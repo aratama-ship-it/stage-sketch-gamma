@@ -32,6 +32,33 @@
 
   const TEXT = {
 
+    "ブラウザ版の相談で、説明書や書斎を参考にした返答と資料の表示、操作する場所への案内ができるようになりました。関連する説明書の文や書斎の参照情報も、返答を作るために Anthropic の API へ送ります。": "Consultation in the browser edition can now use the manual and Study references, show its sources, and guide you to controls in the app. Relevant manual text and Study reference information are also sent to Anthropic’s API to produce a reply.",
+
+    "相談に「このシーンを点検」を追加しました。押すと、入力文に加えて対象と前後のシーン名、駒の種類・名前（演者名を含む）・位置・向き、人数や重なりなどの計算結果を Anthropic の API へ送ります。点検で配置が変わることはありません。": "Added Check this scene to Consultation. Pressing it sends your text, the current and adjacent scene titles, piece types, names (including performer names), positions and facing directions, and calculated facts such as performer counts and overlaps to Anthropic’s API. Checking does not change the layout.",
+
+    "Studio・Company の相談に「別案に下書き」を追加しました。入力文と対象シーンの名前・駒の種類・名前・位置・向き、登録済みの人・道具の名前と道具の種類、人数や重なりなどの計算結果を Anthropic の API へ送ります。AI がショーを勝手に書き換えることはなく、利用者が確認カードを確かめて「別案に作る」を押したときだけ、新しい別案として保存します。": "Added Draft in an alternative to Consultation for Studio and Company. Your text, the current scene title, piece types, names, positions and facing directions, registered performer and set names, set types, and calculated facts such as counts and overlaps are sent to Anthropic’s API. AI never changes your show on its own: a new alternative is saved only after you review the confirmation card and press Create alternative.",
+
+    "Studio・Company の相談に「照明を下書き」を追加しました。入力文と、そのシーンの灯体の名前・種類・吊り位置・固定灯かどうか・明るさ・色、演者の名前・位置、かんたん照明の利用可否と型の情報を Anthropic の API へ送ります。AI は試し表示・未適用の下書きまでを用意し、利用者が内容を確かめて適用ボタンを押したときだけショーに入ります。": "Added Draft lighting to Consultation for Studio and Company. Your text, the current scene’s fixture names, types, mounting positions, fixed-light status, brightness and colours, performer names and positions, and Easy lighting availability and preset information are sent to Anthropic’s API. AI prepares a preview or unapplied draft; it enters your show only after you review it and press the apply button.",
+
+    "照明タブで適用した直後は、「元に戻す」1回で適用前へ戻るようにしました。未適用の編集があるときはその編集を戻し、かんたん照明の「適用を戻す」も適用前へ戻します。相談を使わない場合にも効く変更です。": "In the lighting tab, one Undo immediately after applying now restores the state before the application. If there are unapplied edits, Undo reverses those edits instead; Easy lighting’s Undo application also restores the state before applying. This change also applies when you do not use Consultation.",
+
+    "相談の1人1日の上限を一律30回から Lite 40回・Studio 60回・Company 80回へ変更しました。全体では1日2,000回までで、日本時間の午前0時に数え直します。": "Changed the daily Consultation limit from 30 requests per person for every plan to 40 for Lite, 60 for Studio and 80 for Company. The overall limit remains 2,000 requests per day, with counts resetting at midnight Japan Standard Time.",
+
+    "相談のクレジットを使い切ったときは、利用枠の案内ではなく「相談の試験は終わりました。ご意見ありがとうございました。」と表示するようにしました。": "When Consultation credits run out, the panel now displays a message that the trial has ended and thanks you for your feedback, instead of a usage-allowance message.",
+
+    "相談パネルに「試験中の機能です。予告なく終わることがあります。」の注意を独立して表示するようにしました。": "The Consultation panel now separately displays the notice: “This is a trial feature. It may end without notice.”",
+
+    "相談の使われ方は、日ごと・プランごとの合計回数と全体の合計回数だけを、当日を含む120日分残します。この集計には文・名前・アカウントを含めず、サービスの持ち主だけが読めます。": "Consultation usage history keeps only daily totals for each plan and an overall daily total for 120 days including today. These totals contain no text, names or accounts and can be read only by the service owner.",
+
+    "利用規約と相談ボタンの説明に、演者名（実名の場合もある）を送ることを明記し、規約の送信範囲を「入力した文と直近の会話（過去6往復まで）」としました。画面の案内、点検・下書きで送る情報、提案をショーに入れるには利用者の確認と操作が必要なことも記載しています。相談パネルは引き続き Mac 版には表示されません。": "The terms and Consultation button descriptions now explicitly state that performer names, which may be real names, are sent; the terms describe the conversation sent as your entered text and recent conversation (up to six exchanges). They also explain in-app guidance, the information sent for scene checks and drafts, and the requirement for you to review and act before proposals enter your show. The Consultation panel remains unavailable in the Mac app.",
+
+    "別のショーを受け取ったとき、切り替え前のショーの「元に戻す」「やり直す」の履歴が残らないようにしました。同じショーの更新では履歴を保ちます。相談を使わない場合や Mac 版にも効く変更です。": "When a different show is received, the previous show’s Undo and Redo history is now cleared. Updates to the same show retain the history. This change also applies without Consultation and in the Mac app.",
+
+    "日英の説明書の13か所を、現在の画面の名前や劇場設定の手順番号に合わせて直しました。": "Updated 13 places in the Japanese and English manual to match current control names and theatre setup step numbers.",
+
+    "中国語（簡体字・繁体字）の表示で、上手・下手などの方向に客席から見た左右を明記しました。上手は客席から見て右、下手は左です。": "In Simplified and Traditional Chinese displays, stage-side labels now state left and right as seen from the audience: kamite (stage left) is on the audience’s right, and shimote (stage right) is on the audience’s left.",
+    "iPad 表示に切り替えたあと、元の表示へ戻る方法がなかったのを直しました。iPad 表示の左の列の上に「通常表示に戻る」ボタンを置きました。": "Fixed there being no way back after switching to iPad display. A “Return to desktop” button now appears at the top of the left rail in iPad display.",
+
     "Safari 系で、リハーサルの画面のまま読み直したあと、図面や振り返りの操作が出ない、通常の画面へ戻されることがあったのを直しました。": "Fixed cases in Safari-based browsers where reloading while in Rehearsal could leave drawings or review controls missing, or return you to the normal workspace.",
 
     "埋め込みの窓を閉じたとき、スクロールの位置が元に戻らないことがあったのを直しました。": "Fixed cases where the scroll position was not restored after closing an embedded dialog.",
@@ -2128,6 +2155,7 @@
     "右側": "Right side",
     "1列表示のパネル列を左側か右側へ置きます。":
       "Places the one-column panel rail on the left or right side.",
+    "通常表示に戻る": "Return to desktop",
     "iPad表示モード": "iPad display mode",
     "iPad用の左アイコン列と引き出しで操作します。切り替え後に画面を読み込み直します。":
       "Uses the iPad left icon rail and drawer. The page reloads after switching.",
@@ -6000,7 +6028,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.send": "Send",
   "assist.context": "Share the current scene title and head count",
   "assist.remaining": "{n} left today",
-  "assist.notice": "This is a trial feature and may end without notice. Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
+  "assist.trialNotice": "This is a trial feature and may end without notice.",
+  "assist.notice": "Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
   "assist.thinking": "Thinking: {n}s",
   "assist.daily": "Today’s allowance is used up. Please come back tomorrow.",
   "assist.monthly": "This month’s consultation allowance is full.",
@@ -6020,4 +6049,59 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "指差し・矢印・音の操作": "Pointing, arrows and audio",
   "図にマウスを動かすと指差しが届きます。": "Move the mouse over a diagram to point for others.",
   "矢印は相手にも共有されます。表示の切替は自分の画面だけです。": "Arrows are shared with others. View changes affect only your own screen."
+});
+
+// K1 consultation reference labels.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.refs": "References",
+  "assist.refWork": "Work: {label} ({source})",
+  "assist.refShosai": "Study: {label}"
+});
+
+// K4: scene data is sent only by the explicit check action.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.check": "Check this scene",
+  "assist.checkPrompt": "Check this scene",
+  "assist.checkNotice": "Sends piece types, names (including performer names) and positions from this scene and its adjacent scenes.",
+  "assist.refScene": "Checked scene: {label}",
+  "assist.sceneUnavailable": "Could not read the scene. Open a scene and try again."
+});
+
+// K5: reviewed alternative drafts.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.draft": "Draft in an alternative",
+  "assist.draftInput": "Describe your draft in up to 400 characters. Sends this scene’s pieces and registered names (including performer names).",
+  "assist.draftShared": "Alternative drafts are unavailable while sharing.",
+  "assist.draftLite": "Alternative drafts require Studio or Company.",
+  "assist.draftStorage": "Resolve the storage problem and try again.",
+  "assist.draftBlocked": "Use the normal editor after editing and playback have stopped.",
+  "assist.confirmDraft": "This will be done",
+  "assist.applyDraft": "Create alternative",
+  "assist.cancelDraft": "Cancel",
+  "assist.draftRejected": "Omitted {n} unsupported operations.",
+  "assist.draftLabel": "Consultation draft",
+  "assist.draftCreated": "Created the “{label}” alternative. Compare it and adopt it if you like.",
+  "assist.draftSavedDisplayFailed": "The alternative was saved. Reopen the scene to view it.",
+  "assist.draftFailed": "Could not create the alternative.",
+  "assist.draftReady": "Review the proposed operations.",
+  "assist.opRemove": "Take {name} backstage",
+  "assist.opFace": "Turn {name} to face {dir} ({n}°)",
+  "assist.faceHouse": "the house",
+  "assist.faceBack": "upstage",
+  "assist.opPlace": "Place {name} at {where}",
+  "assist.opMove": "Move {name} to {where}",
+  "assist.stageRight": "stage right",
+  "assist.stageLeft": "stage left",
+  "assist.center": "centre",
+  "assist.backStage": "back",
+  "assist.frontStage": "front",
+  "assist.middleStage": "middle",
+  "assist.position": "{side}, {depth} ({x}% across, {y}% from back)",
+  "assist.editFailureStale": "The scene, alternative or editing state changed. Ask again.",
+  "assist.editFailureSave": "Saving failed. The original alternative is unchanged.",
+  "assist.editFailureLocked": "Locked pieces cannot be changed.",
+  "assist.editFailureRelationship": "This operation cannot handle the attached or supported pieces.",
+  "assist.editFailureUnsupported": "This operation, including lights and routes, is not enabled yet.",
+  "assist.editFailureCapacity": "The piece or alternative limit has been reached.",
+  "assist.editFailureInvalid": "Check the names, positions and facing in the proposal."
 });

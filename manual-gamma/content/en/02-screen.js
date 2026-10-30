@@ -12,7 +12,7 @@
         html: `
 <p>The current scene title uses the space between the buttons; its tooltip contains the full title. If the header runs out of room, TC hides first, then the controls move to a second row if needed. The version remains visible; TC returns when the window widens.</p>
 <p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
-${fig("release094-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
+${fig("release095-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
   ["Left", "Logo and version", "The version number (for example 0.2.19). Please include it when reporting a problem"],
   ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Run of show)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
@@ -53,7 +53,7 @@ ${note("In a new show some tabs are closed", "Until the theatre has been applied
         html: `
 <h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
 <p>The ${ui("Stage")} tab defaults to ${ui("Two columns")}: show, scene, performer and other panels on the left, drawings on the right. Use ${ui("Panel display style")} to switch to ${ui("3 columns")} or another layout.</p>
-${fig("release094-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
+${fig("release095-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
 <ul>
 <li><strong>Reorder panels</strong> — drag the ⠿ at the left of a panel heading up or down. The other panels slide aside to make room.</li>
 <li><strong>Collapse</strong> — the ▾ at the right of a heading folds the panel. What is folded is saved with the show and goes into exports.</li>
@@ -110,7 +110,7 @@ ${table(["Icon", "Name", "Key", "What it does"], [
   ["(bulb)", ui("Work lights"), kbd("G"), "With work lights off, areas without light go dark — in the front view, plan and 3D"],
   ["(person + tag)", ui("Performer names"), "—", "Show name tags for performers"],
   ["(box + tag)", ui("Set names"), "—", "Show name tags for set pieces and props"],
-  ["▾", "Which views", kbd("T"), ui("Front") + " / " + ui("Plan") + " / " + ui("Both 1") + " (front on top) / " + ui("Both 2") + " (plan on top). The lower right of the drawing also has front/plan switches"]
+  ["▾", "Which views", kbd("T"), ui("Front") + " / " + ui("Plan") + " / " + ui("Front + plan") + " (front on top) / " + ui("Plan + front") + " (plan on top). The lower right of the drawing also has front/plan switches"]
 ])}
 <p>Each view has its own row at its top right. The plan has ${ui("Draw route")}, ${ui("Draw from next")} and ${ui("Clear route")}; both views have ${ui("Add a note")}, name tags and — while the arrow tool is in hand — ${ui("Clear arrows")} (clears that view's arrows only). ＋ and − at the lower right zoom the view, and ${ui("Front")} / ${ui("Plan")} show one view large.</p>
 <p>Idle motion during playback is off by default in Settings. With it on, standing performers gently shift their weight while both feet stay in place. Saved positions and facing do not change. Performer names stay steady in the front view, plan and 3D while idle motion moves their bodies. During a scene transition, the names follow the performers as they change position.</p>
@@ -153,7 +153,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release094-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release094-stage", "Stage toolbar.", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release095-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release095-stage", "Stage toolbar.", "stage")
 }
     ]
   });

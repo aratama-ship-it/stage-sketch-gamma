@@ -476,7 +476,7 @@
       $('study-verified-name').textContent = result.displayName || '';
       $('study-name').required = !result.displayName;
       if (!frame) {
-        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261029-v0394-' + (lang === 'en' ? 'en' : 'ja');
+        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261030-v0395-' + (lang === 'en' ? 'en' : 'ja');
         $('study-frame-host').replaceChildren(frame);
       } else if (frameReady) { frame.title = t('both'); loadFrame(); }
       $('study-workspace').hidden = false;

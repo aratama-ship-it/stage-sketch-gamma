@@ -33,22 +33,22 @@ ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, 
 ${vid("venue-preset", "In A-3, choose a thrust stage and apply it to the show without adding lighting equipment.")}`
       },
       {
-        id: "venue-steps", title: "The nine steps (format, main shape, extra stages, ceiling, house, wings, walls, machinery, viewpoints)", status: "sourced",
+        id: "venue-steps", title: "The nine steps (room outline, stage shape, ceiling and front border, audience, wings, walls and pillars, back screen, stage machinery, viewing positions)", status: "sourced",
         keywords: ["steps", "stage format", "end-on", "thrust", "in the round", "main shape", "rectangle", "l-shape", "circle", "custom", "extra stage", "hanamichi", "hashigakari", "ceiling", "house", "floor height", "rake", "steps in floor", "wings", "curtains", "walls", "machinery", "viewpoint", "eye height", "floor colour"],
         html: `
 <p>Further down the left column are steps 1–9. Change only what you need; there is no need to go through them all.</p>
 ${table(["Step", "What you decide", "Main items"], [
-  ["1. Stage format", "Which sides the house can be on", ui("End-on") + " / " + ui("Thrust") + " (three sides) / " + ui("In the round")],
-  ["2. Main shape", "Outline, size and floor", ui("Rectangle") + " / " + ui("L-shape") + " / " + ui("Circle") + " / " + ui("Custom") + " (edges move one way, corners two; long-press a corner to cut it), " + ui("Width (m)") + " and " + ui("Depth (m)") + ", " + ui("Stage height") + " (−3 to 3 m from the house floor; negative for a stage below the audience, like a circus ring), and " + ui("Stage floor colour") + " (" + ui("Black") + " by default / " + ui("Brown") + " / " + ui("Grey") + "; the front view, plan and 3D floors all use it)"],
-  ["3. Extra stages", "Hanamichi, hashigakari, thrusts", "Add a " + ui("Rectangle") + " or " + ui("Circle") + ". Where they overlap, use " + ui("Merge overlaps") + " or " + ui("Resolve the overlap")],
-  ["4. Ceiling", "Whether there is a ceiling and how high", ui("With a ceiling") + " / " + ui("No ceiling") + ", " + ui("Height") + ", " + ui("Opening height") + " (height of the front border). Shown in the plan and preview (v0.2.10)"],
-  ["5. House", "Audience areas and floor heights", ui("Place all around") + ", " + ui("Floor height at the stage end") + " / " + ui("Floor height at the back") + " (relative to the stage floor; flat, raked and stepped floors appear in the plan and in 3D), and whether the house can be rigged: " + ui("No rigging") + " / " + ui("Partial") + " / " + ui("Riggable")],
-  ["6. Wings", "Wing positions and masking", ui("With border") + " / " + ui("No border") + ", stage left and right. Legs also appear at the front and back of the wings (v0.2.14)"],
-  ["7. Walls", "Where the walls are", "Place lines on the plan. " + ui("Add a back screen") + " (draw a horizontal line; follows the ceiling height)"],
+  ["1. Room outline", "Overall room size and stage position", ui("Width (m)") + " / " + ui("Depth (m)") + "; use " + ui("Change the boundary") + " to apply the dimensions, and " + ui("Move the stage") + " to move the stage and wings together"],
+  ["2. Stage shape", "Stage outline, extra stages and floor", "Select the stage on the plan to move its corners or edges. Use " + ui("Add rectangle") + " / " + ui("Add circle") + " / " + ui("Draw polygon") + " for a hanamichi, hashigakari or thrust; use " + ui("Merge overlaps") + " for overlapping stages. " + ui("Stage floor colour") + ": " + ui("Black") + " (default) / " + ui("Brown") + " / " + ui("Grey")],
+  ["3. Ceiling and front border", "Whether there is a ceiling and how high", ui("With a ceiling") + " / " + ui("No ceiling") + ", " + ui("Height") + ", " + ui("Opening height (front border curtain)") + " (height of the front border). Shown in the plan and preview (v0.2.10)"],
+  ["4. Audience", "Audience areas and floor heights", ui("Place all around") + ", " + ui("Floor height at the stage end") + " / " + ui("Floor height at the back") + " (relative to the stage floor; flat, raked and stepped floors appear in the plan and in 3D), and whether the house can be rigged: " + ui("No rigging") + " / " + ui("Partial") + " / " + ui("Riggable")],
+  ["5. Wings", "Wing positions and masking", ui("With border") + " / " + ui("No border") + ", stage left and right. Legs also appear at the front and back of the wings (v0.2.14)"],
+  ["6. Walls and pillars", "Walls, pillars, furniture, doors and load-in doors", "Draw wall lines on the plan and add pillars or other items"],
+  ["7. Back screen", "Screen position, length and colour", ui("Add a back screen") + " draws a horizontal line on the plan. Select it to adjust length and colour; height follows the ceiling"],
   ["8. Stage machinery", "Add a front scrim", ui("Place a front scrim (downstage edge, 30% sheer)") + ". The Stage tab also has " + ui("Place scrim") + " and " + ui("Place stage lift") + ". For revolves, decks and water, duplicate a sample show (" + ref("machinery-kinds", "Part 6") + ")"],
-  ["9. Viewpoints", "Where the front view is seen from", "Up to five. Name, " + ui("eye height") + ", " + ui("Reset to the default height") + ". They follow the house floor height (" + ref("viewpoints", "5-6") + ")"]
+  ["9. Viewing positions", "Where the front view is seen from", "Up to five. Name, " + ui("eye height") + ", " + ui("Reset to the default height") + ". They follow the house floor height (" + ref("viewpoints", "5-6") + ")"]
 ])}
-<p>With a point selected on the plan you can use ${ui("+ Add a point")}, ${ui("Delete the selected point")} and ${ui("Undo edits")}. The strip under the plan tells you what to do next (for example “select step 5 or 6”).</p>
+<p>With a point selected on the plan you can use ${ui("+ Add a point")}, ${ui("Delete the selected point")} and ${ui("Undo edits")}. The strip under the plan tells you what to do next.</p>
 <p>When you select the stage, an additional stage, an audience area, a stage wing, a wall, a pillar, furniture, a door, a load-in door or a back screen, the line under the plan shows what is selected (for example “Selected: Pillar”), and ${ui("Delete")} next to it removes it. The ${kbd("Delete")} key and ${ui("Delete")} in the right-click menu do the same. ${kbd("⌘Z")} brings it back. ${ui("Delete")} is not shown while nothing is selected.</p>
 <p>${ui("Three lines derived from the theatre")} are the reach, blind-spot and sightline limits. On the Stage tab you can check them by switching seats above the front view.</p>`
       },
@@ -94,9 +94,9 @@ ${note("Viewpoints are no longer registered from 3D", "v0.2.12 removed registeri
         keywords: ["hanamichi", "hashigakari", "runway", "thrust", "front border", "border", "legs", "back screen", "cyclorama", "curtain", "outside", "overhang"],
         html: `
 <ul>
-<li><strong>Hanamichi and hashigakari</strong> (step 3) are drawn as walkways leaving the stage in the front view and 3D, and pieces can stand on them.</li>
-<li><strong>The front border</strong> (the notch at the top of the front view) takes its height from ${ui("Opening height")} in step 4. On the Stage tab the front view has a ${ui("Front border")} switch. From the balcony you see it from above.</li>
-<li><strong>Legs</strong> appear with ${ui("With border")} in step 6. Several stand from front to back, and the wing space is painted darker than the legs.</li>
+<li><strong>Hanamichi and hashigakari</strong> (step 2, Stage shape) are drawn as walkways leaving the stage in the front view and 3D, and pieces can stand on them.</li>
+<li><strong>The front border</strong> (the notch at the top of the front view) takes its height from ${ui("Opening height (front border curtain)")} in step 3, Ceiling and front border. On the Stage tab the front view has a ${ui("Front border")} switch. From the balcony you see it from above.</li>
+<li><strong>Legs</strong> appear with ${ui("With border")} in step 5, Wings. Several stand from front to back, and the wing space is painted darker than the legs.</li>
 <li><strong>The back screen</strong> is added in step 7 (${ui("Add a back screen")}) by drawing a horizontal line on the plan. It follows the ceiling height (v0.2.14).</li>
 </ul>`
       }

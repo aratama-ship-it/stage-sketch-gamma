@@ -377,6 +377,8 @@
 
     /* --- 左レール --- */
     const rail = el("nav", "gm-rail", { "aria-label": tx("舞台スケッチの道具"), "data-no-i18n": "" });
+    const displayExit = $("#stage-tablet-display-exit");
+    if (displayExit) rail.append(displayExit);
     const GROUPS = [
       { id: "show", ja: "ショー", icon: ICON.show, panels: ["project"] },
       { id: "cast", ja: "出演・装置", icon: ICON.cast, panels: ["cast", "sets", "props", "stage-set", "rigs"] },

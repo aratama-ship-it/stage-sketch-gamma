@@ -126,7 +126,7 @@
     if(!context || loading)return;
     drafts.set(runtimeKey(context),{baseBasis:basis(context),contextGeneration,context:structuredClone(context),
       raw:state.dirty ? draftRecordRaw() : null,editor:hooks.captureDocumentState(),appliedExtras:structuredClone(appliedExtras),changedElsewhere,
-      draftState,applyError,appliedNotice,recoveredWithoutHistory,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
+      draftState,applyError,appliedNotice,recoveredWithoutHistory,draftRedo,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
   }
   let applyRequest=null,applyTask=null,draftTask=Promise.resolve(true),draftWriteSequence=0;
   function retainNative(raw, owner=context) {
@@ -575,6 +575,7 @@
       && vector(record.context)===vector(next) && record.baseBasis===basis(next)
       && record.raw===raw).sort((a,b)=>b.contextGeneration-a.contextGeneration)[0] || null;
   }
+  let draftRedo=false;
   function open(next, mode) {
     if(playbackPreview && sameOwner(context,next)) return false;
     const retained=retainedDraft(next);
@@ -586,6 +587,7 @@
       loading=true;
       try {
         hooks.restoreDocumentState(retained.editor);appliedExtras=structuredClone(retained.appliedExtras);
+        draftRedo=!!retained.draftRedo;
         context={...next,basis:retained.context.basis,baseBasis:retained.baseBasis};
         changedElsewhere=retained.changedElsewhere || retained.baseBasis!==basis(next);
         draftState=retained.draftState;recoveredWithoutHistory=!!retained.recoveredWithoutHistory;applyError='';appliedNotice='';active=true;
@@ -613,7 +615,7 @@
       synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();return;
     }
-    saveDraft();stash();clearTimeout(draftTimer);draftTimer=0;contextGeneration++;applyRequest=null;applying=false;loading=true;
+    saveDraft();stash();clearTimeout(draftTimer);draftTimer=0;contextGeneration++;applyRequest=null;applying=false;loading=true;draftRedo=false;
     try {
       const hostDesign=model.reconcile(next.design,next);
       let design=hostDesign,dirty=false;
@@ -726,7 +728,7 @@
       context=result.context;synchronizeVenueMask(context);
       if(result.designExpanded || options.placement) hooks.applyDesign(context.design,{host:true,preserveHistory:true});
       synchronizePieces(context);
-      appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();
+      appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();draftRedo=false;
       parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';
@@ -755,7 +757,7 @@
       if(!result.persisted) throw Error('保存できませんでした');
       if(!sameOwner(request.context,result.context))return staleResult();
       context=result.context;appliedExtras=model.clone(design);
-      hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
+      hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();draftRedo=false;
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · 照明をショーへ保存しました。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
@@ -853,7 +855,7 @@
     return {drafts:new Map(drafts),editor:hooks.captureDocumentState(),context:context&&structuredClone(context),active,changedElsewhere,draftRecord,
       appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,recoveredWithoutHistory,lastScene,cuePanelStamp,
       placementUnderlaySnapshot:structuredClone(placementUnderlaySnapshot),
-      simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.(),
+      draftRedo,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.(),
       dialogHidden:dialog.hidden,dialogChildren:[...dialog.childNodes],
       scroll:[...document.querySelectorAll('[id]')].filter(el=>el.scrollTop||el.scrollLeft).map(el=>[el,el.scrollTop,el.scrollLeft]),
       focus:document.activeElement};
@@ -864,7 +866,7 @@
     contextGeneration++;applyRequest=null;applyTask=null;applying=false;loading=true;
     try {
       drafts.clear();for(const [k,v] of saved.drafts || [])drafts.set(k,v);
-      context=saved.context&&structuredClone(saved.context);active=saved.active;changedElsewhere=saved.changedElsewhere;
+      context=saved.context&&structuredClone(saved.context);active=saved.active;changedElsewhere=saved.changedElsewhere;draftRedo=!!saved.draftRedo;
       appliedExtras=structuredClone(saved.appliedExtras);draftState=saved.draftState;
       applyError=saved.applyError;appliedNotice=saved.appliedNotice;recoveredWithoutHistory=!!saved.recoveredWithoutHistory;lastScene=saved.lastScene;cuePanelStamp=saved.cuePanelStamp;
       placementUnderlaySnapshot=structuredClone(saved.placementUnderlaySnapshot);
@@ -888,7 +890,7 @@
     stash();contextGeneration++;
     applyRequest=null;applyTask=null;applying=false;active=false;context=null;
     clearRecoveryMessage();changedElsewhere=false;applyError='';appliedNotice='';draftState='none';recoveredWithoutHistory=false;
-    state.history=[];state.future=[];hooks.markApplied();
+    state.history=[];state.future=[];hooks.markApplied();draftRedo=false;
     window.GAMMA_SIMPLE_LIGHT_UI?.clearDocumentContext?.();renderSaveStatus();
   }
   async function waitForApply() {
@@ -919,12 +921,13 @@
       else hooks.draw();
       return true;
     },
-    undo:event=>hooks.undo(event),redo:event=>hooks.redo(event),
+    undo(event){const done=hooks.undo(event);if(done)draftRedo=!!state.future.length;parent.GammaUndoOwner?.invalidate();return done;},
+    redo(event){const done=hooks.redo(event);if(done)draftRedo=!!state.future.length;parent.GammaUndoOwner?.invalidate();return done;},
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:state.dirty,active,changedElsewhere,applying,applyError,draftState,
+    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:state.dirty,draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
       draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
       hasUnappliedDrafts:state.dirty || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
       loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,

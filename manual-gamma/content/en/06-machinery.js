@@ -36,7 +36,7 @@ ${fig("11-D-machinery", "Test scene D-2 (moving deck) in plan. Performers stand 
         id: "machinery-transition", title: "Moving it in transitions (turn, rise, open)", status: "sourced",
         keywords: ["transition", "move", "turn", "rise", "lower", "open", "close", "animation", "speed", "seconds"],
         html: `
-<p>Machinery values belong to each scene. If a revolve is at 0° in one scene and 40° in the next, pressing ${ui("Next ▶")} turns it through 40°, and the pieces on it turn too. Lift height, curtain opening and water level work the same way. With transition animation switched off in Settings, the change is instant.</p>
+<p>Machinery values belong to each scene. If a revolve is at 0° in one scene and 40° in the next, pressing ${ui("Next scene")} (${kbd("↓")}) turns it through 40°, and the pieces on it turn too. Lift height, curtain opening and water level work the same way. With transition animation switched off in Settings, the change is instant.</p>
 <p>A revolve given a ${ui("Spin speed")} keeps turning while the scene is shown.</p>
 ${vid("machinery-revolve", "Test scenes C-7 → D-1 → D-2 → D-3 in the full-screen front view: a lift rises carrying a performer, a deck tilts and a curtain comes in.")}`
       },

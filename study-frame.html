@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.94</span>
+                <span class="stage-app-version">0.3.95</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2831,16 +2831,26 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261029-v0394">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261030-v0395">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0394-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0394-title">v0.3.94</h3><time datetime="2026-10-30">2026-10-30</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0395-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0395-title">v0.3.95</h3><time datetime="2026-10-30">2026-10-30</time></header>
       <ul>
-        <li>Safari 系で、リハーサルの画面のまま読み直したあと、図面や振り返りの操作が出ない、通常の画面へ戻されることがあったのを直しました。</li>
-        <li>埋め込みの窓を閉じたとき、スクロールの位置が元に戻らないことがあったのを直しました。</li>
-        <li>照明デザインの「かんたん」の型を12種から21種に増やしました（色違いと、舞台の奥・手前を照らす型）。</li>
-        <li>ブラウザ版の対象プランに「相談（試験中）」パネルを追加しました。入力した文は、返答を作るためだけに外部の AI（Anthropic の API）へ送られます。利用は日本時間で1人1日30回・全体1日2,000回までです。利用規約に相談の条項を追記しました（Mac 版には表示されません）。</li>
+        <li>ブラウザ版の相談で、説明書や書斎を参考にした返答と資料の表示、操作する場所への案内ができるようになりました。関連する説明書の文や書斎の参照情報も、返答を作るために Anthropic の API へ送ります。</li>
+        <li>相談に「このシーンを点検」を追加しました。押すと、入力文に加えて対象と前後のシーン名、駒の種類・名前（演者名を含む）・位置・向き、人数や重なりなどの計算結果を Anthropic の API へ送ります。点検で配置が変わることはありません。</li>
+        <li>Studio・Company の相談に「別案に下書き」を追加しました。入力文と対象シーンの名前・駒の種類・名前・位置・向き、登録済みの人・道具の名前と道具の種類、人数や重なりなどの計算結果を Anthropic の API へ送ります。AI がショーを勝手に書き換えることはなく、利用者が確認カードを確かめて「別案に作る」を押したときだけ、新しい別案として保存します。</li>
+        <li>Studio・Company の相談に「照明を下書き」を追加しました。入力文と、そのシーンの灯体の名前・種類・吊り位置・固定灯かどうか・明るさ・色、演者の名前・位置、かんたん照明の利用可否と型の情報を Anthropic の API へ送ります。AI は試し表示・未適用の下書きまでを用意し、利用者が内容を確かめて適用ボタンを押したときだけショーに入ります。</li>
+        <li>照明タブで適用した直後は、「元に戻す」1回で適用前へ戻るようにしました。未適用の編集があるときはその編集を戻し、かんたん照明の「適用を戻す」も適用前へ戻します。相談を使わない場合にも効く変更です。</li>
+        <li>相談の1人1日の上限を一律30回から Lite 40回・Studio 60回・Company 80回へ変更しました。全体では1日2,000回までで、日本時間の午前0時に数え直します。</li>
+        <li>相談のクレジットを使い切ったときは、利用枠の案内ではなく「相談の試験は終わりました。ご意見ありがとうございました。」と表示するようにしました。</li>
+        <li>相談パネルに「試験中の機能です。予告なく終わることがあります。」の注意を独立して表示するようにしました。</li>
+        <li>相談の使われ方は、日ごと・プランごとの合計回数と全体の合計回数だけを、当日を含む120日分残します。この集計には文・名前・アカウントを含めず、サービスの持ち主だけが読めます。</li>
+        <li>利用規約と相談ボタンの説明に、演者名（実名の場合もある）を送ることを明記し、規約の送信範囲を「入力した文と直近の会話（過去6往復まで）」としました。画面の案内、点検・下書きで送る情報、提案をショーに入れるには利用者の確認と操作が必要なことも記載しています。相談パネルは引き続き Mac 版には表示されません。</li>
+        <li>別のショーを受け取ったとき、切り替え前のショーの「元に戻す」「やり直す」の履歴が残らないようにしました。同じショーの更新では履歴を保ちます。相談を使わない場合や Mac 版にも効く変更です。</li>
+        <li>日英の説明書の13か所を、現在の画面の名前や劇場設定の手順番号に合わせて直しました。</li>
+        <li>中国語（簡体字・繁体字）の表示で、上手・下手などの方向に客席から見た左右を明記しました。上手は客席から見て右、下手は左です。</li>
+        <li>iPad 表示に切り替えたあと、元の表示へ戻る方法がなかったのを直しました。iPad 表示の左の列の上に「通常表示に戻る」ボタンを置きました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3806,9 +3816,9 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261017-v0377"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261029-v0394"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261030-v0395"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261029-v0394"></script>
+<script src="/study-assets/stage-sketch.js?v=20261030-v0395"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261024-v0385"></script>
 </body></html>

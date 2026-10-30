@@ -4,6 +4,7 @@
   const clone = x => JSON.parse(JSON.stringify(x));
   const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
   const colors = {white:'#f2ead6',warm:'#ffc46b',blue:'#5e9dff',red:'#ff6262'};
+  const resolveColor=x=>colors[x]||(/^#[0-9a-f]{6}$/i.test(x||'')?x.toLowerCase():null);
   // [id, name, category, spots, color, kind, place]  place = 1灯スポットの既定の狙い（省略は中央）。
   // 2026-10-29: 色違いと奥・手前の狙いを追加（12→21種）。既存の id・既定値は変えない。
   const presets = [
@@ -81,12 +82,12 @@
     const E=root.RIG_ENGINE,p=get(id),o={...defaults(id),...clone(options||{})};
     if(!E)throw Error('照明エンジンを読み込めません');
     if(!Number.isFinite(o.level)||o.level<0||o.level>100||!Number.isFinite(o.sizeM)||o.sizeM<.5||o.sizeM>4
-       ||!Number.isFinite(o.fadeSec)||o.fadeSec<0||o.fadeSec>600||!colors[o.color])throw Error('調整値を確認してください');
+       ||!Number.isFinite(o.fadeSec)||o.fadeSec<0||o.fadeSec>600||!resolveColor(o.color))throw Error('調整値を確認してください');
     o.targets=Array.isArray(o.targets)?o.targets:defaults(id).targets;
     const targets=Array.from({length:p.spots},(_,i)=>target(o.targets[i]||defaults(id).targets[i],pieces));
     const lights={},warnings=[],spotFixtures=rig.fixtures.filter(f=>f.simpleRole==='front-light'&&f.opticalType==='spot');
     for(const f of rig.fixtures) {
-      let on=false,point={u:f.mount.u||.5,v:.5,hM:0},color=colors[o.color],level=o.level,beamDeg=50;
+      let on=false,point={u:f.mount.u||.5,v:.5,hM:0},color=resolveColor(o.color),level=o.level,beamDeg=50;
       if(['all','mix'].includes(p.kind)&&f.opticalType==='wash'&&f.simpleRole!=='side') {
         on=true;point={u:f.mount.u,v:f.simpleRole==='back'?.25:f.simpleRole==='front'?.65:.85,hM:0};
         if(p.kind==='mix')color=colors.blue;

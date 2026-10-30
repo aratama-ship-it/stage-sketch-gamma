@@ -1115,7 +1115,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261029-v0394'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261030-v0395'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1436,6 +1436,6 @@
 (() => {
   if (!document.querySelector('[data-panel="assist"]')) return;
   const script = document.createElement('script');
-  script.src = 'gamma-assist.js?v=20261029-v0394';
+  script.src = 'gamma-assist.js?v=20261030-v0395';
   document.body.append(script);
 })();

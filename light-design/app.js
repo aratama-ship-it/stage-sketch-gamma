@@ -4670,7 +4670,13 @@
      空き枠として残るので、要素ごと作らない。 */
   const field = (lab, node, wide) => { const f = document.createElement("div"); f.className = "field" + (wide ? " wide" : "") + (lab ? "" : " nolabel"); if (lab) { const l = document.createElement("span"); l.textContent = lab; f.append(l); } f.append(node); return f; };
   let fieldNameSerial = 0;
+  // K3: stable nonvisual destinations on existing inspector boxes only.
+  const ASSIST_FIELD_LABELS = {"光量":"level", "光の色":"colour", "始点の色":"colour", "狙い":"aim", "光の広がり":"beam", "模様（ゴボ）":"gobo", "カッター":"shutter"};
   function nameInspectorFields(host) {
+    for (const box of host.querySelectorAll('.pbox')) {
+      const title = box.querySelector(':scope > .kicker, :scope > .pboxhead > .kicker')?.textContent.trim();
+      if (ASSIST_FIELD_LABELS[title]) box.dataset.assistField = ASSIST_FIELD_LABELS[title];
+    }
     for (const f of host.querySelectorAll(".field, .barn2 .cell")) {
       const caption = f.querySelector(":scope > span:not(.val)");
       const heading = f.closest(".pbox")?.querySelector(":scope > .kicker, :scope > .pboxhead > .kicker");

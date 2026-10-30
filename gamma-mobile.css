@@ -301,6 +301,25 @@ html.stage-pwa-tablet.gm-tablet .gm-rail {
   background: var(--stage-ui-rail, #14110e);
   overflow: hidden auto;
 }
+/* Shared by the live rail and the old-shell fallback. Keep the exit at the top. */
+html.stage-pwa-tablet .stage-tablet-display-exit {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 44px;
+  min-height: 56px;
+  padding: 4px 2px;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--stage-ui-rail, #15171a);
+  color: var(--milk);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+html.stage-pwa-tablet .stage-tablet-display-exit[hidden],
+html.stage-pwa-tablet body.stage-session-guest .stage-tablet-display-exit { display: none; }
 html.stage-pwa-tablet.gm-tablet .gm-rail-btn {
   display: grid;
   place-items: center;

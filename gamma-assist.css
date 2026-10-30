@@ -26,7 +26,7 @@
 .assist-context {display:flex;align-items:center;gap:var(--assist-s2);min-height:var(--assist-hit);font-size:var(--assist-small);line-height:1.5;cursor:pointer;}
 .assist-context input {flex:0 0 auto;}
 .assist-actions {display:flex;align-items:center;justify-content:space-between;gap:var(--assist-s2);}
-.assist-send {min-height:var(--assist-hit);min-width:88px;border:1px solid var(--brass);border-radius:var(--assist-radius);background:transparent;color:var(--paper);font:var(--assist-body)/1.6 var(--sans);padding:0 var(--assist-s4);transition:opacity var(--assist-duration);}
+.assist-send, .assist-check, .assist-draft {min-height:var(--assist-hit);min-width:88px;border:1px solid var(--brass);border-radius:var(--assist-radius);background:transparent;color:var(--paper);font:var(--assist-body)/1.6 var(--sans);padding:0 var(--assist-s4);transition:opacity var(--assist-duration);}
 .assist-form :focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
 .assist-status,.assist-remaining,.assist-notice {font-size:var(--assist-small);line-height:1.5;color:var(--ink-soft-sm);margin:0;overflow-wrap:anywhere;}
 .assist-status:empty {display:none;}
@@ -37,3 +37,33 @@
 /* v1 follows gamma-mobile.css's narrow breakpoint and the phone viewer shell. */
 @media (max-width:680px) { [data-panel="assist"] {display:none!important;} }
 html.stage-phone-viewer [data-panel="assist"] {display:none!important;}
+
+/* K1 references reuse TOKEN_SHEET small text, spacing and hit-area tokens. */
+.assist-refs {margin-top:var(--assist-s2);color:var(--ink-soft-sm);font-size:var(--assist-small);line-height:1.5;white-space:normal;}
+.assist-ref {display:block;overflow-wrap:anywhere;}
+.assist-refs a.assist-ref {display:flex;align-items:center;min-height:var(--assist-hit);width:100%;color:inherit;text-decoration:underline;padding:var(--assist-s1) 0;box-sizing:border-box;}
+.assist-refs a.assist-ref:focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
+
+/* K3 / design/TOKEN_SHEET.md: a noninteractive ring and one reachable return. */
+.assist-guide-ring {position:fixed;z-index:20000;box-sizing:border-box;border:3px solid var(--brass);border-radius:50%;pointer-events:none;box-shadow:0 0 0 1px #201b16,0 0 0 2px #efe7d6;}
+.assist-guide-ring::after {content:"";position:absolute;inset:-3px;border:3px solid var(--brass);border-radius:50%;box-shadow:0 0 12px var(--brass);animation:assist-guide-glow 1200ms ease-in-out infinite;}
+@keyframes assist-guide-glow {0%,100%{opacity:.3}50%{opacity:1}}
+.assist-guide {position:fixed;z-index:20001;right:16px;bottom:16px;max-width:min(360px,calc(100vw - 32px));padding:12px;background:var(--desk-2);color:var(--ink-soft-sm);border:1px solid var(--brass);font:13px/1.5 var(--sans);display:flex;flex-direction:column;gap:8px;}
+.assist-guide[hidden] {display:none;}
+.assist-guide p {margin:0;overflow-wrap:anywhere;}
+.assist-back {min-height:44px;min-width:44px;padding:8px 12px;font:15px/1.5 var(--sans);background:transparent;border:1px solid var(--brass);color:var(--paper);border-radius:0;}
+.assist-back:focus-visible {outline:2px solid var(--brass);outline-offset:2px;}
+@media(prefers-reduced-motion:reduce) {.assist-guide-ring::after {animation:none;opacity:1;}}
+@media(max-width:680px) {.assist-guide,.assist-guide-ring {display:none;}}
+html.stage-phone-viewer :is(.assist-guide,.assist-guide-ring) {display:none;}
+
+/* K5: same scene action tokens, with a persistent review card outside the log. */
+.assist-scene-actions {display:flex;flex-wrap:wrap;gap:var(--assist-s2);}
+.assist-scene-actions > button {flex:1 1 auto;}
+.assist-confirm {flex:0 0 auto;border:1px solid var(--brass);padding:var(--assist-s3);color:var(--paper);font:var(--assist-body)/1.6 var(--sans);overflow-wrap:anywhere;}
+.assist-confirm ul {margin:var(--assist-s2) 0;padding-left:var(--assist-s4);}
+.assist-confirm button:focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
+
+/* K6: keep the lighting Apply/Cancel controls clear of the persistent review. */
+.assist-guide.has-lighting {left:16px;right:auto;max-height:calc(100vh - 32px);overflow-y:auto;--assist-body:13px;--assist-s2:8px;--assist-s3:12px;--assist-s4:16px;}
+.assist-light-changes {max-height:min(40vh,320px);overflow-y:auto;}

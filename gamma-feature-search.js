@@ -550,8 +550,8 @@
     return false;
   }
   let going = false;
-  async function go(i) {
-    const row = shown[i];
+  async function go(i, destination = null, signal = null) {
+    const row = destination || shown[i];
     if (!row || going) return;
     if (row.kind === "guide") { openGuide(row.query); return; }
     going = true;
@@ -576,14 +576,15 @@
         closeButtonOf(dialog)?.click();
       }
       let ok = true;
-      for (const step of row.steps) { if (!(await runStep(step))) { ok = false; break; } }
+      for (const step of row.steps) { if (signal?.aborted || !(await runStep(step))) { ok = false; break; } }
       /* 開いた領域の中で、さらに畳まれているもの（劇場設定の手順など）は、開いてから経路を引き直して続ける */
       if (ok && !(await waitFor(() => relocate() && visible(target), 300))) {
         styleCache.clear();
         const more = relocate() ? routeTo(target) : null;
-        if (more) for (const step of more) { if (!(await runStep(step))) { ok = false; break; } }
+        if (more) for (const step of more) { if (signal?.aborted || !(await runStep(step))) { ok = false; break; } }
       }
       if (ok) ok = await waitFor(() => relocate() && visible(target), 1200);
+      if (signal?.aborted) return null;
       if (!ok) { announce(fill(tx("「{name}」はいま開けません。"), { name })); return; }
       await frame();
       target.scrollIntoView({ block: "center", inline: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
@@ -603,8 +604,10 @@
         target=doc.getElementById("gamma-run-of-show");
         target?.focus({preventScroll:true});
       }
+      if (signal?.aborted) return null;
       highlight(target.matches("summary") ? target.parentElement : target);
       announce(fill(tx("「{name}」へ移動しました。"), { name }));
+      return target;
     } finally { going = false; }
   }
 
@@ -671,6 +674,24 @@
 
   window.GAMMA_FEATURE_SEARCH = Object.freeze({
     open, close, toggle, isOpen: () => opened,
+    // Public navigation uses the same opening-only route as search. Never clicks the target
+    // operation (only workspace tabs and the existing Q-sheet window openers).
+    reveal: async (selectorOrElement, { signal } = {}) => {
+      let el;
+      try { el = typeof selectorOrElement === 'string' ? doc.querySelector(selectorOrElement) : selectorOrElement; } catch (_) { return Promise.resolve(null); }
+      if (!el || el.ownerDocument !== doc || !el.isConnected || signal?.aborted) return Promise.resolve(null);
+      const panel = el.closest('section.stage-panel');
+      if (panel && !panel.hidden) {
+        panel.scrollIntoView({block:'nearest',behavior:'auto'});
+        await waitFor(() => !panel.querySelector('.stage-panel-body')?.inert, 800);
+      }
+      // A switched-off panel is hidden and its body inert, so route to the panel itself:
+      // the existing "panel" step turns it on from the panel list, as search does.
+      if (el.matches('section.stage-panel') && !el.hidden) el = el.querySelector('.stage-panel-body') || el;
+      styleCache.clear();
+      const steps = routeTo(el), label = labelOf(el) || {shown: el.closest('[data-title]')?.dataset.title || el.id};
+      return steps ? go(-1, {el,steps,label}, signal) : Promise.resolve(null);
+    },
     /* 検査用: 索引を作って返す（開かない）。項目の DOM・経路は読むだけ。 */
     index: () => build().map((row) => ({ label: row.label.shown, ja: row.label.ja, path: row.path.map((p) => p.shown), steps: row.steps.map((s) => s.kind), id: row.el.id || "" })),
     find: (query, { includeRelated = false } = {}) => { build(); const result = search(query); return (result.total === 0 && !includeRelated ? [] : result.hits).map((row) => ({ label: row.label.shown, ja: row.label.ja, path: row.path.map((p) => p.shown), id: row.el.id || "" })); },

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.94";
+  const GAMMA_APP_VERSION = "v0.3.95";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -22449,6 +22449,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function syncTabletWorkspace() {
     if (!tabletUi) return;
+    if (tabletUi.exitButton) {
+      tabletUi.exitButton.hidden = !canExitTabletDisplayMode();
+      tabletUi.exitButton.textContent = tx("通常表示に戻る");
+      tabletUi.exitButton.setAttribute("aria-label", tx("通常表示に戻る"));
+    }
     tabletUi.viewToggle.hidden = tabletOrientation.matches;
     const nextView = state.showFront ? "plan" : "front";
     const nextLabel = nextView === "plan" ? "平面図へ" : "正面図へ";
@@ -22534,6 +22539,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const rail = document.createElement("nav");
     rail.className = "stage-tablet-rail";
     rail.setAttribute("aria-label", "舞台スケッチの道具");
+    // Keep an escape in the live shell, including the old-shell fallback.
+    const exitButton = canExitTabletDisplayMode() ? document.createElement("button") : null;
+    if (exitButton) {
+      exitButton.type = "button";
+      exitButton.id = "stage-tablet-display-exit";
+      exitButton.className = "stage-tablet-display-exit";
+      exitButton.addEventListener("click", exitTabletDisplayMode);
+      rail.append(exitButton);
+    }
     const viewBox = document.createElement("div");
     viewBox.className = "stage-tablet-view-buttons";
     const viewToggle = makeTabletButton("▦", "平面図へ", "stage-tablet-rail-button");
@@ -22614,7 +22628,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       drawerClose, pagePrev, pageCount, pageNext,
       scenePrev, sceneCurrent, sceneNext,
       groups, groupId: "show", pageIndex: 0,
-      viewToggle,
+      viewToggle, exitButton,
       groupButtons: groups.map((group) => group.button),
     };
 
@@ -32787,6 +32801,60 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   /* 表示スタイルの保存と反映は、独立したヘッダーメニューからここへ集約する。 */
   const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"], ["bottom", "下部・二図横並び"]];
+  function canExitTabletDisplayMode() {
+    return tabletPwaActive && window.SHOSAI_TABLET_PWA !== true && !phoneViewerActive
+      && !STUDY_READ_ONLY && !nativeProject?.readOnly && !contractReadOnly()
+      && !document.body.classList.contains("stage-session-guest");
+  }
+  async function exitTabletDisplayMode() {
+    if (!canExitTabletDisplayMode() || layoutLaneReloadPending) return;
+    layoutLaneReloadPending = true;
+    let saveWaitTimer;
+    const project = state.project;
+    try {
+      if (hasPendingRenameDrafts()) {
+        // Reuse the editor's restore/conflict/commit path: saving the show alone
+        // cannot persist the WeakMap used by feature-search navigation.
+        if (renameTarget && !els.rename.hidden) {
+          if (Object.keys(renameDraftConflicts).length) { renderRenameDraftConflicts(); return; }
+          commitRename();
+        }
+        for (const scene of project.scenes) {
+          if (!renameSearchDrafts.get(project)?.has(renameDraftKey(scene))) continue;
+          openRename(scene);
+          if (Object.keys(renameDraftConflicts).length) return;
+          commitRename();
+        }
+        // Drafts belonging to another alternative must remain available there.
+        if (hasPendingRenameDrafts()) {
+          announce(tx("編集中の変更を守るため、切り替えを止めました。もう一度開いてください。"));
+          return;
+        }
+      }
+      // Match automatic layout changes: require a verified save, with the same
+      // deadline, before changing preferences or requesting navigation.
+      if (typeof saveCurrentShow !== "function") throw new Error("save-unavailable");
+      const result = await Promise.race([
+        saveCurrentShow(),
+        new Promise(resolve => { saveWaitTimer = window.setTimeout(() => resolve({ ok:false }), 1500); }),
+      ]);
+      if (result?.ok !== true) throw new Error("save-unconfirmed");
+      if (state.project !== project || !canExitTabletDisplayMode() || hasPendingRenameDrafts()) return;
+      layoutLaneSaveUnconfirmed = false;
+      // Preserve the previous column choice, widths and order.
+      prefs.tabletMode = false;
+      try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet); } catch (_) { /* 続ける */ }
+      savePrefs();
+      window.location.reload();
+    } catch (_) {
+      layoutLaneSaveUnconfirmed = true;
+      setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"), "warn");
+      storageBand?.update();
+    } finally {
+      if (saveWaitTimer !== undefined) window.clearTimeout(saveWaitTimer);
+      layoutLaneReloadPending = false;
+    }
+  }
   function panelLayoutChoiceValue(key) {
     if (key === "normal" && tabletUi) return "ipad";
     const mode = panelLayoutMode(key);
@@ -47039,6 +47107,162 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) throw Error("閲覧中はシーンの案を変更できません。");
     if (gammaStorageChanged) throw Error("別のタブでショーが更新されました。ファイルに控えてから読み直してください。");
   }
+  /* K5: one guarded, durable transaction; existing gesture/button paths are unchanged. */
+  let stageEditPending = false;
+  const stageEditRequests = new Set();
+  function stageEditReasons(ignorePending = false) {
+    const reasons = [];
+    if (contractReadOnly()) reasons.push("contract-read-only");
+    if (STUDY_READ_ONLY || nativeProject?.readOnly) reasons.push("read-only");
+    if (nativeProject) reasons.push("native");
+    if (!editionAllows("sceneAlternatives") || !sceneAlternatives) reasons.push("lite");
+    const hooks = window.SHOSAI_STAGE_SESSION_HOOKS;
+    if (guestSessionActive() || hooks?.role?.() || hooks?.guestView?.()) reasons.push("shared");
+    if (phoneViewerActive || window.matchMedia?.("(max-width:680px)").matches) reasons.push("phone");
+    if (presenting || document.body.classList.contains("stage-fullscreen")) reasons.push("presenting");
+    if (fieldMode || document.body.classList.contains("stage-field-mode")) reasons.push("field");
+    if (window.GAMMA_WORKSPACE?.mode?.() === "rehearsal" || document.body.dataset.gammaRehearsalPending || fieldRunQuiet) reasons.push("rehearsal");
+    if (gammaStorageChanged || alternativesStorageBlocked || saveProtectionCode() || autosaveFailed) reasons.push("storage");
+    if (resetInProgress || nativeDocumentDelivery || showSaveTransitionsPending || musicCueWritePending || audioFileOperationPending) reasons.push("document-busy");
+    if (pointerAction || controlBefore || document.activeElement?.matches?.('input:not([data-assist]), textarea:not([data-assist]), [contenteditable="true"]')) reasons.push("editing");
+    if (sceneAnim || spinRun || formationSectionPlayback || formationPlaybackRaf || !els.musicAudio?.paused && els.musicAudio
+        || timelineLightGo?.playing || document.getElementById("stage-timeline-play")?.getAttribute("aria-pressed") === "true") reasons.push("playing");
+    if (stageEditPending && !ignorePending) reasons.push("busy");
+    if (!sc() || sc().kind === "section") reasons.push("scene");
+    return reasons;
+  }
+  function stageEditContext(ignorePending = false) {
+    const row = sc(), alternativeId = sceneAlternatives?.current(row)?.id || null;
+    // Capture only a detached copy for the basis: context never hands out mutable references.
+    const project = alternativesState(projectIoClone(state)).project;
+    return {projectId:state.project.id, sceneId:row.id, alternativeId, generation:loadedStateGeneration,
+      basis:gammaBasisFingerprint(JSON.stringify(project)), editable:stageEditReasons(ignorePending).length === 0,
+      reasons:stageEditReasons(ignorePending), pieces:projectIoClone(row.pieces),
+      cast:(state.project.cast || []).map(p => ({castId:p.id,name:p.name})),
+      sets:(state.project.sets || []).map(p => ({setId:p.id,name:p.name,kind:p.kind}))};
+  }
+  function stageEditMatches(expected) {
+    const current = stageEditContext(true);
+    return current.editable && expected && ["projectId","sceneId","alternativeId","generation","basis"].every(key => current[key] === expected[key]);
+  }
+  function stageEditFailure(code, message = code) { return {ok:false, committed:false, error:{code,message}}; }
+  function stageEditCandidate(next, operations, label) {
+    const fail = code => { throw Object.assign(new Error(code), {code}); };
+    const object = value => value && typeof value === "object" && !Array.isArray(value);
+    const keys = (value, allowed) => object(value) && Object.keys(value).every(key => allowed.includes(key));
+    const angle = value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 359;
+    const position = op => {
+      if (![op.u,op.v].every(n => typeof n === "number" && Number.isFinite(n))) fail("invalid-position");
+      const point = clampToPieceArea(op.u,op.v);
+      if (point.u !== op.u || point.v !== op.v || op.u < -0.5 || op.u > 1.5 || op.v < -0.5 || op.v > 1) fail("invalid-position");
+    };
+    if (!Array.isArray(operations) || !operations.length || operations.length > PROJECT_LIMITS.piecesPerScene) fail("invalid-operations");
+    const row = next.project.scenes.find(s => s.id === next.project.activeSceneId);
+    const source = projectIoClone(row.pieces), touched = new Set(), removed = new Set();
+    if (new Set(source.map(p => p.id)).size !== source.length) fail("invalid-id");
+    const item = sceneAlternatives.add(next.project, row, () => rid("scene-plan"));
+    if (label !== undefined) {
+      if (typeof label !== "string" || !label.trim() || [...label].length > 40) fail("invalid-label");
+      // Labels remain unique for the existing alternatives picker.
+      const used = new Set(row.sceneAlternatives.items.filter(p => p !== item).map(p => p.label));
+      item.label = label.trim(); let serial = 2;
+      while (used.has(item.label)) item.label = label.trim() + " " + serial++;
+    }
+    const related = piece => piece.supportId || piece.heldBy || source.some(p => p.supportId === piece.id);
+    for (const op of operations) {
+      if (!object(op) || !["place","move","face","remove"].includes(op.op)) fail("unsupported");
+      let piece;
+      if (op.op === "place") {
+        if (!keys(op,["op","ref","u","v","facing"]) || !keys(op.ref,["castId","setId"]) || Object.keys(op.ref).length !== 1) fail("invalid-operation");
+        const cast = Object.hasOwn(op.ref,"castId"), id = cast ? op.ref.castId : op.ref.setId;
+        const registry = (cast ? next.project.cast : next.project.sets).filter(p => p.id === id);
+        if (typeof id !== "string" || registry.length !== 1) fail("unknown-id");
+        const registration = registry[0], type = cast ? "performer" : registration.kind;
+        if (type === "light" || type === "route") fail("unsupported");
+        if (registration.locked) fail("locked");
+        if (row.pieces.some(p => cast ? p.castId === id : p.setId === id)) fail("already-placed");
+        if (!canAddScenePieces(row)) fail("capacity");
+        position(op);
+        const kept = row.stashed?.[id] || {};
+        if (kept.route) fail("unsupported");
+        piece = normalizePiece({...projectIoClone(kept), id:nextId(), type, ...(cast ? {castId:id} : {setId:id,curtainKind:registration.curtainKind}),
+          color:registration.color || state.pieceColor, size:kept.size || 100, u:op.u,v:op.v},0);
+        row.pieces.push(piece);
+        if (row.stashed) delete row.stashed[id];
+      } else {
+        const allowed = op.op === "move" ? ["op","pieceId","u","v"] : op.op === "face" ? ["op","pieceId","facing"] : ["op","pieceId"];
+        if (!keys(op,allowed) || typeof op.pieceId !== "string") fail("invalid-operation");
+        piece = row.pieces.find(p => p.id === op.pieceId);
+        if (!piece) fail("unknown-id");
+        if (piece.type === "light" || piece.type === "route" || piece.route) fail("unsupported");
+        if (isLocked(piece)) fail("locked");
+        if (related(piece) || op.op !== "remove" && row.pieces.some(p => p.heldBy === piece.id)) fail("relationship");
+        if (op.op === "move") { position(op); piece.u = op.u; piece.v = op.v; }
+        if (op.op === "remove") {
+          if (row.pieces.some(p => p.heldBy === piece.id && isLocked(p))) fail("locked");
+          releaseHeldBy(row,piece.id);
+          stashPiece(row,piece.castId || piece.setId,piece);
+          row.pieces = row.pieces.filter(p => p !== piece); removed.add(piece.id);
+        }
+      }
+      if (Object.hasOwn(op,"facing")) {
+        if (!angle(op.facing)) fail("invalid-facing");
+        piece.facing = op.facing;
+      } else if (op.op === "face") fail("invalid-facing");
+      touched.add(piece.id);
+    }
+    // Reuse the renderer's support calculation on detached pieces. Any newly formed,
+    // lost or ambiguous support/pose relation is outside this first editing contract.
+    const calculated = projectIoClone(row.pieces);
+    refreshBases(venueSize(), calculated);
+    for (const p of calculated) {
+      const original = source.find(q => q.id === p.id), edited = row.pieces.find(q => q.id === p.id);
+      const held = original?.heldBy && removed.has(original.heldBy) ? null : original?.heldBy;
+      if ((p.supportId || null) !== (original?.supportId || null) || (p.heldBy || null) !== (held || null)
+          || p.pose !== edited.pose || touched.has(p.id) && p.supportId) fail("relationship");
+    }
+    if (!canAddScenePieces(row,0)) fail("capacity");
+    sceneAlternatives.capture(next.project);
+    sceneAlternatives.validate(row);
+    return {alternativeId:item.id, alternativeLabel:item.label, changed:operations.length};
+  }
+  async function applyStageEdit(request) {
+    if (request?.target?.mode !== "newAlternative") return stageEditFailure("not-enabled");
+    if (!request || typeof request.requestId !== "string" || !request.requestId || request.requestId.length > 120) return stageEditFailure("invalid-request");
+    if (stageEditRequests.has(request.requestId)) return stageEditFailure("duplicate-request");
+    if (stageEditPending || !stageEditMatches(request.expected)) return stageEditFailure("stale-or-blocked",stageEditReasons().join(", ") || "stale");
+    // Copy caller-owned input before the first await.
+    const input = projectIoClone(request), origin = state.project;
+    const valid = () => state.project === origin && stageEditMatches(input.expected);
+    stageEditPending = true;
+    let committed = false, outcome;
+    try {
+      clearTimeout(saveTimer);
+      if (snapshot() !== lastPersistedSnapshot) autosaveRequested = true;
+      await flushAutosave(); await ProjectStore.whenIdle();
+      if (!valid() || autosaveFailed || saveProtectionCode()) return stageEditFailure("source-save-failed");
+      const before = snapshot(), next = projectIoClone(state);
+      outcome = stageEditCandidate(next,input.operations,input.target.label);
+      const serializedState = JSON.stringify(alternativesState(next));
+      const receipt = captureFileAutosave(serializedState);
+      const result = await ProjectStore.commit({projectId:next.project.id,serializedState,expectedRevision:null,intent:"assist-new-alternative",guard:valid});
+      if (!result.ok) { reportProjectStoreFailure(result); return stageEditFailure(result.error?.code || "save-failed"); }
+      // Recheck after the asynchronous store boundary as well as inside its flush guard.
+      committed = true;
+      if (!valid()) return {ok:false,committed:true,...outcome,error:{code:"stale-after-commit",message:"Saved draft; current editing context changed. Reopen the scene to review it."}};
+      recordBefore(before); state = next;
+      stageEditRequests.add(input.requestId);
+      if (stageEditRequests.size > 36) stageEditRequests.delete(stageEditRequests.values().next().value);
+      lastPersistedSnapshot = serializedState; fileAutosaveUi?.persisted(receipt);
+      refreshAlternativesView();
+      return {ok:true,committed:true,...outcome};
+    } catch (error) {
+      return committed ? {ok:false,committed:true,...outcome,error:{code:"display-failed",message:"Saved; reopen the scene to display the draft."}}
+        : stageEditFailure(error.code || "invalid-operations",error.message);
+    } finally { stageEditPending = false; }
+  }
+  window.GAMMA_STAGE_EDIT = Object.freeze({context:() => stageEditContext(), apply:applyStageEdit});
+
   window.STAGE_SCENE_ALTERNATIVES_HOST = Object.freeze({
     context() {
       const row = sc();
@@ -47421,6 +47645,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   const nativeLightingApplyRequests = new Set();
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
+    assistReasons: () => stageEditReasons(),
     recoveryDrafts:()=>nativeProject?.draftRecoveryEntries || [],
     readRecoveryDraft:(owner,vector)=>nativeProject?.readRecoveryDraft(owner,vector) ?? Promise.resolve(null),
     retainDraft:(raw,vector,owner)=>nativeProject?.retainDraft(raw,vector,owner) ?? Promise.resolve(false),
@@ -48503,7 +48728,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         audioPlayback.ready && els.musicAudio && !els.musicAudio.paused
       );
       // Session receive can replace a different show without the import dialog.
-      if (project.id !== state.project.id) state.projectPackageCarry = null;
+      if (project.id !== state.project.id) {
+        state.projectPackageCarry = null;
+        history.length = 0; future.length = 0; controlBefore = null; updateHistoryButtons();
+      }
       else state.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt);
       state.project = project;
       state.projectFileEnvelope = fileEnvelope;
@@ -48590,8 +48818,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   });
   window.SHOSAI_STAGE_CUE_SHEET_HOST = contractBridge(window.SHOSAI_STAGE_CUE_SHEET_HOST, ["open", "close", "printOpened", "available", "choices", "readOnly", "selection", "mount", "show", "refresh"]);
   window.STAGE_SCENE_ALTERNATIVES_HOST = contractBridge(window.STAGE_SCENE_ALTERNATIVES_HOST, ["context", "compare"]);
+  window.GAMMA_STAGE_EDIT = contractBridge(window.GAMMA_STAGE_EDIT, ["context"]);
   window.GAMMA_FORMATION_HOST = contractBridge(window.GAMMA_FORMATION_HOST, ["availability", "context"]);
-  window.GAMMA_LIGHT_HOST = contractBridge(window.GAMMA_LIGHT_HOST, ["context", "recoveryDrafts", "readRecoveryDraft", "retainDraft", "readSceneStepPrevious", "readPlaybackPreview", "openScene", "selectCue", "draftChanged", "placementChoices"]);
+  window.GAMMA_LIGHT_HOST = contractBridge(window.GAMMA_LIGHT_HOST, ["context", "assistReasons", "recoveryDrafts", "readRecoveryDraft", "retainDraft", "readSceneStepPrevious", "readPlaybackPreview", "openScene", "selectCue", "draftChanged", "placementChoices"]);
   window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = contractBridge(window.SHOSAI_STAGE_RUN_OF_SHOW_HOST, ["overview", "renderSceneImages", "sceneStamps", "timing", "cues", "uiLanguage", "edition", "read", "export", "openScene", "save", "historyStatus"]);
   window.SHOSAI_STAGE_SESSION_BRIDGE = contractBridge(window.SHOSAI_STAGE_SESSION_BRIDGE, ["ensureMusicCueMigration", "arrowKeysVoxOnly", "historyStatus", "transitionGeometry", "exportDocumentString", "resetVisibleStageViews", "sceneOverviewById", "sceneThumbnailById", "openSceneById", "focusTimelineScene", "setTimelineLightSchedule", "applyTimelineLightClock", "refreshTimelineLightClock", "applyTimelineLightCue", "suspendSceneDetailsForSearch", "openSceneDetailsById", "hasTimelineAudioFile", "activateTimelineAudio", "getActiveSceneId", "getTimelineAudioTrackId", "isTimelineAudioActive", "getTimelineAudioBlob", "getTimelineAudioAssignments", "pauseTimelineAudio", "getProjectScript", "syncTimelineSceneTransition", "finishTimelineSceneTransition", "finishSceneTransition", "replaySceneTransition", "isEnglish"]);
   if (!STUDY_READ_ONLY) {

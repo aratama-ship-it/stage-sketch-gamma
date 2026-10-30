@@ -183,6 +183,7 @@
     // 保存済みを見ているときは「調整あり」より「詳細で編集済み」を優先して、絵の下の名前で分かるようにする（試し表示中は候補の名前のまま）
     $('simple-name').textContent=p.name+(!preview&&edited?'（詳細で編集済み）':adjusted?'（調整あり）':'');
     const filtered=list();$('simple-count').textContent=(filtered.findIndex(p=>p.id===selected)+1)+' / '+filtered.length;
+    if(![...$('simple-color').options].some(x=>x.value===o.color)){const custom=el('option','',o.color);custom.value=o.color;$('simple-color').append(custom);}
     $('simple-color').value=o.color;$('simple-level').value=o.level;$('simple-level-value').textContent=o.level+'%';
     $('simple-size').value=o.sizeM;$('simple-size-value').textContent=o.sizeM+'m';
     if(!$('simple-fade').querySelector('option[value="'+o.fadeSec+'"]')){const op=el('option','',o.fadeSec+'秒');op.value=o.fadeSec;$('simple-fade').append(op);}
@@ -273,6 +274,12 @@
   $('simple-undo').onclick=()=>track(async()=>{
     const token={context:{...context}};operation=token;busy=true;render();
     try {
+      // K6: applied lighting now lives in the host history, including this
+      // existing button. Do not undo a clean local bank and apply it again.
+      if(parent.GammaUndoOwner?.state().owner==='stage') {
+        if(parent.GammaUndoOwner.execute('undo')){context=parent.GAMMA_LIGHT_HOST.context();resetFromSaved();}
+        return;
+      }
       hooks.undo();const result=await window.GAMMA_LIGHT_EDITOR.apply();
       if(!owns(token))return;
       if(result?.persisted){context=result.context;resetFromSaved();}
@@ -288,13 +295,15 @@
   window.GAMMA_SIMPLE_LIGHT_UI=Object.freeze({
     status:()=>({busy,error,preview,context:context && {...context}}),
     refreshPlayback(){if(active())paint($('simple-front'),state.rig,hooks.cue());},
-    onContext(next){const different=!sameOwner(context,next);context=next;if(different){operation=null;operationTask=null;busy=false;error='';preview=false;thumbToken++;choices=new Map();targetCueId=null;replaceLook=false;timeEdited=false;wanted=!next.existingLighting||M.isCommon(state.rig,state.dims,next.venueType);lastScene='';thumbKey='';}render();},
+    onContext(next){const different=!sameOwner(context,next),restored=!different&&context?.basis!==next.basis;context=next;if(different){operation=null;operationTask=null;busy=false;error='';preview=false;thumbToken++;choices=new Map();targetCueId=null;replaceLook=false;timeEdited=false;wanted=!next.existingLighting||M.isCommon(state.rig,state.dims,next.venueType);lastScene='';thumbKey='';}if(restored){targetCueId=null;lastScene='';thumbKey='';}render();},
     clearDocumentContext(){context=null;operation=null;operationTask=null;busy=false;error='';preview=false;thumbToken++;},
     captureRuntime(){return structuredClone({context,wanted,preview,busy:false,error,selected,category,lastScene,choices,thumbKey,targetCueId,replaceLook,timeEdited});},
     restoreRuntime(saved){if(!saved)return;operation=null;operationTask=null;
       ({context,wanted,preview,busy,error,selected,category,lastScene,choices,thumbKey,targetCueId,replaceLook,timeEdited}=structuredClone(saved));
       thumbToken++;render();},
     waitForApply:()=>operationTask || Promise.resolve(),
+    previewForAssist(id,o){M.makeCue(state.rig,state.dims,sc().pieces,id,o);mode(true);selected=id;choices.set(choiceKey(),clone(o));replaceLook=true;preview=true;error='';category=M.get(id).category;$('simple-category').value=category;render();},
+    detailForAssist:()=>mode(false),
     render,active,available,sync(){const before=wanted;syncAvailability();if(before!==wanted)render();}
   });
 })();

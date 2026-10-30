@@ -84,8 +84,13 @@
       if (drawing) { owner = 'rehearsalDrawing'; available = drawing; }
       else if (mode === 'venue-setup') { owner = 'venueDraft'; available = window.SHOSAI_VENUE_EDITOR?.history?.() || {}; blocked ||= !!available.busy; }
       else if (mode === 'light-design' || mode === 'light-placement') {
-        owner = 'lightDraft'; available = document.getElementById('gamma-light-frame')?.contentWindow?.GAMMA_LIGHT_EDITOR?.status?.() || {};
-        blocked ||= !!available.busy || !!available.historyBlocked || !!available.readOnly || !!available.playbackPreview || !!window.GAMMA_WORKSPACE?.playbackPreviewStatus?.().active;
+        const editor = document.getElementById('gamma-light-frame')?.contentWindow?.GAMMA_LIGHT_EDITOR;
+        const light = editor?.status?.() || {};
+        // After Apply the show owns Undo. Keep a local Redo after undoing the
+        // last unapplied edit, even though that restoration clears dirty.
+        owner = light.dirty || light.draftRedo ? 'lightDraft' : 'stage';
+        available = owner === 'lightDraft' ? light : stage;
+        blocked ||= !light.active || !!light.busy || !!light.historyBlocked || !!light.readOnly || !!light.playbackPreview || !!window.GAMMA_WORKSPACE?.playbackPreviewStatus?.().active;
       } else if (visible(document.getElementById('view-stage'))) { owner = 'stage'; available = stage; }
     }
     if (blocked) owner = 'none';
@@ -119,7 +124,13 @@
     if (current.owner === 'none' || !current[action === 'undo' ? 'canUndo' : 'canRedo']) return false;
     // AppKit owns textUndoManager; JS only authorizes a native text action.
     if (current.owner === 'text') return true;
-    if (current.owner === 'stage') window.SHOSAI_STAGE_SESSION_BRIDGE?.historyCommand?.(action);
+    if (current.owner === 'stage') {
+      window.SHOSAI_STAGE_SESSION_BRIDGE?.historyCommand?.(action);
+      const mode = window.GAMMA_WORKSPACE?.mode?.();
+      if (mode === 'light-design' || mode === 'light-placement') {
+        document.getElementById('gamma-light-frame')?.contentWindow?.GAMMA_LIGHT_EDITOR?.open?.(window.GAMMA_LIGHT_HOST.context(), mode);
+      }
+    }
     else if (current.owner === 'venueDraft') window.SHOSAI_VENUE_EDITOR?.[action]?.();
     else if (current.owner === 'lightDraft') document.getElementById('gamma-light-frame')?.contentWindow?.GAMMA_LIGHT_EDITOR?.[action]?.();
     else window.GAMMA_FIELD_RUNS?.historyCommand?.(action === 'redo');
