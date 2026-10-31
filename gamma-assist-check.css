@@ -1,0 +1,19 @@
+.assist-batch {font:15px/1.6 var(--sans);color:var(--paper);border-block:1px solid var(--brass);padding-block:var(--assist-s2,8px);flex:0 0 auto;min-width:0;}
+.assist-batch-bar {display:flex;flex-wrap:wrap;gap:var(--assist-s2,8px);align-items:center;}
+.assist-batch select,.assist-batch button,.assist-batch summary {min-height:44px;min-width:44px;box-sizing:border-box;font:inherit;border-radius:0;}
+.assist-batch select {background:var(--desk-2);color:var(--paper);border:1px solid var(--brass);padding:4px 8px;max-width:100%;}
+.assist-batch summary {cursor:pointer;padding:8px 4px;color:var(--paper);}
+.assist-batch-row {padding:var(--assist-s2,8px) 0;border-top:1px solid var(--line-dark);display:flex;flex-direction:column;gap:var(--assist-s2,8px);}
+.assist-batch-jump {display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;padding:8px 12px;background:var(--desk-2);color:var(--paper);border:1px solid var(--brass);overflow-wrap:anywhere;}
+.assist-batch-jump span,.assist-batch-advice {font-size:13px;line-height:1.5;color:var(--ink-soft-sm);white-space:pre-wrap;overflow-wrap:anywhere;}
+.assist-batch-row .assist-draft {align-self:flex-start;}
+.assist-batch-group-label {display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--assist-s2,8px);overflow-wrap:anywhere;}
+.assist-batch-severity {font-size:13px;line-height:1.5;font-weight:bold;color:var(--paper);}
+.assist-batch-locations .assist-batch-jump {margin-block:var(--assist-s2,8px);}
+.assist-batch :focus-visible {outline:2px solid var(--paper);outline-offset:-2px;}
+.assist-batch p {margin:8px 0;}
+.assist-batch-advice {padding:12px;border:1px solid var(--brass);}
+/* The secondary entry is outside the panel's scoped assist variables. */
+#stage-workspace-tabs .assist-batch-entry {min-height:44px;min-width:44px;max-height:none;font:15px/1.6 var(--sans);padding:0 16px;border-radius:0;}
+#stage-workspace-tabs .assist-batch-entry[hidden],html.stage-phone-viewer .assist-batch-entry {display:none!important;}
+@media (max-width:680px) {.assist-batch-entry {display:none!important;}}

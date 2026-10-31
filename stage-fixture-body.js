@@ -19,6 +19,24 @@
   function resolve() { return "white-black"; }
   function colors() { return BODY_STYLES["white-black"]; }
   const SIZE = { baseR: 0.11, baseH: 0.10, armSpread: 0.17, armDrop: 0.32, armDepth: 0.06, headR: 0.10, headL: 0.34 };
+  // View-only location hint; design/TOKEN_SHEET.md. Never a saved body style.
+  const OUTLINE = Object.freeze({ ink: "#efe7d6", lineWidth: 1.5, backing: "#0d0c0b", backingWidth: 4.5 });
+  function strokeOutline(ctx) {
+    ctx.strokeStyle = OUTLINE.backing; ctx.lineWidth = OUTLINE.backingWidth; ctx.stroke();
+    ctx.strokeStyle = OUTLINE.ink; ctx.lineWidth = OUTLINE.lineWidth; ctx.stroke();
+  }
+  // Cyc fixtures already use an abstract continuous bar (not a PAR/moving head).
+  // Preserve its projected endpoints and thickness without the mounting symbol/ring.
+  function outlineBar(ctx, bar) {
+    const { a, b } = bar;
+    if (!Number.isFinite(a.X + a.Y + b.X + b.Y)) return;
+    const length = Math.hypot(b.X - a.X, b.Y - a.Y) || 1;
+    const nx = -(b.Y - a.Y) / length * 7, ny = (b.X - a.X) / length * 7;
+    ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(a.X + nx, a.Y + ny); ctx.lineTo(b.X + nx, b.Y + ny);
+    ctx.lineTo(b.X - nx, b.Y - ny); ctx.lineTo(a.X - nx, a.Y - ny); ctx.closePath();
+    strokeOutline(ctx); ctx.restore();
+  }
   const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
   const add = (a, b, k = 1) => ({ x: a.x + b.x * k, y: a.y + b.y * k, z: a.z + b.z * k });
   const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
@@ -104,8 +122,10 @@
   }
 
   /* 描く。P(world)→{X,Y}。opts: color（点灯色）, lit（0〜1）, selected, ink（線色）, fill（面色）, beamDeg, px,
+     outlineOnly（位置確認専用。既存の輪郭だけを二重線で描き、面・レンズの光は描かない）,
      topDown（真上から見る図＝レンズの光と芯は胴体の下に隠れるので出さない。胴体の上面を塗って光の根元を隠す） */
   function draw(ctx, P, geom, opts = {}) {
+    const outlineOnly = opts.outlineOnly === true;
     // Keep the established colours; the cylinder hides its far end and internal rails.
     const style = resolve(opts.bodyStyle);
     const classic = style === "white-black";
@@ -115,17 +135,20 @@
     const poly = (pts, fillStyle, strokeStyle, close = true) => {
       ctx.beginPath(); pts.forEach((p, i) => { const q = P(p); if (i) ctx.lineTo(q.X, q.Y); else ctx.moveTo(q.X, q.Y); });
       if (close) ctx.closePath();
-      if (fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
-      if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = lw; ctx.stroke(); }
+      if (!outlineOnly && fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
+      if (outlineOnly) strokeOutline(ctx);
+      else if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = lw; ctx.stroke(); }
     };
     const polyScreen = (qs, fillStyle, strokeStyle) => {
       if (qs.length < 3) return;
       ctx.beginPath(); qs.forEach((q, i) => (i ? ctx.lineTo(q.X, q.Y) : ctx.moveTo(q.X, q.Y))); ctx.closePath();
-      if (fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
-      if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = lw; ctx.stroke(); }
+      if (!outlineOnly && fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
+      if (outlineOnly) strokeOutline(ctx);
+      else if (strokeStyle) { ctx.strokeStyle = strokeStyle; ctx.lineWidth = lw; ctx.stroke(); }
     };
     const lit = Math.max(0, Math.min(1, Number(opts.lit) || 0));
     ctx.save();
+    if (outlineOnly) { ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; }
     ctx.lineJoin = "round";
     // 土台（円柱の影絵）
     polyScreen(hull(geom.base.top.concat(geom.base.bottom).map(P)), fill, ink);
@@ -150,10 +173,10 @@
       poly(geom.head.front, lens, sel ? "#df6433" : ink);
     } else poly(geom.head.back, fill, ink);
     ctx.restore();
-    if (frontVisible && !topDown && opts.glow !== false) lensGlow(ctx, P, geom, opts);
+    if (!outlineOnly && frontVisible && !topDown && opts.glow !== false) lensGlow(ctx, P, geom, opts);
   }
   const hexA = (hex, a) => { const n = parseInt(String(hex || "#ffffff").slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${Math.max(0, Math.min(1, a))})`; };
   const deg = (rad) => Math.round(rad * 180 / Math.PI);
 
-  root.FIXTURE_BODY = Object.freeze({ BODY_STYLES, colors, resolve, refreshDefault, setDefaultStyle, SIZE, movingHead, parCan, draw, lensGlow, hull, deg });
+  root.FIXTURE_BODY = Object.freeze({ BODY_STYLES, colors, resolve, refreshDefault, setDefaultStyle, SIZE, OUTLINE, movingHead, parCan, draw, outlineBar, lensGlow, hull, deg });
 })(typeof window !== "undefined" ? window : globalThis);

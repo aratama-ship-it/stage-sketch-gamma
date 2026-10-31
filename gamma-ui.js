@@ -5,9 +5,164 @@
   const visible = element => element && element.isConnected && element.getClientRects().length
     && !element.closest('[hidden], [inert]') && getComputedStyle(element).visibility !== 'hidden';
 
+  // Presentation-only ledger. The existing owners still open/close their windows.
+  // One observer in watchDialogs drives both this ledger and automatic focus traps.
+  const layerSelector = '.stage-modal, .stage-fpv-viewpoint-modal, dialog';
+  const layerEntries = [], layerBlocked = new Map(), layerStyles = new Map();
+  const layerProblems = new Set();
+  let layerRoot = null, layerExclude = () => false;
+  const layerShown = node => Boolean(node?.isConnected && !node.closest('[hidden]')
+    && (!node.matches('dialog') || node.open) && node.getClientRects().length
+    && getComputedStyle(node).visibility !== 'hidden');
+  function layerEligible(node) {
+    // These DOM windows are embedded as ordinary workspace panels.
+    return !layerExclude(node) && !node.closest('#gamma-venue-workspace, #gamma-cuesheet-workspace')
+      && layerShown(node);
+  }
+  function layerBackdrop(node) {
+    if (node.matches('dialog')) return null; // native ::backdrop owns this window
+    const id = node.id?.replace(/-modal$/, '-backdrop');
+    // Windows without an id yield '' here; only look up a real, different id.
+    const named = id && id !== node.id ? document.getElementById(id) : null;
+    if (named && named.matches('.stage-modal-backdrop')) return named;
+    for (let sibling = node.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+      if (sibling.matches('.stage-modal-backdrop')) return sibling;
+    }
+    return null;
+  }
+  // A trigger in the just-covered parent is intentionally inert now, but is
+  // still the return target. External inert flags must not make it eligible.
+  const layerReturnable = node => visible(node) || (layerShown(node)
+    && [...layerBlocked].some(([parent, owned]) => owned.inert && parent.contains(node)));
+  function layerAlert(node) {
+    if (node.matches('.gamma-light-leave-modal, #stage-offline-feature-notice, #stage-storage-pressure-dialog, #stage-launch-backup-warning')) {
+      node.dataset.gammaLayer = 'alert';
+    }
+    return node.dataset.gammaLayer === 'alert';
+  }
+  function restoreLayerBlock(node) {
+    const owned = layerBlocked.get(node);
+    if (!owned) return;
+    if (owned.inert && node.inert) node.inert = false;
+    if (node.getAttribute('aria-hidden') === 'true') {
+      if (owned.aria === null) node.removeAttribute('aria-hidden');
+      else node.setAttribute('aria-hidden', owned.aria);
+    }
+    if (owned.pointer !== null && node.style.pointerEvents === 'none') node.style.pointerEvents = owned.pointer;
+    layerBlocked.delete(node);
+  }
+  function blockLayer(node) {
+    if (layerBlocked.has(node)) return;
+    const owned = { inert: !node.inert, aria: node.getAttribute('aria-hidden'), pointer: null };
+    if (owned.inert) node.inert = true;
+    // Defensive fallback for engines without native inert (no UA sniffing).
+    if (!('inert' in HTMLElement.prototype)) {
+      owned.pointer = node.style.pointerEvents; node.style.pointerEvents = 'none';
+    }
+    if (owned.aria !== 'true') node.setAttribute('aria-hidden', 'true');
+    layerBlocked.set(node, owned);
+  }
+  function setLayerZ(node, value) {
+    if (!node) return;
+    if (!layerStyles.has(node)) layerStyles.set(node, {value:node.style.zIndex, assigned:''});
+    const record = layerStyles.get(node); record.assigned = String(value);
+    if (node.style.zIndex !== record.assigned) node.style.zIndex = record.assigned;
+  }
+  function syncLayers(records = []) {
+    if (!layerRoot) return;
+    const candidates = [...layerRoot.querySelectorAll(layerSelector)].filter(layerEligible);
+    const current = new Set(candidates);
+    for (let i = layerEntries.length - 1; i >= 0; i--) {
+      if (!current.has(layerEntries[i])) layerEntries.splice(i, 1);
+    }
+    // Consume mutations in order, including close/reopen within one task.
+    for (const record of records) {
+      const nodes = record.type === 'attributes' ? [record.target]
+        : [...record.addedNodes].filter(node => node.nodeType === 1)
+          .flatMap(node => [node, ...node.querySelectorAll(layerSelector)]);
+      for (const node of nodes) {
+        if (!current.has(node)) continue;
+        const opening = record.type === 'attributes' && ((record.attributeName === 'hidden' && record.oldValue !== null)
+          || (record.attributeName === 'open' && record.oldValue === null));
+        const index = layerEntries.indexOf(node);
+        if (opening && index >= 0) layerEntries.splice(index, 1);
+        if (opening || index < 0) layerEntries.push(node);
+      }
+    }
+    for (const node of candidates) if (!layerEntries.includes(node)) layerEntries.push(node);
+    layerEntries.forEach(layerAlert);
+    const native = layerEntries.filter(node => node.matches('dialog:modal'));
+    const divs = layerEntries.filter(node => !native.includes(node));
+    const ordered = nodes => [...nodes.filter(node => !layerAlert(node)), ...nodes.filter(layerAlert)];
+    // CSS can never put a div above a native top-layer dialog. Keep the actual
+    // native owner usable, and expose the unsupported request for acceptance.
+    const stack = [...ordered(divs), ...native];
+    for (const node of divs) {
+      if (native.length && layerEntries.indexOf(node) > layerEntries.indexOf(native.at(-1))) {
+        layerProblems.add('div-over-native:' + (node.id || node.className));
+      }
+    }
+    const front = stack.at(-1);
+    // Unblock first: releasing a focus trap must be able to return into the parent.
+    for (const node of [...layerBlocked.keys()]) {
+      if (!current.has(node) || node === front || node.contains(front)) restoreLayerBlock(node);
+    }
+    const styled = new Set();
+    stack.forEach((node, index) => {
+      const backdrop = layerBackdrop(node);
+      setLayerZ(backdrop, 70 + 2 * index); setLayerZ(node, 71 + 2 * index);
+      styled.add(node); if (backdrop) styled.add(backdrop);
+      if (node !== front && !node.contains(front)) blockLayer(node);
+    });
+    for (const [node, record] of layerStyles) if (!styled.has(node)) {
+      if (node.style.zIndex === record.assigned) node.style.zIndex = record.value;
+      layerStyles.delete(node);
+    }
+    layers.stack = stack;
+  }
+  function closeLayerTop() {
+    syncLayers();
+    const front = layers.stack.at(-1);
+    if (!front) return false;
+    const managed = [...dialogs].reverse().find(entry => entry.dialog === front);
+    if (managed?.onCancel) managed.onCancel();
+    else {
+      const close = [...front.querySelectorAll('button')].find(button =>
+        !button.disabled && visible(button) && (/(?:-close|-cancel)$/.test(button.id) || button.matches('.stage-modal-close')));
+      if (close) close.click();
+      else if (front.matches('dialog')) {
+        const event = new Event('cancel', {cancelable:true});
+        if (front.dispatchEvent(event)) front.close();
+      }
+      // Consume Escape even if an owner intentionally has no cancel action.
+    }
+    syncLayers();
+    return true;
+  }
+  const layers = {
+    stack: [],
+    isOpen: node => layerShown(node),
+    isTop: node => !layers.stack.length || layers.stack.at(-1) === node,
+    open(node) {
+      if (!node || layerShown(node)) return false;
+      node.hidden = false;
+      if (node.matches('dialog')) node.showModal();
+      else { const backdrop = layerBackdrop(node); if (backdrop) backdrop.hidden = false; }
+      syncLayers(); return true;
+    },
+    closeTop: closeLayerTop,
+    sync: syncLayers,
+    backdrop: layerBackdrop,
+    diagnostics() {
+      return { unsupported:[...layerProblems], unpaired:layerRoot ? [...layerRoot.querySelectorAll('.stage-modal')]
+        .filter(node => !node.matches('dialog') && !layerBackdrop(node)).map(node => node.id || node.className) : [] };
+    },
+  };
+
   function containDialog(dialog, { initialFocus, returnFocus, onCancel } = {}) {
     const previous = returnFocus || document.activeElement;
-    const entry = { dialog };
+    syncLayers();
+    const entry = { dialog, onCancel };
     dialogs.push(entry);
     dialog.dataset.gammaFocusManaged = "true";
     const focusable = () => {
@@ -22,7 +177,7 @@
         return element === (group.find(node => node.checked) || group[0]);
       });
     };
-    const owns = () => dialogs.at(-1) === entry && visible(dialog);
+    const owns = () => (layers.stack.length ? layers.isTop(dialog) : dialogs.at(-1) === entry) && visible(dialog);
     const foreignDialog = () => {
       const active = document.activeElement?.closest('[role="dialog"][aria-modal="true"]');
       return active && active !== dialog && !dialog.contains(active);
@@ -66,6 +221,7 @@
       document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('focusin', onFocus);
       dialog.removeEventListener('keydown', stopBackgroundKeys);
+      syncLayers();
       const target = typeof previous === "function" ? previous() : previous;
       if (top && visible(target) && !target.disabled) target.focus({ preventScroll: true });
     };
@@ -154,8 +310,9 @@
 
   function watchDialogs(root, { exclude = () => false } = {}) {
     const active = new Map();
-    let trigger = null, lastOutside = document.activeElement, queued = false;
-    const selector = '.stage-modal[role="dialog"], .stage-fpv-viewpoint-modal';
+    let trigger = null, lastOutside = document.activeElement;
+    const selector = '.stage-modal[role="dialog"], .stage-modal[role="alertdialog"], .stage-fpv-viewpoint-modal';
+    layerRoot = root; layerExclude = exclude;
     const record = event => {
       const target = event.target;
       trigger = target?.closest?.('button, summary, [role="button"], a, input, select, textarea') || document.activeElement;
@@ -164,20 +321,20 @@
     root.addEventListener('focusin', rememberOutside);
     root.addEventListener('pointerdown', record, true);
     root.addEventListener('keydown', record, true);
-    const sync = () => {
-      queued = false;
+    const sync = (records = []) => {
+      syncLayers(records);
       for (const [dialog, release] of active) {
-        if (!visible(dialog) || exclude(dialog)) { active.delete(dialog); release(); }
+        if (!layerEligible(dialog)) { active.delete(dialog); release(); }
       }
-      for (const dialog of root.querySelectorAll(selector)) {
+      for (const dialog of layers.stack) {
         if (!visible(dialog) || exclude(dialog) || active.has(dialog) || dialog.dataset.gammaFocusManaged) continue;
         const close = [...dialog.querySelectorAll('button')].find(button =>
           visible(button) && !button.disabled && /(?:-close|-cancel)$/.test(button.id));
         // Dynamic dialogs opt in explicitly when their close action has no stable id.
         if (!close) continue;
         const focused = document.activeElement;
-        const previous = visible(trigger) && !dialog.contains(trigger) ? trigger
-          : (visible(focused) && focused !== document.body && !dialog.contains(focused) ? focused : lastOutside);
+        const previous = layerReturnable(trigger) && !dialog.contains(trigger) ? trigger
+          : (layerReturnable(focused) && focused !== document.body && !dialog.contains(focused) ? focused : lastOutside);
         // Roster edits may rebuild the opener. Resolve the same registered member, not a stale node.
         const roster = previous?.closest?.('[data-roster-id]'), listId = roster?.parentElement?.id;
         const rosterId = roster?.dataset.rosterId;
@@ -191,16 +348,42 @@
         }));
       }
     };
+    const onLayerKey = event => {
+      if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
+      // A select's own popup gets the first Escape, before its containing window.
+      if (event.target.closest?.('.gamma-short-select')?.querySelector('[aria-expanded="true"]')) return;
+      if (closeLayerTop()) { event.preventDefault(); event.stopImmediatePropagation(); }
+    };
+    const onLayerClick = event => {
+      syncLayers();
+      const modal = event.target.closest?.(layerSelector);
+      const backdrop = event.target.closest?.('.stage-modal-backdrop');
+      const front = layers.stack.at(-1);
+      if ((modal && layers.stack.includes(modal) && modal !== front)
+          || (backdrop && front && layerBackdrop(front) !== backdrop)) {
+        event.preventDefault(); event.stopImmediatePropagation();
+      }
+    };
+    root.ownerDocument.defaultView.addEventListener('keydown', onLayerKey, true);
+    root.ownerDocument.addEventListener('click', onLayerClick, true);
     const observer = new MutationObserver(records => {
       const relevant = records.some(record => record.type === 'attributes'
-        ? record.target.matches(selector)
+        ? record.target.matches(layerSelector + ', .stage-modal-backdrop') || record.target.querySelector(layerSelector)
         : [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1
-          && (node.matches(selector) || node.querySelector(selector))));
-      if (relevant && !queued) { queued = true; queueMicrotask(sync); }
+          && (node.matches(layerSelector) || node.querySelector(layerSelector))));
+      if (relevant) sync(records);
     });
-    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'open'], attributeOldValue: true });
     sync();
-    return () => { observer.disconnect(); root.removeEventListener('focusin',rememberOutside); root.removeEventListener('pointerdown',record,true); root.removeEventListener('keydown',record,true); [...active.values()].reverse().forEach(release=>release()); };
+    return () => {
+      observer.disconnect();
+      root.ownerDocument.defaultView.removeEventListener('keydown', onLayerKey, true);
+      root.ownerDocument.removeEventListener('click', onLayerClick, true);
+      root.removeEventListener('focusin',rememberOutside); root.removeEventListener('pointerdown',record,true); root.removeEventListener('keydown',record,true);
+      [...active.values()].reverse().forEach(release=>release());
+      [...layerBlocked.keys()].forEach(restoreLayerBlock);
+      layerRoot = null; layers.stack = []; layerEntries.length = 0;
+    };
   }
 
   // DOM-only translation: never rewrite input values or the show model. Track the last
@@ -445,7 +628,7 @@
 
   const refreshSelect = select => { for (const record of shortControlRecords) if (record.select === select) record.refresh(); };
 
-  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect, bindPanelViewport, isCloseControl });
+  window.GAMMA_UI = Object.freeze({ layers, containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect, bindPanelViewport, isCloseControl });
   const startControls = () => {
     enhanceControls(document.body);
     bindPanelViewport(document.body);

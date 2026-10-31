@@ -10,9 +10,10 @@
         id: "header", title: "The header", status: "verified",
         keywords: ["header", "top bar", "icons", "undo", "redo", "mistake", "settings", "gear", "feedback", "ai", "full screen", "bell", "notifications", "share", "print", "volume", "elapsed time", "TC", "timecode"],
         html: `
+<p>When standard popup windows overlap, the window behind is dimmed and cannot be used until the front window closes. Press Escape or click the front window’s backdrop to close that window and return to the previous one. Unfinished input stays in place.</p>
 <p>The current scene title uses the space between the buttons; its tooltip contains the full title. If the header runs out of room, TC hides first, then the controls move to a second row if needed. The version remains visible; TC returns when the window widens.</p>
 <p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
-${fig("release095-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
+${fig("release096-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
   ["Left", "Logo and version", "The version number (for example 0.2.19). Please include it when reporting a problem"],
   ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Run of show)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
@@ -32,20 +33,20 @@ ${table(["Where", "Name", "What it does"], [
 <p>In the Mac app, ${ui("Edit")} → ${ui("Undo")} and redo follow the current editor: text while typing, stage edits on Stage, lighting drafts in Equipment placement or Light design, the theatre draft in Theatre settings, or marks on a rehearsal drawing. Each reverses the same single action as the keyboard and on-screen controls. If that editor has no history, the command does not switch to another editor's history. While a confirmation is open, it does not undo edits behind the window (a confirmation's text field keeps its own text editing history).</p>`
       },
       {
-        id: "tabs", title: "The seven tabs (number keys 1–5)", status: "verified",
+        id: "tabs", title: "The seven tabs (number keys 1–7)", status: "verified",
         keywords: ["tabs", "switch", "stage", "theatre settings", "equipment placement", "light design", "lines", "3d", "Q sheets", "number keys", "mode"],
         html: `
 ${table(["Tab", "Key", "What it is for", "Part"], [
   [ui("Stage"), kbd("1"), "Place pieces in the front and plan views and line up scenes. Your usual workspace", ref("show-panel", "Part 3") + "–" + ref("arrows", "Part 8")],
-  [ui("Theatre settings"), kbd("2"), "Build the theatre's shape, house, wings, walls, ceiling, machinery and viewpoints, and apply it to the show", ref("venue-overview", "Part 5")],
-  [ui("Equipment placement"), kbd("3"), "Hang fixtures on battens and set their numbers, heights and angles", ref("placement", "Part 7, 7-4")],
-  [ui("Light design"), kbd("4"), "Build LX cues for each scene (colour, level, direction, spread, movement) and apply them to the show", ref("light-design", "Part 7, 7-5")],
-  [ui("Lines"), "—", "Write the script on one screen and link lines to cues", ref("script", "Part 9, 9-4")],
+  [ui("Theatre design"), kbd("2"), "Set space, seating and curtains; use Equipment placement inside this tab to set the rig", ref("venue-overview", "Part 5")],
+  [ui("Lighting"), kbd("3"), "Build LX cues for each scene (colour, level, direction, spread, movement) and apply them to the show", ref("light-design", "Part 7, 7-5")],
+  [ui("Lines"), kbd("4"), "Write the script on one screen and link lines to cues", ref("script", "Part 9, 9-4")],
   [ui("3D"), kbd("5"), "Walk through the stage in 3D, or see through a performer's eyes", ref("fpv-basics", "Part 10")],
-  [ui("Run of show"), "—", "Edit scenes and cues; use the left menu to open, print or export the master, performer and department Q sheets", ref("print", "Part 11")]
+  [ui("Run of show"), kbd("6"), "Edit scenes and cues; use the left menu to open, print or export the master, performer and department Q sheets", ref("print", "Part 11")],
+  [ui("Rehearsal"), kbd("7"), "Front/plan views, GO and run-specific notes. Studio/Company only", ref("tabs", "This section")]
 ])}
 <p>Number keys do nothing while you are typing or while a confirmation window is open. When you leave ${ui("Light design")} with unapplied LX cues, the app asks whether to apply them (${ref("lx-apply", "Part 7, 7-6")}).</p>
-${note("In a new show some tabs are closed", "Until the theatre has been applied, " + ui("Equipment placement") + ", " + ui("Light design") + " and " + ui("3D") + " cannot be opened. They open once you press " + ui("Apply this theatre") + " in " + ui("Theatre settings") + " (" + ref("venue-gate", "Part 3, 3-2") + ").")}`
+${note("In a new show some tabs are closed", "Until the theatre has been applied, " + ui("Equipment placement") + ", " + ui("Light design") + " and " + ui("3D") + " cannot be opened. They open once you press " + ui("Apply this theatre") + " in " + ui("Theatre design") + " (" + ref("venue-gate", "Part 3, 3-2") + ").")}`
       },
       {
         id: "columns", title: "Panels and drawings in the Stage tab (two columns by default)", status: "verified",
@@ -53,7 +54,7 @@ ${note("In a new show some tabs are closed", "Until the theatre has been applied
         html: `
 <h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
 <p>The ${ui("Stage")} tab defaults to ${ui("Two columns")}: show, scene, performer and other panels on the left, drawings on the right. Use ${ui("Panel display style")} to switch to ${ui("3 columns")} or another layout.</p>
-${fig("release095-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
+${fig("release096-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
 <ul>
 <li><strong>Reorder panels</strong> — drag the ⠿ at the left of a panel heading up or down. The other panels slide aside to make room.</li>
 <li><strong>Collapse</strong> — the ▾ at the right of a heading folds the panel. What is folded is saved with the show and goes into exports.</li>
@@ -153,7 +154,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release095-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release095-stage", "Stage toolbar.", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release096-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release096-stage", "Stage toolbar.", "stage")
 }
     ]
   });

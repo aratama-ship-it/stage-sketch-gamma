@@ -38,7 +38,7 @@
     }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261027-v0390';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261031-v0396';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
     finish(){return !editor()||editor().finish();},
     showCueSheet(kind,key){pendingCueSheet={kind,key};openPendingCueSheet();},
     showRunOfShow(){pendingCueSheet=null;return editor()?.showRunOfShow?.();},

@@ -52,6 +52,10 @@
   let timeDomain = null, timeScope = "section", timingErrors = [], managedPlayback = null;
   let managedGeneration = 0, managedClipId = null, timecodeUI = null;
   let managedAvailabilityGeneration = 0;
+  // Failure state belongs to this playback attempt, never to the show or file store.
+  const MANAGED_AUDIO_START_TIMEOUT_MS = 5000;
+  let managedAudioAttempt = null;
+  const managedAudioFailures = new Map();
   const managedAudioAvailability = new Map();
   const missingAudioWarning = document.createElement("p");
   missingAudioWarning.id = "stage-timeline-missing-audio-warning";
@@ -60,8 +64,12 @@
   function syncMissingAudioWarning() {
     const missing = timeline?.managed && (timingErrors.some(e => e.code === "music-reference")
       || timeline.mediaClips.some(clip => managedAudioAvailability.get(clip.trackId) === false));
-    missingAudioWarning.textContent = tx("音源が未接続のため、一部または全部を音なしで再生しています。Mキューの詳細から再接続できます。");
-    missingAudioWarning.hidden = !(managedPlayback && missing);
+    const failed = managedAudioFailures.size > 0;
+    const fast = !rehearsal() && reviewRate.get() > 2;
+    missingAudioWarning.textContent = tx(fast ? "4倍以上は音が出ません。" : failed
+      ? "音源を再生できないため、一部または全部を音なしで再生しています。停止して再生し直すと音源を再試行します。"
+      : "音源が未接続のため、一部または全部を音なしで再生しています。Mキューの詳細から再接続できます。");
+    missingAudioWarning.hidden = !(timeline && fast || managedPlayback && (missing || failed));
     if (!missingAudioWarning.hidden) missingAudioWarning.style.top = `${document.querySelector(".stage-sketch-head")?.getBoundingClientRect().bottom || 0}px`;
   }
   async function refreshManagedAvailability() {
@@ -75,8 +83,10 @@
     syncMissingAudioWarning();
   }
   function playableManagedMediaAt(seconds) {
+    if (reviewRate.get() > 2) return null;
     const media = managedMediaAt(seconds);
-    return media && managedAudioAvailability.get(media.clip.trackId) !== false ? media : null;
+    return media && managedAudioAvailability.get(media.clip.trackId) !== false
+      && !managedAudioFailures.has(media.clip.id) ? media : null;
   }
   let renderedTimelineIdentity = null;
   let musicMigrationAttempt = null;
@@ -256,6 +266,74 @@
     const model = window.SHOSAI_STAGE_I18N_MODEL;
     return model && typeof model.text === "function" ? model.text(root.lang || "ja", japanese) : japanese;
   };
+
+  // Review speed is session UI state, independent of transport placement (G-020).
+  // Audio is the clock while a connected clip plays; gaps use the same rate.
+  function createReviewPlaybackRate(audio) {
+    const rates = Object.freeze([0.5, 1, 1.5, 2, 4, 8]);
+    let rate = 1;
+    const pitchKey = audio && ["preservesPitch", "webkitPreservesPitch", "mozPreservesPitch"].find(key => key in audio);
+    function set(value) {
+      const number = Number(value);
+      rate = rates.includes(number) && (number === 1 || number > 2 || pitchKey) ? number : 1;
+      return rate;
+    }
+    function apply(value = rate) {
+      if (!audio || value > 2) return;
+      if (pitchKey && rate <= 2) audio[pitchKey] = true;
+      audio.playbackRate = value;
+    }
+    return { rates, get: () => rate, set, apply, supportsPitch: Boolean(pitchKey),
+      elapsed: milliseconds => Math.max(0, milliseconds) / 1000 * rate };
+  }
+  const reviewRate = createReviewPlaybackRate(els.audio);
+  const rateSelect = document.createElement("select");
+  rateSelect.id = "stage-timeline-playback-rate";
+  for (const rate of reviewRate.rates) {
+    const option = new Option(`${rate}×`, String(rate));
+    option.disabled = rate !== 1 && rate <= 2 && !reviewRate.supportsPitch;
+    rateSelect.append(option);
+  }
+  rateSelect.value = "1";
+  els.play.after(rateSelect);
+  function syncReviewRateUi() {
+    rateSelect.setAttribute("aria-label", tx("再生速度"));
+    rateSelect.title = tx(reviewRate.supportsPitch ? "再生速度（音程を保つ）" : "この環境では、音ありは1倍、音なしは4倍・8倍で再生できます。");
+    rateSelect.disabled = Boolean(rehearsal());
+  }
+  function setReviewPlaybackRate(value) {
+    if (rehearsal()) return;
+    const now = performance.now();
+    const wasFast = reviewRate.get() > 2;
+    // Anchor the old clock before changing rate, so a running gap cannot jump.
+    if (silentPlayback) {
+      seekSeconds = silentPlayback.startSeconds + reviewRate.elapsed(now - silentPlayback.startedAt);
+      silentPlayback.startSeconds = seekSeconds; silentPlayback.startedAt = now;
+    }
+    if (managedPlayback) {
+      const media = playableManagedMediaAt(managedPlayback.seconds);
+      if (!media) managedPlayback.seconds += reviewRate.elapsed(now - managedPlayback.at);
+      else if (managedClipId === media.clip.id && bridge.isTimelineAudioActive(media.clip.trackId)
+          && els.audio.readyState >= 2 && !els.audio.paused && !els.audio.ended) {
+        // A native select can hold animation frames while the audio keeps playing.
+        managedPlayback.seconds = media.clip.start + els.audio.currentTime - media.clip.mediaIn;
+      }
+      managedPlayback.at = now; seekSeconds = managedPlayback.seconds;
+    }
+    reviewRate.set(value); rateSelect.value = String(reviewRate.get());
+    if (managedPlayback && wasFast !== (reviewRate.get() > 2)) {
+      // Cancel pending play-after-load on entry; returning retries at this clock's
+      // position, including when a previous audio start had failed.
+      if (wasFast) managedAudioFailures.clear();
+      syncManagedAudio(seekSeconds, true, true);
+    } else if (managedPlayback || !timeline?.managed && timelineIsPlaying()) reviewRate.apply();
+    syncReviewRateUi(); updatePlayhead();
+  }
+  rateSelect.addEventListener("change", () => setReviewPlaybackRate(rateSelect.value));
+  rateSelect.addEventListener("keydown", event => event.stopPropagation());
+  syncReviewRateUi();
+  new MutationObserver(() => { syncReviewRateUi(); syncMissingAudioWarning(); }).observe(root, { attributes: true, attributeFilter: ["lang"] });
+  window.addEventListener("gamma-workspace-change", () => { syncReviewRateUi(); syncMissingAudioWarning(); });
 
   // B-9 settings belong to this device, never to the exported show.
   const SPEED_KEY = "gamma:transition-speed-settings-v1";
@@ -1309,28 +1387,59 @@
   function pauseManagedPlayback() {
     managedGeneration++;
     if (managedPlayback?.frame) cancelAnimationFrame(managedPlayback.frame);
-    managedPlayback = null; managedClipId = null;
+    managedPlayback = null; managedClipId = null; managedAudioAttempt = null;
+    managedAudioFailures.clear();
     bridge.pauseTimelineAudio?.();
+    reviewRate.apply(1);
     syncMissingAudioWarning();
   }
   function managedMediaAt(seconds) { return TD.mediaAt(timeline?.mediaClips || [], seconds); }
+  function failManagedAudio(reason, trackId = managedAudioAttempt?.trackId) {
+    const attempt = managedAudioAttempt;
+    if (!managedPlayback || !attempt || attempt.trackId !== trackId || attempt.clipId !== managedClipId) return;
+    const detail = { clipId: attempt.clipId, trackId, reason, readyState: els.audio.readyState,
+      paused: els.audio.paused, currentTime: els.audio.currentTime, mediaSeconds: attempt.mediaSeconds,
+      elapsedMs: performance.now() - attempt.at, errorCode: els.audio.error?.code || null };
+    managedAudioFailures.set(attempt.clipId, reason);
+    managedAudioAttempt = null;
+    bridge.pauseTimelineAudio?.(); // Also cancel play-after-load, including late metadata.
+    syncMissingAudioWarning();
+    window.dispatchEvent(new CustomEvent("stage-timeline-audio-fallback", { detail }));
+  }
+  window.addEventListener("stage-timeline-audio-playback-failed", event => {
+    failManagedAudio(event.detail?.reason || "play-rejected", event.detail?.trackId);
+  });
+  els.audio?.addEventListener("error", () => failManagedAudio("media-error"));
   function syncManagedAudio(seconds, playing, force = false) {
     const media = playableManagedMediaAt(seconds);
     if (!media) {
       if (managedClipId !== null || !els.audio.paused) bridge.pauseTimelineAudio?.();
-      managedClipId = null; return;
+      managedClipId = null; managedAudioAttempt = null; return;
     }
     if (force || managedClipId !== media.clip.id) {
       bridge.pauseTimelineAudio?.();
       managedClipId = media.clip.id;
+      managedAudioAttempt = { clipId: media.clip.id, trackId: media.clip.trackId,
+        at: performance.now(), mediaSeconds: media.seconds, started: false };
       applyAudioLevels(media.clip.track.gainDb);
-      bridge.activateTimelineAudio(media.clip.trackId, { seekSeconds: media.seconds, play: playing });
+      reviewRate.apply();
+      if (bridge.activateTimelineAudio(media.clip.trackId, { seekSeconds: media.seconds, play: playing }) === false)
+        failManagedAudio("activation-failed", media.clip.trackId);
     }
   }
   function managedFrame(now) {
     const clock = managedPlayback;
     if (!clock || !timeline?.managed) return;
-    let next = clock.seconds + (now - clock.at) / 1000;
+    // A rejected play or an unending media load must not hold the show clock forever.
+    if (managedAudioAttempt && !managedAudioAttempt.started) {
+      const active = bridge.isTimelineAudioActive(managedAudioAttempt.trackId);
+      if (active && els.audio.readyState >= 2 && (els.audio.ended
+          || !els.audio.paused && els.audio.currentTime > managedAudioAttempt.mediaSeconds + .001))
+        managedAudioAttempt.started = true;
+      else if (now - managedAudioAttempt.at >= MANAGED_AUDIO_START_TIMEOUT_MS)
+        failManagedAudio("start-timeout");
+    }
+    let next = clock.seconds + reviewRate.elapsed(now - clock.at);
     const media = playableManagedMediaAt(clock.seconds);
     if (media && managedClipId === media.clip.id) {
       if (bridge.isTimelineAudioActive(media.clip.trackId) && els.audio.readyState >= 2) {
@@ -1340,7 +1449,8 @@
         else next = clock.seconds; // Loading, interruption or an explicit audio pause cannot run ahead.
       } else next = clock.seconds;
     } else {
-      const upcoming = timeline.mediaClips.find(c => managedAudioAvailability.get(c.trackId) !== false && c.start > clock.seconds && c.start <= next);
+      const upcoming = reviewRate.get() <= 2 && timeline.mediaClips.find(c => managedAudioAvailability.get(c.trackId) !== false
+        && !managedAudioFailures.has(c.id) && c.start > clock.seconds && c.start <= next);
       if (upcoming) next = upcoming.start;
     }
     if (ui.loop && ui.loopB > ui.loopA && next >= ui.loopB) { next = ui.loopA; managedClipId = null; }
@@ -1356,9 +1466,10 @@
     if (!timeline?.managed || timingErrors.some(e => e.code !== "music-reference")) return;
     pauseManagedPlayback(); pauseSilentPlayback({ update: false }); stopAudioPlayheadAnimation();
     const generation = ++managedGeneration, requested = renderedTimelineIdentity;
-    // Resume in the user action; only missing files are silent. Connected clips keep their normal clock/gain.
-    const graphReady = ensureAudioGainGraph();
-    await refreshManagedAvailability(); await graphReady;
+    // Request resume in the user action. A suspended gain context's pending resume
+    // promise must not prevent the transport from starting its bounded audio attempt.
+    void ensureAudioGainGraph();
+    await refreshManagedAvailability();
     if (generation !== managedGeneration || requested !== renderedTimelineIdentity
         || !timeline?.managed || timingErrors.some(e => e.code !== "music-reference")) return;
     if (seekSeconds >= timeline.duration - .001) seekSeconds = 0;
@@ -1969,9 +2080,9 @@
     const effectSeconds=timeline.source === "show" ? seconds-(timeDomain.sections.get(timeDomain.byId.get(segmentAt(seconds)?.sceneId)?.sectionId)?.start||0) : seconds;
     const index=schedule.eventAt(timelineLightEvents,seconds);
     const identity=`${timeline?.sectionId}:${index}:${playing}:${playing?'':seconds}`;
-    if(!force&&appliedLightCueIdentity===identity){bridge.refreshTimelineLightClock?.({seconds,playing,effectSeconds});return false;}
+    if(!force&&appliedLightCueIdentity===identity){bridge.refreshTimelineLightClock?.({seconds,playing,effectSeconds,playbackRate:reviewRate.get()});return false;}
     appliedLightCueIdentity=identity;
-    return bridge.applyTimelineLightClock({seconds,playing},effectSeconds);
+    return bridge.applyTimelineLightClock({seconds,playing,playbackRate:reviewRate.get()},effectSeconds);
   }
 
   function closeTimelineLockMenu() {
@@ -2708,6 +2819,8 @@
     cueGroupDrag.delta = delta;
     cueGroupDrag.items.forEach((item) => {
       item.button.classList.add("is-dragging");
+      item.button.closest(".stage-timeline-row-content")?.classList.add("is-cue-drop-target");
+      document.body.classList.add("is-timeline-cue-drag");
       item.button.style.left = `${clamp(pxFor(item.startSeconds + delta) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
     });
     event.preventDefault();
@@ -2720,6 +2833,7 @@
     cueGroupDrag = null;
     if (drag.moved || event.type === "pointercancel") finishCuePointerInteraction();
     drag.items.forEach((item) => item.button.classList.remove("is-dragging"));
+    clearCueDropFeedback();
     if (event.type !== "pointercancel" && drag.moved && Math.abs(drag.delta) > 1e-9
       && typeof bridge.updateTimelineCues === "function") {
       suppressCueClickId = drag.anchorId;
@@ -2731,6 +2845,11 @@
     renderTimeline();
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  function clearCueDropFeedback() {
+    document.body.classList.remove("is-timeline-cue-drag");
+    Object.values(els.cueLanes).forEach(lane => lane.classList.remove("is-cue-drop-target"));
   }
 
   function beginCueDrag(event, cue, button) {
@@ -2766,6 +2885,8 @@
     cueDrag.moved = true;
     cueDrag.nextSeconds = cueSecondsAfterDrag(event, cueDrag.startSeconds, cueDrag.startX);
     cueDrag.button.classList.add("is-dragging");
+    document.body.classList.add("is-timeline-cue-drag");
+    els.cueLanes[cueDrag.cue.cueType]?.classList.add("is-cue-drop-target");
     cueDrag.button.style.left = `${clamp(pxFor(cueDrag.nextSeconds) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
     event.preventDefault();
     event.stopPropagation();
@@ -2778,6 +2899,7 @@
     cueDrag = null;
     if (drag.moved || event.type === "pointercancel") finishCuePointerInteraction();
     drag.button.classList.remove("is-dragging");
+    clearCueDropFeedback();
     try { if (drag.button.hasPointerCapture(event.pointerId)) drag.button.releasePointerCapture(event.pointerId); } catch (_) { /* pointercancel */ }
     if (event.type !== "pointercancel" && drag.moved) {
       suppressCueClickId = drag.cue.id;
@@ -3008,6 +3130,11 @@
       if(cueAddedFeedback?.id===cue.id&&cueAddedFeedback.until>Date.now())button.classList.add("is-just-added");
       button.dataset.cueType = cue.cueType;
       button.dataset.cueEnabled=String(cue.lx?.enabled!==false);
+      if (!cue.locked && timeline.source !== "show") {
+        const grip = document.createElement("span"); grip.className = "stage-timeline-cue-grip";
+        grip.textContent = "⠿"; grip.setAttribute("aria-hidden", "true"); button.append(grip);
+        button.classList.add("is-movable");
+      }
       button.dataset.cueLocked = String(Boolean(cue.locked)); // T-5: 範囲選択から外す目印
       if (cue.cueType === "music") button.dataset.cueSilent = String(Boolean(cue.silent));   // U-07: 鳴らない音楽キュー
       button.setAttribute("aria-pressed", String(cueIsSelected(cue.id)));
@@ -3349,6 +3476,7 @@
   function syncTimelineAudioAt(seconds, { play = false } = {}) {
     if (timeline?.managed) { syncManagedAudio(seconds, play || !!managedPlayback, true); return true; }
     if (!timeline || !timeline.trackId || typeof bridge.activateTimelineAudio !== "function") return false;
+    if (play) reviewRate.apply();
     return bridge.activateTimelineAudio(timeline.trackId, { seekSeconds: seconds, play });
   }
 
@@ -3427,7 +3555,7 @@
 
   function silentPlaybackFrame(now) {
     if (!silentPlayback || !timeline) return;
-    let next = silentPlayback.startSeconds + (now - silentPlayback.startedAt) / 1000;
+    let next = silentPlayback.startSeconds + reviewRate.elapsed(now - silentPlayback.startedAt);
     if (ui.loop && ui.loopB > ui.loopA && next >= ui.loopB) {
       const span = ui.loopB - ui.loopA;
       next = ui.loopA + ((next - ui.loopA) % span);
@@ -4174,23 +4302,56 @@
     filter.onchange=renderChoices;renderChoices();
     document.body.append(backdrop,modal);release=window.GAMMA_UI.containDialog(modal,{returnFocus:els.addCueButtons.find(b=>b.dataset.stageTimelineAddCue==="light"),onCancel:finish});close.focus();
   }
-  const lightDropLane=els.cueLanes.light;
-  lightDropLane.addEventListener("dragover",event=>{
-    if(!event.dataTransfer?.types.includes("application/x-stage-sketch-lx-cue"))return;
-    event.preventDefault();event.dataTransfer.dropEffect="move";lightDropLane.classList.add("is-lx-drop-target");
+  const lightDropLane = els.cueLanes.light;
+  const lxDropPreview = document.createElement("span");
+  lxDropPreview.className = "stage-timeline-lx-drop-preview"; lxDropPreview.hidden = true;
+  lxDropPreview.setAttribute("aria-hidden", "true"); lightDropLane.append(lxDropPreview);
+  const isLxTransfer = event => Array.from(event.dataTransfer?.types || []).includes("application/x-stage-sketch-lx-cue");
+  function clearLxDropFeedback() {
+    lightDropLane.classList.remove("is-lx-drop-target"); lxDropPreview.hidden = true;
+    document.body.classList.remove("is-timeline-lx-drop");
+  }
+  function lxDropSeconds(event) {
+    const rect = els.ruler.getBoundingClientRect();
+    return snappedSeconds(clamp((event.clientX - rect.left - timelineLeftInset) * secondsPerPixel(), 0, timeline.duration));
+  }
+  els.surface.addEventListener("dragover", event => {
+    if (!timeline || !isLxTransfer(event)) return;
+    lightDropLane.classList.add("is-lx-drop-target");
+    document.body.classList.add("is-timeline-lx-drop");
+    if (lxDropPreview.parentElement !== lightDropLane) lightDropLane.append(lxDropPreview);
+    const valid = Boolean(event.target.closest?.(".stage-timeline-row-content") === lightDropLane);
+    event.dataTransfer.dropEffect = valid ? "move" : "none";
+    const seconds = lxDropSeconds(event);
+    lxDropPreview.textContent = `LX · ${labelPosition(seconds)}${valid ? "" : " · " + tx("LXレーンに置く")}`;
+    lxDropPreview.style.left = `${clamp(pxFor(seconds), 0, Math.max(0, timelineWidth - 220))}px`;
+    lxDropPreview.hidden = false;
+    if (valid) event.preventDefault();
   });
-  lightDropLane.addEventListener("dragleave",()=>lightDropLane.classList.remove("is-lx-drop-target"));
-  lightDropLane.addEventListener("drop",async event=>{
-    lightDropLane.classList.remove("is-lx-drop-target");
-    const raw=event.dataTransfer?.getData("application/x-stage-sketch-lx-cue");if(!raw)return;
+  els.surface.addEventListener("dragleave", event => {
+    if (!event.relatedTarget || !els.surface.contains(event.relatedTarget)) clearLxDropFeedback();
+  });
+  // Drop outside the LX lane is a no-op, as before; clean feedback even there.
+  document.addEventListener("drop", clearLxDropFeedback);
+  document.addEventListener("dragend", clearLxDropFeedback);
+  // HTML dragend belongs to the source document, including the embedded editor.
+  // Only observe the lifecycle; the lighting editor's controls stay unchanged.
+  const lxSourceFrame = document.getElementById("gamma-light-frame");
+  function observeLxDragEnd() {
+    lxSourceFrame?.contentDocument?.addEventListener("dragend", clearLxDropFeedback);
+  }
+  lxSourceFrame?.addEventListener("load", observeLxDragEnd); observeLxDragEnd();
+
+  window.addEventListener("blur", () => { clearLxDropFeedback(); clearCueDropFeedback(); });
+  lightDropLane.addEventListener("drop", async event => {
+    clearLxDropFeedback();
+    const raw = event.dataTransfer?.getData("application/x-stage-sketch-lx-cue"); if (!raw || !timeline) return;
     event.preventDefault();
     try {
-      const payload=JSON.parse(raw),project=projectDocument().project;
-      if(payload.showId!==project.id)return;
-      const rect=els.ruler.getBoundingClientRect();
-      const seconds=snappedSeconds(clamp((event.clientX-rect.left-timelineLeftInset)*secondsPerPixel(),0,timeline.duration));
-      await placeExistingLightCue(payload.lxId,lightPlacementTarget(seconds));
-    } catch(error) {cueAddedNotice(error.message);}
+      const payload = JSON.parse(raw), project = projectDocument().project;
+      if (payload.showId !== project.id) return;
+      await placeExistingLightCue(payload.lxId, lightPlacementTarget(lxDropSeconds(event)));
+    } catch (error) { cueAddedNotice(error.message); }
   });
 
   function addSceneAtPlayhead() {
@@ -4304,7 +4465,7 @@
     return true;
   }
 
-  function beginTimelineResize(event) {
+  function beginTimelineResize(event, element = els.resize) {
     if (event.button !== 0) return;
     fitRowsOnResize = false;
     timelineResize = {
@@ -4313,8 +4474,9 @@
       startHeight: ui.height,
       collapsed: ui.collapsed,
       revealHeight: ui.collapsed ? timelineResizeHandleHeight() : null,
+      el: element,
     };
-    els.resize.setPointerCapture(event.pointerId);
+    element.setPointerCapture(event.pointerId);
     document.body.classList.add("is-timeline-resizing");
     event.preventDefault();
   }
@@ -4972,17 +5134,7 @@
     els.grip.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
       gripPulled = 0;
-      timelineResize = {
-        pointerId: event.pointerId,
-        startY: event.clientY,
-        startHeight: ui.height,
-        collapsed: ui.collapsed,
-        revealHeight: ui.collapsed ? timelineResizeHandleHeight() : null,
-        el: els.grip,
-      };
-      els.grip.setPointerCapture(event.pointerId);
-      document.body.classList.add("is-timeline-resizing");
-      event.preventDefault();
+      beginTimelineResize(event, els.grip);
     });
     els.grip.addEventListener("pointermove", (event) => {
       if (timelineResize && event.pointerId === timelineResize.pointerId) {
@@ -5013,6 +5165,7 @@
           if (event.key !== "ArrowUp") return;
           setTimelineCollapsed(false, { save: true }); renderTimeline(); return;
         }
+        fitRowsOnResize = false;
         // 下限に着いているところで↓をもう一度＝しまう
         if (event.key === "ArrowDown" && ui.height <= MIN_HEIGHT) {
           setTimelineCollapsed(true, { save: true });
@@ -5024,6 +5177,7 @@
     });
   }
   els.resize.addEventListener("dblclick", () => {
+    fitRowsOnResize = false;
     if (ui.collapsed) {
       setTimelineCollapsed(false, { save: true });
       renderTimeline();
@@ -5035,6 +5189,7 @@
   els.resize.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home") return;
     event.preventDefault();
+    fitRowsOnResize = false;
     // 下限に着いているところで↓をもう一度＝しまう（引き切って離すのと同じ）
     if (event.key === "ArrowDown" && ui.height <= MIN_HEIGHT) {
       setTimelineCollapsed(true, { save: true });
@@ -5046,7 +5201,9 @@
   });
   let fitRowsOnResize = false;
   function fitTimelineRows() {
-    if (ui.collapsed) return;
+    // E may already have queued a fit when a manual resize starts. Recheck at
+    // execution time, so neither that callback nor an observer undoes the edit.
+    if (!fitRowsOnResize || ui.collapsed || timelineResize) return;
     // Status, feasibility and unplaced-Q rows are siblings of the toolbar.
     // Measure all visible chrome after render, including late audio availability.
     const chrome = [...panel.children].filter(el => el !== els.viewport && el.getClientRects().length)
@@ -5166,7 +5323,12 @@
   });
   ["loadedmetadata", "durationchange", "timeupdate", "play", "pause", "ended", "seeking"].forEach((name) => {
     els.audio.addEventListener(name, () => {
-      if (timeline?.managed) { updatePlayhead(); return; }
+      if (timeline?.managed) {
+        if (managedPlayback && reviewRate.get() > 2 && (name === "loadedmetadata" || name === "play")) bridge.pauseTimelineAudio?.();
+        else if (managedPlayback && (name === "loadedmetadata" || name === "play")) reviewRate.apply();
+        else if (!managedPlayback && name === "play") reviewRate.apply(1);
+        updatePlayhead(); return;
+      }
       if (name === "play") {
         pauseSilentPlayback({ update: false });
         if (audioMatchesTimeline()) {
@@ -5364,5 +5526,33 @@
   syncVolumeUi();
   applyAudioLevels();
   applyRowLayout();
+  // W1-B2: publish only the column's viewport top. CSS combines it with the
+  // existing grip offset, so pointermove does not add synchronous layout reads.
+  const leftColumn = document.getElementById("stage-col-left");
+  if (leftColumn) {
+    let clearanceFrame = 0;
+    const scheduleClearance = () => {
+      if (clearanceFrame) return;
+      clearanceFrame = requestAnimationFrame(() => {
+        clearanceFrame = 0;
+        if (!leftColumn.getClientRects().length) return;
+        const top = `${Math.max(0, leftColumn.getBoundingClientRect().top)}px`;
+        if (leftColumn.style.getPropertyValue("--stage-timeline-left-top") !== top) {
+          leftColumn.style.setProperty("--stage-timeline-left-top", top);
+        }
+      });
+    };
+    const observer = new ResizeObserver(scheduleClearance);
+    for (const selector of [".stage-sketch-head", ".gamma-stage-gate-band", ".stage-sketch-grid"]) {
+      const element = document.querySelector(selector);
+      if (element) observer.observe(element);
+    }
+    document.getElementById("view-stage")?.addEventListener("scroll", scheduleClearance, { passive: true });
+    window.addEventListener("resize", scheduleClearance);
+    window.addEventListener("gamma-workspace-change", scheduleClearance);
+    new MutationObserver(scheduleClearance).observe(root, { attributes: true, attributeFilter: ["class", "data-stage-layout"] });
+    new MutationObserver(scheduleClearance).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    scheduleClearance();
+  }
   initializeTimelineDrawer();
 }());

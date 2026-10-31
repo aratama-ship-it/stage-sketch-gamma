@@ -12,7 +12,7 @@
         html: `
 <dl class="m-faq">
 <dt>A piece will not move when I drag it</dt><dd>It is locked. Unlock it with ${ui("Search the Guide")} → ${ui("When an item will not move")} (${ref("lock", "4-11")}). Also check the tool in hand is ${ui("Move objects")} (${kbd("V")}).</dd>
-<dt>Equipment placement, Light design and 3D will not open / other panels are dimmed</dt><dd>The new show has no theatre yet. Press ${ui("Apply this theatre")} in ${ui("Theatre settings")} (${ref("venue-gate", "3-2")}). If the band stays after that, press the ${ui("Stage")} tab again or reload.</dd>
+<dt>Equipment placement, Light design and 3D will not open / other panels are dimmed</dt><dd>The new show has no theatre yet. Press ${ui("Apply this theatre")} in ${ui("Theatre design")} (${ref("venue-gate", "3-2")}). If the band stays after that, press the ${ui("Stage")} tab again or reload.</dd>
 <dt>My light design changes do not appear on the Stage tab or in Q sheets</dt><dd>${ui("Apply LX cues")} has not been pressed (${ref("lx-apply", "7-6")}). To draw light on the Stage tab, set ${ui("How the light looks")} to ${ui("Light pools")} or higher in Settings (${ref("light-render", "7-3")}).</dd>
 <dt>A red warning appears on fixed fixtures</dt><dd>A fixed fixture's direction, colour or spread differs between scenes. In reality it is set at the focus session, so match it with the “match scene …” buttons under the warning (${ref("light-design", "7-5")}).</dd>
 <dt>No sound / “Audio file not found”</dt><dd>Audio is stored per device and not included in show files. Use ${ui("Reconnect")} on the timeline's audio block and pick the original file (${ref("music", "9-2")}). Open the timeline with ${kbd("E")} for audio controls.</dd>

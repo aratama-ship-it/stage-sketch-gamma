@@ -8,6 +8,7 @@
 }
 [data-panel="assist"][hidden], [data-panel="assist"][data-assist-available="false"] {display:none!important;}
 [data-panel="assist"] .stage-panel-body {display:flex;flex-direction:column;gap:var(--assist-s2);}
+[data-panel="assist"] .stage-panel-body > * {flex:0 0 auto;min-width:0;}
 [data-panel="assist"].is-collapsed .stage-panel-body {display:none;}
 .assist-badge {align-self:flex-start;border:1px solid var(--brass);color:var(--brass);padding:0 var(--assist-s1);font-size:var(--assist-small);line-height:1.5;}
 .assist-figure {height:var(--assist-figure-h);flex:0 0 auto;pointer-events:none;}
@@ -63,7 +64,31 @@ html.stage-phone-viewer :is(.assist-guide,.assist-guide-ring) {display:none;}
 .assist-confirm {flex:0 0 auto;border:1px solid var(--brass);padding:var(--assist-s3);color:var(--paper);font:var(--assist-body)/1.6 var(--sans);overflow-wrap:anywhere;}
 .assist-confirm ul {margin:var(--assist-s2) 0;padding-left:var(--assist-s4);}
 .assist-confirm button:focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
+.assist-ops-details {margin:var(--assist-s2) 0;color:var(--ink-soft-sm);font-size:var(--assist-small);}
+.assist-ops-details > summary {box-sizing:border-box;min-height:var(--assist-hit);padding:var(--assist-s3) 0;cursor:pointer;}
+.assist-ops-details > summary:focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
 
 /* K6: keep the lighting Apply/Cancel controls clear of the persistent review. */
 .assist-guide.has-lighting {left:16px;right:auto;max-height:calc(100vh - 32px);overflow-y:auto;--assist-body:13px;--assist-s2:8px;--assist-s3:12px;--assist-s4:16px;}
 .assist-light-changes {max-height:min(40vh,320px);overflow-y:auto;}
+
+/* PANEL: keep the composer before every extension; entries wrap in normal flow. */
+.assist-form {min-width:0;}
+.assist-form textarea {box-sizing:border-box;}
+.assist-modes {align-items:flex-start;min-width:0;}
+.assist-modes > * {min-width:0;max-width:100%;box-sizing:border-box;}
+.assist-modes > button {flex:0 1 auto;min-width:var(--assist-hit);white-space:normal;overflow-wrap:anywhere;}
+.assist-modes > button > .gamma-control-text {min-width:0;}
+.assist-modes > [data-assist-quick] {padding:var(--assist-s1) var(--assist-s2);}
+.assist-modes > .assist-batch {flex:1 1 100%;}
+.assist-modes > :is(.assist-docs,.assist-quick) {flex:0 1 auto;}
+.assist-modes > :is(.assist-docs,.assist-quick)[open] {flex-basis:100%;}
+.assist-modes > .assist-docs {border:0;padding:0;}
+.assist-modes > .assist-docs > summary {box-sizing:border-box;border:1px solid var(--brass);padding:var(--assist-s1) var(--assist-s2);font:var(--assist-body)/1.6 var(--sans);}
+.assist-quick-buttons:empty {display:none;}
+.assist-mode-description[hidden] {display:none!important;}
+/* CHECK's original disclosure and summary are one visual paragraph, unchanged. */
+.assist-mode-description > .assist-notice {display:inline;}
+.assist-mode-description > .assist-notice + .assist-notice::before {content:' ';}
+.assist-mode-notices:focus-within,.assist-modes :focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
+.assist-footer {display:flex;flex-direction:column;gap:var(--assist-s2);}

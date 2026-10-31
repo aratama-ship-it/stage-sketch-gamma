@@ -1420,6 +1420,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     const available=!lite&&!runOnly&&Boolean(cueHost?.available?.());
     $("band-cues").hidden=!available;
     const selected=cueHost?.selection?.();
+    $("ros-csv").hidden=cueView;
     $("cue-handover").hidden=!available||!cueView||!["performer","handover"].includes(selected?.kind);
     $("cue-handover").textContent=uiText("引継ぎ Q シート");
     if(!available)return;
@@ -1540,6 +1541,43 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     scroller.scrollTop+=event.deltaY*unit;scroller.scrollLeft+=event.deltaX*unit;event.preventDefault();
   },{passive:false});
   $('band-output-button').addEventListener('click',()=>printCurrent().catch(showError));
+  // Project the current run-of-show table into the existing CSV writer. Keep
+  // row/column order and text; images are represented by their alternative text.
+  function tableToCsvSheet(table, columns) {
+    function cellText(node) {
+      if (node.nodeType === 3) return node.textContent;
+      if (node.nodeType !== 1 || node.hasAttribute("data-screen-only") || node.hidden) return "";
+      if (node.tagName === "IMG") return node.getAttribute("alt") || "";
+      if (node.tagName === "BR") return "\n";
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(node.tagName)) return node.value || "";
+      const text = Array.from(node.childNodes, cellText).join("");
+      return ["DIV", "P", "SMALL", "FIGURE", "SPAN", "STRONG"].includes(node.tagName) ? "\n" + text + "\n" : text;
+    }
+    const result = { columns, rows: [] };
+    for (const tr of table.tBodies[0].rows) {
+      const row = {};
+      if (tr.dataset.rowKind === "head") {
+        row.no = tr.dataset.no || "";
+        row.content = cellText(tr.cells[0]).trim();
+      } else {
+        for (const cell of tr.cells) row[cell.dataset.columnId] = cellText(cell).trim();
+      }
+      result.rows.push(row);
+    }
+    return result;
+  }
+
+  $("ros-csv").disabled = typeof bridge.exportCsv !== "function";
+  $("ros-csv").addEventListener("click", async () => {
+    if (cueView || !paperEditor.finish()) return;
+    try {
+      const columns = orderedColumns().filter(c => !layoutFor().hidden.includes(c.id))
+        .map(c => ({key:c.id, label:columnLabel(c)}));
+      const sheet = tableToCsvSheet($("ros-table"), columns);
+      await bridge.exportCsv(sheet);
+    } catch (error) { showError(error); }
+  });
+
   window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>paperEditor.finish(),hasDraft:()=>paperEditor?.hasDraft,
     showCueSheet,showRunOfShow,printCurrent,
     selectScene(id){const found=items.find(i=>i.sceneId===id);if(found){selected=found.id;render();}},

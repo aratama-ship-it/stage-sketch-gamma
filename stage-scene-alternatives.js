@@ -259,7 +259,7 @@
       const pieceIds = new Map(item.content.pieces.map(piece => [piece.id, idFactory()]));
       for (const piece of item.content.pieces) {
         const old = piece.id; piece.id = pieceIds.get(old); piece.originId = piece.originId || old;
-        for (const key of ['heldBy','mountedOn','parentId','supportId']) if (piece[key]) piece[key] = pieceIds.get(piece[key]) || piece[key];
+        for (const key of ['heldBy','mountedOn','parentId','supportId','mountOn','mountWith']) if (piece[key]) piece[key] = pieceIds.get(piece[key]) || piece[key];
       }
       for (const note of item.content.notes || []) { note.id = idFactory(); if (note.pieceId) note.pieceId = pieceIds.get(note.pieceId) || null; }
       for (const arrow of item.content.arrows || []) arrow.id = idFactory();

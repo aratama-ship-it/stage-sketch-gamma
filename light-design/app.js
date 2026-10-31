@@ -1,3 +1,129 @@
+/* Detail figures: device-only split and camera transforms. No show/model writes. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.LIGHT_FIGURE_VIEW = api;
+})(typeof window === 'object' ? window : globalThis, () => {
+  'use strict';
+  const SPLIT_KEY = 'gamma:light-figure-split-v1';
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const ratio = n => n !== null && n !== '' && Number.isFinite(Number(n)) ? clamp(Number(n), .15, .85) : .5;
+  function split(height, share) {
+    const available = Math.max(320, height - 8);
+    const min = Math.max(160, available * .15), max = Math.min(available - 160, available * .85);
+    return { available, min, max, top: clamp(available * ratio(share), min, max) };
+  }
+  function bound(view, width, height) {
+    const z = clamp(view.z, .5, 4);
+    // Always retain at least a quarter of the figure on each axis.
+    return { z, x: clamp(view.x, -width * z * .75, width - width * z * .25),
+      y: clamp(view.y, -height * z * .75, height - height * z * .25) };
+  }
+  function zoomAt(view, factor, point, width, height) {
+    const z = clamp(view.z * factor, .5, 4), scale = z / view.z;
+    return bound({ z, x: point.x - (point.x - view.x) * scale, y: point.y - (point.y - view.y) * scale }, width, height);
+  }
+  function wheelFactor(event) {
+    return event.ctrlKey ? Math.exp(clamp(-event.deltaY * .01, -1, 1)) : Math.pow(1.1, -Math.sign(event.deltaY));
+  }
+  function mount({ canvases, enabled, editing, aimWheel, hit, text }) {
+    const views = new Map(); let hovered = null, space = false, drag = null;
+    const consume = e => { e.preventDefault(); e.stopImmediatePropagation(); };
+    function apply(canvas) {
+      const item = views.get(canvas), on = enabled();
+      item.panel.classList.toggle('light-figure-active', on);
+      item.wrap.classList.toggle('light-figure-viewport', on);
+      item.tools.hidden = !on;
+      if(on)canvas.tabIndex=0;else canvas.removeAttribute('tabindex');
+      const w = canvas.offsetWidth, h = canvas.offsetHeight;
+      if (on && w && h) item.view = bound(item.view, w, h);
+      const v = item.view;
+      canvas.style.transform = on ? `translate(${v.x}px,${v.y}px) scale(${v.z})` : '';
+      canvas.dataset.figureZoom = String(v.z); canvas.dataset.figureX = String(v.x); canvas.dataset.figureY = String(v.y);
+      item.output.textContent = Math.abs(v.z - 1) < .001 ? '' : `×${v.z.toFixed(1)}`;
+      item.wrap.classList.toggle('is-panning', !!drag && drag.canvas === canvas);
+      item.button.textContent = text('全体');
+      item.button.setAttribute('aria-label',text('図を全体表示'));
+      item.button.title = text('図を全体表示（空き場所のダブルクリックでも戻ります）');
+      item.wrap.title = text('ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動');
+    }
+    function reset(canvas) { views.get(canvas).view = { z: 1, x: 0, y: 0 }; apply(canvas); }
+    function end(e) {
+      if (!drag || e && e.pointerId !== drag.id) return;
+      const canvas = drag.canvas; drag = null; apply(canvas);
+    }
+    for (const canvas of canvases) {
+      const panel = canvas.parentElement, wrap = document.createElement('div');
+      wrap.className = 'light-figure-slot'; canvas.before(wrap); wrap.append(canvas);
+      const tools = document.createElement('span'), output = document.createElement('span'), button = document.createElement('button');
+      tools.className = 'light-figure-tools'; tools.hidden = true; tools.setAttribute('data-no-i18n','');
+      button.type = 'button'; button.className = 'btn small light-figure-fit';
+      output.className = 'light-figure-scale'; output.setAttribute('data-no-i18n','');
+      tools.append(output, button); wrap.append(tools);
+      views.set(canvas, { panel, wrap, tools, button, output, view: { z: 1, x: 0, y: 0 } });
+      button.onclick = () => reset(canvas);
+      wrap.addEventListener('pointerenter', () => { hovered = canvas; });
+      wrap.addEventListener('pointerleave', () => { if (hovered === canvas) hovered = null; });
+      wrap.addEventListener('wheel', e => {
+        if (!enabled() || editing() || e.target !== canvas) return;
+        // The existing aim-point spread wheel wins; pinch always zooms.
+        if (!e.ctrlKey && aimWheel(canvas, e)) return;
+        const item = views.get(canvas), v = item.view, w = canvas.offsetWidth, h = canvas.offsetHeight;
+        const pan = !e.ctrlKey && Math.abs(e.deltaX) > Math.abs(e.deltaY);
+        if ((pan && v.z <= 1) || (!pan && !e.deltaY)) return;
+        consume(e);
+        if (pan) {
+          const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? h : 1;
+          item.view = bound({ z: v.z, x: v.x - e.deltaX * unit, y: v.y - e.deltaY * unit }, w, h);
+        } else {
+          const r = wrap.getBoundingClientRect();
+          item.view = zoomAt(v, wheelFactor(e), { x: e.clientX - r.left, y: e.clientY - r.top }, w, h);
+        }
+        apply(canvas);
+      }, { capture: true, passive: false });
+      wrap.addEventListener('pointerdown', e => {
+        if(enabled() && e.target===canvas && e.button===0)canvas.focus({preventScroll:true});
+        const v = views.get(canvas).view;
+        if (!enabled() || editing() || v.z <= 1 || e.target !== canvas || !(e.button === 1 || e.button === 0 && space)) return;
+        consume(e); drag = { canvas, id: e.pointerId, x: e.clientX, y: e.clientY, view: { ...v } };
+        wrap.setPointerCapture(e.pointerId); apply(canvas);
+      }, true);
+      wrap.addEventListener('pointermove', e => {
+        if (!drag || drag.canvas !== canvas || drag.id !== e.pointerId) return;
+        consume(e);
+        views.get(canvas).view = bound({ z: drag.view.z, x: drag.view.x + e.clientX - drag.x, y: drag.view.y + e.clientY - drag.y }, canvas.offsetWidth, canvas.offsetHeight);
+        apply(canvas);
+      }, true);
+      for (const type of ['pointerup','pointercancel','lostpointercapture']) wrap.addEventListener(type, e => {
+        if (drag?.canvas === canvas && drag.id === e.pointerId) { consume(e); end(e); }
+      }, true);
+      wrap.addEventListener('dblclick', e => {
+        if (!enabled() || e.target !== canvas || hit(canvas, e)) return;
+        consume(e); reset(canvas);
+      }, true);
+      wrap.addEventListener('auxclick', e => { if (enabled() && e.button === 1 && views.get(canvas).view.z > 1) consume(e); });
+    }
+    document.addEventListener('keydown', e => {
+      if (e.code !== 'Space' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.keyCode === 229) return;
+      const target = e.target;
+      if (!hovered || !enabled() || views.get(hovered).view.z <= 1 || editing() ||
+          target?.closest?.('input,textarea,select,button,[contenteditable="true"],[role="combobox"],[role="separator"]') || !document.getElementById('dialog').hidden) return;
+      const shortcuts = window.parent?.SHOSAI_STAGE_SHORTCUTS;
+      if (Object.keys(shortcuts?.defaults || {}).some(id => shortcuts.matches(e,id))) return;
+      space = true; consume(e);
+    }, true);
+    document.addEventListener('keyup', e => { if (e.code === 'Space') { if (space) consume(e); space = false; } }, true);
+    window.addEventListener('blur', () => { space = false; end(); });
+    if(typeof MutationObserver==='function') {
+      const languageRoot=(window.parent!==window?window.parent:window).document.documentElement;
+      new MutationObserver(()=>canvases.forEach(apply)).observe(languageRoot,{attributes:true,attributeFilter:['lang']});
+    }
+    return { sync: () => { if (!enabled()) { space = false; end(); } canvases.forEach(apply); }, reset };
+  }
+  return { SPLIT_KEY, ratio, split, bound, zoomAt, wheelFactor, mount };
+});
+
+/* END W1-A FIGURE VIEW CONTROLLER */
 /* 「照明デザインモード」試作 — UIと描画（判断用。製品コードではない）
  * 旧称「照明を組む」（2026-09-13 本人決定で改名。設計記録 docs/light-rig-design-2026-09-11/ は旧称のまま）
  * 仕様の根拠: ../codex-round2.answer.md（3列 196/636/292、正面図常時表示、配置と動きの2モード、
@@ -34,6 +160,12 @@
       };
     } catch (_) { return { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0, sideFull: false }; }
   })();
+  const FIGURE_VIEW = window.LIGHT_FIGURE_VIEW;
+  let figureViews = null;
+  let figureSplit = (() => {
+    try { return FIGURE_VIEW.ratio(localStorage.getItem(FIGURE_VIEW.SPLIT_KEY)); } catch (_) { return .5; }
+  })();
+  const saveFigureSplit = () => { try { localStorage.setItem(FIGURE_VIEW.SPLIT_KEY, String(figureSplit)); } catch (_) { /* device preference only */ } };
   const PANEL_MIN_WIDTH = 160;
   function savePanelLayout() {
     try { localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(panelLayout)); } catch (_) { /* UI preference only */ }
@@ -461,7 +593,9 @@
       entry: sc.entry, cue: sc.cue })), palette: state.palette,
     levelCurve: state.levelCurve, curtains: state.curtains,
     fixtureAlternatives: state.fixtureAlternatives, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
-    positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName });
+    positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName },
+    (_key, value) => value && typeof value === "object" && !Array.isArray(value)
+      ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
   let appliedFingerprint = applyFingerprint();
   function markApplied() { appliedFingerprint = applyFingerprint(); state.dirty = false; }
   let cueSyncPending = false;
@@ -511,12 +645,12 @@
       if (!light || !old) continue;
       // Propagate only authored fields. A color edit must not repair old aim differences.
       const patch = {};
-      for (const key of ['surface', 'color', 'path'])
+      for (const key of (fixture.cueColor ? ['surface','path'] : ['surface', 'color', 'path']))
         if (light[key] !== undefined && JSON.stringify(light[key]) !== JSON.stringify(old[key]))
           patch[key] = JSON.parse(JSON.stringify(light[key]));
       if (!Object.keys(patch).length) continue;
       fixture.fixedSetup = { ...fixture.fixedSetup, ...JSON.parse(JSON.stringify(patch)) };
-      const edits = window.GAMMA_LIGHT_MODEL.fixedSetupDelta(old, light);
+      const edits = window.GAMMA_LIGHT_MODEL.fixedSetupDelta(old, light).filter(edit=>!fixture.cueColor || edit.path[0]!=='color');
       for (const row of [...state.scenes, ...(state.fixtureAlternatives || []).map(item => item.native)])
         window.GAMMA_LIGHT_MODEL.patchFixedSetup(row, fixture.id, edits);
     }
@@ -706,12 +840,52 @@
      s（1mあたりのpx）はその2つの小さいほう。 */
   function syncFigureSizes() {
     const g = document.querySelector(".figgrid"); if (!g) return;
+    // Clear move-only sizes before measuring the viewport on tab/solo transitions.
+    for (const panel of [plan.closest('.planwrap'), secF.closest('.sec')]) panel.style.height = '';
     g.style.minHeight=""; // Measure the available viewport, not the previous manual overflow.
     const r = g.getBoundingClientRect(); if (!r.width || !r.height) return;
     const d = state.dims;
     g.classList.toggle("side-cropped",sideCropped());
     g.classList.toggle("detail-columns",state.mode === "move");
     const headSec=Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2);
+    if (state.mode === "move" && state.soloFigure !== "side") {
+      const solo = state.soloFigure;
+      const left = solo && solo !== 'plan' ? 0 : E.clamp(panelLayout.leftWidth || 320, 320, Math.max(320, r.width - 280 - 240 - PAD.gap * 2));
+      const right = E.clamp(panelLayout.rightWidth || 360, 280, Math.max(280, r.width - left - 240 - PAD.gap * (left ? 2 : 1)));
+      const mid = Math.max(240, r.width - left - right - PAD.gap * (left ? 2 : 1));
+      const heights = FIGURE_VIEW.split(r.height, figureSplit);
+      const height = solo ? Math.max(160, r.height) : heights.available + PAD.gap;
+      // The row frames depend only on viewport height. Each canvas contains its drawing.
+      g.style.minHeight = height + 'px';
+      g.style.setProperty('--detail-top-height', heights.top + 'px');
+      g.style.setProperty('--detail-left-width', left + 'px');
+      g.style.setProperty('--detail-mid-width', mid + 'px');
+      g.style.setProperty('--detail-right-width', right + 'px');
+      g.style.setProperty('--band', r.width + 'px');
+      $("modal").style.setProperty('--band', r.width + 'px');
+      for (const [canvas, kind, head] of [[plan,'plan',PAD.headPlan],[secF,'front',headSec]]) {
+        const panel = canvas.closest('.planwrap,.sec');
+        const top = state.figuresSwapped ? kind === 'front' : kind === 'plan';
+        const frameHeight = solo ? height : top ? heights.top : heights.available - heights.top;
+        panel.style.width = mid + 'px'; panel.style.height = frameHeight + 'px';
+        canvas.style.height = Math.max(1, frameHeight - head - 2) + 'px';
+      }
+      const sideMetres = sideCropped() ? Math.min(d.H,SIDE_VISIBLE_METRES) : d.H;
+      const sideScale = Math.max(1, Math.min((left - PAD.secX * 2) / d.D, (height - PANEL_MIN_WIDTH - PAD.headSec - PAD.gap - PAD.secT - PAD.secB) / sideMetres));
+      sectionScale = sideScale;
+      const sideH = Math.round(sideMetres * sideScale) + PAD.secT + PAD.secB;
+      secL.style.height = sideH + 'px'; secL.parentElement.style.width = left + 'px';
+      g.style.setProperty('--side-reserved', (sideH + PAD.headSec + PAD.gap) + 'px');
+      const lc = document.querySelector('.leftcol'); lc.style.width = left + 'px';
+      const share = E.clamp(panelLayout.fixtureShare, .15, .85);
+      for (const [id, width] of [['panel-fixtures',left * share],['panel-lxq',left * (1-share)],['panel-insp',right]]) {
+        const panel=$(id);panel.style.width = width + 'px'; if(id !== 'panel-insp')panel.style.flexBasis=width+'px';
+      }
+      for (const [id,width,min,max] of [['light-left-resize',left,320,r.width-right-240-PAD.gap*2],['light-right-resize',right,280,r.width-left-240-PAD.gap*2],['light-figure-resize',heights.top,heights.min,heights.max]]) {
+        const handle=$(id);if(handle)for(const [name,value] of [['now',width],['min',min],['max',Math.max(min,max)]])handle.setAttribute('aria-value'+name,String(Math.round(value)));
+      }
+      return;
+    }
     /* R-14（2026-09-17 本人要望）: 1枚だけ広げているときは、4図をそろえる尺ではなく
        その1枚が枠いっぱいになる尺で決める。4図の縮尺をそろえる意味が無い状態なので、
        ここだけ別計算にする（そろえたままだと広げても大きくならない）。 */
@@ -728,7 +902,7 @@
       if(k === "side") sectionScale=s2;
       const box = k === "plan" ? plan : k === "front" ? secF : secL;
       const setPx = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
-      setPx(box.parentElement, "width", Math.round(wNeed * s2) + padX);
+      setPx(box.closest(".planwrap,.sec"), "width", Math.round(wNeed * s2) + padX);
       setPx(box, "height", Math.round(hNeed * s2) + (k === "plan" ? PAD.planT + PAD.planB : PAD.secT + PAD.secB));
       return;
     }
@@ -785,9 +959,9 @@
     const share = E.clamp(panelLayout.fixtureShare, minShare, 1 - minShare);
     const fixtureW = Math.round(panelWidth * share), lxqW = Math.max(PANEL_MIN_WIDTH, panelWidth - fixtureW);
     const midW = Math.round(d.W * s) + PAD.planX * 2;
-    set(plan.parentElement, "width", midW);
+    set(plan.closest(".planwrap"), "width", midW);
     set(plan, "height", Math.round(d.D * s) + PAD.planT + PAD.planB);
-    set(secF.parentElement, "width", midW); set(secF, "height", secH);
+    set(secF.closest(".sec"), "width", midW); set(secF, "height", secH);
     set(secL.parentElement, "width", leftW); set(secL, "height", sideH);
     set(secR.parentElement, "width", sideW); set(secR, "height", secH);
     // 灯体一覧・LXキュー・下手側面図は、設定した可変幅を共有する。
@@ -797,13 +971,7 @@
     if (fixturesPanel) { set(fixturesPanel, "width", visibleFixtureWidth); fixturesPanel.style.flexBasis = visibleFixtureWidth + "px"; }
     if (lxqPanel) { set(lxqPanel, "width", lxqW); lxqPanel.style.flexBasis = lxqW + "px"; }
     set($("panel-insp"), "width", inspectorW);
-    if(state.mode === "move") {
-      const topFigure=state.figuresSwapped ? secF.parentElement : plan.parentElement;
-      g.style.setProperty("--detail-top-height",topFigure.getBoundingClientRect().height+"px");
-      g.style.setProperty("--detail-left-width",leftW+"px");
-      g.style.setProperty("--detail-mid-width",midW+"px");
-      g.style.minHeight=(Math.round(d.D*s)+PAD.planT+PAD.planB+PAD.headPlan+secH+headSec+PAD.gap)+"px";
-    } else g.style.minHeight="";
+    g.style.minHeight="";
     for(const [id,width] of [["light-left-resize",leftW],["light-right-resize",inspectorW]]) {
       const handle=$(id);if(handle){handle.setAttribute("aria-valuenow",String(Math.round(width)));handle.setAttribute("aria-valuemax",String(Math.round(r.width-(id.includes("left")?inspectorW:leftW)-240-PAD.gap*2)));}
     }
@@ -821,8 +989,10 @@
   }
   function syncCanvasSize() {
     syncFigureSizes();   // 先に各図の表示高さを決めてから内部解像度を合わせる
+    figureViews?.sync();
     const fit = (c) => {
-      const r = c.getBoundingClientRect(); if (!r.width) return;
+      // Camera CSS transforms must never feed back into backing size / logical coordinates.
+      const r = { width:c.offsetWidth, height:c.offsetHeight }; if (!r.width) return;
       const width = Math.max(300, Math.round(r.width * 2)), height = Math.max(2, Math.round(r.height * 2));
       displayCanvasSizes.set(c, { width, height });
       resizeDisplayBacking(c);
@@ -838,7 +1008,8 @@
       draw();
     });
   }
-  new ResizeObserver(refreshPanelLayout).observe(document.querySelector(".sec.front .sechead"));
+  const figureLayoutObserver = new ResizeObserver(refreshPanelLayout);
+  for (const node of [document.querySelector('.figgrid'),document.querySelector('.sec.front .sechead')]) figureLayoutObserver.observe(node);
   $("panel-layout-reset").onclick = () => {
     Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0 });
     refreshPanelLayout(); savePanelLayout();
@@ -864,6 +1035,32 @@
         panelLayout[side+"Width"]=E.clamp(width,side==="left"?320:280,Math.max(side==="left"?320:280,g.width-other-240-PAD.gap*2));refreshPanelLayout();savePanelLayout();},
       reset:()=>{panelLayout.leftWidth=0;panelLayout.rightWidth=0;panelLayout.leftExtra=0;refreshPanelLayout();savePanelLayout();}});
   }
+  const figureDivider = document.createElement('div');
+  figureDivider.id='light-figure-resize';figureDivider.className='light-figure-resize';figureDivider.tabIndex=0;
+  figureDivider.setAttribute('role','separator');figureDivider.setAttribute('aria-orientation','horizontal');
+  figureDivider.setAttribute('aria-label','平面図と正面図の高さ配分');
+  document.querySelector('.figgrid').append(figureDivider);
+  const resizeFigures = height => {
+    if(state.mode !== 'move' || state.soloFigure)return;
+    const bounds=FIGURE_VIEW.split(document.querySelector('.figgrid').getBoundingClientRect().height,figureSplit);
+    figureSplit=FIGURE_VIEW.ratio(E.clamp(height,bounds.min,bounds.max)/bounds.available);
+    refreshPanelLayout();saveFigureSplit();
+  };
+  let figureResizeDrag=null;
+  figureDivider.addEventListener('pointerdown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    figureResizeDrag={id:e.pointerId,y:e.clientY,height:Number(figureDivider.getAttribute('aria-valuenow'))};figureDivider.setPointerCapture(e.pointerId);
+  });
+  figureDivider.addEventListener('pointermove',e=>{if(figureResizeDrag?.id===e.pointerId)resizeFigures(figureResizeDrag.height+e.clientY-figureResizeDrag.y);});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])figureDivider.addEventListener(type,()=>{figureResizeDrag=null;});
+  figureDivider.addEventListener('dblclick',()=>{figureSplit=.5;saveFigureSplit();refreshPanelLayout();});
+  figureDivider.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return;
+    if(!['ArrowUp','ArrowDown','Home','End'].includes(e.key))return;
+    e.preventDefault();e.stopPropagation();
+    const bounds=FIGURE_VIEW.split(document.querySelector('.figgrid').getBoundingClientRect().height,figureSplit);
+    resizeFigures(e.key==='Home'?bounds.min:e.key==='End'?bounds.max:bounds.top+(e.key==='ArrowUp'?-1:1)*(e.shiftKey?64:16));
+  });
   $("side-height").onclick=()=>{panelLayout.sideFull=!panelLayout.sideFull;savePanelLayout();renderAll();};
   const secProj = (sec) => (sec.kind === "front"
     ? (state.front3d
@@ -872,6 +1069,12 @@
     : E.makeSideProjector(state.dims, secBox(sec.cv, sec.kind), sec.kind));
   const positionSectionProjector=(P,canvas)=>w=>{const q=P(w);q.X=Math.max(24,Math.min(logicalWidth(canvas)-24,q.X));return q;};
   const canvasPoint = (c, ev) => { const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * logicalWidth(c) / r.width, Y: (ev.clientY - r.top) * logicalHeight(c) / r.height }; };
+  figureViews = FIGURE_VIEW.mount({
+    canvases:[plan,secF], enabled:()=>state.mode==='move', editing:()=>!!state.drag,
+    aimWheel:(canvas,event)=>{if(canvas!==plan)return false;const h=hitHandle(canvasPoint(plan,event),houseProjPlan(planProj(),planBox()),['floor','air','house']);return !!h&&h.handle!=='r';},
+    hit:(canvas,event)=>{const pt=canvasPoint(canvas,event);return fixtureLabelAt(canvas,pt) || (canvas===plan ? hitFixturePlan(pt) || hitHandle(pt,houseProjPlan(planProj(),planBox()),['floor','air','house']) : hitFixtureSec(secOf('front'),pt) || hitHandle(pt,secProj(secOf('front')),['back','air','house'],secHandleProj(secProj(secOf('front')),'front')));},
+    text:key=>{const host=window.parent!==window?window.parent:window;return host.SHOSAI_STAGE_I18N_MODEL?.text(host.document.documentElement.lang||'ja',key)||key;},
+  });
   // 表示（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
   const showOn = (key) => key === "path" || state.show[key] !== false;
   /* R-09: 駒は種類ごとに出し入れする。performer / set / curtain の3種類しかない。 */
@@ -2097,10 +2300,24 @@
          背景（#0d0e10）より暗くなり、作業灯を消したときにマスクの穴からその暗い部分が
          「黒い光」として見えていた（本人指摘）。布が光を遮るのだから、透かさず塗るのが正しい。
          色は背景よりわずかに明るくして、布そのものの形は塗りと陰影で読めるようにする。 */
-      const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg";
+      const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg" || (state.rig.simpleLighting?.version===2 && ['front','traveler'].includes(pc.curtainKind));
       ctx.fillStyle = masking ? workSurface("wing", surface("#12100e")) : hexA(pc.color || "#000000", 0.3);
       ctx.beginPath(); ctx.moveTo(fl.X, fl.Y); ctx.lineTo(fr.X, fr.Y); ctx.lineTo(tr.X, tr.Y); ctx.lineTo(tl.X, tl.Y); ctx.closePath();
-      ctx.fill();
+      if(state.rig.simpleLighting?.version===2 && pc.curtainKind==='scrim' && window.SHOSAI_SCRIM){
+        const hex=pc.color||'#efe7d6',rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+        window.SHOSAI_SCRIM.paintFront(ctx,[fl,fr,tr,tl].map(p=>({x:p.X,y:p.Y})),E.clamp(E.finite(pc.sheer,0),0,100),{black:rgb.reduce((a,b)=>a+b,0)<384,scale:1});
+      }else ctx.fill();
+      if(state.rig.simpleLighting?.version===2 && pc.curtainKind==='cyc' && !masking){
+        ctx.save();ctx.clip();
+        const receiverP=point=>P({...point,y:part.leftY+(part.rightY-part.leftY)*(point.x-part.leftX)/(part.rightX-part.leftX||1)});
+        for(const fixture of state.rig.fixtures){
+          if(fixture.mount.type!=='cyc')continue;
+          const light=lightOf(fixture.id);if(!visibleLight(fixture,light))continue;
+          const amount=legacyVisualAlpha(E.clamp(litFactorOf(fixture,light),0,1));
+          drawCycWash(ctx,cycWashQuads(fixture,light,receiverP,d),light.color,amount,cycGradientOf(light));
+        }
+        ctx.restore();
+      }
       if(!window.SHOSAI_STAGE_MACHINERY.isMaskingCurtain(pc)){ctx.strokeStyle="rgba(240,231,214,0.22)";ctx.lineWidth=1;ctx.stroke();}
     });
     const p0 = panels[0];
@@ -2246,10 +2463,10 @@
       cache = foregroundClipFrame.get(P);
       if (!cache) { cache = new Map(); foregroundClipFrame.set(P, cache); }
     }
-    pieces.filter(pc => pc.kind === "set" && showPiece(pc)).forEach(pc => {
+    pieces.filter(pc => showPiece(pc) && (pc.kind === "set" || (state.rig.simpleLighting?.version===2 && pc.kind==='curtain' && (pc.solid || ['front','traveler','leg','border'].includes(pc.curtainKind))))).forEach(pc => {
       let polygons = cache?.get(pc);
       if (!polygons) {
-        polygons = setPartsOf(pc).filter(part => !part.kind || part.kind === "box").map(part => {
+        polygons = pc.kind==='curtain' ? curtainPanelsWorld(pc,dims).map(panel=>[P({x:panel.leftX,y:panel.leftY,z:panel.lift}),P({x:panel.rightX,y:panel.rightY,z:panel.lift}),P({x:panel.rightX,y:panel.rightY,z:panel.lift+panel.h}),P({x:panel.leftX,y:panel.leftY,z:panel.lift+panel.h})]) : setPartsOf(pc).filter(part => !part.kind || part.kind === "box").map(part => {
           const pts = R.baseCorners(pc,part,dims).flatMap(p=>[P(p),P({...p,z:p.top})]);
           return hull(pts);
         }).filter(polygon => polygon.length >= 3);
@@ -2441,8 +2658,18 @@
       const a = legacyVisualAlpha(E.clamp(E.finite(lv, 1), 0, 1));
       const quads = cycWashQuads(f, l, P, dims);
       if (!quads) return;
-      drawCycWash(ctx, quads, l.color, a, cycGradientOf(l));
-      if (sink) sink.push({ cycQuads: quads, lv });
+      const receivers=state.rig.simpleLighting?.version===2 ? piecesOf().filter(pc=>pc.kind==='curtain'&&pc.curtainKind==='cyc'&&(pc.open||0)<100) : [];
+      if(receivers.length){
+        // The backdrop itself is the receiver. Do not paint a second wash on the wall behind it.
+        for(const pc of receivers)for(const part of curtainPanelsWorld(pc,dims)){
+          const receiverP=point=>P({...point,y:part.leftY+(part.rightY-part.leftY)*(point.x-part.leftX)/(part.rightX-part.leftX||1)});
+          const received=cycWashQuads(f,l,receiverP,dims);
+          if(sink && received){const cycClip=[[part.leftX,part.leftY,part.lift],[part.rightX,part.rightY,part.lift],[part.rightX,part.rightY,part.lift+part.h],[part.leftX,part.leftY,part.lift+part.h]].map(([x,y,z])=>P({x,y,z}));sink.push({cycQuads:received,cycClip,lv});}
+        }
+      }else{
+        drawCycWash(ctx, quads, l.color, a, cycGradientOf(l));
+        if (sink) sink.push({ cycQuads: quads, lv });
+      }
     });
     } finally { frameCost?.end(frameCostToken); }
   }
@@ -2781,7 +3008,7 @@
         mctx.beginPath(); sp.coneHull.forEach((p,i)=>i?mctx.lineTo(p.X,p.Y):mctx.moveTo(p.X,p.Y));mctx.closePath();
         mctx.fillStyle=`rgba(0,0,0,${.65*lv})`;mctx.fill();return;
       }
-      if (sp.cycQuads) { punchCycHole(mctx, sp.cycQuads, lv); return; }   // ホリゾントライトの帯
+      if (sp.cycQuads) { mctx.save();if(sp.cycClip){mctx.beginPath();sp.cycClip.forEach((p,i)=>i?mctx.lineTo(p.X,p.Y):mctx.moveTo(p.X,p.Y));mctx.closePath();mctx.clip();}punchCycHole(mctx, sp.cycQuads, lv);mctx.restore();return; }   // ホリゾントライトの帯
       const fadedHole = sp.silhouette && !sp.onlyPool && !sp.asLine && sp.corners &&
         paintBeamLandingFade(mctx, { X: sp.fromX, Y: sp.fromY }, sp.corners, 0.85 * lv, "destination-out");
       if (!fadedHole) {
@@ -3596,7 +3823,7 @@
   /* ---------- 描画: 正面図（3D・擬似パース） ----------
      舞台スケッチ本体の正面図と同じ式（rig-engine の makeFrontPerspProjector）で描く。
      床は奥から手前へ広がる台形、奥の壁はその上に立つ。高さも奥行きで縮む。 */
-  function drawFront3D(sec, {simple=false} = {}) {
+  function drawFront3D(sec, {simple=false, simpleSeat="rear", fixtureHintIds=[]} = {}) {
     // PERF3: opt-in, test-owned meter; no clock reads or records by default.
     const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
     const frameCostToken = frameCost?.begin("lighting.view.front3d", {canvas:sec.cv.id});
@@ -3604,8 +3831,8 @@
     try {
     const fctx = sec.ctx, cv = sec.cv, w = logicalWidth(cv), h = logicalHeight(cv);
     const B = secBox(cv, "front"), d = state.dims;
-    // Simple comparisons use the same fixed audience view for every preset.
-    const seat = simple ? "rear" : state.frontSeats?.[state.seat] || state.seat;
+    // Simple preview uses its device-local audience seat, independently of the detail view.
+    const seat = simple ? simpleSeat : state.frontSeats?.[state.seat] || state.seat;
     let P = simple ? E.makeFrontPerspProjector(d, B, seat) : secProj(sec);
     let L = E.frontPerspSetup(d, B, seat);
     if(simple) {
@@ -3702,6 +3929,19 @@
     if(simple) drawBordersUp(fctx,P,d);
     if (showOn("fixtures")) redrawFixtureInfo3D(fctx, P, { hideFront: fctx.canvas === secF });
     drawFrontMasking(fctx, P, true);
+    if(simple && fixtureHintIds.length) {
+      // Location aids belong to the preview, above light/masking layers. They
+      // neither select fixtures in the editor nor change their actual light.
+      const hinted = new Set(fixtureHintIds);
+      for(const fixture of state.rig.fixtures) {
+        if(!hinted.has(fixture.id)) continue;
+        // Reuse redrawFixtureInfo3D's actual body, including its live aim and
+        // physical size. Only the contour is added; no light, fill or selection.
+        const model = fixtureBody3D(fixture, P);
+        if(model) window.FIXTURE_BODY.draw(fctx,P,model.geom,{outlineOnly:true});
+        else if(fixture.mount.type==='cyc') window.FIXTURE_BODY.outlineBar(fctx,cycFixtureBar(P,fixture));
+      }
+    }
     if(simple) return;
     fctx.fillStyle = "rgba(240,231,214,0.4)"; fctx.font = "15px sans-serif"; fctx.textBaseline = "top";
     fctx.fillText(`${L.seat.label}から見た形（舞台スケッチの正面図と同じ描き方）`, 8, h - 24);
@@ -4039,9 +4279,11 @@
       else toast("舞台より手前（客席側の帯）をクリックしてください");
       return;
     }
+    // A selected aim point owns its drag even when a displaced number plate
+    // overlaps it in a compact/zoomed figure. Label browsing is the fallback.
+    if (state.mode === "move" && !state.tool) { const hh = hitHandle(pt, houseProjPlan(planProj(), B), ["floor", "air", "house"]); if (hh) { startHandleDrag(hh, "uv"); return; } }
     if (selectFixtureLabel(plan,pt,ev)) return;
     // 選択モード
-    if (state.mode === "move") { const hh = hitHandle(pt, houseProjPlan(planProj(), B), ["floor", "air", "house"]); if (hh) { startHandleDrag(hh, "uv"); return; } }
     const f = hitFixturePlan(pt);
     if (f) {
       state.selEquipment = null;
@@ -4203,10 +4445,16 @@
       const pt = canvasPoint(cv, ev); const B = secBox(cv, side); const P = secProj(sec);
       try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* 合成イベント等 */ }
       if (state.tool === "border" || state.tool === "pros" || state.tool === "legs") return;
+      // Match plan-view priority: selected aim handles precede number plates.
+      if (state.mode === "move" && !state.tool) {
+        const hh = side === "front"
+          ? hitHandle(pt, P, ["back", "air", "house"], secHandleProj(P, side))
+          : hitHandle(pt, P, distanceMetric ? ["air", "house"] : ["air"]);
+        if (hh) { startHandleDrag(hh, side === "front" ? "uh" : "vh", sec); return; }
+      }
       if (selectFixtureLabel(cv,pt,ev)) return;
       if (side !== "front") {
         if (state.tool === "side") { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); addFixture({ type: "side", side, v: snapV(vh.v), h: Math.max(0.3, snapH(vh.h)) }); toast(`${label([...state.sel][0])}を${side === "shimote" ? "下手" : "上手"}の袖に立てました`, "元に戻す", undo); return; }
-        if (state.mode === "move") { const hh = hitHandle(pt, P, distanceMetric ? ["air","house"] : ["air"]); if (hh) { startHandleDrag(hh, "vh", sec); return; } }
         const f = hitFixtureSec(sec, pt);
         if (f) {
           state.selEquipment = null;
@@ -4236,7 +4484,6 @@
         if (t) { state.selTruss = t.id; state.sel.clear(); state.selEquipment = null; state.drag = { kind: "trussH", tid: t.id, sec, before: snapshot(), moved: false }; renderAll(); }
         return;
       }
-      const hh = hitHandle(pt, P, ["back", "air", "house"], secHandleProj(P, sec.kind)); if (hh) { startHandleDrag(hh, "uh", sec); return; }
       const f = hitFixtureSec(sec, pt); if (f) {
         let selectionChanged = false;
         if (ev.shiftKey) { state.sel.has(f.id) ? state.sel.delete(f.id) : state.sel.add(f.id); selectionChanged = true; }
@@ -4379,7 +4626,8 @@
        ボタンの既定の動作（click）が同じトグルを呼ぶので、ここで拾うと2回走る。 */
     if (ev.key === " " && !timelineTransportBridge && !ev.defaultPrevented && !ev.isComposing && ev.keyCode !== 229
         && !ev.repeat && !ev.metaKey && !ev.ctrlKey && !ev.altKey && $("dialog").hidden) {
-      if (document.activeElement !== $("t-play")) { ev.preventDefault(); togglePlay(); }
+      // The simple work-light view button must retain Space's native click too.
+      if (document.activeElement !== $("t-play") && !ev.target?.closest?.('#simple-work-light')) { ev.preventDefault(); togglePlay(); }
     }
     /* 設定のコピー＆ペースト（2026-09-14 本人指定で ⌘C / ⌘P。⌘V も慣れで押すので受ける）。
        ⌘P はブラウザの印刷なので preventDefault が要る。
@@ -6137,6 +6385,27 @@
     if (j >= 0 && j < state.scenes.length) lxGotoScene(j);
   }
 
+  // G-018: only the visible Q-number handle owns the native drag.
+  function bindLxCueDrag(no,row,li,q) {
+    no.title="Q番号をドラッグしてタイムラインへ配置。リスト内では並べ替え。";
+    no.draggable=true;
+    const grip=el("span","lx-q-grip");grip.setAttribute("aria-hidden","true");
+    grip.innerHTML='<svg viewBox="0 0 10 16" focusable="false" aria-hidden="true" fill="currentColor"><circle cx="3" cy="3" r="1"/><circle cx="7" cy="3" r="1"/><circle cx="3" cy="8" r="1"/><circle cx="7" cy="8" r="1"/><circle cx="3" cy="13" r="1"/><circle cx="7" cy="13" r="1"/></svg>';
+    no.prepend(grip);
+    no.ondragstart=ev=>{
+      ev.dataTransfer.setData("text/plain",q.id);
+      const showId=window.GAMMA_LIGHT_EDITOR?.status().showId;
+      if(showId)ev.dataTransfer.setData("application/x-stage-sketch-lx-cue",JSON.stringify({showId,lxId:q.id}));
+      ev.dataTransfer.effectAllowed="move";
+      window.getSelection()?.removeAllRanges();
+      document.documentElement.classList.add("lx-cue-dragging");row.classList.add("dragging");
+    };
+    no.ondragend=()=>{
+      document.documentElement.classList.remove("lx-cue-dragging");row.classList.remove("dragging");
+      li.querySelectorAll(".lxrow").forEach(r=>r.classList.remove("dropto"));
+    };
+  }
+
   /* Reorder progression (seq). Hierarchical labels follow it; retained creation tokens do not change. */
   function lxReorder(si, dragId, dropId) {
     if (!dragId || dragId === dropId) return;
@@ -6256,11 +6525,7 @@
       const no = el("span", "qno"); no.textContent = qLabel(q); no.title = q.legacyNo ? `旧番号 ${q.legacyNo}。つまんで上下に動かすと順番を変えられます` : "つまんで上下に動かすと順番を変えられます";
       /* 番号をつまんで上下に落とすと並びが変わる。札ごと掴めるようにすると
          名前欄の文字が選べなくなるので、掴めるのは番号だけにする。 */
-      no.title="Q番号をドラッグしてタイムラインへ配置。リスト内では並べ替え。";
-      no.draggable = true;
-      no.ondragstart = (ev) => { ev.dataTransfer.setData("text/plain", q.id); const showId=window.GAMMA_LIGHT_EDITOR?.status().showId;
-        if(showId)ev.dataTransfer.setData("application/x-stage-sketch-lx-cue",JSON.stringify({showId,lxId:q.id})); ev.dataTransfer.effectAllowed = "move"; row.classList.add("dragging"); };
-      no.ondragend = () => { row.classList.remove("dragging"); li.querySelectorAll(".lxrow").forEach((r) => r.classList.remove("dropto")); };
+      bindLxCueDrag(no,row,li,q);
       row.ondragover = (ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; row.classList.add("dropto"); };
       row.ondragleave = () => row.classList.remove("dropto");
       row.ondrop = (ev) => { ev.preventDefault(); row.classList.remove("dropto"); lxReorder(si, ev.dataTransfer.getData("text/plain"), q.id); };
@@ -7022,7 +7287,7 @@
     const focusKind = state.tool === "side" ? (sideSel ? sideSel.mount.side : "shimote")
       : sideSel ? sideSel.mount.side
       : needsHeightEdit ? "front" : null;
-    SECS.forEach((sec) => sec.cv.parentElement.classList.toggle("focus", state.mode === "move" && sec.kind === focusKind));
+    SECS.forEach((sec) => sec.cv.closest(".sec").classList.toggle("focus", state.mode === "move" && sec.kind === focusKind));
     renderToolStrip();   // 帯の出し入れで図に使える高さが変わるので、寸法合わせより先に
     syncCanvasSize();
     document.querySelectorAll("button[data-show]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.show === "onstage" ? showOn("performers") && showOn("setpieces") : showOn(b.dataset.show))));
@@ -7491,6 +7756,12 @@
   }
   async function applyVenueRigPreset(key) {
     const host = venueRigHost(); if (!host) return;
+    if((key==='simple-24'||key.startsWith('parts-')) && window.GAMMA_SIMPLE_LIGHT_UI){
+      if(state.dirty){toast('詳細の未適用編集を先に適用してください');return;}
+      $("dialog").hidden=true;
+      await parent.GAMMA_WORKSPACE.select('light-design');
+      window.GAMMA_SIMPLE_LIGHT_UI.configurePreset(key==='simple-24'?'common24':key.slice(6));return;
+    }
     try {
       const made = await host.design(key);
       if (made.kind === "simple") {
@@ -7861,12 +8132,12 @@
   const simpleFrontCanvas = document.createElement("canvas");
   simpleFrontCanvas.width = 1000; simpleFrontCanvas.height = 560;
   function drawSimpleFront(options = {}) {
-    const factor=E.clamp(E.finite(options.pixelWidth,1000)/1000,1,3);
+    const factor=E.clamp(E.finite(options.pixelWidth,1000)/1000,.5,3);
     simpleFrontCanvas.width=Math.round(1000*factor);simpleFrontCanvas.height=Math.round(560*factor);
     displayCanvasSizes.set(simpleFrontCanvas,{width:1000,height:560});
     simpleFrontCanvas.getContext('2d').setTransform(factor,0,0,factor,0,0);
     const paint = () => {
-      drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true });
+      drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true, simpleSeat: options.seat || "rear", fixtureHintIds: options.fixtureHintIds || [] });
       paintFixtureLabels(false);
     };
     const previousCue=drawCueOverride,previousLabels=fixtureLabelFrame;

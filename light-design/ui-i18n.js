@@ -169,7 +169,7 @@
       `Standard rig for this theatre (${dot(m[1])})`, `이 극장의 표준 구성(${dot(m[1])})`,
       `此剧场的标准配置（${m[1]}）`, `此劇場的標準配置（${m[1]}）`]],
     [/^「(.+)」で(\d+)灯を組みました$/, (m, index) => {
-      const name = rig[m[1]] ? rig[m[1]][index] : m[1];
+      const name = rig[m[1]] ? rig[m[1]][index] : (window.parent.SHOSAI_I18N_PACKS?.[['en','ko','zh-Hans','zh-Hant'][index]]?.text?.[m[1]] || m[1]);
       return [`Set up ${m[2]} fixtures from “${name}”`, `「${name}」(으)로 조명 ${m[2]}개를 구성했습니다`,
         `已按“${name}”组建 ${m[2]} 盏灯`, `已依「${name}」組建 ${m[2]} 盞燈`];
     }],
@@ -190,6 +190,10 @@
     const text = value => model?.text(language, value) || value;
     const format = (template, values) => text(template).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
     const direct = text(key); if (direct !== key) return direct;
+    // Full status templates own their punctuation; split only after that lookup.
+    const complete = window.GAMMA_UI_TEXT(key,language); if (complete !== key) return complete;
+    if(key.includes(' ／ '))return key.split(' ／ ').map(x=>lightingText(x,language)).join(' / ');
+    if(key.includes(' · '))return key.split(' · ').map(x=>lightingText(x,language)).join(' · ');
     const templates = [
       [/^(前|次)の (\S+)(「.*」)? へ GO$/, m => format(m[1] === '前' ? '前の {cue}{name} へ GO' : '次の {cue}{name} へ GO', {cue:m[2],name:m[3] || ''})],
       [/^シーン ([\d-]+)／([\s\S]*)$/, m => format('シーン {number}／{detail}', {number:m[1],detail:lightingText(m[2],language)})],
@@ -227,7 +231,7 @@
     for (const [pattern, make] of templates) { const match=key.match(pattern); if(match)return make(match); }
     if (/^[▾▸] /.test(key)) return key.slice(0,2)+lightingText(key.slice(2),language);
     if (/^(下手寄り|中央|上手寄り)・(奥|手前|中ほど)$/.test(key)) return key.split('・').map(text).join(' · ');
-    return venueRigText(key,language) || window.GAMMA_UI_TEXT(key,language);
+    return venueRigText(key,language) || window.parent.SHOSAI_I18N_PACKS?.[language]?.text?.[key] || window.GAMMA_UI_TEXT(key,language);
   }
   window.GAMMA_LIGHT_UI_TEXT = lightingText;
   function render() {
@@ -243,7 +247,10 @@
     for (const button of document.querySelectorAll('[data-fixed-conflict-scenes]')) {
       button.textContent = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
     }
-    if(document.documentElement.lang!==language) document.documentElement.lang=language;
+    if(document.documentElement.lang!==language) {
+      document.documentElement.lang=language;
+      window.GAMMA_SIMPLE_LIGHT_UI?.render();
+    }
     const runtime=document.getElementById('runtime-status');
     if(runtime?.title)runtime.title=lightingText('このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。',language);
     const sceneControl=document.getElementById('place-scene');

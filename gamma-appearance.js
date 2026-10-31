@@ -3,7 +3,8 @@
   'use strict';
   const root=document.documentElement;
   const inlineRows='.stage-cast-row,.stage-scene-row,.stage-scene-transition-point,.row,.lxrow,.ros-index-row';
-  const excluded='.stage-cast-lock,.stage-cast-remove,.stage-scene-row-delete,.stage-kind-swatch,.stage-timeline-row-handle,#stage-timeline-grip,.stage-panel-help,.stage-hint-help,.stage-pref-help,.card';
+  // G-008: the scene transition point is a grid (marker column + label); wrapping its single label would switch it to inline-flex and draw the marker over the text.
+  const excluded='.stage-cast-lock,.stage-cast-remove,.stage-scene-row-delete,.stage-kind-swatch,.stage-timeline-row-handle,#stage-timeline-grip,.stage-panel-help,.stage-hint-help,.stage-pref-help,.card,.stage-scene-transition-point';
   const context=document.createElement('canvas').getContext('2d');
   const capHeights=new Map(),textBoxSupported=CSS.supports('text-box','trim-both cap alphabetic');
   const inkSignatures=new WeakMap();

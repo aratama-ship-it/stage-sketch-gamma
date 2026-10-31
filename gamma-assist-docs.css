@@ -1,0 +1,16 @@
+.assist-docs { min-width:0; overflow-wrap:anywhere; border-top:1px solid var(--brass); padding-top:var(--assist-s2,8px); }
+.assist-docs summary { min-height:44px; cursor:pointer; color:var(--paper); line-height:1.6; }
+/* Keep each label in one shrinkable column. */
+.assist-docs label { display:grid; grid-template-columns:minmax(0,1fr); min-width:0; gap:4px; margin-block:var(--assist-s2,8px); }
+/* Constrain native option text to the closed control; keep full option values. */
+.assist-docs select { width:100%; max-width:100%; min-width:0; box-sizing:border-box; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:44px; color:var(--paper); background:var(--desk-2); border:1px solid var(--brass); border-radius:0; font:inherit; }
+.assist-docs pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; margin-block:var(--assist-s2,8px); }
+.assist-docs .assist-docs-pages,.assist-docs-result-actions { display:flex; flex-wrap:wrap; gap:var(--assist-s2,8px); align-items:center; }
+.assist-docs-pages button,.assist-docs-generate,.assist-docs-result-actions button { min-width:44px; min-height:44px; }
+/* Allow WebKit buttons and the shared text-alignment flex child to wrap. */
+.assist-docs button,.assist-docs-result-actions button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.assist-docs button > .gamma-control-text,.assist-docs-result-actions button > .gamma-control-text { min-width:0; }
+.assist-docs-result { white-space:pre-wrap; overflow-wrap:anywhere; }
+
+.assist-docs label[hidden] { display:none; }
+.assist-docs :focus-visible,.assist-docs-result-actions :focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }

@@ -32,6 +32,46 @@
 
   const TEXT = {
 
+    "照明の画面を作り直しました。上部のタブを7つに整理し、「機材配置」は「劇場設計」（空間・客席・幕と機材の配置）になりました。照明は「かんたん照明」から開き、細部は「詳細」で調整します。": "Rebuilt the lighting screens. The top tabs are reorganised into seven, and Rig layout is now Theatre design (space, seating, curtains and the rig). Lighting opens in Easy lighting; fine adjustments are made in Detail.",
+
+    "かんたん照明は、先に機能（人物・場所、輪郭・補助、背景など）を選び、次にその明かりを出せる位置を選ぶ順になりました。位置の候補にマウスを乗せると、図の中に灯体本体の輪郭が一時的に表示され、離すと消えます。保存される値は変わりません。": "Easy lighting now starts with the function (person or place, rim or fill, background and so on), then the position that can produce that light. Hovering a position candidate temporarily outlines the fixture bodies in the drawing; the outline disappears when the pointer leaves. Saved values do not change.",
+
+    "設備プリセットに「背景付き22器具」と「背景・転がし付き24器具」を追加しました。既存の24灯の配置は自動では置き換えません。背景幕への受光、前幕による奥の遮蔽、紗の透けを図に反映します。": "Added two rig presets: 22 fixtures with cyclorama and 24 fixtures with cyclorama and floor lights. Existing 24-light rigs are not replaced automatically. Light falling on the backdrop, masking by the front curtain and the translucency of scrims are drawn.",
+
+    "かんたん照明の右側のパネルを作り直しました。使用中の層の一覧、視点の切替、「作業灯を消す」の切替、横向きの強さスライダーを追加し、操作の列を最上段に置きました。": "Rebuilt the right-hand panel of Easy lighting: a list of layers in use, a viewpoint switch, a Turn off work lights toggle and a horizontal level slider, with the action row placed at the top.",
+
+    "照明タブのQ番号に、つかんで動かすための取っ手を付けました。Q番号をタイムラインへドラッグしてキューを配置でき、タイムライン側は配置先を示します。": "Added a grip to the Q numbers in the lighting tab. Drag a Q number onto the timeline to place the cue; the timeline shows the drop target.",
+
+    "起動時の照明モデルの読み込みを、必要になるまで遅らせました。言語を切り替えた後の照明の状態表示と作業灯の表示を改善しました。": "The lighting model is now loaded only when it is needed at startup. Improved the lighting status and work-light display after switching languages.",
+
+    "窓が重なったときに奥の窓を暗くして操作できなくし、手前の窓だけを閉じて元の入力へ戻れるようにしました。窓や入力欄の書体を本文とそろえました。": "When windows overlap, the rear window is dimmed and cannot be operated; closing the front window returns you to the input you were editing. Window and input typography now matches the body text.",
+
+    "タイムラインの再生速度を 0.5・1・1.5・2・4・8 倍から選べるようにしました。2倍を超える速度では音を出さずに進み、2倍以下へ戻すとその位置から音源を再開します。音源を開始できないときも、警告を表示して音なしでショーの確認を続けられます。": "Timeline playback speed can be chosen from 0.5, 1, 1.5, 2, 4 and 8 times. Above 2x the show runs silently; returning to 2x or below resumes the audio from that position. When audio cannot start, a warning is shown and you can keep reviewing the show without sound.",
+
+    "進行表からCSVを書き出せるようにしました。": "The run sheet can now be exported as CSV.",
+
+    "演者を近づけても自動では積み重ならなくなりました。「選んだもの」の「上に乗せる」と「降ろす」で乗り降りを指定します。すでに積み重なっている保存済みのショーは、開いたときに明示の関係へ引き継ぎます。": "Performers no longer stack automatically when moved close together. Use Mount on and Dismount in the Selection panel to specify who stands on what. Saved shows that already contain stacks are migrated to explicit relationships when opened.",
+
+    "ブラウザ版の相談に、用語の説明・困ったときの案内・キュー文面と名前の提案・よく使う質問のボタン・端末の音声入力の案内を追加しました。選んだ2シーンの転換の比較と、現在のシーンの台本（400字まで）からの段取りも頼めます。転換の比較では前後2シーンの駒の種類・名前・位置を、段取りでは台本の文を Anthropic の API へ送ります。提案を読む・写すだけならショーは変わりません。": "Consultation in the browser edition adds glossary explanations, troubleshooting guidance, cue-text and name suggestions, frequently used question buttons and guidance for your device's dictation. You can also ask for a comparison of two selected scenes' transition and a running order from the current scene's script (up to 400 characters). The transition comparison sends the piece types, names and positions of the two scenes, and the running order sends the script text, to Anthropic's API. Reading or copying a suggestion does not change the show.",
+
+    "ブラウザ版の相談から、駒の追加・移動・入れ替え・片付け・向き、全員を前へ・左右反転・等間隔、ハケと出の方向を頼めます。現在のシーンの駒・登録名・位置・舞台寸法を Anthropic の API へ送り、影響するシーンと演者を要約した確認カードを確かめてから一度に反映します。「元に戻す」1回で全部戻ります。共有中・ゲスト・閲覧専用・体験版では使えません。": "Consultation in the browser edition can carry out operations: add, move, swap, clear and face pieces; bring everyone forward, mirror left and right, space evenly; and set entrance and exit directions. The current scene's pieces, registered names, positions and stage dimensions are sent to Anthropic's API. Review the confirmation card summarising the affected scenes and performers, then apply everything at once; one Undo reverts it all. Not available while sharing, for guests, in read-only mode or in the trial.",
+
+    "ブラウザ版の相談で、フォーメーション（8つの型）とシーンの複製・追加・並べ替えを頼めます。位置やキュー・音への影響を確かめてから実行し、「元に戻す」1回で取り消せます。": "Consultation in the browser edition can request formations (eight patterns) and duplicate, add or reorder scenes. Review the effect on positions, cues and audio before applying; one Undo reverts it.",
+
+    "ブラウザ版の相談に「AI点検」ボタンを追加しました。シーンまたはショー全体の配置・転換・出番・照明の確認候補を優先度順の一覧にし、該当するシーンへ移れます。見つかった項目の一覧を Anthropic の API へ送ります。検出がなければ相談回数を使いません。": "Added an AI check button to Consultation in the browser edition. It lists review candidates for layout, transitions, appearances and lighting across a scene or the whole show in priority order, and lets you jump to the scene. The list of findings is sent to Anthropic's API. If nothing is found, no consultation request is used.",
+
+    "ブラウザ版の相談で、ランノートの整理、演者への説明文、技師への申し送り、5言語の訳の控えを作り、写す・書き出すことができます。ランノートの文・演者の動き・キューを Anthropic の API へ送ります。ショーの内容は変わりません。": "Consultation in the browser edition can tidy run notes, write notes for performers and handovers for technicians, and draft translations in five languages, which you can copy or export. Run-note text, performer movements and cues are sent to Anthropic's API. The show itself does not change.",
+
+    "ブラウザ版の相談に、この端末だけに相談の履歴を残す任意の設定を追加しました（既定はオフ）。一般的な質問の回答を再利用する仕組みも入れましたが、既定ではオフです。": "Added an optional setting to keep consultation history on this device only (off by default). A mechanism to reuse answers to general questions is included but off by default.",
+
+    "Mac 版では相談を表示しない判定を補強しました。Mac 版の相談は、有料版の公開に合わせて準備中です。": "Strengthened the check that hides Consultation in the Mac app. Consultation for the Mac app is being prepared together with the paid release.",
+    // G-017: explicit performer mounting.
+    "乗せる相手の演者がいません。": "There is no other performer to mount on.",
+    "上に乗せる": "Mount on a performer",
+    "降ろす": "Dismount",
+    "乗せる相手を選んでください（矢印キーで移動、Enter で確定、Esc で取消）": "Choose a performer to mount on (arrow keys to move, Enter to confirm, Esc to cancel)",
+
+
     "ブラウザ版の相談で、説明書や書斎を参考にした返答と資料の表示、操作する場所への案内ができるようになりました。関連する説明書の文や書斎の参照情報も、返答を作るために Anthropic の API へ送ります。": "Consultation in the browser edition can now use the manual and Study references, show its sources, and guide you to controls in the app. Relevant manual text and Study reference information are also sent to Anthropic’s API to produce a reply.",
 
     "相談に「このシーンを点検」を追加しました。押すと、入力文に加えて対象と前後のシーン名、駒の種類・名前（演者名を含む）・位置・向き、人数や重なりなどの計算結果を Anthropic の API へ送ります。点検で配置が変わることはありません。": "Added Check this scene to Consultation. Pressing it sends your text, the current and adjacent scene titles, piece types, names (including performer names), positions and facing directions, and calculated facts such as performer counts and overlaps to Anthropic’s API. Checking does not change the layout.",
@@ -6103,5 +6143,402 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.editFailureRelationship": "This operation cannot handle the attached or supported pieces.",
   "assist.editFailureUnsupported": "This operation, including lights and routes, is not enabled yet.",
   "assist.editFailureCapacity": "The piece or alternative limit has been reached.",
-  "assist.editFailureInvalid": "Check the names, positions and facing in the proposal."
+  "assist.editFailureInvalid": "Check the names, positions and facing in the proposal.",
+  "assist.ops": "Operate this scene",
+  "assist.opsInput": "Sends this scene’s pieces, registered names, positions and stage dimensions to AI to prepare a confirmation card.",
+  "assist.opsShared": "Operation assistance is unavailable during sharing, including for hosts.",
+  "assist.opsBlocked": "Operation assistance is unavailable in the current editing state.",
+  "assist.opsDirectionCount": "Affected performers: {n} · Scenes: {m}",
+  "assist.opsRoute": "Exit route",
+  "assist.opsBackstageSpot": "Backstage position",
+  "assist.opsTransition": "Transition into this scene",
+  "assist.opsLanding": "Keep landing at this scene’s position",
+  "assist.opsRoutePoint": "{x}% from stage right · {y}% from upstage",
+  "assist.opsBend": "Bend",
+  "assist.opsStraight": "Straight",
+  "assist.opsDirectionQuestion": "Whose exit or entrance, and which wing? Please check the performer, adjacent scenes, earlier exit source and theatre wings (upstage for thrust, stage left/right otherwise). The conditions are unclear; nothing has changed.",
+  "assist.opsDirectionNoChange": "The requested exit or entrance direction is unchanged. Nothing has changed.",
+  "assist.opsDirectionProceed": "This change also affects {names}’s exits, entrances and earlier or later scenes as listed below. Proceed?",
+  "assist.opsDirectionProceedLocal": "Change {names}’s exit or entrance as listed below. Proceed?",
+  "assist.opsDirectionAutomatic": "A performer with a specified exit leaves the automatic backstage queue, so other performers’ waiting positions and entrances or exits also change.",
+  "assist.opsDirectionDetails": "Details (coordinates, curves and all changes)",
+  "assist.opsPlaceUpstage": "upstage",
+  "assist.opsPlaceRightWing": "stage-right wing",
+  "assist.opsPlaceLeftWing": "stage-left wing",
+  "assist.opsPlaceOnstage": "onstage ({side})",
+  "assist.opsPlaceRight": "stage-right area",
+  "assist.opsPlaceLeft": "stage-left area",
+  "assist.opsPlaceCenter": "centre",
+  "assist.opsSummaryExit": "exit",
+  "assist.opsSummaryEntrance": "entrance start",
+  "assist.opsSummaryPreviousExit": "exit destination from previous scene",
+  "assist.opsSummaryCurve": "movement curve changes (landing stays {place})",
+  "assist.opsSummaryWithin": "{kind}: position or path changes within {to}",
+  "assist.opsSummaryChange": "{kind}: {from} → {to}",
+  "assist.opsSummaryRow": "{number} {title}: {name} — {changes}",
+  "assist.opsSummarySeparator": " / ",
+  "assist.opsDirectionConfirm": "Review exit and entrance changes",
+  "assist.opsNoRoute": "Automatic / unspecified",
+  "assist.opsDirectionSide": "This theatre has no wing in that direction. Use upstage for thrust, or stage left/right otherwise. Which side? Nothing has changed.",
+  "assist.opsDirectionAdjacent": "There is no previous or next scene. Which scene’s entrance or exit should change? Nothing has changed.",
+  "assist.opsDirectionSource": "No earlier exit route can change this entrance start. Which earlier scene should supply the exit? Nothing has changed.",
+  "assist.opsDirectionPerformer": "Please give the exact registered name of one performer on stage in this scene. Whose entrance or exit should change? Nothing has changed.",
+  "assist.opsDirectionRelationship": "A lock, held item or support prevents this route change. Please check those relationships. Whose entrance or exit should change? Nothing has changed.",
+  "assist.opsConfirm": "Changes in this scene",
+  "assist.opsExecute": "Execute",
+  "assist.opsCount": "{n} pieces changed · total {before} → {after}",
+  "assist.opsPosition": "{x}% from stage right · {y}% from back · facing {n}°",
+  "assist.opsBackstage": "backstage",
+  "assist.opsDone": "Applied to this scene. Undo once to restore it.",
+  "assist.opsCommitted": "Saved, but the display could not be updated. Reopen the scene to check; do not execute again.",
+  "assist.opsFailed": "Could not execute. Check the scene, locks, attachments and saving state, then ask again."
+});
+
+// Position-based lighting: fixed copy and parameterized diagnostics.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{
+  "劇場設計": "Theatre design",
+  "空間・客席・幕": "Space, seating and curtains",
+  "シーンの明かりを組み合わせる": "Compose scene lighting",
+  "位置ごとの明かり": "Lighting by position",
+  "背景付き22器具": "22 fixtures with cyclorama",
+  "背景・転がし付き24器具": "24 fixtures with cyclorama and floor lights",
+  "人物・場所": "Person or place",
+  "輪郭・補助": "Rim or fill",
+  "保存済みの明かり": "Saved lighting",
+  "プリセット配置に整える": "Arrange using a rig preset",
+  "詳細で編集": "Edit in detail",
+  "詳細で調整": "Adjust in detail",
+  "詳細で調整済み": "Adjusted in detail",
+  "かんたん照明は、対応プリセットの機材配置で使えます。現在の配置は対応していません。": "Simple lighting requires a supported rig preset. This rig is not supported.",
+  "試し表示中 · 適用すると現在の対象キューに保存します。": "Preview · Apply to save to the selected cue.",
+  "このキューの明かりは要再設定です。": "This cue needs lighting to be set again.",
+  "この位置の型を選び直すと、詳細の調整を置き換えます。": "Choosing a pattern replaces detailed adjustments at this position.",
+  "組み合わせた明かりの正面図": "Front view of the composed lighting",
+  "スポットの直径": "Spot diameter",
+  "移る時間": "Transition time",
+  "奥の吊り": "Upstage batten",
+  "手前の吊り": "Downstage batten",
+  "当て先": "Target",
+  "強さを1下げる": "Decrease level by 1",
+  "強さを1上げる": "Increase level by 1",
+  "この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？": "Replace detailed edits at this position with the selected pattern?",
+  "共通24灯": "Common 24 fixtures",
+  "ホリゾント床": "Cyclorama floor",
+  "ホリゾント上": "Cyclorama top",
+  "転がし下手": "Floor: audience left",
+  "転がし上手": "Floor: audience right",
+  "旧かんたん照明を表示中。操作した位置だけを変更します。": "Showing legacy simple lighting. Only the edited position changes.",
+  "パートの明かり": "Position lighting",
+  "この位置の機材では利用できません": "Not available with the fixtures at this position",
+  "対象の人物が不在": "Target person is missing",
+  "詳細の未適用編集を先に適用してください。": "Apply the pending detailed edits first.",
+  "未適用の編集を先に適用してください": "Apply pending edits first",
+  "ショーが更新されています。下書きを確認してから適用してください": "The show has changed. Review the draft before applying.",
+  "適用するか、適用済みに戻してからシーンを切り替えてください": "Apply or return to the applied lighting before changing scenes",
+  "適用するか、適用済みに戻してからキューを切り替えてください": "Apply or return to the applied lighting before changing cues",
+  "対応する機材配置を選んでください": "Choose a supported rig preset",
+  "対応する機材配置を確認してください": "Check the supported rig arrangement",
+  "新しい形式の明かりです。詳細で確認してください": "This lighting uses a newer format. Inspect it in detail.",
+  "この位置ではその明かりを作れません": "This position cannot produce that lighting pattern",
+  "調整値を確認してください": "Check the adjustment values",
+  "組の効果がある位置です。詳細で調整してください": "A group effect controls this position. Adjust it in detail.",
+  "背景幕がありません。仮想背景面での試し表示です": "No backdrop is present. This previews a virtual background plane.",
+  "スポット径が機材の照射角の範囲で変わります": "Spot diameter is limited by the fixture beam-angle range",
+  "この舞台幅では背景の光に隙間が残る可能性があります。ホリゾント付きの配置も確認してください": "This stage width may leave gaps in the background wash. Check a rig with cyclorama lights.",
+  "対象の配置が変わりました。人物・場所の型を選び直して再照準してください": "The target has moved. Reselect Person or place to re-aim.",
+  "対象の人物が不在です。選び直してください": "The target person is missing. Select a new target.",
+  "対象が舞台の外にあります": "The target is outside the stage",
+  "当て先を選んでください": "Choose a target",
+  "強さを確認してください": "Check the lighting level",
+  "位置がありません": "Position not found",
+  "組の強さは詳細で調整してください": "Adjust group levels in detail",
+  "条件付き：照射範囲と吊り高さを詳細で確認してください": "Conditional: check coverage and hanging height in detail",
+  "配置可能：機材数を保って舞台寸法に合わせます": "Layout supported: adapts to stage size with the same fixture count",
+  "共通セットの作図対応寸法は間口4〜24m、奥行3〜16m、高さ3〜14mです": "Drawing limits: width 4–24 m, depth 3–16 m, height 3–14 m",
+  "初版は標準・拡張プロセニアムに対応しています。詳細表示で仕込みを確認してください": "This version supports standard and extended proscenium stages. Check other rigs in detail.",
+  "元のショーを残して、新しい版に「{preset}」を配置します。全シーンの機材配置が変わり、{count}件の照明キューと{alternatives}件の照明の別案は、時刻と名前を保って明かりを要再設定にします。続けますか？": "Keep the original show and create a new version with “{preset}”. The rig changes for all scenes. Lighting in {count} cues and {alternatives} lighting alternatives must be set again; their times and names are retained. Continue?",
+  "劇場設計（2）": "Theatre design (2)",
+  "照明（3）": "Lighting (3)",
+  "劇場設計の機材配置": "Equipment placement in Theatre design",
+  "照明タブ": "Lighting tab"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"劇場設計タブ": "Theatre design tab"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{
+  "明かりの機能": "Lighting function",
+  "使う位置": "Position to use",
+  "ピンスポット": "Pin spot",
+  "全体照らし": "Stage wash",
+  "背景染め": "Background colour",
+  "使用中: {count}か所": "In use: {count} positions",
+  "未使用": "Unused",
+  "この機能を担当できる位置がありません": "No position can provide this function",
+  "適用すると、この位置の明かりを選んだ機能に切り替えます。": "Applying switches this position to the selected function.",
+  "対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください": "The target has moved. Select its pin-spot position and Apply to re-aim."
+});
+
+// Seven-workspace shortcut labels.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "セリフタブ": "Lines tab",
+  "進行表タブ": "Run of show tab",
+  "リハーサルタブ": "Rehearsal tab"
+});
+
+// Simple lighting panel layers (F-2/F-4–F-7).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{
+  "この明かりの層": "Lighting layers",
+  "まだ層はありません。下の機能から選んでください。": "No layers yet. Choose a function below.",
+  "使用中: {function}": "In use: {function}",
+  "層の一覧から選んで編集してください": "Select a layer in the list to edit it",
+  "層の点灯: {position}": "Layer on/off: {position}",
+  "層を選ぶ: {position}": "Select layer: {position}",
+  "この位置は詳細で点灯してください": "Turn on this position in the detailed editor",
+  "視点": "Viewpoint",
+  "選ぶ": "Select"
+});
+
+// On-demand lighting model load failure.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "照明データを読み込めませんでした。": "Could not load the lighting data."
+});
+
+// Position lighting preset descriptions.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "位置ごとの明かりを組み合わせる対応プリセット。": "A supported preset for combining lighting by position.",
+  "元のショーを残し、新しい版で照明を組み直します。": "Keep the original show and rebuild the lighting in a new version.",
+  "同じ機材数で劇場寸法に合わせて配置します。": "Fit the placement to the theatre dimensions using the same fixture count."
+});
+// AB read-only consultation starters; no terms or storage changes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.quick.title":"Frequent questions","assist.quick.terms":"Look up terms","assist.quick.help":"Troubleshooting","assist.quick.cue":"Draft cue wording","assist.quick.names":"Suggest names","assist.quick.transition":"Review transition","assist.quick.script":"Plan from script","assist.quick.direction":"Compare transition","assist.quick.next":"Now → next","assist.quick.prev":"Previous → now","assist.quick.notice":"Each press uses one request. Transitions send pieces from the selected two scenes; script planning sends up to 400 characters of current-scene dialogue/directions (or notes/input) to Anthropic. Suggestions only; your show stays as it is.","assist.quick.voice":"Voice input: You can use your device’s dictation, such as Mac Dictation.","assist.quick.copy":"Copy","assist.quick.copied":"Copied","assist.quick.copyFailed":"Could not copy. Select and copy the reply text.","assist.quick.noScript":"No script or notes in this scene. Paste dialogue or directions in the input (up to 400 characters).","assist.quick.noAdjacent":"Cannot read the adjacent scene. Check the scene selection.","assist.quick.excerpt":"Script sent: {title} ({n} characters)","assist.quick.excerptShort":"Script sent: {title} (first {n} of {total} characters; the rest was not read)","assist.quick.prompt.terms":"Explain stage left, cyclorama and gobo","assist.quick.prompt.help":"What should I do if I cannot save?","assist.quick.prompt.cue":"Suggest short wording for a lighting cue memo","assist.quick.prompt.names":"Suggest scene, cue or alternative names","assist.quick.prompt.transition":"Explain moving people and objects, entrances, exits and ordering for the selected transition","assist.quick.prompt.script":"Suggest entrances, exits and transition order from this scene’s dialogue and directions"});
+
+// INFRA local archive controls; policy text remains a publication approval item.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.history.settings": "Consultation settings", "assist.history.enabled": "Keep history on this device", "assist.history.notice": "Off by default. Only questions and replies started after enabling are kept here: up to 20 exchanges, 7 days and 64 KiB. They are not saved in shows or on the server, or automatically sent with new questions. Turning this off keeps existing entries readable until deleted.", "assist.history.archive": "Saved history ({n} exchanges)", "assist.history.clear": "Delete all history", "assist.history.confirmClear": "Delete (cannot be undone)", "assist.history.cancel": "Cancel", "assist.history.cleared": "History on this device was deleted.", "assist.history.storageFailed": "History could not be saved or read. Your show and this reply are unchanged. Delete history to reset this setting.", "assist.history.notSaved": "This exchange was not saved to history.", "assist.history.policy": "Your input is sent to Anthropic to produce replies. You can choose to keep later questions and replies on this device. Conversation history is not stored on the server."});
+// CHECK: local batch results and explicit finding-only transmission.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.batch.title": "AI check",
+  "assist.batch.scope": "Check scope",
+  "assist.batch.scene": "This scene",
+  "assist.batch.show": "Whole show",
+  "assist.batch.notice": "Only findings (scene numbers/titles, subject names, counts and timing) go to Anthropic. One request uses one allowance. With no findings, no AI call or charge. Results are not saved.",
+  "assist.batch.prompt": "Explain the code-calculated findings briefly by category and suggest remedies.",
+  "assist.batch.result": "Check results: {scenes} scenes · {n} review items ({places} occurrences)",
+  "assist.batch.safety": "Safety / placement",
+  "assist.batch.transition": "Transitions",
+  "assist.batch.appearance": "Appearances",
+  "assist.batch.lighting": "Lighting",
+  "assist.batch.advice": "AI suggestions",
+  "assist.batch.ask": "Ask AI",
+  "assist.batch.askPrompt": "Suggest ways to address this finding: {item}",
+  "assist.batch.thinking": "Reviewing the list…",
+  "assist.batch.empty": "No review items found. No AI call or allowance used. Also check the unassessed areas. This does not guarantee physical safety.",
+  "assist.batch.done": "Checked. Placement, appearances and light coverage are candidates; verify heights, routes, attachments and costumes in rehearsal.",
+  "assist.batch.failed": "Could not complete the check or AI explanation. Any displayed list was calculated locally.",
+  "assist.batch.tooLarge": "The list exceeds the sending limit. No AI call or allowance used. Check one scene to continue.",
+  "assist.batch.stale": "The show has changed. Run the check again.",
+  "assist.batch.sceneMissing": "The scene in this result could not be found. Run the check again.",
+  "assist.batch.routeFailed": "Could not open that location. Open it by scene number.",
+  "assist.batch.opened": "Opened the matching scene and workspace.",
+  "assist.batch.count": "{n} performer pieces (placement count)",
+  "assist.batch.balance": "Onstage positions lean strongly toward {side} (mean horizontal position {mean}). Check whether this is intentional.",
+  "assist.batch.overlap": "{n} overlapping pairs. Subjects: {names}",
+  "assist.batch.overhead": "{n} overhead candidates; height and support unknown: {names}",
+  "assist.batch.outside": "{n} offstage pieces: {names}",
+  "assist.batch.hidden": "{n} potentially hidden performers (fixed venue obstacles, plan blind spots): {names}",
+  "assist.batch.positionsUnknown": "Some positions cannot be read; position and overlap checks are incomplete.",
+  "assist.batch.sightUnknown": "Audience blind spots unassessed; audience and fixed-obstacle venue data are needed.",
+  "assist.batch.speed": "{names}: {m}m / {seconds}s, required {speed}m/s vs guideline {limit}m/s. Consider fewer simultaneous movers, a different order or more time.",
+  "assist.batch.route": "{names}: offstage route, distance or timing needs review ({seconds}s). Feasibility is unconfirmed.",
+  "assist.batch.changes": "Endpoints: moved {a} people/{b} objects, appeared {c}/{d}, disappeared {e}/{f}, crossed in {g}/{h}, crossed out {i}/{j} (people/objects). Overlapping categories must not be added.",
+  "assist.batch.transitionUnknown": "Transition comparison unavailable.",
+  "assist.batch.consecutive": "{names}: scenes {a}–{b}, {c} consecutive scenes. Whole-show presence runs: {d}; runs ending before show end: {e}. Review breaks and changes.",
+  "assist.batch.return": "{names}: after scene {a}, returns in {b} with one intervening scene; {c}s including transitions. Quick-change/travel candidate. Whole-show presence runs: {d}; runs ending before show end: {e}.",
+  "assist.batch.identityUnknown": "Some performers lack cast or shared identifiers; cross-scene appearances are incomplete.",
+  "assist.batch.unlit": "{n} potentially outside light: {names}. Cue-start chest sample and static outer cones only.",
+  "assist.batch.noFade": "Cue with no fade (check whether an intentional cut): {names}",
+  "assist.batch.duplicate": "Cues with identical lights/groups: {names}. Names and timing excluded.",
+  "assist.batch.lightUnknown": "Lighting data unavailable; unset does not mean no issues.",
+  "assist.batch.movingLight": "Moving beams, gobos, cutters or other effects unassessed: {names}. Verify during playback."
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.batch.summaryNotice": "AI receives counts, representative metrics and up to two example names grouped by scene and finding type. Individual results stay on this device."});
+
+// CHECK fix 3: priority, grouped findings and unassessed areas.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.batch.more": "{n} more items",
+  "assist.batch.otherPlaces": "{n} other occurrences",
+  "assist.batch.otherNames": "{n} other people/subjects",
+  "assist.batch.group": "{item}: {n} occurrences ({scenes} scenes)",
+  "assist.batch.severity.high": "High priority",
+  "assist.batch.severity.medium": "Medium priority",
+  "assist.batch.severity.low": "Low priority",
+  "assist.batch.kind.balance": "Strong side imbalance",
+  "assist.batch.kind.overlap": "Overlap",
+  "assist.batch.kind.overhead": "Under overhead equipment",
+  "assist.batch.kind.hidden": "Hidden from the audience",
+  "assist.batch.kind.speed": "Transition speed",
+  "assist.batch.kind.return": "Quick return",
+  "assist.batch.kind.unlit": "Outside the light",
+  "assist.batch.kind.noFade": "No fade",
+  "assist.batch.kind.duplicate": "Identical cue content",
+  "assist.batch.coverage": "Unassessed areas ({n} types)",
+  "assist.batch.coverageNotice": "These areas are unassessed, separately from detected issues. They are excluded from review counts and AI requests; they have not passed the check.",
+  "assist.batch.coverageItem": "{item}: {scenes} scenes",
+  "assist.batch.coverage.positionsUnknown": "Unreadable positions and overlaps",
+  "assist.batch.coverage.sightUnknown": "Audience blind spots (seating and fixed obstacle data needed)",
+  "assist.batch.coverage.route": "Offstage routes, distances and transition timing",
+  "assist.batch.coverage.transitionUnknown": "Transitions that could not be compared",
+  "assist.batch.coverage.identityUnknown": "Appearances without performer identity",
+  "assist.batch.coverage.lightUnknown": "Lighting data that could not be assessed",
+  "assist.batch.coverage.movingLight": "Moving beams, gobos, cutters and other effects"
+});
+
+// DOCS: read-only document drafts.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.docs.original": "Original (unchanged)",
+  "assist.docs.title": "Document drafts",
+  "assist.docs.kind": "Document",
+  "assist.docs.runNotes": "Organize run notes",
+  "assist.docs.performer": "Performer briefing",
+  "assist.docs.technician": "Technical handover",
+  "assist.docs.translate": "Translated copy",
+  "assist.docs.run": "Run",
+  "assist.docs.scene": "Scene",
+  "assist.docs.cast": "Performer",
+  "assist.docs.source": "Translation source",
+  "assist.docs.cues": "Cue names and notes",
+  "assist.docs.notes": "Scene notes",
+  "assist.docs.draft": "Latest draft for this scene",
+  "assist.docs.language": "Target language",
+  "assist.docs.ja": "Japanese",
+  "assist.docs.en": "English",
+  "assist.docs.ko": "Korean",
+  "assist.docs.zh-Hans": "Chinese (Simplified)",
+  "assist.docs.zh-Hant": "Chinese (Traditional)",
+  "assist.docs.notice": "Only the scene and part shown below are sent to Anthropic. Exclude personal or confidential information. Your show stays unchanged. Each generation uses one consultation.",
+  "assist.docs.scope": "Scope: {title}, part {page}/{pages} ({total} items overall). Other parts and scenes are not read. Long labels end in … .",
+  "assist.docs.page": "Part {page}/{pages}",
+  "assist.docs.previous": "Previous part",
+  "assist.docs.next": "Next part",
+  "assist.docs.generate": "Draft this part",
+  "assist.docs.loading": "Checking the source…",
+  "assist.docs.unavailable": "No material is available for this part, or one item exceeds the sending limit. Reselect the run, performer, scene or source.",
+  "assist.docs.changed": "The source changed. Review the updated scope below and press again.",
+  "assist.docs.copy": "Copy",
+  "assist.docs.export": "Export",
+  "assist.docs.copied": "Copied",
+  "assist.docs.copyFailed": "Copy failed. Select the reply and copy it.",
+  "assist.docs.exported": "Export started",
+  "assist.docs.exportFailed": "Export failed. Try Copy.",
+  "assist.docs.result": "Unreviewed draft: {title}, part {page}/{pages} (other parts unread)",
+  "assist.docs.true": "Yes",
+  "assist.docs.false": "No",
+  "assist.docs.prompt.runNotes": "Organize these run notes into correction lists by department.",
+  "assist.docs.prompt.performer": "Draft a movement briefing for this performer.",
+  "assist.docs.prompt.technician": "Draft a technical handover from this equipment and LX cue data.",
+  "assist.docs.prompt.translate": "Pair each original excerpt with a translation in the selected language. Keep original names.",
+  "assist.docs.field.source": "Source",
+  "assist.docs.field.text": "Original",
+  "assist.docs.field.segment": "Text segment",
+  "assist.docs.field.segments": "Text segments overall",
+  "assist.docs.field.label": "Label",
+  "assist.docs.field.presence": "Scene presence",
+  "assist.docs.field.fromPrev": "Presence from previous scene",
+  "assist.docs.field.toNext": "Presence into next scene",
+  "assist.docs.field.side": "Stage side",
+  "assist.docs.field.depth": "Stage depth",
+  "assist.docs.field.props": "Held props",
+  "assist.docs.field.number": "Registered fixture number",
+  "assist.docs.field.position": "Registered position",
+  "assist.docs.field.kind": "Fixture type",
+  "assist.docs.field.mount": "Mount (source value)",
+  "assist.docs.field.u": "Plan horizontal (0–1)",
+  "assist.docs.field.v": "Plan depth (0–1)",
+  "assist.docs.field.height": "Registered height (m)",
+  "assist.docs.field.name": "Name",
+  "assist.docs.field.memo": "Note",
+  "assist.docs.field.trigger": "Trigger",
+  "assist.docs.field.offset": "Scene offset (seconds)",
+  "assist.docs.field.placed": "Placed on timeline",
+  "assist.docs.field.enabled": "Enabled",
+  "assist.docs.field.fadeIn": "Fade in (seconds)",
+  "assist.docs.field.fadeOut": "Fade out (seconds)",
+  "assist.docs.field.delayIn": "In delay (seconds)",
+  "assist.docs.field.delayOut": "Out delay (seconds)",
+  "assist.docs.field.cue": "Cue",
+  "assist.docs.field.fixture": "Fixture",
+  "assist.docs.field.intensity": "Intensity (source value)",
+  "assist.docs.field.on": "Light on (source value)",
+  "assist.docs.value.unknown": "Unknown",
+  "assist.docs.value.absent": "Not placed",
+  "assist.docs.value.onstage": "On stage",
+  "assist.docs.value.outside": "Outside stage bounds",
+  "assist.docs.value.appeared": "Placement appears (route unknown)",
+  "assist.docs.value.disappeared": "Placement disappears (route unknown)",
+  "assist.docs.value.continued": "Same presence at endpoints",
+  "assist.docs.value.stage-right": "Stage right",
+  "assist.docs.value.stage-left": "Stage left",
+  "assist.docs.value.center": "Centre",
+  "assist.docs.value.upstage": "Upstage",
+  "assist.docs.value.downstage": "Downstage",
+  "assist.docs.value.run-note": "Run note",
+  "assist.docs.value.addendum": "Addendum"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.ops2Confirm": "Review formation / scene operation",
+  "assist.ops2FormationCount": "{shape}: {n} pieces change",
+  "assist.ops2SceneCount": "{n} scenes added or renumbered",
+  "assist.ops2Number": "{from} → {to}: {title}",
+  "assist.ops2Outside": "{name}: outside the stage. Review the position.",
+  "assist.ops2Overlap": "{name} / {other}: plan centres {distance}m apart; possible overlap with a piece or apparatus. Size, height and physical safety are unverified.",
+  "assist.ops2Neighbours": "{number} {title}: adjacent scenes, entrances, exits and paths change.",
+  "assist.ops2Ros": "Run-of-show scene rows follow IDs and update order/numbering. Free items and notes stay.",
+  "assist.ops2SceneCue": "Cue {name}: keeps its scene ID. Review its new order and time.",
+  "assist.ops2FixedCue": "Cue {name}: section timing and scene-following rules stay. Review its time and resulting scene below.",
+  "assist.ops2Media": "Audio placement {name}: keeps its start-scene ID and file range. Review playback time.",
+  "assist.ops2Audio": "Scene audio-track references stay. Section starts and playback order may change.",
+  "assist.ops2CopyLinks": "The copy gets fresh scene, piece and cue IDs. Scene cues, lighting and audio placements are copied; section-time cues are not duplicated. The new run-of-show row does not copy owners or annotations.",
+  "assist.ops2SectionCopy": "The copy uses its destination section’s costume and timing.",
+  "assist.ops2Time": "{number}: start from show head {from}s → {to}s",
+  "assist.ops2Proceed": "Have you reviewed these changes and effects? Press Execute to apply. One Undo restores the whole operation.",
+  "assist.ops2OutsideBlocked": "Outside the editable area; cannot execute. Ask again with a different centre or spacing.",
+  "assist.ops2Capacity": "Scene/section capacity reached. Make room before adding. Nothing has changed.",
+  "assist.ops2Section": "Use leaf scenes within the same section for this operation. Nothing has changed.",
+  "assist.ops2LinkedTiming": "Fixed timing, audio or formation links cannot be kept. Review the timeline first. Nothing has changed.",
+  "assist.ops2Alternative": "Display the adopted alternative in the source scene before copying. Nothing has changed.",
+  "assist.ops2SceneRef": "Scene number not found. Check the numbers and before/after. Nothing has changed.",
+  "assist.ops2Relationships": "This arrangement cannot move locked, routed, held or supported pieces. Review the targets. Nothing has changed.",
+  "assist.ops2Question": "Specify targets, shape, centre, spacing and facing, or scene numbers and before/after. Nothing has changed.",
+  "assist.ops2Shape_line": "Line",
+  "assist.ops2Shape_column": "Column",
+  "assist.ops2Shape_diagonal": "Diagonal line",
+  "assist.ops2Shape_v": "V",
+  "assist.ops2Shape_inverted-v": "Inverted V",
+  "assist.ops2Shape_circle": "Circle",
+  "assist.ops2Shape_two-rows": "Two horizontal rows",
+  "assist.ops2Shape_staggered": "Staggered",
+  "assist.ops2CueTime": "Cue {name}: time {from} → {to}, resulting scene {scene}.",
+  "assist.ops2CopyTitle": "Copy of {title}",
+  "assist.ops2Effects": "Effects ({n}, all details)"
+});
+
+// 3-C: review transport and run-of-show CSV.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "4倍以上は音が出ません。": "Audio is muted at 4× and above.",
+  "この環境では、音ありは1倍、音なしは4倍・8倍で再生できます。": "In this environment, audio plays at 1×; silent playback supports 4× and 8×.",
+  "再生速度": "Playback speed",
+  "再生速度（音程を保つ）": "Playback speed (preserve pitch)",
+  "この環境では通常速度のみ再生できます。": "Only normal speed is available in this environment.",
+  "LXレーンに置く": "Drop on the LX lane",
+  "音源を再生できないため、一部または全部を音なしで再生しています。停止して再生し直すと音源を再試行します。": "Audio could not start, so some or all of the show is playing without sound. Stop and play again to retry the audio.",
+  "CSVを書き出す": "Export CSV"
+});
+
+// W1-A: detail figure view controls (device preferences only).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "図を全体表示": "Fit the whole figure",
+  "図を全体表示（空き場所のダブルクリックでも戻ります）": "Fit the whole figure (or double-click empty space)",
+  "ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動": "Wheel to zoom; while enlarged, Space + drag or middle-button drag to pan",
+  "平面図と正面図の高さ配分": "Plan and front figure height split"
 });

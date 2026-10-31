@@ -245,15 +245,29 @@ html[data-gamma-embedded] .gamma-light-actions #swap-figures{width:var(--ctrl-sm
 html[data-gamma-embedded] .dialog { top:var(--gamma-light-dialog-top,0px); bottom:auto; height:var(--gamma-light-dialog-height,100dvh); }
 html[data-gamma-embedded] .dialog .in.gamma-light-dialog { max-height:calc(var(--gamma-light-dialog-height,100dvh) - 24px); }
 
-/* fix-c: centre figures follow their content; spare height stays below them. */
-.figgrid.detail-columns:not([data-solo]){position:relative;grid-template-rows:var(--detail-top-height,auto) auto minmax(0,1fr);gap:var(--gamma-gap,8px);align-content:start}
-.figgrid.detail-columns:not([data-solo])>.planwrap{grid-row:1;align-self:start}
-.figgrid.detail-columns:not([data-solo])>.sec.front{grid-row:2;align-self:start}
+/* Detail frame height belongs to the viewport, independently of drawing aspect ratio. */
+.figgrid.detail-columns:not([data-solo]){position:relative;grid-template-columns:var(--detail-left-width,320px) minmax(0,var(--detail-mid-width)) var(--detail-right-width,360px);grid-template-rows:var(--detail-top-height,minmax(160px,1fr)) minmax(160px,1fr);gap:var(--gamma-gap,8px);align-content:stretch}
+.figgrid.detail-columns:not([data-solo])>.planwrap{grid-row:1;align-self:stretch}
+.figgrid.detail-columns:not([data-solo])>.sec.front{grid-row:2;align-self:stretch}
 .figgrid.detail-columns[data-swapped]:not([data-solo])>.planwrap{grid-row:2}
 .figgrid.detail-columns[data-swapped]:not([data-solo])>.sec.front{grid-row:1}
-.figgrid.detail-columns:not([data-solo])>.leftcol{grid-row:1/4;margin-bottom:var(--side-reserved);align-self:stretch;min-height:0}
-.figgrid.detail-columns:not([data-solo])>.sec.side.l{grid-row:1/4;align-self:end}
-.figgrid.detail-columns:not([data-solo])>.panel.insp{grid-row:1/4}
+.figgrid.detail-columns:not([data-solo])>.leftcol{grid-row:1/3;margin-bottom:var(--side-reserved);align-self:stretch;min-height:0}
+.figgrid.detail-columns:not([data-solo])>.sec.side.l{grid-row:1/3;align-self:end}
+.figgrid.detail-columns:not([data-solo])>.panel.insp{grid-row:1/3;min-height:0}
+.light-figure-resize{display:none;position:absolute;left:calc(var(--detail-left-width) + var(--gamma-gap,8px));width:var(--detail-mid-width);top:calc(var(--detail-top-height) - 2px);height:calc(var(--gamma-gap,8px) + 4px);cursor:row-resize;touch-action:none;z-index:5;outline-offset:-2px}
+.figgrid.detail-columns:not([data-solo])>.light-figure-resize{display:block}
+.light-figure-resize::before{content:"";position:absolute;left:0;right:0;top:calc(50% - .5px);height:1px;background:var(--line-dark)}
+.light-figure-resize:hover::before,.light-figure-resize:focus-visible::before{background:var(--brass)}
+.light-figure-slot{display:contents}
+.light-figure-active{min-height:0;overflow:hidden}
+.light-figure-active>:is(.viewhead,.sechead){flex:0 0 auto}
+.light-figure-viewport{display:block;position:relative;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;width:100%;isolation:isolate}
+.figgrid .light-figure-viewport>canvas{display:block;width:100%;height:100%!important;transform-origin:0 0;max-width:none;touch-action:none}
+.light-figure-tools{position:absolute;top:0;right:0;display:flex;align-items:center;gap:var(--gamma-gap,8px);background:var(--desk);z-index:1}
+.light-figure-tools[hidden]{display:none}
+html[data-gamma-embedded] .figgrid .light-figure-tools>.light-figure-fit,.figgrid .light-figure-tools>.light-figure-fit{min-width:44px;min-height:44px}
+.light-figure-scale{font-size:12px;color:var(--milk-dim);font-variant-numeric:tabular-nums}
+.light-figure-viewport.is-panning,.light-figure-viewport.is-panning>canvas{cursor:grabbing}
 .light-column-resize{display:none;position:absolute;top:0;bottom:0;width:var(--gamma-gap,8px);cursor:col-resize;touch-action:none;z-index:5;outline-offset:-2px}
 .figgrid.detail-columns:not([data-solo])>.light-column-resize{display:block}
 .light-column-resize::before,.simple-column-resize::before{content:"";position:absolute;inset:0 calc(50% - 1px);background:var(--line-dark)}
@@ -282,3 +296,6 @@ html[data-gamma-embedded] #gamma-light-recovery-notice {
   flex:1 1 100%; min-width:0; margin:0; font-size:var(--fs-4); line-height:1.6; color:var(--milk); overflow-wrap:anywhere;
 }
 html[data-gamma-embedded] #gamma-light-return-saved { max-width:100%; white-space:normal; min-height:var(--ctrl-lg); }
+
+/* Extremely short detail windows retain both frames and scroll the surrounding controls. */
+html[data-gamma-embedded][data-gamma-light-mode="move"] .body{overflow:auto}

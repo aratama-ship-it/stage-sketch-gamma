@@ -2,6 +2,7 @@
   'use strict';
   if(!new URLSearchParams(location.search).has('embed') || parent===window) return;
   const rig=window.__RIG, model=window.GAMMA_LIGHT_MODEL, state=rig.state, hooks=rig.hooks;
+  const hasDraft=()=>{hooks.refreshApplyState();return state.dirty || Boolean(window.GAMMA_SIMPLE_LIGHT_UI?.hasPending?.());};
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='', playbackPreview=false;
   let timelineFollowing=false, timelineFrameRaf=0, cuePanelStamp='';
@@ -9,7 +10,7 @@
   // too (33ms alone could reach 30.3/s on a high-refresh display).
   const hostFrameIntervalMs=Math.max(33,1000/30);
   let timelineFrameLast=-Infinity, timelineFrameInput=null;
-  const placementFields=['id','kind','u','v','hM','base','w','pose','facing','open','exitWalker'];
+  const placementFields=['id','kind','u','v','hM','base','w','pose','facing','open','sheer','exitWalker'];
   function sameHostPlaybackFrame(a,b) {
     if(a===b) return true;
     if(!a || !b || a.showId!==b.showId || a.sceneId!==b.sceneId || a.tMs!==b.tMs
@@ -125,7 +126,7 @@
   function stash() {
     if(!context || loading)return;
     drafts.set(runtimeKey(context),{baseBasis:basis(context),contextGeneration,context:structuredClone(context),
-      raw:state.dirty ? draftRecordRaw() : null,editor:hooks.captureDocumentState(),appliedExtras:structuredClone(appliedExtras),changedElsewhere,
+      raw:hasDraft() ? draftRecordRaw() : null,editor:hooks.captureDocumentState(),appliedExtras:structuredClone(appliedExtras),changedElsewhere,
       draftState,applyError,appliedNotice,recoveredWithoutHistory,draftRedo,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
   }
   let applyRequest=null,applyTask=null,draftTask=Promise.resolve(true),draftWriteSequence=0;
@@ -157,7 +158,7 @@
     context={...context,draftOwnerId:next.draftOwnerId,draftRecords:next.draftRecords};
     for(const record of drafts.values())if(record.context.documentSessionId===context.documentSessionId)
       record.context={...record.context,draftOwnerId:next.draftOwnerId,draftRecords:next.draftRecords};
-    if(state.dirty)saveDraft();
+    if(hasDraft())saveDraft();
   });
   const message=text=>hooks.toast(text);
   let recoveryMessage = "";
@@ -281,13 +282,13 @@
        ふだん（言うことが無いとき）は行ごと隠す。★ただし警告（保存できない・別のタブで更新・適用できない）の文は
        「控え・書き出しから残してください」と案内するので、警告のときだけボタンも出す＝データを失う場面の逃げ道を残す。 */
     let text='', level='info';
-    if(context && recoveryRecords().length && !state.dirty && !applyError && !changedElsewhere) {
+    if(context && recoveryRecords().length && !hasDraft() && !applyError && !changedElsewhere) {
       text=recoveryCopy()?.note || '';level='warn';
     }
     if(applying) text='ショーへ適用中…';
     else if(changedElsewhere) {text='ショーが別のタブで更新されています。照明を控え・書き出しから残し、読み直してください。';level='warn';}
     else if(applyError) {text='適用できませんでした: '+applyError+' · '+draftText;level='warn';}
-    else if(state.dirty) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
+    else if(hasDraft()) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
     else if(appliedNotice) {text=appliedNotice;level=appliedNotice.includes('できません')||appliedNotice.includes('整理')?'warn':'info';}
     const recoveryWarning=context?.nativeDocument && context.draftRecoveryUnavailable
       ? '照明の控えの記録を読めません。記録の中身は書き換えていません。' : '';
@@ -296,8 +297,8 @@
     if(recoveryRepair){recoveryRepair.hidden=!repairVisible;recoveryRepair.textContent=repairCopy?.rebuild || '';}
     if(recoveryReveal){recoveryReveal.hidden=!repairVisible;recoveryReveal.textContent=repairCopy?.reveal || '';}
     if(recoveryWarning)level='warn';
-    if(recoveryNotice){recoveryNotice.hidden=!(recoveredWithoutHistory && state.dirty);recoveryNotice.textContent=recoveryCopy().restored;}
-    if(recoveryReturn){recoveryReturn.hidden=!(recoveredWithoutHistory && state.dirty);recoveryReturn.textContent=recoveryCopy().returnSaved;recoveryReturn.disabled=applying || changedElsewhere || !!context?.readOnly;}
+    if(recoveryNotice){recoveryNotice.hidden=!(recoveredWithoutHistory && hasDraft());recoveryNotice.textContent=recoveryCopy().restored;}
+    if(recoveryReturn){recoveryReturn.hidden=!(recoveredWithoutHistory && hasDraft());recoveryReturn.textContent=recoveryCopy().returnSaved;recoveryReturn.disabled=applying || changedElsewhere || !!context?.readOnly;}
     const statusText=[text,recoveryWarning].filter(Boolean).join(' · ');
     if(saveStatus.textContent!==statusText) {
       // Keep existing phrases in separate text nodes so the existing DOM
@@ -425,7 +426,7 @@
     const next={...appliedExtras,...hooks.buildDesign(state.designName || context.title)};
     if(next.version!==3)delete next.positionLayoutRollback;
     if(next.version===1)delete next.migration;
-    return next;
+    return window.GAMMA_SIMPLE_LIGHT_UI?.decorateDesign?.(next) || next;
   }
   const legacyConsumedKey=value=>'gamma:lighting-legacy-consumed-v1:'+value.showId;
   const rawFingerprint=text=>{let h=0x811c9dc5;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),0x01000193);return text.length+':'+(h>>>0).toString(16);};
@@ -460,7 +461,7 @@
     if(!context)return [];
     if(!hostOwns(context))throw Error('Draft recovery owner changed');
     const rows=[];
-    if(state.dirty)rows.push({key:vector(context),raw:draftRecordRaw(),source:'editor'});
+    if(hasDraft())rows.push({key:vector(context),raw:draftRecordRaw(),source:'editor'});
     for(const record of drafts.values())
       if(record.context.documentSessionId===context.documentSessionId && record.raw)
         rows.push({key:vector(record.context),raw:record.raw,source:'runtime'});
@@ -470,7 +471,7 @@
   async function saveAllDraftsDurably() {
     if(!context)return true;
     if(context.nativeDocument && context.draftRecoveryUnavailable)
-      return !state.dirty && ![...drafts.values()].some(record=>record.context.documentSessionId===context.documentSessionId && record.raw);
+      return !hasDraft() && ![...drafts.values()].some(record=>record.context.documentSessionId===context.documentSessionId && record.raw);
     stash();
     const owner=context,generation=contextGeneration;
     try {
@@ -492,8 +493,19 @@
       return false;
     }
   }
+  function clearCleanDraft() {
+    if(!context || loading || applying || changedElsewhere || !hostOwns(context)
+      || basis(parent.GAMMA_LIGHT_HOST.context())!==basis(context)
+      || (context.nativeDocument && context.draftRecoveryUnavailable))return;
+    clearTimeout(draftTimer);draftTimer=0;
+    try {
+      const retained=localStorage.getItem(key(context))!==null || context.draftRecords?.[vector(context)];
+      markLegacyConsumed();localStorage.removeItem(key(context));if(retained)retainNative(null);draftState='none';
+    } catch(_) { /* The previous draft remains recoverable. */ }
+    renderSaveStatus();
+  }
   function saveDraft() {
-    if(!state.dirty) return true;
+    if(!hasDraft()) {clearCleanDraft();return true;}
     if(!context || loading || applying || changedElsewhere) return false;
     if(context.nativeDocument && context.draftRecoveryUnavailable) {
       draftState='failed';renderSaveStatus();return false;
@@ -604,7 +616,7 @@
       return true;
     }
     clearTimelineFrame();hooks.stop();hooks.setCueSyncPending(next.cueSyncPending);
-    if(sameOwner(context,next) && state.dirty) {
+    if(sameOwner(context,next) && hasDraft()) {
       if(basis(context)!==basis(next) || changedElsewhere) {
         changedElsewhere=true;renderSaveStatus();
         message('ショーが更新されています。照明の編集中データは保持しています。「控え・書き出し」からファイルへ控えてください');
@@ -663,14 +675,14 @@
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
       recoveredWithoutHistory=dirty;
-      hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+      hooks.refreshApplyState();draftState=hasDraft()?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();
       // Mode setup may normalize the first scene too; only a fresh host load
       // becomes the applied baseline. A restored draft must keep its differences.
       if(!dirty) hooks.markApplied();
-      hooks.refreshApplyState();draftState=state.dirty?'saved':'none';renderSaveStatus();
+      hooks.refreshApplyState();draftState=hasDraft()?'saved':'none';renderSaveStatus();
       clearRecoveryMessage();
       if(dirty) showRecoveryMessage();
     } finally {loading=false;window.dispatchEvent(new Event("gamma-light-history-change"));}
@@ -712,7 +724,7 @@
   async function applyOwned(options = {}) {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は適用できません。下書きに戻ってください'};
     if(!context || applying) return;
-    if(!hooks.refreshApplyState() && !options.placement) return {persisted:false,unchanged:true};
+    if(!hooks.refreshApplyState() && !window.GAMMA_SIMPLE_LIGHT_UI?.hasPending?.() && !options.placement) return {persisted:false,unchanged:true};
     if(!hostOwns(context))return staleResult();
     const request={context:{...context},generation:contextGeneration,requestId:crypto.randomUUID()};applyRequest=request;
     const owner={...ownerOf(context),requestId:request.requestId};
@@ -726,9 +738,9 @@
       if(!sameOwner(request.context,result.context))return staleResult();
       parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;synchronizeVenueMask(context);
-      if(result.designExpanded || options.placement) hooks.applyDesign(context.design,{host:true,preserveHistory:true});
+      if(result.designExpanded || options.placement || window.GAMMA_SIMPLE_LIGHT_UI?.hasPending?.()) hooks.applyDesign(context.design,{host:true,preserveHistory:true});
       synchronizePieces(context);
-      appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();draftRedo=false;
+      appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();draftRedo=false;window.GAMMA_SIMPLE_LIGHT_UI?.accepted?.(context);
       parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';
@@ -740,6 +752,15 @@
       return result;
     } catch(error) {if(!ownsRequest(request))return staleResult();applying=false;applyError=error.message;hooks.refreshApplyState();saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
     finally {if(ownsRequest(request)){applyRequest=null;applying=false;renderSaveStatus();}}
+  }
+  function stageDraft(design) {
+    if(!context||applying||context.readOnly||!hostOwns(context)||changedElsewhere)throw Error('現在の下書きを編集できません');
+    const checked=model.validate(design,context.scenes.map(row=>row.id)),before=hooks.captureDocumentState();
+    try{
+      hooks.applyDesign(checked,{host:true,preserveHistory:true,preserveAppliedBaseline:true});
+      state.history.push(before.baseline);if(state.history.length>100)state.history.shift();state.future=[];
+      state.dirty=true;hooks.refreshApplyState();saveDraft();hooks.renderAll();
+    }catch(error){hooks.restoreDocumentState(before);throw error;}
   }
   function applyCandidate(design) {return startApply(()=>applyCandidateOwned(design));}
   async function applyCandidateOwned(design) {
@@ -756,8 +777,14 @@
       if(!ownsRequest(request))return staleResult();
       if(!result.persisted) throw Error('保存できませんでした');
       if(!sameOwner(request.context,result.context))return staleResult();
-      context=result.context;appliedExtras=model.clone(design);
-      hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();draftRedo=false;
+      context=result.context;
+      // v0.3.96 review P2 (LX-SYNC-CANONICAL-LOSS): on apply the host may materialize timeline LX marks into
+      // lx-sync-* cues (designExpanded). Take the host's normalized design back as the applied baseline, as the
+      // normal apply path does, so the next build does not report those cues as removed and drop them.
+      const accepted=result.designExpanded?model.clone(context.design):design;
+      appliedExtras=model.clone(accepted);
+      if(result.designExpanded)hooks.applyDesign(accepted,{host:true,preserveHistory:true});else hooks.applyDesign(accepted);
+      synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();draftRedo=false;
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · 照明をショーへ保存しました。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
@@ -791,6 +818,8 @@
     const target=event.target;
     if(!transportAvailable() || event.defaultPrevented || event.isComposing || event.keyCode===229) return;
     if(target?.isContentEditable || target?.closest?.('input,textarea,select,[role="combobox"],[role="listbox"],[role="option"]')) return;
+    // Space on this view toggle belongs to the native button click, not playback.
+    if(target?.closest?.('#simple-work-light')) return;
     if(event.code!=='Space' && event.key!==' ') return;
     if(event.metaKey || event.ctrlKey || event.altKey) return;
     const shortcuts=parent.SHOSAI_STAGE_SHORTCUTS;
@@ -832,22 +861,15 @@
     if(loading || !context || !hostOwns(context)) return;
     const stamp=JSON.stringify(state.scenes.map(s=>[s.id,(s.lxq||[]).map(q=>[q.id,q.seq,q.no,q.enabled,q.name,q.trigger,q.timing,q.follow])]));
     if(active && stamp!==cuePanelStamp) {cuePanelStamp=stamp;parent.GAMMA_LIGHT_HOST.draftChanged(build());}
-    if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
-    else if(!state.dirty && !applying && !(context.nativeDocument && context.draftRecoveryUnavailable)) {
-      clearTimeout(draftTimer);
-      try {
-        const retained=localStorage.getItem(key(context))!==null || context.draftRecords?.[vector(context)];
-        markLegacyConsumed();localStorage.removeItem(key(context));if(retained)retainNative(null);draftState='none';
-      } catch(_) { /* The draft remains recoverable. */ }
-      renderSaveStatus();
-    }
-    clearTimeout(draftTimer); draftTimer=state.dirty?setTimeout(saveDraft,250):0;
+    if(hasDraft() && !applying) {draftState='pending';renderSaveStatus();}
+    else if(!hasDraft()) clearCleanDraft();
+    clearTimeout(draftTimer); draftTimer=hasDraft()?setTimeout(saveDraft,250):0;
     const scene=state.scenes[state.sceneIndex];
     if(active && scene && scene.id!==lastScene){lastScene=scene.id;parent.GAMMA_LIGHT_HOST.openScene(scene.id);}
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playbackPreview)saveDraft();else suspend();}});
   window.addEventListener('pagehide',saveDraft);
-  window.addEventListener('beforeunload',event=>{const saved=saveDraft();if(state.dirty&&!saved){event.preventDefault();event.returnValue='';}});
+  window.addEventListener('beforeunload',event=>{const saved=saveDraft();if(hasDraft()&&!saved){event.preventDefault();event.returnValue='';}});
   function captureRuntime() {
     const dialog=document.getElementById('dialog');
     let draftRecord=null;
@@ -893,19 +915,19 @@
     state.history=[];state.future=[];hooks.markApplied();draftRedo=false;
     window.GAMMA_SIMPLE_LIGHT_UI?.clearDocumentContext?.();renderSaveStatus();
   }
-  async function waitForApply() {
+  async function waitForApply(request) {
     if(applyTask)await applyTask;
-    await window.GAMMA_SIMPLE_LIGHT_UI?.waitForApply?.();
+    await window.GAMMA_SIMPLE_LIGHT_UI?.waitForApply?.(request);
     await draftTask;
     return !applying;
   }
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({closeRecoveryRecords,draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({stageDraft,closeRecoveryRecords,draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
 
     selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
     async placeCue(placement) {
       const owner=context&&{...context};
       if(!build().scenes.flatMap(s=>s.lxq||[]).some(q=>q.id===placement.lxId))return {persisted:false,error:"このQは一覧にありません"};
-      if(state.dirty || context?.cueSyncPending) {
+      if(hasDraft() || context?.cueSyncPending) {
         const saved=await apply();if(!saved?.persisted)return saved;
       }
       if(!sameOwner(owner,context) || !hostOwns(owner))return staleResult();
@@ -926,10 +948,10 @@
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
-    externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:state.dirty,draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
+    externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(hasDraft())message('別のタブでショーが更新されました。編集中の照明は保持しています');},
+    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:hasDraft(),draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
       draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
-      hasUnappliedDrafts:state.dirty || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
+      hasUnappliedDrafts:hasDraft() || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
       loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
       canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)})});
 })();

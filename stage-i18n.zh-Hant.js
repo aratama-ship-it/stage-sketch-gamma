@@ -17,6 +17,46 @@
 
   const TEXT = {
 
+    "照明の画面を作り直しました。上部のタブを7つに整理し、「機材配置」は「劇場設計」（空間・客席・幕と機材の配置）になりました。照明は「かんたん照明」から開き、細部は「詳細」で調整します。": "重新製作了燈光畫面。頂部索引標籤整理為7個，「器材配置」改為「劇場設計」（空間、觀眾席、幕與器材配置）。燈光從「簡易燈光」開啟，細節在「詳細」中調整。",
+
+    "かんたん照明は、先に機能（人物・場所、輪郭・補助、背景など）を選び、次にその明かりを出せる位置を選ぶ順になりました。位置の候補にマウスを乗せると、図の中に灯体本体の輪郭が一時的に表示され、離すと消えます。保存される値は変わりません。": "簡易燈光改為先選擇功能（人物／場所、輪廓／輔助、背景等），再選擇能發出該光的位置。將滑鼠移到位置候選上時，圖中會暫時顯示燈具本體的輪廓，移開後消失。儲存的值不會改變。",
+
+    "設備プリセットに「背景付き22器具」と「背景・転がし付き24器具」を追加しました。既存の24灯の配置は自動では置き換えません。背景幕への受光、前幕による奥の遮蔽、紗の透けを図に反映します。": "設備預設新增「含背景的22台燈具」與「含背景與地面燈的24台燈具」。現有的24燈配置不會自動替換。背景幕受光、前幕對後方的遮蔽、紗幕的透光會反映在圖中。",
+
+    "かんたん照明の右側のパネルを作り直しました。使用中の層の一覧、視点の切替、「作業灯を消す」の切替、横向きの強さスライダーを追加し、操作の列を最上段に置きました。": "重新製作了簡易燈光右側的面板。新增使用中的層清單、視點切換、「關閉工作燈」切換與橫向亮度滑桿，並將操作列放在最上方。",
+
+    "照明タブのQ番号に、つかんで動かすための取っ手を付けました。Q番号をタイムラインへドラッグしてキューを配置でき、タイムライン側は配置先を示します。": "為燈光索引標籤中的Q編號加上可抓取拖曳的把手。可將Q編號拖到時間軸上放置提示，時間軸一側會顯示放置位置。",
+
+    "起動時の照明モデルの読み込みを、必要になるまで遅らせました。言語を切り替えた後の照明の状態表示と作業灯の表示を改善しました。": "啟動時的燈光模型載入延後到需要時進行。改進了切換語言後的燈光狀態顯示與工作燈顯示。",
+
+    "窓が重なったときに奥の窓を暗くして操作できなくし、手前の窓だけを閉じて元の入力へ戻れるようにしました。窓や入力欄の書体を本文とそろえました。": "視窗重疊時，後方視窗變暗且不可操作，只關閉前方視窗即可回到原本的輸入。視窗與輸入欄的字體與內文統一。",
+
+    "タイムラインの再生速度を 0.5・1・1.5・2・4・8 倍から選べるようにしました。2倍を超える速度では音を出さずに進み、2倍以下へ戻すとその位置から音源を再開します。音源を開始できないときも、警告を表示して音なしでショーの確認を続けられます。": "時間軸播放速度可從0.5、1、1.5、2、4、8倍中選擇。超過2倍時無聲播放，回到2倍以下時從該位置繼續播放音源。音源無法啟動時也會顯示警告，可在無聲狀態下繼續確認演出。",
+
+    "進行表からCSVを書き出せるようにしました。": "可以從進行表匯出CSV。",
+
+    "演者を近づけても自動では積み重ならなくなりました。「選んだもの」の「上に乗せる」と「降ろす」で乗り降りを指定します。すでに積み重なっている保存済みのショーは、開いたときに明示の関係へ引き継ぎます。": "演員靠近時不再自動疊放。透過「所選內容」中的「放到上面」與「放下」指定疊放。已儲存的含疊放的演出在開啟時會轉換為明確的關係。",
+
+    "ブラウザ版の相談に、用語の説明・困ったときの案内・キュー文面と名前の提案・よく使う質問のボタン・端末の音声入力の案内を追加しました。選んだ2シーンの転換の比較と、現在のシーンの台本（400字まで）からの段取りも頼めます。転換の比較では前後2シーンの駒の種類・名前・位置を、段取りでは台本の文を Anthropic の API へ送ります。提案を読む・写すだけならショーは変わりません。": "瀏覽器版的諮詢新增術語說明、遇到困難時的指引、提示文字與名稱的建議、常用問題按鈕以及裝置語音輸入的指引。還可以請求比較所選兩個場景的轉換，以及依當前場景的台本（最多400字）整理流程。轉換比較會將兩個場景的元素類型、名稱、位置，流程整理會將台本文字傳送至Anthropic的API。只閱讀或抄寫建議不會改變演出。",
+
+    "ブラウザ版の相談から、駒の追加・移動・入れ替え・片付け・向き、全員を前へ・左右反転・等間隔、ハケと出の方向を頼めます。現在のシーンの駒・登録名・位置・舞台寸法を Anthropic の API へ送り、影響するシーンと演者を要約した確認カードを確かめてから一度に反映します。「元に戻す」1回で全部戻ります。共有中・ゲスト・閲覧専用・体験版では使えません。": "瀏覽器版的諮詢可以執行操作：元素的新增、移動、交換、清理、朝向，全員前移、左右鏡像、等間距，以及上下場方向。當前場景的元素、登記名稱、位置與舞台尺寸會傳送至Anthropic的API，確認概括受影響場景與演員的確認卡片後一次套用。復原一次即可全部恢復。共享中、訪客、唯讀、試用版中不可用。",
+
+    "ブラウザ版の相談で、フォーメーション（8つの型）とシーンの複製・追加・並べ替えを頼めます。位置やキュー・音への影響を確かめてから実行し、「元に戻す」1回で取り消せます。": "瀏覽器版的諮詢可以請求隊形（8種類型）以及場景的複製、新增、重新排序。確認對位置、提示與聲音的影響後執行，復原一次即可取消。",
+
+    "ブラウザ版の相談に「AI点検」ボタンを追加しました。シーンまたはショー全体の配置・転換・出番・照明の確認候補を優先度順の一覧にし、該当するシーンへ移れます。見つかった項目の一覧を Anthropic の API へ送ります。検出がなければ相談回数を使いません。": "瀏覽器版的諮詢新增「AI檢查」按鈕。依優先順序列出場景或整個演出的配置、轉換、出場、燈光的待確認項，並可跳到相應場景。發現的項目清單會傳送至Anthropic的API。沒有發現時不消耗諮詢次數。",
+
+    "ブラウザ版の相談で、ランノートの整理、演者への説明文、技師への申し送り、5言語の訳の控えを作り、写す・書き出すことができます。ランノートの文・演者の動き・キューを Anthropic の API へ送ります。ショーの内容は変わりません。": "瀏覽器版的諮詢可以整理運行筆記、撰寫給演員的說明與給技術人員的交接，以及產生5種語言的翻譯草稿，可抄寫或匯出。運行筆記文字、演員的動作與提示會傳送至Anthropic的API。演出內容不會改變。",
+
+    "ブラウザ版の相談に、この端末だけに相談の履歴を残す任意の設定を追加しました（既定はオフ）。一般的な質問の回答を再利用する仕組みも入れましたが、既定ではオフです。": "瀏覽器版的諮詢新增僅在本裝置保留諮詢紀錄的可選設定（預設關閉）。也加入了重複使用一般問題答案的機制，預設關閉。",
+
+    "Mac 版では相談を表示しない判定を補強しました。Mac 版の相談は、有料版の公開に合わせて準備中です。": "加強了在Mac版中不顯示諮詢的判定。Mac版的諮詢正配合付費版發布進行準備。",
+    // G-017: explicit performer mounting.
+    "乗せる相手の演者がいません。": "沒有可作為底座的其他演員。",
+    "上に乗せる": "放到他人上方",
+    "降ろす": "放下",
+    "乗せる相手を選んでください（矢印キーで移動、Enter で確定、Esc で取消）": "請選擇作為底座的演員（方向鍵移動，Enter 確認，Esc 取消）",
+
+
     "ブラウザ版の相談で、説明書や書斎を参考にした返答と資料の表示、操作する場所への案内ができるようになりました。関連する説明書の文や書斎の参照情報も、返答を作るために Anthropic の API へ送ります。": "瀏覽器版的諮詢現在可以參考說明書和書齋產生回覆、顯示參考資料，並引導至相應的操作位置。相關說明書文字和書齋參考資訊也會傳送至Anthropic的API，用於產生回覆。",
 
     "相談に「このシーンを点検」を追加しました。押すと、入力文に加えて対象と前後のシーン名、駒の種類・名前（演者名を含む）・位置・向き、人数や重なりなどの計算結果を Anthropic の API へ送ります。点検で配置が変わることはありません。": "諮詢新增了檢查目前場景。點擊後，輸入文字以及目前和前後場景的名稱、元素類型、名稱（包括演員姓名）、位置、朝向，以及人數、重疊等計算結果會傳送至Anthropic的API。檢查不會改變配置。",
@@ -5910,5 +5950,403 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "assist.editFailureRelationship": "此操作無法處理持有或支撐關係。",
   "assist.editFailureUnsupported": "燈光、動線等操作尚未啟用。",
   "assist.editFailureCapacity": "已達到棋子或方案數量上限。",
-  "assist.editFailureInvalid": "請檢查名稱、位置和朝向。"
+  "assist.editFailureInvalid": "請檢查名稱、位置和朝向。",
+  "assist.ops": "操作此場景",
+  "assist.opsInput": "將此場景的棋子、登記名稱、位置和舞台尺寸傳送給AI，以建立確認卡片。",
+  "assist.opsShared": "共享期間，包括主持人在內均無法使用操作代行。",
+  "assist.opsBlocked": "目前編輯狀態下無法使用操作代行。",
+  "assist.opsDirectionCount": "受影響演員 {n}人 · {m}個場景",
+  "assist.opsRoute": "退場動線",
+  "assist.opsBackstageSpot": "後台位置",
+  "assist.opsTransition": "進入此場景的進退場",
+  "assist.opsLanding": "保留此場景的落點",
+  "assist.opsRoutePoint": "距下手{x}% · 距舞台後方{y}%",
+  "assist.opsBend": "彎曲",
+  "assist.opsStraight": "直線",
+  "assist.opsDirectionQuestion": "哪位演員從哪側退場或進場？請確認演員、前後場景、先前退場動線和劇場側台（伸出式舞台為後方，其他為上手/下手）。條件不明，未做變更。",
+  "assist.opsDirectionNoChange": "指定的退場或進場方向相同。未做變更。",
+  "assist.opsDirectionProceed": "這項變更也會使{names}的退場、登場及前後或後續場景發生以下變化。是否繼續？",
+  "assist.opsDirectionProceedLocal": "將按以下內容變更{names}的退場或登場。是否繼續？",
+  "assist.opsDirectionAutomatic": "指定退場位置的演員會退出後台自動排列，因此其他演員的等候位置與登場、退場也會變化。",
+  "assist.opsDirectionDetails": "詳情（座標、曲線與全部變更）",
+  "assist.opsPlaceUpstage": "舞台後方",
+  "assist.opsPlaceRightWing": "下手側台",
+  "assist.opsPlaceLeftWing": "上手側台",
+  "assist.opsPlaceOnstage": "舞台上（{side}）",
+  "assist.opsPlaceRight": "偏下手",
+  "assist.opsPlaceLeft": "偏上手",
+  "assist.opsPlaceCenter": "中央",
+  "assist.opsSummaryExit": "退場",
+  "assist.opsSummaryEntrance": "登場起點",
+  "assist.opsSummaryPreviousExit": "從上一場景退場的位置",
+  "assist.opsSummaryCurve": "移動曲線變化（落點仍為{place}）",
+  "assist.opsSummaryWithin": "{kind}：在{to}內改變位置或路徑",
+  "assist.opsSummaryChange": "{kind}：{from} → {to}",
+  "assist.opsSummaryRow": "{number} {title}：{name} — {changes}",
+  "assist.opsSummarySeparator": "／",
+  "assist.opsDirectionConfirm": "確認退場與登場的變更",
+  "assist.opsNoRoute": "自動 / 未指定",
+  "assist.opsDirectionSide": "此劇場在該方向沒有側台。伸出式舞台使用後方，其他使用上手/下手。選擇哪側？未做變更。",
+  "assist.opsDirectionAdjacent": "沒有前一個或後一個場景。要變更哪個場景的進退場？未做變更。",
+  "assist.opsDirectionSource": "找不到能變更此次進場起點的先前退場動線。以哪個場景的退場為準？未做變更。",
+  "assist.opsDirectionPerformer": "請用準確登記名稱指定此場景舞台上的一位演員。要變更誰的進退場？未做變更。",
+  "assist.opsDirectionRelationship": "固定、持有物品或支撐關係阻止了動線變更。請確認關係，要變更誰的進退場？未做變更。",
+  "assist.opsConfirm": "此場景中的變更",
+  "assist.opsExecute": "執行",
+  "assist.opsCount": "變更{n}個棋子 · 總數{before} → {after}",
+  "assist.opsPosition": "距舞台右側{x}% · 距後方{y}% · 朝向{n}°",
+  "assist.opsBackstage": "後台",
+  "assist.opsDone": "已套用到此場景。復原一次即可還原。",
+  "assist.opsCommitted": "已儲存，但無法更新顯示。請勿再次執行，請重新開啟場景確認。",
+  "assist.opsFailed": "無法執行。請確認場景、鎖定、連接關係和儲存狀態後重新要求。"
+});
+
+
+// Position-based lighting: fixed copy and parameterized diagnostics.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{
+  "劇場設計": "劇院設計",
+  "空間・客席・幕": "空間、觀眾席與幕布",
+  "シーンの明かりを組み合わせる": "組合場景燈光",
+  "位置ごとの明かり": "各位置的燈光",
+  "背景付き22器具": "含天幕燈的22台設備",
+  "背景・転がし付き24器具": "含天幕燈及地排燈的24台設備",
+  "人物・場所": "人物或位置",
+  "輪郭・補助": "輪廓或補光",
+  "保存済みの明かり": "已儲存的燈光",
+  "プリセット配置に整える": "調整為預設設備配置",
+  "詳細で編集": "詳細編輯",
+  "詳細で調整": "詳細調整",
+  "詳細で調整済み": "已詳細調整",
+  "かんたん照明は、対応プリセットの機材配置で使えます。現在の配置は対応していません。": "簡易燈光需要支援的設備預設。目前配置不受支援。",
+  "試し表示中 · 適用すると現在の対象キューに保存します。": "預覽中 · 套用後儲存至所選燈光提示。",
+  "このキューの明かりは要再設定です。": "此燈光提示需要重新設定。",
+  "この位置の型を選び直すと、詳細の調整を置き換えます。": "重新選擇類型將取代此位置的詳細調整。",
+  "組み合わせた明かりの正面図": "組合燈光的正視圖",
+  "スポットの直径": "光斑直徑",
+  "移る時間": "過渡時間",
+  "奥の吊り": "後方吊桿",
+  "手前の吊り": "前方吊桿",
+  "当て先": "照射目標",
+  "強さを1下げる": "亮度降低1",
+  "強さを1上げる": "亮度提高1",
+  "この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？": "要用所選類型取代此位置的詳細編輯嗎？",
+  "共通24灯": "通用24盞燈",
+  "ホリゾント床": "天幕地排",
+  "ホリゾント上": "天幕頂排",
+  "転がし下手": "地燈：觀眾左側",
+  "転がし上手": "地燈：觀眾右側",
+  "旧かんたん照明を表示中。操作した位置だけを変更します。": "正在顯示舊版簡易燈光，僅修改操作的位置。",
+  "パートの明かり": "分區燈光",
+  "この位置の機材では利用できません": "此位置的燈具無法使用",
+  "対象の人物が不在": "目標人物不存在",
+  "詳細の未適用編集を先に適用してください。": "請先套用尚未套用的詳細編輯。",
+  "未適用の編集を先に適用してください": "請先套用尚未套用的編輯",
+  "ショーが更新されています。下書きを確認してから適用してください": "演出已更新，請檢查草稿後再套用。",
+  "適用するか、適用済みに戻してからシーンを切り替えてください": "請先套用或恢復已套用狀態，再切換場景",
+  "適用するか、適用済みに戻してからキューを切り替えてください": "請先套用或恢復已套用狀態，再切換提示",
+  "対応する機材配置を選んでください": "請選擇支援的設備預設",
+  "対応する機材配置を確認してください": "請檢查支援的設備配置",
+  "新しい形式の明かりです。詳細で確認してください": "此燈光使用較新的格式，請在詳細模式中檢查。",
+  "この位置ではその明かりを作れません": "此位置無法產生該燈光效果",
+  "調整値を確認してください": "請檢查調整值",
+  "組の効果がある位置です。詳細で調整してください": "此位置受群組效果控制，請在詳細模式中調整。",
+  "背景幕がありません。仮想背景面での試し表示です": "沒有背景幕，目前預覽使用虛擬背景面。",
+  "スポット径が機材の照射角の範囲で変わります": "光斑直徑受燈具光束角範圍限制",
+  "この舞台幅では背景の光に隙間が残る可能性があります。ホリゾント付きの配置も確認してください": "此舞台寬度可能導致背景光有空隙，請檢查含天幕燈的配置。",
+  "対象の配置が変わりました。人物・場所の型を選び直して再照準してください": "目標位置已改變，請重新選擇人物或位置以重新瞄準。",
+  "対象の人物が不在です。選び直してください": "目標人物不存在，請重新選擇。",
+  "対象が舞台の外にあります": "目標在舞台外",
+  "当て先を選んでください": "請選擇目標",
+  "強さを確認してください": "請檢查燈光強度",
+  "位置がありません": "找不到位置",
+  "組の強さは詳細で調整してください": "請在詳細模式中調整群組強度",
+  "条件付き：照射範囲と吊り高さを詳細で確認してください": "有條件：請在詳細模式中檢查照射範圍和懸掛高度",
+  "配置可能：機材数を保って舞台寸法に合わせます": "可以配置：保持燈具數量並適應舞台尺寸",
+  "共通セットの作図対応寸法は間口4〜24m、奥行3〜16m、高さ3〜14mです": "繪圖範圍：寬4–24公尺、深3–16公尺、高3–14公尺",
+  "初版は標準・拡張プロセニアムに対応しています。詳細表示で仕込みを確認してください": "此版本支援標準及擴展鏡框式舞台，其他配置請在詳細模式中檢查。",
+  "元のショーを残して、新しい版に「{preset}」を配置します。全シーンの機材配置が変わり、{count}件の照明キューと{alternatives}件の照明の別案は、時刻と名前を保って明かりを要再設定にします。続けますか？": "保留原演出並建立使用「{preset}」的新版本。所有場景的設備配置將改變，{count}個燈光提示和{alternatives}個燈光備選方案將保留時間及名稱，但需要重新設定燈光。繼續嗎？",
+  "劇場設計（2）": "劇院設計 (2)",
+  "照明（3）": "燈光 (3)",
+  "劇場設計の機材配置": "劇院設計中的設備配置",
+  "照明タブ": "燈光分頁"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"劇場設計タブ": "劇院設計分頁"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{
+  "明かりの機能": "燈光功能",
+  "使う位置": "使用位置",
+  "ピンスポット": "定點聚光",
+  "全体照らし": "全舞臺照明",
+  "背景染め": "背景染色",
+  "使用中: {count}か所": "使用中：{count}處",
+  "未使用": "尚未使用",
+  "この機能を担当できる位置がありません": "沒有位置能承擔此功能",
+  "適用すると、この位置の明かりを選んだ機能に切り替えます。": "套用後，此位置的燈光將切換為所選功能。",
+  "対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください": "目標位置已改變。請選擇對應的聚光位置並套用，重新瞄準。"
+});
+
+// Seven-workspace shortcut labels.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "セリフタブ": "台詞分頁",
+  "進行表タブ": "流程表分頁",
+  "リハーサルタブ": "排練分頁"
+});
+
+// Simple lighting panel layers (F-2/F-4–F-7).
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{
+  "この明かりの層": "此燈光的圖層",
+  "まだ層はありません。下の機能から選んでください。": "尚無圖層。請從下方選擇功能。",
+  "使用中: {function}": "使用中：{function}",
+  "層の一覧から選んで編集してください": "請從圖層清單選擇後編輯",
+  "層の点灯: {position}": "圖層開關：{position}",
+  "層を選ぶ: {position}": "選擇圖層：{position}",
+  "この位置は詳細で点灯してください": "請在詳細編輯器中點亮此位置",
+  "視点": "視點",
+  "選ぶ": "選擇"
+});
+
+// On-demand lighting model load failure.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "照明データを読み込めませんでした。": "無法載入燈光資料。"
+});
+
+// Position lighting preset descriptions.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "位置ごとの明かりを組み合わせる対応プリセット。": "可依位置組合燈光的相容預設。",
+  "元のショーを残し、新しい版で照明を組み直します。": "保留原始演出，在新版本中重新配置燈光。",
+  "同じ機材数で劇場寸法に合わせて配置します。": "維持設備數量，依劇場尺寸調整位置。"
+});
+// AB read-only consultation starters; no terms or storage changes.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.quick.title":"常用問題","assist.quick.terms":"查詢術語","assist.quick.help":"遇到問題","assist.quick.cue":"起草提示文字","assist.quick.names":"建議名稱","assist.quick.transition":"查看轉場","assist.quick.script":"根據劇本提建議","assist.quick.direction":"比較的轉場","assist.quick.next":"目前 → 下一個","assist.quick.prev":"上一個 → 目前","assist.quick.notice":"每次點擊計為1次。轉場會將所選兩個場景的棋子資訊，劇本會將目前場景的台詞和舞台指示（沒有時則為說明或輸入文字）最多400字傳送給Anthropic。只提供建議，不更改演出。","assist.quick.voice":"語音輸入：可使用裝置內建的語音輸入，如Mac聽寫。","assist.quick.copy":"複製","assist.quick.copied":"已複製","assist.quick.copyFailed":"無法複製。請選取回答文字後複製。","assist.quick.noScript":"此場景沒有劇本或說明。請在輸入框貼上400字以內的台詞或舞台指示。","assist.quick.noAdjacent":"無法讀取相鄰場景。請檢查場景選擇。","assist.quick.excerpt":"已傳送劇本：{title}（{n}字）","assist.quick.excerptShort":"已傳送劇本：{title}（共{total}字中的前{n}字，其餘未讀）","assist.quick.prompt.terms":"請解釋舞台左側、天幕和圖案片的含義","assist.quick.prompt.help":"無法儲存時應該怎麼辦？","assist.quick.prompt.cue":"請建議簡短的燈光提示說明文字","assist.quick.prompt.names":"請建議場景、提示或備選方案的名稱","assist.quick.prompt.transition":"請說明所選轉場中移動的人和物、出入場及順序的注意事項","assist.quick.prompt.script":"請根據此場景的台詞和舞台指示建議出入場及轉場順序"});
+
+// INFRA local archive controls; policy text remains a publication approval item.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.history.settings": "諮詢設定", "assist.history.enabled": "在此裝置保留歷史", "assist.history.notice": "預設關閉。開啟後開始的提問和回答才會保留在此裝置，最多20輪、7天、合計64KiB。不寫入演出或伺服器，也不隨新問題自動傳送。關閉後，已有歷史在刪除前仍可閱讀。", "assist.history.archive": "已儲存的歷史（{n}輪）", "assist.history.clear": "刪除全部歷史", "assist.history.confirmClear": "刪除（無法復原）", "assist.history.cancel": "取消", "assist.history.cleared": "已刪除此裝置的歷史。", "assist.history.storageFailed": "無法儲存或讀取歷史。演出和本次回答維持原樣。刪除歷史後可以重新設定。", "assist.history.notSaved": "本輪對話未儲存至歷史。", "assist.history.policy": "輸入的文字會傳送給Anthropic以產生回答。開啟歷史後，可將後續提問和回答保留在此裝置。伺服器不儲存對話歷史。"});
+// CHECK: local batch results and explicit finding-only transmission.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "assist.batch.title": "AI 檢查",
+  "assist.batch.scope": "檢查範圍",
+  "assist.batch.scene": "此場景",
+  "assist.batch.show": "整場演出",
+  "assist.batch.notice": "僅將發現的項目（場景編號、名稱、對象名、數量、時間）傳送給Anthropic。一次使用一次額度。未發現項目則不呼叫AI，也不使用額度。結果不儲存。",
+  "assist.batch.prompt": "按類別簡短解釋程式算出的檢查項目，並提出處理建議。",
+  "assist.batch.result": "檢查結果：{scenes}個場景 · {n}項待確認（{places}處）",
+  "assist.batch.safety": "安全與位置",
+  "assist.batch.transition": "換場",
+  "assist.batch.appearance": "出場",
+  "assist.batch.lighting": "燈光",
+  "assist.batch.advice": "AI建議",
+  "assist.batch.ask": "問AI",
+  "assist.batch.askPrompt": "請為這個檢查結果提出處理建議：{item}",
+  "assist.batch.thinking": "正在檢查清單…",
+  "assist.batch.empty": "未發現待確認項。未呼叫AI，也未消耗次數。請同時查看未檢查的範圍。這不保證現場安全。",
+  "assist.batch.done": "檢查完成。位置、出場和燈光均為候選提示。請在現場確認高度、路徑、支撐和服裝。",
+  "assist.batch.failed": "無法完成檢查或取得AI說明。已顯示的清單由裝置本機計算。",
+  "assist.batch.tooLarge": "清單超出傳送上限。未呼叫AI或使用額度。可縮小到此場景重新檢查。",
+  "assist.batch.stale": "演出已更改，請重新檢查。",
+  "assist.batch.sceneMissing": "找不到此檢查結果對應的場景，請重新檢查。",
+  "assist.batch.routeFailed": "無法開啟該位置，請按場景編號開啟。",
+  "assist.batch.opened": "已開啟相應場景和畫面。",
+  "assist.batch.count": "演員棋子{n}人（位置數量）",
+  "assist.batch.balance": "台上位置明顯偏向{side}（橫向位置平均值{mean}）。請確認是否有意如此安排。",
+  "assist.batch.overlap": "重疊候選{n}對。相關對象：{names}",
+  "assist.batch.overhead": "器具正下方候選{n}對，高度和支撐未確認：{names}",
+  "assist.batch.outside": "舞台外棋子{n}個：{names}",
+  "assist.batch.hidden": "可能被客席視線遮擋的演員{n}人（場館固定障礙物、平面盲區）：{names}",
+  "assist.batch.positionsUnknown": "部分位置無法讀取，位置和重疊檢查未完成。",
+  "assist.batch.sightUnknown": "客席盲區未確認，需要客席和固定障礙物資料。",
+  "assist.batch.speed": "{names}：{m}公尺/{seconds}秒，需要{speed}公尺/秒，參考{limit}公尺/秒。可減少同時移動的對象、調整順序或延長時間。",
+  "assist.batch.route": "{names}：舞台外路徑、距離或時間待確認（{seconds}秒）。未判斷是否來得及。",
+  "assist.batch.changes": "端點比較：移動{a}人/{b}物，出現{c}/{d}，消失{e}/{f}，進入舞台{g}/{h}，離開舞台{i}/{j}（人/物）。分類有重疊，請勿相加。",
+  "assist.batch.transitionUnknown": "無法比較換場。",
+  "assist.batch.consecutive": "{names}：場景{a}至{b}，連續{c}個場景。整場登場區間{d}次，演出中結束的區間{e}次。請確認休息和換裝。",
+  "assist.batch.return": "{names}：場景{a}後空一個場景，在{b}重新登場。含換場共{c}秒，可能涉及快速換裝或移動。整場登場區間{d}次，演出中結束的區間{e}次。",
+  "assist.batch.identityUnknown": "部分演員缺少名冊或共同識別碼，跨場景出場未確認。",
+  "assist.batch.unlit": "可能在光線外的演員{n}人：{names}。僅檢查提示開始時的胸部採樣點和靜止光錐外緣。",
+  "assist.batch.noFade": "沒有淡變時間的提示（確認是否有意切換）：{names}",
+  "assist.batch.duplicate": "燈光和分組內容相同的提示：{names}。不比較名稱和時間。",
+  "assist.batch.lightUnknown": "無法確認燈光資料，未設定不代表沒有問題。",
+  "assist.batch.movingLight": "移動光線、圖案、切光等未確認：{names}。請在播放中檢查。"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.batch.summaryNotice": "向AI傳送按場景和類型彙總的數量、代表值及最多兩個範例名稱。各個項目的清單留在裝置內。"});
+
+// CHECK fix 3: priority, grouped findings and unassessed areas.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "assist.batch.more": "另有 {n}項",
+  "assist.batch.otherPlaces": "另有 {n}處",
+  "assist.batch.otherNames": "另有{n}人或對象",
+  "assist.batch.group": "{item}：{n}處（{scenes}個場景）",
+  "assist.batch.severity.high": "優先級 高",
+  "assist.batch.severity.medium": "優先級 中",
+  "assist.batch.severity.low": "優先級 低",
+  "assist.batch.kind.balance": "左右明顯偏移",
+  "assist.batch.kind.overlap": "重疊",
+  "assist.batch.kind.overhead": "懸吊器材正下方",
+  "assist.batch.kind.hidden": "觀眾席看不見",
+  "assist.batch.kind.speed": "轉場速度",
+  "assist.batch.kind.return": "快速再次登場",
+  "assist.batch.kind.unlit": "燈光範圍之外",
+  "assist.batch.kind.noFade": "無淡變時間",
+  "assist.batch.kind.duplicate": "內容相同的提示",
+  "assist.batch.coverage": "未檢查的範圍（{n}類）",
+  "assist.batch.coverageNotice": "以下為檢測出的問題之外尚未檢查的事項。不計入待確認項，也不傳送給AI；並不代表檢查通過。",
+  "assist.batch.coverageItem": "{item}：{scenes}個場景",
+  "assist.batch.coverage.positionsUnknown": "無法讀取的位置與重疊",
+  "assist.batch.coverage.sightUnknown": "觀眾席盲區（需要座位與固定障礙物資料）",
+  "assist.batch.coverage.route": "台外路線、距離與轉場時間",
+  "assist.batch.coverage.transitionUnknown": "無法比較的轉場",
+  "assist.batch.coverage.identityUnknown": "缺少識別碼的演員出場情況",
+  "assist.batch.coverage.lightUnknown": "無法檢查的燈光資料",
+  "assist.batch.coverage.movingLight": "移動光束、圖案、切割片等效果"
+});
+
+// DOCS: read-only document drafts.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "assist.docs.original": "原文（保持不變）",
+  "assist.docs.title": "文件草稿",
+  "assist.docs.kind": "文件類型",
+  "assist.docs.runNotes": "整理排練記錄",
+  "assist.docs.performer": "演員說明",
+  "assist.docs.technician": "技術交接",
+  "assist.docs.translate": "翻譯副本",
+  "assist.docs.run": "排練輪次",
+  "assist.docs.scene": "場景",
+  "assist.docs.cast": "演員",
+  "assist.docs.source": "翻譯內容",
+  "assist.docs.cues": "提示名稱與備註",
+  "assist.docs.notes": "場景備註",
+  "assist.docs.draft": "此場景的最近草稿",
+  "assist.docs.language": "目標語言",
+  "assist.docs.ja": "日語",
+  "assist.docs.en": "英語",
+  "assist.docs.ko": "韓語",
+  "assist.docs.zh-Hans": "簡體中文",
+  "assist.docs.zh-Hant": "繁體中文",
+  "assist.docs.notice": "僅將下方所示的一個場景的一個部分傳送給 Anthropic。請勿包含個人或機密資訊。演出不變。每次生成使用一次諮詢。",
+  "assist.docs.scope": "傳送範圍：{title}，第{page}/{pages}部分（共{total}項）。不讀取其他部分或場景。長名稱以…縮短。",
+  "assist.docs.page": "第{page}/{pages}部分",
+  "assist.docs.previous": "上一部分",
+  "assist.docs.next": "下一部分",
+  "assist.docs.generate": "為此部分產生草稿",
+  "assist.docs.loading": "正在檢查內容…",
+  "assist.docs.unavailable": "此部分沒有資料，或單個項目超過傳送上限。請重新選擇輪次、演員、場景或內容。",
+  "assist.docs.changed": "資料已變更。請檢查下方更新後的範圍，再次按下。",
+  "assist.docs.copy": "複製",
+  "assist.docs.export": "匯出",
+  "assist.docs.copied": "已複製",
+  "assist.docs.copyFailed": "複製失敗。請選取回覆進行複製。",
+  "assist.docs.exported": "已開始匯出",
+  "assist.docs.exportFailed": "匯出失敗。請嘗試複製。",
+  "assist.docs.result": "未核實草稿：{title}，第{page}/{pages}部分（未讀其他部分）",
+  "assist.docs.true": "是",
+  "assist.docs.false": "否",
+  "assist.docs.prompt.runNotes": "請將這些排練記錄整理為各部門的修改清單。",
+  "assist.docs.prompt.performer": "請為這位演員起草動作說明。",
+  "assist.docs.prompt.technician": "請根據這些設備配置和 LX 提示起草技術交接。",
+  "assist.docs.prompt.translate": "請將原文與所選語言的譯文配對，保留原名。",
+  "assist.docs.field.source": "來源",
+  "assist.docs.field.text": "原文",
+  "assist.docs.field.segment": "文字部分",
+  "assist.docs.field.segments": "文字總部分數",
+  "assist.docs.field.label": "對象",
+  "assist.docs.field.presence": "場景內位置",
+  "assist.docs.field.fromPrev": "上一場景的配置變化",
+  "assist.docs.field.toNext": "下一場景的配置變化",
+  "assist.docs.field.side": "左右",
+  "assist.docs.field.depth": "前後",
+  "assist.docs.field.props": "持有物",
+  "assist.docs.field.number": "設備登記編號",
+  "assist.docs.field.position": "登記位置",
+  "assist.docs.field.kind": "設備類型",
+  "assist.docs.field.mount": "安裝方式（登記值）",
+  "assist.docs.field.u": "左右登記值（0–1）",
+  "assist.docs.field.v": "前後登記值（0–1）",
+  "assist.docs.field.height": "登記高度（m）",
+  "assist.docs.field.name": "名稱",
+  "assist.docs.field.memo": "備註",
+  "assist.docs.field.trigger": "觸發",
+  "assist.docs.field.offset": "場景內位置（秒）",
+  "assist.docs.field.placed": "已置於時間軸",
+  "assist.docs.field.enabled": "啟用",
+  "assist.docs.field.fadeIn": "漸入（秒）",
+  "assist.docs.field.fadeOut": "漸出（秒）",
+  "assist.docs.field.delayIn": "漸入延遲（秒）",
+  "assist.docs.field.delayOut": "漸出延遲（秒）",
+  "assist.docs.field.cue": "提示",
+  "assist.docs.field.fixture": "設備",
+  "assist.docs.field.intensity": "亮度（登記值）",
+  "assist.docs.field.on": "點亮登記值",
+  "assist.docs.value.unknown": "未確認",
+  "assist.docs.value.absent": "未配置",
+  "assist.docs.value.onstage": "舞台內",
+  "assist.docs.value.outside": "舞台範圍外",
+  "assist.docs.value.appeared": "配置出現（路徑未確認）",
+  "assist.docs.value.disappeared": "配置消失（路徑未確認）",
+  "assist.docs.value.continued": "前後配置有無相同",
+  "assist.docs.value.stage-right": "舞台右側",
+  "assist.docs.value.stage-left": "舞台左側",
+  "assist.docs.value.center": "中央",
+  "assist.docs.value.upstage": "舞台後方",
+  "assist.docs.value.downstage": "舞台前方",
+  "assist.docs.value.run-note": "排練記錄正文",
+  "assist.docs.value.addendum": "確認後補充"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "assist.ops2Confirm": "確認隊形／場景操作",
+  "assist.ops2FormationCount": "{shape}：變更{n}個棋子",
+  "assist.ops2SceneCount": "新增或重新編號的場景{n}個",
+  "assist.ops2Number": "{from} → {to}：{title}",
+  "assist.ops2Outside": "{name}：超出舞台。請確認位置。",
+  "assist.ops2Overlap": "{name}與{other}：平面中心相距{distance}m，可能與器具或棋子重疊。尺寸、高度及實際安全性未確認。",
+  "assist.ops2Neighbours": "{number} {title}：相鄰場景、進出場及動線將改變。",
+  "assist.ops2Ros": "流程表的場景行按ID更新順序及編號，自由項目和備註保留。",
+  "assist.ops2SceneCue": "提示{name}：保留場景ID關聯，請確認執行順序及時刻。",
+  "assist.ops2FixedCue": "提示{name}：保留章節時間及場景跟隨規則。請確認下方時刻及對應場景。",
+  "assist.ops2Media": "音源位置{name}：保留開始場景ID及檔案範圍，請確認播放時刻。",
+  "assist.ops2Audio": "保留場景音軌引用，章節開頭及播放順序可能改變。",
+  "assist.ops2CopyLinks": "副本使用新的場景、棋子及提示ID。複製場景提示、燈光及音源位置，不增加章節定時提示。新流程表行不複製負責人及註釋。",
+  "assist.ops2SectionCopy": "副本使用目標章節的服裝及時間指定。",
+  "assist.ops2Time": "{number}：距演出開頭{from}秒 → {to}秒",
+  "assist.ops2Proceed": "確認以上變更及影響後，請按執行。復原一次即可全部還原。",
+  "assist.ops2OutsideBlocked": "超出可放置範圍，無法執行。請更改中心或間距後重試。",
+  "assist.ops2Capacity": "場景及章節已達上限，請先騰出空間。目前未變更。",
+  "assist.ops2Section": "請在同一章節內對沒有子項目的場景操作。目前未變更。",
+  "assist.ops2LinkedTiming": "無法保留固定時間、音源或隊形關聯。請先檢查時間軸。目前未變更。",
+  "assist.ops2Alternative": "請先顯示原場景的採用方案再複製。目前未變更。",
+  "assist.ops2SceneRef": "找不到指定場景編號，請確認編號及前後關係。目前未變更。",
+  "assist.ops2Relationships": "無法移動固定、有動線、持有或支撐關係的棋子。請確認對象。目前未變更。",
+  "assist.ops2Question": "請明確對象、隊形、中心、間距及方向，或場景編號及前後關係。目前未變更。",
+  "assist.ops2Shape_line": "橫一列",
+  "assist.ops2Shape_column": "縱一列",
+  "assist.ops2Shape_diagonal": "斜一列",
+  "assist.ops2Shape_v": "V字",
+  "assist.ops2Shape_inverted-v": "倒V字",
+  "assist.ops2Shape_circle": "圓",
+  "assist.ops2Shape_two-rows": "橫向兩列",
+  "assist.ops2Shape_staggered": "交錯",
+  "assist.ops2CueTime": "提示{name}：時刻{from} → {to}，對應場景{scene}。",
+  "assist.ops2CopyTitle": "{title}的副本",
+  "assist.ops2Effects": "影響詳情（全部{n}項）"
+});
+
+// 3-C: review transport and run-of-show CSV.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "4倍以上は音が出ません。": "4倍及以上速度播放時無聲音。",
+  "この環境では、音ありは1倍、音なしは4倍・8倍で再生できます。": "此環境支援1倍有聲播放，以及4倍、8倍無聲播放。",
+  "再生速度": "播放速度",
+  "再生速度（音程を保つ）": "播放速度（保持音調）",
+  "この環境では通常速度のみ再生できます。": "此環境僅支援正常速度播放。",
+  "LXレーンに置く": "放入LX軌道",
+  "音源を再生できないため、一部または全部を音なしで再生しています。停止して再生し直すと音源を再試行します。": "音源無法播放，部分或全部內容正在無聲播放。停止後重新播放可重試音源。",
+  "CSVを書き出す": "匯出CSV"
+});
+
+// W1-A: detail figure view controls (device preferences only).
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "図を全体表示": "顯示完整圖",
+  "図を全体表示（空き場所のダブルクリックでも戻ります）": "顯示完整圖（也可按兩下空白處返回）",
+  "ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動": "滾輪縮放；放大時按空白鍵拖曳或用滑鼠中鍵拖曳平移",
+  "平面図と正面図の高さ配分": "平面圖和正面圖的高度分配"
 });

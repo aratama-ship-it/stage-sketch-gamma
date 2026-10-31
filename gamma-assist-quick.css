@@ -1,0 +1,11 @@
+/* AB inherits design/TOKEN_SHEET.md and the existing consultation tokens. */
+.assist-quick {flex:0 0 auto;min-width:0;}
+.assist-quick summary {display:flex;align-items:center;min-height:var(--assist-hit);padding:var(--assist-s1) var(--assist-s2);box-sizing:border-box;border:1px solid var(--brass);cursor:pointer;color:var(--paper);font:var(--assist-body)/1.6 var(--sans);}
+.assist-quick summary::before {content:'▸';margin-right:var(--assist-s2);}
+.assist-quick[open] summary::before {content:'▾';}
+.assist-quick-buttons {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--assist-s2);margin:var(--assist-s2) 0;}
+.assist-quick-buttons .assist-draft {min-width:44px;padding:var(--assist-s1) var(--assist-s2);overflow-wrap:anywhere;}
+.assist-quick-direction {display:flex;align-items:center;gap:var(--assist-s2);margin:var(--assist-s2) 0;font:var(--assist-small)/1.5 var(--sans);}
+.assist-quick select {min-height:var(--assist-hit);min-width:44px;max-width:100%;background:var(--desk-2);color:var(--paper);border:1px solid var(--brass);border-radius:var(--assist-radius);font:var(--assist-small)/1.5 var(--sans);}
+.assist-quick-copy {display:block;margin-top:var(--assist-s2);}
+.assist-quick :focus-visible,.assist-quick-copy:focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}

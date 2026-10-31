@@ -33,7 +33,7 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release095-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release096-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {
@@ -61,8 +61,8 @@ ${fig("49b-tour-step1", "Step 1 of the tour. A ring marks the drawing and the ca
 <p>Starting your own show rather than a sample. In Gamma, <strong>a new show begins by choosing the theatre</strong>.</p>
 ${steps([
   "In the " + ui("Show") + " panel on the left, press " + ui("Create a new show") + " and give it a name.",
-  "A “choose the theatre first” band appears and the " + ui("Theatre settings") + " tab opens. On the Stage tab only the " + ui("Show") + " panel works; the rest is dimmed.",
-  "In " + ui("Theatre settings") + ", choose a venue type preset (press " + ui("Apply the preset") + " at the end of the list, or double-click it). Choose a size; adjust wings, house or viewpoints in the nine steps if you need to.",
+  "A “choose the theatre first” band appears and the " + ui("Theatre design") + " tab opens. On the Stage tab only the " + ui("Show") + " panel works; the rest is dimmed.",
+  "In " + ui("Theatre design") + ", choose a venue type preset (press " + ui("Apply the preset") + " at the end of the list, or double-click it). Choose a size; adjust wings, house or viewpoints in the nine steps if you need to.",
   "Press " + ui("Apply this theatre") + ". Asked about lighting equipment, " + ui("Do not install lighting equipment") + " is fine for now — you can add it later.",
   "Go back to " + ui("Stage") + ". Use " + ui("＋ Add performer") + " to add a name. A piece appears on stage.",
   "Drag the piece into place. In " + ui("Selection") + " on the right, set the " + ui("Pose") + " and facing.",

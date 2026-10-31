@@ -139,8 +139,11 @@ button {
   min-height: 44px;
 }
 
-textarea, input[type="text"] {
+input, select, textarea {
   font-family: var(--sans);
+}
+
+textarea, input[type="text"] {
   font-size: 15px;
 }
 
@@ -3133,7 +3136,7 @@ canvas[data-tool="note"] { cursor: copy; }
   color: var(--milk);
   /* 絵の上の付箋（NOTE_FONT）と同じ大きさ。ここだけ小さいと、
      書いているときと貼り終えたときで字の大きさが変わって見える */
-  font: 15px/1.45 'Hiragino Kaku Gothic ProN', sans-serif;
+  font: 15px/1.45 var(--sans);
   padding: 6px 7px;
 }
 
@@ -11058,10 +11061,13 @@ button.stage-pref-keyrow.is-capturing .stage-pref-keycap {
 /* 場面は右列で縦に積む */
 .stage-col .stage-scenes {
   border: 0;
+  border-top: 1px solid var(--line-dark);
   background: none;
   padding: 0 0 14px;
   margin-bottom: 0;
 }
+
+.stage-col .stage-scenes.is-collapsed { padding-bottom: 0; }
 
 /* 場面の欄は内容が少なければその高さで閉じ、多ければ画面高の2/3まで広げる。
    下の縁を引いたときだけ、本人が選んだ高さを固定して覚える。 */
@@ -18734,7 +18740,7 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
  * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
  * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
 /* T-08 三度目（2026-09-18 本人選択）: 取っ手ではなく「時間の目盛りが覗く箱」にする。
- * 目盛り箱40×22（2代目72×34の面積36%）＋ショートカット表示Eで操作領域52×22。
+ * W1-B: 目盛り箱40×22は維持し、名称12px＋補助のEを添える。操作域は44px高。
  * 地は不透明＝下のパネルの文字と重なって読めなくなるのを防ぐ。
  * 数値・コントラストの実測値・却下した案は design/TOKEN_SHEET_timeline_grip_2026-09-18.md が正本。
  * ★上へ引くとタイムラインが上がるので、取っ手もそれに合わせて上がる。
@@ -18747,57 +18753,68 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   bottom: calc(var(--stage-timeline-grip-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  width: 52px;
-  height: 22px;
-  /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。 */
-  min-height: 22px;
-  padding: 0;
+  gap: 6px;
+  width: max-content;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 8px 0 4px;
   border: 0;
   background: none;
-  color: var(--brass);
+  color: var(--milk-dim);
   cursor: grab;
   touch-action: none;
-  transition: transform 120ms ease, color 120ms ease;
+  white-space: nowrap;
+  transition: color 120ms ease;
 }
 
+/* 地は28px、操作域は上の余白まで44px。文字の背後を不透明に保つ。 */
+.stage-timeline-resize-handle::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 0;
+  height: 28px;
+  box-sizing: border-box;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--desk-2);
+  transition: border-color 120ms ease;
+}
 .stage-timeline-resize-handle svg {
   flex: 0 0 40px;
   display: block;
   width: 40px;
   height: 22px;
-  /* ★塗りは箱の地だけ（SVG 側で指定）。ここで fill: currentColor を掛けると全部真鍮で潰れる。 */
   fill: none;
   stroke: currentColor;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
 }
-
+.stage-timeline-grip-label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  pointer-events: none;
+}
 .stage-timeline-shortcut {
   flex: 0 0 auto;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
   color: currentColor;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
   pointer-events: none;
 }
-
 .stage-timeline-resize-handle:hover,
-.stage-timeline-resize-handle:focus-visible { color: var(--paper); transform: translateY(-2px); }
-.stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; border-radius: var(--radius-sm); }
+.stage-timeline-resize-handle:focus-visible,
+body.is-timeline-will-collapse .stage-timeline-resize-handle { color: var(--milk); }
+.stage-timeline-resize-handle:hover::before,
+.stage-timeline-resize-handle:focus-visible::before { border-color: var(--brass); }
+.stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: var(--radius-sm); }
 body.is-timeline-resizing .stage-timeline-resize-handle { cursor: grabbing; transition: none; }
-
-/* 2026-09-18: 下限より下へ引いている間だけ「離せばしまいます」と見せる。
- * 取っ手の線を明るくするだけ（パネルを動かすと掴んだ場所が逃げる）。 */
-body.is-timeline-will-collapse .stage-timeline-resize-handle { color: var(--paper); }
 body.is-timeline-will-collapse .stage-timeline-resize { background: rgba(239, 231, 214, 0.22); }
 
-.stage-timeline-resize-handle:hover,
-.stage-timeline-resize-handle:focus-visible { color: var(--milk); border-color: var(--brass); }
-.stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-
-/* 全画面・発表中・機材配置・劇場設定では出さない。
- * 照明デザインでは舞台と同じタイムラインを使うため取っ手も残す。 */
+/* 劇場設計の『空間』『機材』は内部では venue-setup / light-placement のまま。
+ * 照明（light-design）は同じタイムラインを使うため取っ手も残す。 */
 body.stage-fullscreen .stage-timeline-resize-handle,
 body[data-gamma-workspace="light-placement"] .stage-timeline-resize-handle,
 body[data-gamma-workspace="venue-setup"] .stage-timeline-resize-handle { display: none; }

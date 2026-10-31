@@ -7,7 +7,7 @@
 .scene-alternatives-info { display:block; padding:8px 0; color:var(--scene-plan-muted); font-size:12px; }
 .scene-alternatives-status:empty { display:none; }
 .scene-alternatives-status,.scene-alternatives-error { color:#f6c18b; }
-.scene-alternatives-dialog { box-sizing:border-box; margin:auto; width:min(1120px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; padding:24px; background:#201b16; color:var(--scene-plan-ink); border:1px solid var(--scene-plan-border); border-radius:var(--radius-sm); font:14px/1.6 system-ui,sans-serif; }
+.scene-alternatives-dialog { box-sizing:border-box; margin:auto; width:min(1120px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; padding:24px; background:#201b16; color:var(--scene-plan-ink); border:1px solid var(--scene-plan-border); border-radius:var(--radius-sm); font:14px/1.6 var(--sans); }
 .scene-alternatives-dialog::backdrop { background:rgb(0 0 0 / .7); }
 .scene-alternatives-dialog h2 { margin:0 70px 20px 0; font-size:18px; }
 .scene-alternatives-close { position:absolute; top:18px; right:20px; }

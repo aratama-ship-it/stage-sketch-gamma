@@ -691,6 +691,7 @@
   function applyPreset() {
     const preset = currentPreset(), ids = selectedIds(), picked = choices();
     const result = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: picked, regions: stageRegions(), order: effectiveOrder() });
+    if (result.status === "noop" && result.reason === "no-change") { refresh(); return; }
     if (result.status !== "applied") { H.toast(result.reason === "no-compatible-fixtures" ? "この型に使える灯が選ばれていません" : "型を適用できませんでした"); return; }
     /* ここだけが状態を書き換える箇所。commit は正確に一度だけなので、Undoも一手だけ。 */
     const c = H.cue();

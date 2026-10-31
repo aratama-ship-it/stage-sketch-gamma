@@ -357,7 +357,7 @@
         || cues.map(cue => cue.lights?.[fixture.id]).find(Boolean);
       if (!source) continue;
       const point = source.path?.a || source.path?.c;
-      const setup = { surface: source.surface || 'floor', color: source.color || '#f2ead6',
+      const setup = { surface: source.surface || 'floor', ...(!fixture.cueColor ? {color:source.color || '#f2ead6'} : {}),
         ...(point ? { path: { kind: 'still', a: clone(point) } } : {}) };
       fixture.fixedSetup = clone(setup);
       for (const cue of cues) if (cue.lights?.[fixture.id]) Object.assign(cue.lights[fixture.id], clone(setup), { beamDeg: null, beamDegTo: null });

@@ -111,6 +111,7 @@
     "light-design/laser-effects.js",
     "light-design/light-presets-ui.js",
     "light-design/light-presets.js",
+    "light-design/part-lighting-model.js",
     "light-design/position-names-ui.js",
     "light-design/position-placement-ui.js",
     "light-design/rig-engine.js",

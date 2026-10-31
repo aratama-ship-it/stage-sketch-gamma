@@ -1,4 +1,4 @@
-/* Conversation stays in memory; only the independent panel collapse preference is stored. */
+/* Model context stays in memory; an optional local archive is separate from request history. */
 (function(root) {
   'use strict';
   // Insert the approved SVG here later; an empty value omits the figure entirely.
@@ -8,6 +8,10 @@
   function nativeSessionBridge() {
     const b = root.stageSketchBridge;
     return b && ['sessionConnect','sessionSend','sessionDisconnect','onSessionEvent'].every(k => typeof b[k] === 'function') ? b : null;
+  }
+  function isNative() {
+    // Display gating only. Metadata never grants authentication or edit rights.
+    return root.STAGE_RUNTIME?.isMac?.() === true || !!nativeSessionBridge();
   }
   function eligible(identity, native = false) {
     const plan = root.GAMMA_EDITIONS?.normalizePlan(identity?.plan);
@@ -21,7 +25,7 @@
   }
   // Explicit scene-check snapshots only. Original IDs, notes, cues and the show body never leave here.
   const clip = (value, max) => [...String(value || '')].slice(0,max).join('');
-  function buildSceneSnapshot(documentString, activeId) {
+  function buildSceneSnapshot(documentString, activeId, adjacent = 'both') {
     const project=JSON.parse(documentString).project;
     const scenes=project?.scenes;
     if(!Array.isArray(scenes))throw new Error('scene unavailable');
@@ -61,8 +65,8 @@
       return {title,pieces:list};
     }
     const scene=compact(actual[pos],120);
-    if(pos>0)scene.prev=compact(actual[pos-1],80);
-    if(pos+1<actual.length)scene.next=compact(actual[pos+1],80);
+    if(pos>0&&adjacent!=='next')scene.prev=compact(actual[pos-1],80);
+    if(pos+1<actual.length&&adjacent!=='prev')scene.next=compact(actual[pos+1],80);
     function summarize(s) {
       if(!s||s.truncated)return;
       const counts=Object.create(null);
@@ -169,17 +173,49 @@
     if(kind==='field'&&!['level','colour','aim','beam','gobo','shutter'].includes(key))return null;
     return {doc,tab,kind,key,selector:kind==='field'?`#insp [data-assist-field="${key}"]`:kind==='panel'?`section.stage-panel[data-panel="${key}"]`:'#'+key};
   }
-  const model = {eligible, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps};
+  const model = {isNative, eligible, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps};
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   if (!root.document) return;
   const panel = document.querySelector('[data-panel="assist"]');
   if (!panel) return;
+  let waitingForGrid, placementObserver, panelRemoved = false;
+  function removePanel() {
+    panelRemoved = true;
+    waitingForGrid?.disconnect();
+    placementObserver?.disconnect();
+    panel.remove();
+  }
   // Hide before any asynchronous work, including on Mac and static Pages.
   panel.hidden = true;
   panel.dataset.assistAvailable = 'false';
-  if (nativeSessionBridge()) { panel.remove(); return; }
-  panel.innerHTML = "<div class=\"stage-panel-body\">\n              <span class=\"assist-badge\" data-assist-text=\"badge\"></span>\n              <p class=\"assist-notice\" data-assist-text=\"trialNotice\"></p>\n              <div class=\"assist-figure\" data-assist=\"figure\" aria-hidden=\"true\"></div>\n              <div class=\"assist-log\" data-assist=\"log\" role=\"log\" aria-live=\"polite\"></div>\n              <form class=\"assist-form\" data-assist=\"form\" autocomplete=\"off\">\n                <textarea data-assist=\"input\" rows=\"3\" maxlength=\"400\" autocomplete=\"off\" data-1p-ignore></textarea>\n                <div class=\"assist-scene-actions\"><button class=\"assist-check\" data-assist=\"check\" type=\"button\" data-assist-text=\"check\" aria-describedby=\"assist-check-notice\"></button><button class=\"assist-draft\" data-assist=\"draft\" type=\"button\" data-assist-text=\"draft\" aria-describedby=\"assist-draft-reason\"></button><button class=\"assist-draft\" data-assist=\"lighting\" type=\"button\" data-assist-text=\"lighting\" aria-describedby=\"assist-light-reason\"></button></div>\n                <p id=\"assist-light-reason\" class=\"assist-notice\" data-assist=\"lightReason\"></p>\n                <p id=\"assist-draft-reason\" class=\"assist-notice\" data-assist=\"draftReason\"></p>\n                <p id=\"assist-check-notice\" class=\"assist-notice\" data-assist-text=\"checkNotice\"></p>\n                <label class=\"assist-context\"><input type=\"checkbox\" data-assist=\"context\"><span data-assist-text=\"context\"></span></label>\n                <p class=\"assist-status\" data-assist=\"status\" role=\"status\"></p>\n                <div class=\"assist-actions\"><span class=\"assist-remaining\" data-assist=\"remaining\"></span><button class=\"assist-send\" data-assist=\"send\" type=\"submit\" data-assist-text=\"send\" disabled></button></div>\n              </form>\n              <p class=\"assist-notice\" data-assist-text=\"notice\"></p>\n            </div>";
-  const style = document.createElement("link"); style.rel="stylesheet"; style.href="gamma-assist.css?v=20261030-v0395"; document.head.append(style);
+  if (isNative()) { removePanel(); return; }
+  panel.innerHTML = `<div class="stage-panel-body">
+              <form class="assist-form" data-assist="form" autocomplete="off">
+                <textarea data-assist="input" rows="3" maxlength="400" autocomplete="off" data-1p-ignore></textarea>
+                <div class="assist-actions"><button class="assist-send" data-assist="send" type="submit" data-assist-text="send" disabled></button></div>
+                <label class="assist-context"><input type="checkbox" data-assist="context"><span data-assist-text="context"></span></label>
+                <p class="assist-status" data-assist="status" role="status"></p>
+              </form>
+              <div class="assist-scene-actions assist-modes" data-assist="modes">
+                <button class="assist-check" data-assist="check" type="button" data-assist-text="check" aria-describedby="assist-check-notice"></button>
+                <button class="assist-draft" data-assist="draft" type="button" data-assist-text="draft" aria-describedby="assist-draft-reason"></button>
+                <button class="assist-draft" data-assist="lighting" type="button" data-assist-text="lighting" aria-describedby="assist-light-reason"></button>
+              </div>
+              <div class="assist-mode-notices" data-assist="modeNotices" aria-live="polite">
+                <p id="assist-normal-notice" class="assist-notice" data-assist-text="notice"></p>
+                <p id="assist-light-reason" class="assist-notice" data-assist="lightReason"></p>
+                <p id="assist-draft-reason" class="assist-notice" data-assist="draftReason"></p>
+                <p id="assist-check-notice" class="assist-notice" data-assist-text="checkNotice"></p>
+              </div>
+              <div class="assist-figure" data-assist="figure" aria-hidden="true"></div>
+              <div class="assist-log" data-assist="log" role="log" aria-live="polite"></div>
+              <div class="assist-footer" data-assist="footer">
+                <span class="assist-badge" data-assist-text="badge"></span>
+                <p class="assist-notice" data-assist-text="trialNotice"></p>
+                <span class="assist-remaining" data-assist="remaining"></span>
+              </div>
+            </div>`;
+  const style = document.createElement("link"); style.rel="stylesheet"; style.href="gamma-assist.css?v=20261031-v0396"; document.head.append(style);
   const $ = key => panel.querySelector('[data-assist="'+key+'"]');
   // The supplied SVG style is global in an HTML document; its equivalent is
   // scoped to .assist-character in CSS so existing stage vectors are unaffected.
@@ -190,7 +226,7 @@
   svg?.classList.add('assist-character');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let state = 'idle', elapsed = 0, timer = null, inView = false, busy = false, ended = false, talkTimer = null;
-  let pendingDraft = null, editAllowed = false;
+  let pendingDraft = null, editAllowed = false, quick = null, archive = null, batch = null, docs = null;
   let history = [], remaining = null, statusKey = '', seconds = 0;
   const lang = () => document.documentElement.lang || 'ja';
   const t = (key, values = {}) => {
@@ -198,6 +234,68 @@
       || root.SHOSAI_I18N_PACKS?.en?.text?.['assist.'+key] || '';
     return text.replace(/\{(\w+)\}/g, (_,k) => values[k] ?? '');
   };
+  // Mounts keep their original controls, selectors and request handlers. Only their
+  // placement and the currently read explanation are shared here (PANEL).
+  const modeNotices = new Map();
+  let selectedNotice = 'normal';
+  function showModeNotice(key) {
+    selectedNotice = key;
+    for (const [name, box] of modeNotices) {
+      box.hidden = name !== key;
+      box.setAttribute('aria-hidden',String(box.hidden));
+    }
+  }
+  function organizeModes() {
+    const group=$('modes'), notices=$('modeNotices');
+    const definitions=[
+      ['normal',['#assist-normal-notice']],
+      ['check',['#assist-check-notice']],
+      ['draft',['#assist-draft-reason']],
+      ['lighting',['#assist-light-reason']],
+      ['ops',['#assist-ops-reason']],
+      ['batchCheck',['#assist-batch-notice','[data-assist-text="batch.summaryNotice"]']],
+      ['docs',['#assist-docs-notice']],
+      ['quick',['#assist-quick-notice']]
+    ];
+    for (const [key,selectors] of definitions) {
+      if(modeNotices.has(key))continue;
+      const paragraphs=selectors.map(selector=>panel.querySelector(selector)).filter(Boolean);
+      if(!paragraphs.length)continue;
+      const box=document.createElement('div');box.className='assist-mode-description';box.dataset.assistDescription=key;
+      box.append(...paragraphs);notices.append(box);modeNotices.set(key,box);
+    }
+    const batchBox=panel.querySelector('.assist-batch'), docsBox=panel.querySelector('.assist-docs'), quickBox=panel.querySelector('.assist-quick');
+    // OPS2 deliberately shares the guarded OPS request button in this checkout.
+    const entries=[batchBox,$('check'),$('ops'),docsBox,$('draft'),$('lighting'),
+      ...['transition','script','terms','help','names','cue'].map(mode=>panel.querySelector('[data-assist-quick="'+mode+'"]')),quickBox].filter(Boolean);
+    for(const entry of entries)group.append(entry);
+    // The OS voice-input hint belongs to the optional questions disclosure, not
+    // between the textarea and Send. Keep its original node and translated copy.
+    const voice=panel.querySelector('[data-assist-text="quick.voice"]');
+    if(quickBox&&voice)quickBox.append(voice);
+    // Optional settings mount last; trial text and remaining count stay below it.
+    panel.querySelector('.stage-panel-body').append($('footer'));
+    // Async mounts previously inserted before textarea. Restore the composer first.
+    panel.querySelector('.stage-panel-body').prepend($('form'));
+    showModeNotice(selectedNotice);
+  }
+  function noticeFor(target) {
+    if(target.closest('[data-assist="send"]'))return 'normal';
+    if(target.closest('[data-assist-batch="run"],[data-assist-batch="scope"]'))return 'batchCheck';
+    if(target.closest('.assist-docs'))return 'docs';
+    if(target.closest('[data-assist-quick],.assist-quick'))return 'quick';
+    const button=target.closest('[data-assist="check"],[data-assist="draft"],[data-assist="lighting"],[data-assist="ops"]');
+    return button?.dataset.assist;
+  }
+  for(const name of ['focusin','pointerover','click'])panel.addEventListener(name,event=>{
+    const key=noticeFor(event.target);if(key)showModeNotice(key);
+  },true);
+  // Existing aria-describedby values remain intact; summaries gain the same link.
+  function connectModeSummaries() {
+    for(const [selector,id] of [['.assist-docs > summary','assist-docs-notice'],['.assist-quick > summary','assist-quick-notice']])
+      panel.querySelector(selector)?.setAttribute('aria-describedby',id);
+  }
+  organizeModes();
   // A small part of the conversation remains reachable when the normal workspace
   // (and its independent consultation panel) is hidden by a destination tab.
   const guide=document.createElement('aside');guide.className='assist-guide';guide.hidden=true;
@@ -291,6 +389,14 @@
       }
       const frame=document.getElementById('gamma-light-frame');
       if(!await until(()=>{try{const status=frame?.contentWindow?.GAMMA_LIGHT_EDITOR?.status();return status?.active&&!status.busy&&!!frame.contentDocument?.getElementById('list');}catch{return false;}},run))return;
+      // Simple lighting hides the detail list/inspector with CSS. Use the existing
+      // display switch before locating them; never stage a user's pending preview.
+      const simple=frame.contentWindow?.GAMMA_SIMPLE_LIGHT_UI;
+      if(simple?.active()){
+        const status=simple.status?.();
+        if(!status||status.busy||status.preview)return;
+        simple.detailForAssist();
+      }
       const doc=frame.contentDocument;
       const locate=()=>{
         const target=doc.querySelector(destination.selector);if(!target)return null;
@@ -352,6 +458,9 @@
   reduced.addEventListener('change',() => {paint(); schedule();});
   function relabel() {
     guideLabel();
+    quick?.refresh(busy,ended); docs?.refresh(busy,ended);
+    archive?.refresh(busy);
+    batch?.refresh(busy,ended);
     refreshEditAvailability();
     for (const node of panel.querySelectorAll('[data-assist-text]')) node.textContent = t(node.dataset.assistText);
     panel.dataset.title = t('title');
@@ -368,7 +477,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261030-v0395';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261031-v0396';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;
@@ -409,9 +518,11 @@
     if (!scene) throw new Error('scene unavailable');
     return {sceneTitle:[...String(scene.title || '')].slice(0,400).join(''),castCount:(scene.pieces || []).filter(p => p.type === 'performer').length};
   }
+  const currentOps=root.GAMMA_ASSIST_OPS?.attach({panel,t,send,isBusy:()=>busy||ended,buildEditSnapshot,resolveEditOps,sceneContext,addMessage});
+  organizeModes();
   function editContext() {try{return root.GAMMA_STAGE_EDIT?.context();}catch{return null;}}
   function refreshEditAvailability() {
-    refreshLightAvailability();
+    refreshLightAvailability(); currentOps?.refresh();
     if(busy||ended){$('draft').disabled=true;return;}
     const c=editContext(),reasons=c?.reasons||['unavailable'];editAllowed=!!c?.editable;
     $('draft').disabled=busy||ended||!c?.editable||!$('input').value.trim();
@@ -471,7 +582,7 @@
   root.addEventListener('resize',refreshSoon);
   new MutationObserver(refreshSoon).observe(document.body,{attributes:true,attributeFilter:['class','data-gamma-rehearsal-pending','data-gamma-workspace']});
   document.addEventListener('focusout',()=>queueMicrotask(refreshEditAvailability));
-  function cancelDraft() {pendingDraft?.card.remove();pendingDraft=null;}
+  function cancelDraft() {currentOps?.cancel();pendingDraft?.card.remove();pendingDraft=null;}
   function editFailureKey(code) {
     if(/save|WRITE|QUOTA|PARTIAL|CONCURRENT|CANCELLED/.test(code||''))return 'editFailureSave';
     if(code==='stale-or-blocked')return 'editFailureStale';
@@ -506,24 +617,29 @@
     });
   }
   $('input').addEventListener('input',() => {if (!busy && !ended) restingState(); $('send').disabled=busy || ended || !$('input').value.trim();$('draft').disabled=busy||ended||!editAllowed||!$('input').value.trim();if(editAllowed)$('draftReason').textContent=t('draftInput');refreshLightAvailability();});
-  $('form').addEventListener('submit',event => {event.preventDefault();send('normal');});
+  $('form').addEventListener('submit',event => {event.preventDefault();showModeNotice('normal');send('normal');});
   $('check').addEventListener('click',()=>send('check'));
   $('draft').addEventListener('click',()=>send('draft'));
   $('lighting').addEventListener('click',()=>send('lighting'));
   async function send(mode) {
-    const checkScene=mode==='check',editing=mode==='draft',lighting=mode==='lighting';
-    const text = checkScene ? sceneCheckText(t('checkPrompt'),$('input').value) : $('input').value.trim();
+    const checkScene=mode==='check',editing=mode==='draft',lighting=mode==='lighting',operating=mode==='ops';
+    const extension=docs?.isMode(mode)?docs:quick;
+    const quickMode=extension?.isMode(mode),docsMode=docs?.isMode(mode), batchMode=mode==='batchCheck';
+    const text = batchMode ? t('batch.prompt') : quickMode ? extension.text(mode,$('input').value) : checkScene ? sceneCheckText(t('checkPrompt'),$('input').value) : $('input').value.trim();
     if (busy || ended || !text || [...text].length > 400) return;
+    if(operating&&!currentOps?.allowed()){currentOps?.refresh();return;}
     if(editing&&!editContext()?.editable){refreshEditAvailability();return;}
     stopGuidance();cancelDraft();
     busy=true; clearTimeout(talkTimer); $('input').disabled=true; $('send').disabled=true; $('context').disabled=true; $('check').disabled=true; $('draft').disabled=true; $('lighting').disabled=true;
     statusKey='thinking'; seconds=0; $('status').classList.remove('is-error'); relabel(); setState('thinking');
     const count = setInterval(() => {seconds++; relabel();},1000);
+    const archiveTicket=archive?.ticket();
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(),25000);
     try {
-      const messages=requestHistory(history,text);
+      const messages=(batchMode||docsMode)?[{role:'user',text}]:requestHistory(history,text);
       const payload={lang:lang(),persona:'a',messages};
       let draft,lightDraft;
+      if(operating){draft=currentOps.prepare();payload.scene=draft.scene;payload.opsRequest=draft.opsRequest;}
       if(lighting){try{lightDraft=await prepareLighting();payload.lighting=lightDraft.lighting;}catch(e){statusKey=['lightUnapplied','lightBlocked'].includes(e.message)?e.message:'lightBlocked';throw e;}}
       if(editing){
         try{draft=buildEditSnapshot(editContext(),sceneContext().sceneTitle);payload.scene=draft.scene;payload.edit=draft.edit;}
@@ -534,7 +650,9 @@
         try {payload.scene=buildSceneSnapshot(b.exportDocumentString(),b.getActiveSceneId());}
         catch {statusKey='sceneUnavailable';throw new Error('scene unavailable');}
       }
-      if ($('context').checked) payload.context=sceneContext();
+      if(batchMode){const prepared=await batch?.prepare();if(!prepared){statusKey='';restingState();return;}Object.assign(payload,prepared);}
+      if(quickMode)Object.assign(payload,await extension.prepare(mode));
+      if (!batchMode && !quickMode && $('context').checked) payload.context=sceneContext();
       const response=await fetch('/assist/chat',{method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const data=await response.json();
       if (!response.ok) {
@@ -544,20 +662,27 @@
         throw new Error('response');
       }
       if (typeof data.text !== 'string' || !Number.isInteger(data.remaining)) throw new Error('payload');
-      const reply=splitGuidance(data.text,data.refs);
+      const reply=docsMode?{text:data.text}:splitGuidance(data.text,data.refs);
       if(!reply.text&&!(editing&&Array.isArray(data.ops)))throw new Error('payload');
       if(editing&&!reply.text)reply.text=t('draftReady');
       if(lighting&&data.ops?.length){const result=showLighting(data.ops,lightDraft);if(!result.ok)reply.text=t('lightFailed')+' '+t(lightReasonKey(result.reasons||[]));}
       else if(lighting&&data.rejected?.length)reply.text=t('draftRejected',{n:data.rejected.length});
-      history=[...messages,{role:'assistant',text:reply.text}].slice(-12);
+      if(batchMode)batch.after(reply.text);
+      else {
+      if(!docsMode)history=[...messages,{role:'assistant',text:reply.text}].slice(-12);
       addMessage('user',text); addMessage('assistant',reply.text,data.refs);
+      archive?.record(archiveTicket,text,reply.text);
+      if(quickMode)extension.after(mode,reply.text);
       if(lighting){const changes=panel.querySelector('[data-assist=lightChanges]');if(changes)$('log').append(changes);}
-      if(!editing&&!lighting&&reply.destination)startGuidance(reply.destination);
+      if(operating&&data.ops?.length)currentOps.show(data.ops,draft,data.rejected);
+      if(!quickMode&&!operating&&!editing&&!lighting&&reply.destination)startGuidance(reply.destination);
       if(editing&&data.ops?.length)showDraft(data.ops,draft,data.rejected);
       else if(editing&&data.rejected?.length)addMessage('assistant',t('draftRejected',{n:data.rejected.length}));
-      remaining=data.remaining; $('input').value=''; statusKey=''; setState('talking');
+      }
+      remaining=data.remaining; if(!batchMode)$('input').value=''; statusKey=''; setState('talking');
       talkTimer=setTimeout(restingState,3000);
     } catch {
+      if(batchMode)batch?.failure();
       if (statusKey === 'thinking') statusKey='unavailable';
       $('status').classList.add('is-error'); if (!ended) restingState();
     } finally {
@@ -584,39 +709,47 @@
       const next=!panel.classList.contains('is-collapsed');
       collapse(next);
       // The panel sits at the end of its column; bring the opened body into view so the
-      // input is visible without scrolling the column by hand. 'nearest' scrolls the least.
-      if (!next) panel.scrollIntoView({block:'nearest'});
+      // input and send are visible without scrolling past a tall list of modes.
+      if (!next) $('form').scrollIntoView({block:'start',inline:'nearest'});
       try { root.localStorage.setItem(COLLAPSED_KEY,String(next)); } catch {}
     });
   }
   function placePanel() {
+    // A late layout callback must never reattach a panel rejected by identity.
+    if (panelRemoved) return;
     const grid=document.querySelector('#gamma-normal-workspace');
     if (!grid) return;
     const side=grid.classList.contains('stage-panels-single') && !grid.classList.contains('stage-panels-on-right') ? 'left' : 'right';
     const host=document.getElementById('stage-col-'+side);
     if (host && panel.parentElement !== host) host.append(panel);
   }
-  let waitingForGrid;
   function attachPlacement() {
+    if (panelRemoved) return;
     const grid=document.querySelector('#gamma-normal-workspace');
     if (!grid) return;
     waitingForGrid?.disconnect();
-    new MutationObserver(placePanel).observe(grid,{attributes:true,attributeFilter:['class']});
+    placementObserver=new MutationObserver(placePanel);
+    placementObserver.observe(grid,{attributes:true,attributeFilter:['class']});
     placePanel();
   }
   waitingForGrid=new MutationObserver(attachPlacement);
   waitingForGrid.observe(document.body,{childList:true,subtree:true});
   attachPlacement();
+  Promise.all([import('./gamma-assist-check.js'),import('./gamma-assist-check-core.js')]).then(([m,core])=>{batch=m.mount({panel,t,send,bridge:()=>root.SHOSAI_STAGE_SESSION_BRIDGE,...core});organizeModes();relabel();}).catch(()=>{});
+  import('./gamma-assist-docs.js').then(m=>{docs=m.mount({panel,t,send,bridge:()=>root.SHOSAI_STAGE_SESSION_BRIDGE});organizeModes();connectModeSummaries();relabel();}).catch(()=>{});
+  import('./gamma-assist-quick.js').then(m=>{quick=m.mount({panel,t,send,buildSceneSnapshot,bridge:()=>root.SHOSAI_STAGE_SESSION_BRIDGE});organizeModes();connectModeSummaries();relabel();}).catch(()=>{});
   relabel(); paint();
   (async () => {
     // Static Pages editions have no Worker: never probe paid identity there (trial contract).
-    if (/(^|\.)github\.io$/i.test(root.location?.hostname || '')) {panel.remove(); return;}
+    if (/(^|\.)github\.io$/i.test(root.location?.hostname || '')) {removePanel(); return;}
     try {
       const response=await fetch('/whoami',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
-      if (!response.ok || !eligible(await response.json(),!!nativeSessionBridge())) {panel.remove(); return;}
+      const identity=response.ok ? await response.json() : null;
+      if (!response.ok || !eligible(identity,isNative())) {removePanel(); return;}
       await ensureCopy();
+      try {archive=await (await import('./gamma-assist-history.js')).mount({panel,t,identity});organizeModes();} catch { /* Optional archive cannot hide the consultation. */ }
       panel.dataset.assistAvailable='true'; panel.hidden=false;
       root.dispatchEvent(new CustomEvent('gamma-assist-availability'));
-    } catch { panel.remove(); }
+    } catch { removePanel(); }
   })();
 })(typeof window !== 'undefined' ? window : globalThis);

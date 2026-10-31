@@ -12,7 +12,7 @@
         html: `
 <p>The import, reset and size controls in the left menu use the same type and height as the theatre preset picker. Use Change the overall size to scale the current shape, and Size to choose a fixed size. Side-by-side plan and theatre preview frames share their top and bottom edges, with legends and notes on the same row below.</p>
 <p>The nine steps run from the room outline to viewpoints. Open explanations with ?. Drag an edge to move its endpoints together, or a corner to move that vertex; wings and audience areas use the same controls. Delete appears near the selection. Use the audience floor elevation for relative height; viewpoint height is measured from the stage floor at 0 m.</p>
-<p>The ${ui("Theatre settings")} tab has the venue type preset, size and the steps on the left; plan editing and a theatre preview (front / 3D / whole) in the middle; and ${ui("Export theatre")} and ${ui("Apply this theatre")} along the bottom. ${ui("Import theatre")} sits next to ${ui("Reset")} in the venue type preset box.</p>
+<p>The ${ui("Theatre design")} tab has the venue type preset, size and the steps on the left; plan editing and a theatre preview (front / 3D / whole) in the middle; and ${ui("Export theatre")} and ${ui("Apply this theatre")} along the bottom. ${ui("Import theatre")} sits next to ${ui("Reset")} in the venue type preset box.</p>
 <p>Dragging a shape body pans the plan. To change a shape, click it first, then drag its corners or edges. The selected stage handles take priority where wings or the house overlap. Text in the floating selection row does not block the drawing; its Delete button remains clickable.</p>
 ${fig("release057-venue-editing", "Select the stage before editing its corners or edges. The selection row avoids the handles.", "Selecting and editing a stage in Theatre settings")}
 ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, the plan and a 3D preview in the middle, save/export/apply at the bottom.", "Theatre settings tab")}
@@ -58,7 +58,7 @@ ${table(["Step", "What you decide", "Main items"], [
         html: `
 <p>${ui("Apply this theatre")} at the bottom right uses the theatre for the current show. It applies <strong>only the theatre</strong>; the current lighting (fixtures and LX cues) stays as it is.</p>
 <ul>
-<li>Only when the lighting is the ${ui("Common 24-light set")} (the simple-lighting rig) is it rebuilt to fit the new theatre's dimensions. The apply window says “The lighting (common 24-light set) will be rebuilt to fit the new theatre's dimensions.” Fixture numbers and LX cues stay the same.</li>
+<li>Supported Simple rigs (common24, 22 fixtures with cyclorama, and the floor-extended 24-fixture rig) adapt placement to the new stage dimensions with the same fixture count and IDs. LX cues remain, but check aim, targets and coverage.</li>
 <li>Any other lighting is left untouched. If the theatre's shape or size changes, fixture positions may no longer fit, so check the lighting in each scene afterwards.</li>
 <li>Choose lighting rigs (the common 24-light set, small / mid-size / large proscenium and so on) from ${ui("Presets")} in ${ui("Equipment placement")} (${ref("light-presets", "Part 7, 7-7")}).</li>
 </ul>

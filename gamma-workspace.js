@@ -48,6 +48,7 @@
     const target = pendingLightCue; pendingLightCue = null;
     if (target.showId !== host.context().showId) return;
     editor().selectCue(target.sceneId, target.cueId);
+    frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.detailForAssist?.();
   }
   async function openLightCue(sceneId, cueId) {
     await select('light-design');
@@ -936,7 +937,7 @@
     const current = () => request.isCurrent();
     const externalReload = request.purpose === 'externalReload';
     const light=editor();
-    await light?.waitForApply?.();
+    await light?.waitForApply?.(request);
     if (!current()) return false;
     request.checkpoint?.();
     const lightStatus=light?.status?.();
@@ -1089,6 +1090,10 @@
       }
     }
     try {
+      if(isLightMode(next)) {
+        await host.ensureParts();
+        if(featureAttempt!==featureSelectionAttempt)return;
+      }
       if(mode==='rehearsal' && next!==mode && !await window.GAMMA_FIELD_RUNS.leave()) return;
       close3dWorkspace();
       if(mode==='normal' && next!=='normal') captureHostHistory();
@@ -1115,9 +1120,10 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261030-v0395'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261031-v0396'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
+          if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
           frame.hidden=false;
           status.textContent='';
           status.classList.remove('gamma-workspace-error');
@@ -1154,9 +1160,11 @@
       if(cuesheetWorkspace) cuesheetWorkspace.hidden=true;
       if(switchingMode) document.getElementById('view-stage')?.scrollTo(0,0);
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
-        const active=button.dataset.stageWorkspaceMode===mode;
+        const active=button.dataset.stageWorkspaceMode===mode || (button.id==='gamma-venue'&&mode==='light-placement');
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
       });
+      const theatreTabs=document.getElementById('gamma-theatre-tabs');
+      if(theatreTabs){theatreTabs.hidden=!['venue-setup','light-placement'].includes(mode);document.getElementById('gamma-theatre-space').setAttribute('aria-pressed',String(mode==='venue-setup'));document.getElementById('gamma-placement')?.setAttribute('aria-pressed',String(mode==='light-placement'));}
       syncVenueGate();
       window.dispatchEvent(new Event('gamma-workspace-change'));
       syncHistory();
@@ -1198,14 +1206,14 @@
    * 劇場未設定のゲート、照明の未適用確認、3Dの開閉を従来と同じ経路へ通す。
    * 入力欄・修飾キー・モーダル中は文字入力やその窓の操作を優先する。 */
   const workspaceShortcutIds = Object.freeze({
-    normal: "workspace.normal", venue: "workspace.venue", placement: "workspace.placement",
+    normal: "workspace.normal", venue: "workspace.venue",placement:"workspace.placement", script:"workspace.script", runOfShow:"workspace.runOfShow",rehearsal:"workspace.rehearsal",
     design: "workspace.design", "3d": "workspace.3d",
   });
   function syncWorkspaceShortcutLabels() {
     const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
     if(!shortcuts) return;
     Object.entries(workspaceShortcutIds).forEach(([mode,id])=>{
-      const key={normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[mode];
+      const key={normal:"1",venue:"2",placement:"equipment",design:"3",script:"4","3d":"5",runOfShow:"6",rehearsal:"7"}[mode];
       const button=workspaceShortcutButton(key);
       if(!button) return;
       button.setAttribute("aria-keyshortcuts",shortcuts.get(id));
@@ -1216,6 +1224,7 @@
     });
   }
   function workspaceShortcutButton(key) {
+    if(key==='equipment')return lite?null:document.getElementById('gamma-placement');
     return document.querySelector(`#stage-workspace-tabs [data-stage-workspace-shortcut="${key}"]`);
   }
   function workspaceShortcutBlocked(event) {
@@ -1237,7 +1246,7 @@
     if(workspaceShortcutBlocked(event)) return;
     const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
     const entry=Object.entries(workspaceShortcutIds).find(([, id])=>shortcuts?.matches(event,id));
-    if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[entry[0]])) return;
+    if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"equipment",design:"3",script:"4","3d":"5",runOfShow:"6",rehearsal:"7"}[entry[0]])) return;
     event.preventDefault();
   });
   // Route from the active workspace before any timeline/stage key listener.
@@ -1309,9 +1318,18 @@
   window.addEventListener('stage-fpv-visibility', syncTabAccessibility);
   syncTabAccessibility();
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
+  document.getElementById('gamma-placement')?.addEventListener('click',()=>select('light-placement'));
+  document.getElementById('gamma-theatre-space')?.addEventListener('click',()=>select('venue-setup'));
   document.getElementById('stage-freecam-open')?.addEventListener('click',event=>{
     if(mode==='rehearsal'){event.preventDefault();event.stopImmediatePropagation();const button=event.currentTarget;void select('normal').then(()=>{if(mode==='normal')button.click();});return;}
     if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
+    // 3D reads the saved show. Settle a real lighting draft through the same
+    // apply/keep/cancel question as the other tabs before opening that view.
+    if(isLightMode(mode) && editor()?.status?.()?.dirty) {
+      event.preventDefault();event.stopImmediatePropagation();
+      const button=event.currentTarget;
+      void select('normal').then(()=>{if(mode==='normal')button.click();});return;
+    }
     endPlaybackPreview({focus:false});editor()?.suspend();
   },true);
   window.addEventListener('stage-fpv-visibility',event=>{
@@ -1432,10 +1450,18 @@
     beginPlaybackPreview,endPlaybackPreview});
 })();
 
-// Consultation has no board operations. Load its isolated module after workspace startup.
+// Consultation proposals load before the conversation module; failures keep editing unavailable.
 (() => {
   if (!document.querySelector('[data-panel="assist"]')) return;
-  const script = document.createElement('script');
-  script.src = 'gamma-assist.js?v=20261030-v0395';
-  document.body.append(script);
+  const ops = document.createElement('script');
+  ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
+  ops.onload = ops.onerror = () => {
+    const script = document.createElement('script');
+    script.src = 'gamma-assist.js?v=20261031-v0396';
+    document.body.append(script);
+  };
+  const extension = document.createElement('script');
+  extension.src = 'gamma-assist-ops2.js?v=20261031-v0396';
+  extension.onload = extension.onerror = () => document.body.append(ops);
+  document.body.append(extension);
 })();

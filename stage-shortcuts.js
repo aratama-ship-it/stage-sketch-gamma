@@ -11,9 +11,12 @@
   const DEFAULTS = Object.freeze({
     "workspace.normal": "1",
     "workspace.venue": "2",
-    "workspace.placement": "3",
-    "workspace.design": "4",
+    "workspace.placement": "",
+    "workspace.design": "3",
     "workspace.3d": "5",
+    "workspace.script":"4",
+    "workspace.runOfShow":"6",
+    "workspace.rehearsal":"7",
     "tool.select": "V",
     "tool.arrow": "A",
     "tool.paint": "P",
@@ -33,10 +36,13 @@
   });
   const LABELS = Object.freeze({
     "workspace.normal": "舞台タブ",
-    "workspace.venue": "劇場設定タブ",
-    "workspace.placement": "機材配置タブ",
-    "workspace.design": "照明デザインタブ",
+    "workspace.venue": "劇場設計タブ",
+    "workspace.placement": "劇場設計の機材配置",
+    "workspace.design": "照明タブ",
     "workspace.3d": "3Dタブ",
+    "workspace.script":"セリフタブ",
+    "workspace.runOfShow":"進行表タブ",
+    "workspace.rehearsal":"リハーサルタブ",
     "tool.select": "ものを動かす",
     "tool.arrow": "矢印を描く",
     "tool.paint": "背景を塗る",
@@ -146,7 +152,7 @@
 
   function get(id) {
     // A newly introduced default must not steal a personal M/0 binding.
-    if (["audio.mute", "view.reset"].includes(id) && !custom[id]
+    if ((["audio.mute", "view.reset"].includes(id) || id.startsWith("workspace.")) && !custom[id]
         && Object.entries(custom).some(([other, value]) => other !== id && value === DEFAULTS[id])) return "";
     return custom[id] || DEFAULTS[id] || "";
   }

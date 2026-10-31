@@ -1,0 +1,13 @@
+/* INFRA: existing panel tokens, no new palette or animation. */
+.assist-history {flex:0 0 auto;min-width:0;}
+.assist-history summary {display:flex;align-items:center;min-height:var(--assist-hit);padding:var(--assist-s1) var(--assist-s2);box-sizing:border-box;border:1px solid var(--brass);cursor:pointer;color:var(--paper);font:var(--assist-body)/1.6 var(--sans);overflow-wrap:anywhere;}
+.assist-history summary::before {content:'▸';margin-right:var(--assist-s2);}
+.assist-history details[open]>summary::before,.assist-history[open]>summary::before {content:'▾';}
+.assist-history> :not(summary) {margin-top:var(--assist-s2);}
+.assist-history .assist-draft {min-width:44px;max-width:100%;padding:var(--assist-s1) var(--assist-s2);overflow-wrap:anywhere;}
+.assist-history-list {max-height:var(--assist-log-max);overflow-y:auto;overflow-wrap:anywhere;font:var(--assist-body)/1.6 var(--sans);}
+.assist-history-entry {border-bottom:1px solid var(--brass);padding:var(--assist-s2) var(--assist-s1);}
+.assist-history-entry time {color:var(--ink-soft-sm);font-size:var(--assist-small);}
+.assist-history-entry p {white-space:pre-wrap;margin:var(--assist-s2) 0;}
+.assist-history :focus-visible {outline:2px solid var(--brass);outline-offset:-2px;}
+.assist-history [hidden] {display:none!important;}

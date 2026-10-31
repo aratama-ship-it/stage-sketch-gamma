@@ -30,9 +30,9 @@ ${fig("03-show-list", "All shows — name, version, number of scenes and date. T
         id: "venue-gate", title: "A new show starts with the theatre", status: "sourced",
         keywords: ["theatre settings", "gate", "band", "cannot press", "greyed out", "dimmed", "blocked", "choose theatre first", "new show", "tabs won't open"],
         html: `
-<p>Press ${ui("Create a new show")} and a “choose the theatre first” band appears while ${ui("Theatre settings")} opens. Until then, on the ${ui("Stage")} tab only the ${ui("Show")} panel (All shows, new, import, export) works and everything else is dimmed. ${ui("Equipment placement")}, ${ui("Light design")} and ${ui("3D")} stay closed.</p>
+<p>Press ${ui("Create a new show")} and a “choose the theatre first” band appears while ${ui("Theatre design")} opens. Until then, on the ${ui("Stage")} tab only the ${ui("Show")} panel (All shows, new, import, export) works and everything else is dimmed. ${ui("Equipment placement")}, ${ui("Light design")} and ${ui("3D")} stay closed.</p>
 ${steps([
-  "In " + ui("Theatre settings") + ", choose a preset or build a shape (" + ref("venue-presets", "Part 5, 5-2") + ").",
+  "In " + ui("Theatre design") + ", choose a preset or build a shape (" + ref("venue-presets", "Part 5, 5-2") + ").",
   "Press " + ui("Apply this theatre") + ".",
   "The band disappears and every panel and tab opens."
 ])}

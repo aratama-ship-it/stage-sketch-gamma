@@ -15,6 +15,46 @@
 
   const TEXT = {
 
+    "照明の画面を作り直しました。上部のタブを7つに整理し、「機材配置」は「劇場設計」（空間・客席・幕と機材の配置）になりました。照明は「かんたん照明」から開き、細部は「詳細」で調整します。": "重新制作了灯光画面。顶部选项卡整理为7个，“器材布置”改为“剧场设计”（空间、观众席、幕布与器材布置）。灯光从“简易灯光”打开，细节在“详细”中调整。",
+
+    "かんたん照明は、先に機能（人物・場所、輪郭・補助、背景など）を選び、次にその明かりを出せる位置を選ぶ順になりました。位置の候補にマウスを乗せると、図の中に灯体本体の輪郭が一時的に表示され、離すと消えます。保存される値は変わりません。": "简易灯光改为先选择功能（人物/场所、轮廓/辅助、背景等），再选择能发出该光的位置。将鼠标移到位置候选上时，图中会临时显示灯具本体的轮廓，移开后消失。保存的值不会改变。",
+
+    "設備プリセットに「背景付き22器具」と「背景・転がし付き24器具」を追加しました。既存の24灯の配置は自動では置き換えません。背景幕への受光、前幕による奥の遮蔽、紗の透けを図に反映します。": "设备预设新增“带背景的22台灯具”和“带背景与地面灯的24台灯具”。现有的24灯布置不会自动替换。背景幕受光、前幕对后方的遮挡、纱幕的透光会反映在图中。",
+
+    "かんたん照明の右側のパネルを作り直しました。使用中の層の一覧、視点の切替、「作業灯を消す」の切替、横向きの強さスライダーを追加し、操作の列を最上段に置きました。": "重新制作了简易灯光右侧的面板。新增使用中的层列表、视点切换、“关闭工作灯”切换和横向亮度滑块，并将操作行放在最上方。",
+
+    "照明タブのQ番号に、つかんで動かすための取っ手を付けました。Q番号をタイムラインへドラッグしてキューを配置でき、タイムライン側は配置先を示します。": "为灯光选项卡中的Q编号添加了可抓取拖动的把手。可将Q编号拖到时间线上放置提示，时间线一侧会显示放置位置。",
+
+    "起動時の照明モデルの読み込みを、必要になるまで遅らせました。言語を切り替えた後の照明の状態表示と作業灯の表示を改善しました。": "启动时的灯光模型加载推迟到需要时进行。改进了切换语言后的灯光状态显示和工作灯显示。",
+
+    "窓が重なったときに奥の窓を暗くして操作できなくし、手前の窓だけを閉じて元の入力へ戻れるようにしました。窓や入力欄の書体を本文とそろえました。": "窗口重叠时，后方窗口变暗且不可操作，只关闭前方窗口即可回到原来的输入。窗口和输入框的字体与正文统一。",
+
+    "タイムラインの再生速度を 0.5・1・1.5・2・4・8 倍から選べるようにしました。2倍を超える速度では音を出さずに進み、2倍以下へ戻すとその位置から音源を再開します。音源を開始できないときも、警告を表示して音なしでショーの確認を続けられます。": "时间线播放速度可从0.5、1、1.5、2、4、8倍中选择。超过2倍时无声播放，回到2倍以下时从该位置继续播放音源。音源无法启动时也会显示警告，可在无声状态下继续确认演出。",
+
+    "進行表からCSVを書き出せるようにしました。": "可以从流程表导出CSV。",
+
+    "演者を近づけても自動では積み重ならなくなりました。「選んだもの」の「上に乗せる」と「降ろす」で乗り降りを指定します。すでに積み重なっている保存済みのショーは、開いたときに明示の関係へ引き継ぎます。": "演员靠近时不再自动叠放。通过“所选内容”中的“放到上面”和“放下”指定叠放。已保存的含叠放的演出在打开时会转换为明确的关系。",
+
+    "ブラウザ版の相談に、用語の説明・困ったときの案内・キュー文面と名前の提案・よく使う質問のボタン・端末の音声入力の案内を追加しました。選んだ2シーンの転換の比較と、現在のシーンの台本（400字まで）からの段取りも頼めます。転換の比較では前後2シーンの駒の種類・名前・位置を、段取りでは台本の文を Anthropic の API へ送ります。提案を読む・写すだけならショーは変わりません。": "浏览器版的咨询新增术语说明、遇到困难时的指引、提示文字与名称的建议、常用问题按钮以及设备语音输入的指引。还可以请求比较所选两个场景的转换，以及根据当前场景的台本（最多400字）整理流程。转换比较会将两个场景的元素类型、名称、位置，流程整理会将台本文字发送至Anthropic的API。只阅读或抄写建议不会改变演出。",
+
+    "ブラウザ版の相談から、駒の追加・移動・入れ替え・片付け・向き、全員を前へ・左右反転・等間隔、ハケと出の方向を頼めます。現在のシーンの駒・登録名・位置・舞台寸法を Anthropic の API へ送り、影響するシーンと演者を要約した確認カードを確かめてから一度に反映します。「元に戻す」1回で全部戻ります。共有中・ゲスト・閲覧専用・体験版では使えません。": "浏览器版的咨询可以执行操作：元素的添加、移动、交换、清理、朝向，全员前移、左右镜像、等间距，以及上下场方向。当前场景的元素、登记名称、位置和舞台尺寸会发送至Anthropic的API，确认概括受影响场景和演员的确认卡片后一次性应用。撤销一次即可全部恢复。共享中、访客、只读、试用版中不可用。",
+
+    "ブラウザ版の相談で、フォーメーション（8つの型）とシーンの複製・追加・並べ替えを頼めます。位置やキュー・音への影響を確かめてから実行し、「元に戻す」1回で取り消せます。": "浏览器版的咨询可以请求队形（8种类型）以及场景的复制、添加、重新排序。确认对位置、提示和声音的影响后执行，撤销一次即可取消。",
+
+    "ブラウザ版の相談に「AI点検」ボタンを追加しました。シーンまたはショー全体の配置・転換・出番・照明の確認候補を優先度順の一覧にし、該当するシーンへ移れます。見つかった項目の一覧を Anthropic の API へ送ります。検出がなければ相談回数を使いません。": "浏览器版的咨询新增“AI检查”按钮。按优先级列出场景或整个演出的布局、转换、出场、灯光的待确认项，并可跳转到相应场景。发现的项目列表会发送至Anthropic的API。没有发现时不消耗咨询次数。",
+
+    "ブラウザ版の相談で、ランノートの整理、演者への説明文、技師への申し送り、5言語の訳の控えを作り、写す・書き出すことができます。ランノートの文・演者の動き・キューを Anthropic の API へ送ります。ショーの内容は変わりません。": "浏览器版的咨询可以整理运行笔记、撰写给演员的说明和给技术人员的交接，以及生成5种语言的翻译草稿，可抄写或导出。运行笔记文字、演员的动作和提示会发送至Anthropic的API。演出内容不会改变。",
+
+    "ブラウザ版の相談に、この端末だけに相談の履歴を残す任意の設定を追加しました（既定はオフ）。一般的な質問の回答を再利用する仕組みも入れましたが、既定ではオフです。": "浏览器版的咨询新增仅在本设备保留咨询历史的可选设置（默认关闭）。也加入了复用一般问题答案的机制，默认关闭。",
+
+    "Mac 版では相談を表示しない判定を補強しました。Mac 版の相談は、有料版の公開に合わせて準備中です。": "加强了在Mac版中不显示咨询的判定。Mac版的咨询正配合付费版发布进行准备。",
+    // G-017: explicit performer mounting.
+    "乗せる相手の演者がいません。": "没有可作为底座的其他演员。",
+    "上に乗せる": "放到他人上方",
+    "降ろす": "放下",
+    "乗せる相手を選んでください（矢印キーで移動、Enter で確定、Esc で取消）": "请选择作为底座的演员（方向键移动，Enter 确认，Esc 取消）",
+
+
     "ブラウザ版の相談で、説明書や書斎を参考にした返答と資料の表示、操作する場所への案内ができるようになりました。関連する説明書の文や書斎の参照情報も、返答を作るために Anthropic の API へ送ります。": "浏览器版的咨询现在可以参考说明书和书斋生成回复、显示参考资料，并引导至相应的操作位置。相关说明书文字和书斋参考信息也会发送至Anthropic的API，用于生成回复。",
 
     "相談に「このシーンを点検」を追加しました。押すと、入力文に加えて対象と前後のシーン名、駒の種類・名前（演者名を含む）・位置・向き、人数や重なりなどの計算結果を Anthropic の API へ送ります。点検で配置が変わることはありません。": "咨询新增了检查当前场景。点击后，输入文字以及当前和前后场景的名称、元素类型、名称（包括演员姓名）、位置、朝向，以及人数、重叠等计算结果会发送至Anthropic的API。检查不会改变布局。",
@@ -5906,5 +5946,403 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
   "assist.editFailureRelationship": "此操作无法处理持有或支撑关系。",
   "assist.editFailureUnsupported": "灯光、动线等操作尚未启用。",
   "assist.editFailureCapacity": "已达到棋子或方案数量上限。",
-  "assist.editFailureInvalid": "请检查名称、位置和朝向。"
+  "assist.editFailureInvalid": "请检查名称、位置和朝向。",
+  "assist.ops": "操作此场景",
+  "assist.opsInput": "将此场景的棋子、登记名称、位置和舞台尺寸发送给AI，以创建确认卡片。",
+  "assist.opsShared": "共享期间，包括主持人在内均无法使用操作代行。",
+  "assist.opsBlocked": "当前编辑状态下无法使用操作代行。",
+  "assist.opsDirectionCount": "受影响演员 {n}人 · {m}个场景",
+  "assist.opsRoute": "退场动线",
+  "assist.opsBackstageSpot": "后台位置",
+  "assist.opsTransition": "进入此场景的进退场",
+  "assist.opsLanding": "保留此场景的落点",
+  "assist.opsRoutePoint": "距下手{x}% · 距舞台后方{y}%",
+  "assist.opsBend": "弯曲",
+  "assist.opsStraight": "直线",
+  "assist.opsDirectionQuestion": "哪位演员从哪侧退场或进场？请确认演员、前后场景、先前退场动线和剧场侧台（伸出式舞台为后方，其他为上手/下手）。条件不明，未做更改。",
+  "assist.opsDirectionNoChange": "指定的退场或进场方向相同。未做更改。",
+  "assist.opsDirectionProceed": "这项更改也会使{names}的退场、登场及前后或后续场景发生以下变化。是否继续？",
+  "assist.opsDirectionProceedLocal": "将按以下内容更改{names}的退场或登场。是否继续？",
+  "assist.opsDirectionAutomatic": "指定退场位置的演员会退出后台自动排列，因此其他演员的等候位置与登场、退场也会变化。",
+  "assist.opsDirectionDetails": "详情（坐标、曲线与全部更改）",
+  "assist.opsPlaceUpstage": "舞台后方",
+  "assist.opsPlaceRightWing": "下手侧台",
+  "assist.opsPlaceLeftWing": "上手侧台",
+  "assist.opsPlaceOnstage": "舞台上（{side}）",
+  "assist.opsPlaceRight": "偏下手",
+  "assist.opsPlaceLeft": "偏上手",
+  "assist.opsPlaceCenter": "中央",
+  "assist.opsSummaryExit": "退场",
+  "assist.opsSummaryEntrance": "登场起点",
+  "assist.opsSummaryPreviousExit": "从上一场景退场的位置",
+  "assist.opsSummaryCurve": "移动曲线变化（落点仍为{place}）",
+  "assist.opsSummaryWithin": "{kind}：在{to}内改变位置或路径",
+  "assist.opsSummaryChange": "{kind}：{from} → {to}",
+  "assist.opsSummaryRow": "{number} {title}：{name} — {changes}",
+  "assist.opsSummarySeparator": "／",
+  "assist.opsDirectionConfirm": "确认退场与登场的更改",
+  "assist.opsNoRoute": "自动 / 未指定",
+  "assist.opsDirectionSide": "此剧场在该方向没有侧台。伸出式舞台使用后方，其他使用上手/下手。选择哪侧？未做更改。",
+  "assist.opsDirectionAdjacent": "没有前一个或后一个场景。要更改哪个场景的进退场？未做更改。",
+  "assist.opsDirectionSource": "找不到能更改此次进场起点的先前退场动线。以哪个场景的退场为准？未做更改。",
+  "assist.opsDirectionPerformer": "请用准确登记名称指定此场景舞台上的一位演员。要更改谁的进退场？未做更改。",
+  "assist.opsDirectionRelationship": "固定、持有物品或支撑关系阻止了动线更改。请确认关系，要更改谁的进退场？未做更改。",
+  "assist.opsConfirm": "此场景中的更改",
+  "assist.opsExecute": "执行",
+  "assist.opsCount": "更改{n}个棋子 · 总数{before} → {after}",
+  "assist.opsPosition": "距舞台右侧{x}% · 距后方{y}% · 朝向{n}°",
+  "assist.opsBackstage": "后台",
+  "assist.opsDone": "已应用到此场景。撤销一次即可恢复。",
+  "assist.opsCommitted": "已保存，但无法更新显示。请勿再次执行，请重新打开场景确认。",
+  "assist.opsFailed": "无法执行。请确认场景、锁定、连接关系和保存状态后重新请求。"
+});
+
+
+// Position-based lighting: fixed copy and parameterized diagnostics.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text,{
+  "劇場設計": "剧场设计",
+  "空間・客席・幕": "空间、观众席与幕布",
+  "シーンの明かりを組み合わせる": "组合场景灯光",
+  "位置ごとの明かり": "各位置的灯光",
+  "背景付き22器具": "含天幕灯的22台设备",
+  "背景・転がし付き24器具": "含天幕灯及地排灯的24台设备",
+  "人物・場所": "人物或位置",
+  "輪郭・補助": "轮廓或补光",
+  "保存済みの明かり": "已保存的灯光",
+  "プリセット配置に整える": "调整为预设设备布局",
+  "詳細で編集": "详细编辑",
+  "詳細で調整": "详细调整",
+  "詳細で調整済み": "已详细调整",
+  "かんたん照明は、対応プリセットの機材配置で使えます。現在の配置は対応していません。": "简易灯光需要支持的设备预设。当前布局不受支持。",
+  "試し表示中 · 適用すると現在の対象キューに保存します。": "预览中 · 应用后保存到所选灯光提示。",
+  "このキューの明かりは要再設定です。": "此灯光提示需要重新设置。",
+  "この位置の型を選び直すと、詳細の調整を置き換えます。": "重新选择类型将替换此位置的详细调整。",
+  "組み合わせた明かりの正面図": "组合灯光的正视图",
+  "スポットの直径": "光斑直径",
+  "移る時間": "过渡时间",
+  "奥の吊り": "后方吊杆",
+  "手前の吊り": "前方吊杆",
+  "当て先": "照射目标",
+  "強さを1下げる": "亮度降低1",
+  "強さを1上げる": "亮度提高1",
+  "この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？": "要用所选类型替换此位置的详细编辑吗？",
+  "共通24灯": "通用24盏灯",
+  "ホリゾント床": "天幕地排",
+  "ホリゾント上": "天幕顶排",
+  "転がし下手": "地灯：观众左侧",
+  "転がし上手": "地灯：观众右侧",
+  "旧かんたん照明を表示中。操作した位置だけを変更します。": "正在显示旧版简易灯光，仅修改操作的位置。",
+  "パートの明かり": "分区灯光",
+  "この位置の機材では利用できません": "此位置的灯具无法使用",
+  "対象の人物が不在": "目标人物不存在",
+  "詳細の未適用編集を先に適用してください。": "请先应用尚未应用的详细编辑。",
+  "未適用の編集を先に適用してください": "请先应用尚未应用的编辑",
+  "ショーが更新されています。下書きを確認してから適用してください": "演出已更新，请检查草稿后再应用。",
+  "適用するか、適用済みに戻してからシーンを切り替えてください": "请先应用或恢复已应用状态，再切换场景",
+  "適用するか、適用済みに戻してからキューを切り替えてください": "请先应用或恢复已应用状态，再切换提示",
+  "対応する機材配置を選んでください": "请选择支持的设备预设",
+  "対応する機材配置を確認してください": "请检查支持的设备配置",
+  "新しい形式の明かりです。詳細で確認してください": "此灯光使用较新的格式，请在详细模式中检查。",
+  "この位置ではその明かりを作れません": "此位置无法产生该灯光效果",
+  "調整値を確認してください": "请检查调整值",
+  "組の効果がある位置です。詳細で調整してください": "此位置受组效果控制，请在详细模式中调整。",
+  "背景幕がありません。仮想背景面での試し表示です": "没有背景幕，当前预览使用虚拟背景面。",
+  "スポット径が機材の照射角の範囲で変わります": "光斑直径受灯具光束角范围限制",
+  "この舞台幅では背景の光に隙間が残る可能性があります。ホリゾント付きの配置も確認してください": "此舞台宽度可能导致背景光有空隙，请检查带天幕灯的配置。",
+  "対象の配置が変わりました。人物・場所の型を選び直して再照準してください": "目标位置已改变，请重新选择人物或位置以重新瞄准。",
+  "対象の人物が不在です。選び直してください": "目标人物不存在，请重新选择。",
+  "対象が舞台の外にあります": "目标在舞台外",
+  "当て先を選んでください": "请选择目标",
+  "強さを確認してください": "请检查灯光强度",
+  "位置がありません": "找不到位置",
+  "組の強さは詳細で調整してください": "请在详细模式中调整组强度",
+  "条件付き：照射範囲と吊り高さを詳細で確認してください": "有条件：请在详细模式中检查照射范围和悬挂高度",
+  "配置可能：機材数を保って舞台寸法に合わせます": "可以配置：保持灯具数量并适应舞台尺寸",
+  "共通セットの作図対応寸法は間口4〜24m、奥行3〜16m、高さ3〜14mです": "绘图范围：宽4–24米、深3–16米、高3–14米",
+  "初版は標準・拡張プロセニアムに対応しています。詳細表示で仕込みを確認してください": "此版本支持标准及扩展镜框式舞台，其他配置请在详细模式中检查。",
+  "元のショーを残して、新しい版に「{preset}」を配置します。全シーンの機材配置が変わり、{count}件の照明キューと{alternatives}件の照明の別案は、時刻と名前を保って明かりを要再設定にします。続けますか？": "保留原演出并创建使用“{preset}”的新版本。所有场景的设备配置将改变，{count}个灯光提示和{alternatives}个灯光备选方案将保留时间及名称，但需要重新设置灯光。继续吗？",
+  "劇場設計（2）": "剧场设计 (2)",
+  "照明（3）": "灯光 (3)",
+  "劇場設計の機材配置": "剧场设计中的设备布置",
+  "照明タブ": "灯光标签页"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text,{"劇場設計タブ": "剧场设计标签页"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text,{
+  "明かりの機能": "灯光功能",
+  "使う位置": "使用位置",
+  "ピンスポット": "定点聚光",
+  "全体照らし": "全舞台照明",
+  "背景染め": "背景染色",
+  "使用中: {count}か所": "使用中：{count}处",
+  "未使用": "尚未使用",
+  "この機能を担当できる位置がありません": "没有位置能承担此功能",
+  "適用すると、この位置の明かりを選んだ機能に切り替えます。": "应用后，此位置的灯光将切换为所选功能。",
+  "対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください": "目标位置已改变。请选择对应的聚光位置并应用，重新瞄准。"
+});
+
+// Seven-workspace shortcut labels.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "セリフタブ": "台词标签页",
+  "進行表タブ": "流程表标签页",
+  "リハーサルタブ": "排练标签页"
+});
+
+// Simple lighting panel layers (F-2/F-4–F-7).
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text,{
+  "この明かりの層": "此灯光的图层",
+  "まだ層はありません。下の機能から選んでください。": "尚无图层。请从下方选择功能。",
+  "使用中: {function}": "使用中：{function}",
+  "層の一覧から選んで編集してください": "请从图层列表选择后编辑",
+  "層の点灯: {position}": "图层开关：{position}",
+  "層を選ぶ: {position}": "选择图层：{position}",
+  "この位置は詳細で点灯してください": "请在详细编辑器中点亮此位置",
+  "視点": "视点",
+  "選ぶ": "选择"
+});
+
+// On-demand lighting model load failure.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "照明データを読み込めませんでした。": "无法加载灯光数据。"
+});
+
+// Position lighting preset descriptions.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "位置ごとの明かりを組み合わせる対応プリセット。": "可按位置组合灯光的兼容预设。",
+  "元のショーを残し、新しい版で照明を組み直します。": "保留原始演出，在新版本中重新配置灯光。",
+  "同じ機材数で劇場寸法に合わせて配置します。": "保持设备数量，按剧场尺寸调整位置。"
+});
+// AB read-only consultation starters; no terms or storage changes.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {"assist.quick.title":"常用问题","assist.quick.terms":"查询术语","assist.quick.help":"遇到问题","assist.quick.cue":"起草提示文字","assist.quick.names":"建议名称","assist.quick.transition":"查看转场","assist.quick.script":"根据剧本提建议","assist.quick.direction":"比较的转场","assist.quick.next":"当前 → 下一个","assist.quick.prev":"上一个 → 当前","assist.quick.notice":"每次点击计为1次。转场会将所选两个场景的棋子信息，剧本会将当前场景的台词和舞台指示（没有时则为说明或输入文字）最多400字发送给Anthropic。只提供建议，不更改演出。","assist.quick.voice":"语音输入：可使用设备自带的语音输入，如Mac听写。","assist.quick.copy":"复制","assist.quick.copied":"已复制","assist.quick.copyFailed":"无法复制。请选择回答文字后复制。","assist.quick.noScript":"此场景没有剧本或说明。请在输入框粘贴400字以内的台词或舞台指示。","assist.quick.noAdjacent":"无法读取相邻场景。请检查场景选择。","assist.quick.excerpt":"已发送剧本：{title}（{n}字）","assist.quick.excerptShort":"已发送剧本：{title}（共{total}字中的前{n}字，其余未读）","assist.quick.prompt.terms":"请解释舞台左侧、天幕和图案片的含义","assist.quick.prompt.help":"无法保存时应该怎么办？","assist.quick.prompt.cue":"请建议简短的灯光提示说明文字","assist.quick.prompt.names":"请建议场景、提示或备选方案的名称","assist.quick.prompt.transition":"请说明所选转场中移动的人和物、出入场及顺序的注意事项","assist.quick.prompt.script":"请根据此场景的台词和舞台指示建议出入场及转场顺序"});
+
+// INFRA local archive controls; policy text remains a publication approval item.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {"assist.history.settings": "咨询设置", "assist.history.enabled": "在此设备保留历史", "assist.history.notice": "默认关闭。开启后开始的提问和回答才会保留在此设备，最多20轮、7天、合计64KiB。不写入演出或服务器，也不随新问题自动发送。关闭后，已有历史在删除前仍可阅读。", "assist.history.archive": "已保存的历史（{n}轮）", "assist.history.clear": "删除全部历史", "assist.history.confirmClear": "删除（无法撤销）", "assist.history.cancel": "取消", "assist.history.cleared": "已删除此设备的历史。", "assist.history.storageFailed": "无法保存或读取历史。演出和本次回答保持原样。删除历史后可以重新设置。", "assist.history.notSaved": "本轮对话未保存到历史。", "assist.history.policy": "输入的文字会发送给Anthropic以生成回答。开启历史后，可将后续提问和回答保留在此设备。服务器不保存对话历史。"});
+// CHECK: local batch results and explicit finding-only transmission.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "assist.batch.title": "AI 检查",
+  "assist.batch.scope": "检查范围",
+  "assist.batch.scene": "此场景",
+  "assist.batch.show": "整场演出",
+  "assist.batch.notice": "仅将发现的项目（场景编号、名称、对象名、数量、时间）发送给Anthropic。一次使用一次额度。未发现项目则不调用AI，也不使用额度。结果不保存。",
+  "assist.batch.prompt": "按类别简短解释代码算出的检查项目，并提出处理建议。",
+  "assist.batch.result": "检查结果：{scenes}个场景 · {n}项待确认（{places}处）",
+  "assist.batch.safety": "安全与位置",
+  "assist.batch.transition": "换场",
+  "assist.batch.appearance": "出场",
+  "assist.batch.lighting": "灯光",
+  "assist.batch.advice": "AI建议",
+  "assist.batch.ask": "问AI",
+  "assist.batch.askPrompt": "请为这个检查结果提出处理建议：{item}",
+  "assist.batch.thinking": "正在检查列表…",
+  "assist.batch.empty": "未发现待确认项。未调用AI，也未消耗次数。请同时查看未检查的范围。这不保证现场安全。",
+  "assist.batch.done": "检查完成。位置、出场和灯光均为候选提示。请在现场确认高度、路径、支撑和服装。",
+  "assist.batch.failed": "无法完成检查或获取AI说明。已显示的列表由设备本地计算。",
+  "assist.batch.tooLarge": "列表超出发送上限。未调用AI或使用额度。可缩小到此场景重新检查。",
+  "assist.batch.stale": "演出已更改，请重新检查。",
+  "assist.batch.sceneMissing": "找不到此检查结果对应的场景，请重新检查。",
+  "assist.batch.routeFailed": "无法打开该位置，请按场景编号打开。",
+  "assist.batch.opened": "已打开相应场景和画面。",
+  "assist.batch.count": "演员棋子{n}人（位置数量）",
+  "assist.batch.balance": "台上位置明显偏向{side}（横向位置平均值{mean}）。请确认是否有意如此安排。",
+  "assist.batch.overlap": "重叠候选{n}对。相关对象：{names}",
+  "assist.batch.overhead": "器具正下方候选{n}对，高度和支撑未确认：{names}",
+  "assist.batch.outside": "舞台外棋子{n}个：{names}",
+  "assist.batch.hidden": "可能被客席视线遮挡的演员{n}人（场馆固定障碍物、平面盲区）：{names}",
+  "assist.batch.positionsUnknown": "部分位置无法读取，位置和重叠检查未完成。",
+  "assist.batch.sightUnknown": "客席盲区未确认，需要客席和固定障碍物数据。",
+  "assist.batch.speed": "{names}：{m}米/{seconds}秒，需要{speed}米/秒，参考{limit}米/秒。可减少同时移动的对象、调整顺序或延长时间。",
+  "assist.batch.route": "{names}：舞台外路径、距离或时间待确认（{seconds}秒）。未判断是否来得及。",
+  "assist.batch.changes": "端点比较：移动{a}人/{b}物，出现{c}/{d}，消失{e}/{f}，进入舞台{g}/{h}，离开舞台{i}/{j}（人/物）。分类有重叠，请勿相加。",
+  "assist.batch.transitionUnknown": "无法比较换场。",
+  "assist.batch.consecutive": "{names}：场景{a}至{b}，连续{c}个场景。整场登场区间{d}次，演出中结束的区间{e}次。请确认休息和换装。",
+  "assist.batch.return": "{names}：场景{a}后空一个场景，在{b}重新登场。含换场共{c}秒，可能涉及快速换装或移动。整场登场区间{d}次，演出中结束的区间{e}次。",
+  "assist.batch.identityUnknown": "部分演员缺少名册或共同标识，跨场景出场未确认。",
+  "assist.batch.unlit": "可能在光线外的演员{n}人：{names}。仅检查提示开始时的胸部采样点和静止光锥外缘。",
+  "assist.batch.noFade": "没有淡变时间的提示（确认是否有意切换）：{names}",
+  "assist.batch.duplicate": "灯光和分组内容相同的提示：{names}。不比较名称和时间。",
+  "assist.batch.lightUnknown": "无法确认灯光数据，未设置不代表没有问题。",
+  "assist.batch.movingLight": "移动光线、图案、切光等未确认：{names}。请在播放中检查。"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {"assist.batch.summaryNotice": "向AI发送按场景和类型汇总的数量、代表值及最多两个示例名称。各个项目的列表留在设备内。"});
+
+// CHECK fix 3: priority, grouped findings and unassessed areas.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "assist.batch.more": "另有 {n}项",
+  "assist.batch.otherPlaces": "另有 {n}处",
+  "assist.batch.otherNames": "另有{n}人或对象",
+  "assist.batch.group": "{item}：{n}处（{scenes}个场景）",
+  "assist.batch.severity.high": "优先级 高",
+  "assist.batch.severity.medium": "优先级 中",
+  "assist.batch.severity.low": "优先级 低",
+  "assist.batch.kind.balance": "左右明显偏移",
+  "assist.batch.kind.overlap": "重叠",
+  "assist.batch.kind.overhead": "悬吊器材正下方",
+  "assist.batch.kind.hidden": "观众席看不见",
+  "assist.batch.kind.speed": "转场速度",
+  "assist.batch.kind.return": "快速再次登场",
+  "assist.batch.kind.unlit": "灯光范围之外",
+  "assist.batch.kind.noFade": "无淡变时间",
+  "assist.batch.kind.duplicate": "内容相同的提示",
+  "assist.batch.coverage": "未检查的范围（{n}类）",
+  "assist.batch.coverageNotice": "以下为检测出的问题之外尚未检查的事项。不计入待确认项，也不发送给AI；并不代表检查通过。",
+  "assist.batch.coverageItem": "{item}：{scenes}个场景",
+  "assist.batch.coverage.positionsUnknown": "无法读取的位置与重叠",
+  "assist.batch.coverage.sightUnknown": "观众席盲区（需要座位与固定障碍物数据）",
+  "assist.batch.coverage.route": "台外路线、距离与转场时间",
+  "assist.batch.coverage.transitionUnknown": "无法比较的转场",
+  "assist.batch.coverage.identityUnknown": "缺少标识的演员出场情况",
+  "assist.batch.coverage.lightUnknown": "无法检查的灯光数据",
+  "assist.batch.coverage.movingLight": "移动光束、图案、切割片等效果"
+});
+
+// DOCS: read-only document drafts.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "assist.docs.original": "原文（保持不变）",
+  "assist.docs.title": "文档草稿",
+  "assist.docs.kind": "文档类型",
+  "assist.docs.runNotes": "整理排练记录",
+  "assist.docs.performer": "演员说明",
+  "assist.docs.technician": "技术交接",
+  "assist.docs.translate": "翻译副本",
+  "assist.docs.run": "排练轮次",
+  "assist.docs.scene": "场景",
+  "assist.docs.cast": "演员",
+  "assist.docs.source": "翻译内容",
+  "assist.docs.cues": "提示名称与备注",
+  "assist.docs.notes": "场景备注",
+  "assist.docs.draft": "此场景的最近草稿",
+  "assist.docs.language": "目标语言",
+  "assist.docs.ja": "日语",
+  "assist.docs.en": "英语",
+  "assist.docs.ko": "韩语",
+  "assist.docs.zh-Hans": "简体中文",
+  "assist.docs.zh-Hant": "繁体中文",
+  "assist.docs.notice": "仅将下方所示的一个场景的一个部分发送给 Anthropic。请勿包含个人或机密信息。演出不变。每次生成使用一次咨询。",
+  "assist.docs.scope": "发送范围：{title}，第{page}/{pages}部分（共{total}项）。不读取其他部分或场景。长名称以…缩短。",
+  "assist.docs.page": "第{page}/{pages}部分",
+  "assist.docs.previous": "上一部分",
+  "assist.docs.next": "下一部分",
+  "assist.docs.generate": "为此部分生成草稿",
+  "assist.docs.loading": "正在检查内容…",
+  "assist.docs.unavailable": "此部分没有资料，或单个条目超过发送上限。请重新选择轮次、演员、场景或内容。",
+  "assist.docs.changed": "资料已更改。请检查下方更新后的范围，再次按下。",
+  "assist.docs.copy": "复制",
+  "assist.docs.export": "导出",
+  "assist.docs.copied": "已复制",
+  "assist.docs.copyFailed": "复制失败。请选择回复进行复制。",
+  "assist.docs.exported": "已开始导出",
+  "assist.docs.exportFailed": "导出失败。请尝试复制。",
+  "assist.docs.result": "未核实草稿：{title}，第{page}/{pages}部分（未读其他部分）",
+  "assist.docs.true": "是",
+  "assist.docs.false": "否",
+  "assist.docs.prompt.runNotes": "请将这些排练记录整理为各部门的修改清单。",
+  "assist.docs.prompt.performer": "请为这位演员起草动作说明。",
+  "assist.docs.prompt.technician": "请根据这些设备布置和 LX 提示起草技术交接。",
+  "assist.docs.prompt.translate": "请将原文与所选语言的译文配对，保留原名。",
+  "assist.docs.field.source": "来源",
+  "assist.docs.field.text": "原文",
+  "assist.docs.field.segment": "文字部分",
+  "assist.docs.field.segments": "文字总部分数",
+  "assist.docs.field.label": "对象",
+  "assist.docs.field.presence": "场景内位置",
+  "assist.docs.field.fromPrev": "上一场景的配置变化",
+  "assist.docs.field.toNext": "下一场景的配置变化",
+  "assist.docs.field.side": "左右",
+  "assist.docs.field.depth": "前后",
+  "assist.docs.field.props": "持有物",
+  "assist.docs.field.number": "设备登记编号",
+  "assist.docs.field.position": "登记位置",
+  "assist.docs.field.kind": "设备类型",
+  "assist.docs.field.mount": "安装方式（登记值）",
+  "assist.docs.field.u": "左右登记值（0–1）",
+  "assist.docs.field.v": "前后登记值（0–1）",
+  "assist.docs.field.height": "登记高度（m）",
+  "assist.docs.field.name": "名称",
+  "assist.docs.field.memo": "备注",
+  "assist.docs.field.trigger": "触发",
+  "assist.docs.field.offset": "场景内位置（秒）",
+  "assist.docs.field.placed": "已置于时间轴",
+  "assist.docs.field.enabled": "启用",
+  "assist.docs.field.fadeIn": "渐入（秒）",
+  "assist.docs.field.fadeOut": "渐出（秒）",
+  "assist.docs.field.delayIn": "渐入延迟（秒）",
+  "assist.docs.field.delayOut": "渐出延迟（秒）",
+  "assist.docs.field.cue": "提示",
+  "assist.docs.field.fixture": "设备",
+  "assist.docs.field.intensity": "亮度（登记值）",
+  "assist.docs.field.on": "点亮登记值",
+  "assist.docs.value.unknown": "未确认",
+  "assist.docs.value.absent": "未配置",
+  "assist.docs.value.onstage": "舞台内",
+  "assist.docs.value.outside": "舞台范围外",
+  "assist.docs.value.appeared": "配置出现（路径未确认）",
+  "assist.docs.value.disappeared": "配置消失（路径未确认）",
+  "assist.docs.value.continued": "前后配置有无相同",
+  "assist.docs.value.stage-right": "舞台右侧",
+  "assist.docs.value.stage-left": "舞台左侧",
+  "assist.docs.value.center": "中央",
+  "assist.docs.value.upstage": "舞台后方",
+  "assist.docs.value.downstage": "舞台前方",
+  "assist.docs.value.run-note": "排练记录正文",
+  "assist.docs.value.addendum": "确认后补充"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "assist.ops2Confirm": "确认队形／场景操作",
+  "assist.ops2FormationCount": "{shape}：更改{n}个棋子",
+  "assist.ops2SceneCount": "新增或重新编号的场景{n}个",
+  "assist.ops2Number": "{from} → {to}：{title}",
+  "assist.ops2Outside": "{name}：超出舞台。请确认位置。",
+  "assist.ops2Overlap": "{name}与{other}：平面中心相距{distance}m，可能与器具或棋子重叠。尺寸、高度及实际安全性未确认。",
+  "assist.ops2Neighbours": "{number} {title}：相邻场景、进出场及动线将改变。",
+  "assist.ops2Ros": "流程表的场景行按ID更新顺序及编号，自由项目和备注保留。",
+  "assist.ops2SceneCue": "提示{name}：保留场景ID关联，请确认执行顺序及时刻。",
+  "assist.ops2FixedCue": "提示{name}：保留章节时间及场景跟随规则。请确认下方时刻及对应场景。",
+  "assist.ops2Media": "音源位置{name}：保留开始场景ID及文件范围，请确认播放时刻。",
+  "assist.ops2Audio": "保留场景音轨引用，章节开头及播放顺序可能改变。",
+  "assist.ops2CopyLinks": "副本使用新的场景、棋子及提示ID。复制场景提示、灯光及音源位置，不增加章节定时提示。新流程表行不复制负责人及注释。",
+  "assist.ops2SectionCopy": "副本使用目标章节的服装及时间指定。",
+  "assist.ops2Time": "{number}：距演出开头{from}秒 → {to}秒",
+  "assist.ops2Proceed": "确认以上更改及影响后，请按执行。撤销一次即可全部还原。",
+  "assist.ops2OutsideBlocked": "超出可放置范围，无法执行。请更改中心或间距后重试。",
+  "assist.ops2Capacity": "场景及章节已达上限，请先腾出空间。目前未更改。",
+  "assist.ops2Section": "请在同一章节内对没有子项目的场景操作。目前未更改。",
+  "assist.ops2LinkedTiming": "无法保留固定时间、音源或队形关联。请先检查时间轴。目前未更改。",
+  "assist.ops2Alternative": "请先显示原场景的采用方案再复制。目前未更改。",
+  "assist.ops2SceneRef": "找不到指定场景编号，请确认编号及前后关系。目前未更改。",
+  "assist.ops2Relationships": "无法移动固定、有动线、持有或支撑关系的棋子。请确认对象。目前未更改。",
+  "assist.ops2Question": "请明确对象、队形、中心、间距及方向，或场景编号及前后关系。目前未更改。",
+  "assist.ops2Shape_line": "横一列",
+  "assist.ops2Shape_column": "纵一列",
+  "assist.ops2Shape_diagonal": "斜一列",
+  "assist.ops2Shape_v": "V字",
+  "assist.ops2Shape_inverted-v": "倒V字",
+  "assist.ops2Shape_circle": "圆",
+  "assist.ops2Shape_two-rows": "横向两列",
+  "assist.ops2Shape_staggered": "交错",
+  "assist.ops2CueTime": "提示{name}：时刻{from} → {to}，对应场景{scene}。",
+  "assist.ops2CopyTitle": "{title}的副本",
+  "assist.ops2Effects": "影响详情（全部{n}项）"
+});
+
+// 3-C: review transport and run-of-show CSV.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "4倍以上は音が出ません。": "4倍及以上速度播放时无声音。",
+  "この環境では、音ありは1倍、音なしは4倍・8倍で再生できます。": "此环境支持1倍有声播放，以及4倍、8倍无声播放。",
+  "再生速度": "播放速度",
+  "再生速度（音程を保つ）": "播放速度（保持音调）",
+  "この環境では通常速度のみ再生できます。": "此环境仅支持正常速度播放。",
+  "LXレーンに置く": "放入LX轨道",
+  "音源を再生できないため、一部または全部を音なしで再生しています。停止して再生し直すと音源を再試行します。": "音源无法播放，部分或全部内容正在无声播放。停止后重新播放可重试音源。",
+  "CSVを書き出す": "导出CSV"
+});
+
+// W1-A: detail figure view controls (device preferences only).
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hans"].text, {
+  "図を全体表示": "显示完整图",
+  "図を全体表示（空き場所のダブルクリックでも戻ります）": "显示完整图（也可双击空白处返回）",
+  "ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動": "滚轮缩放；放大时按空格拖动或用鼠标中键拖动平移",
+  "平面図と正面図の高さ配分": "平面图和正面图的高度分配"
 });

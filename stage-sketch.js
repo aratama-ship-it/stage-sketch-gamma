@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.95";
+  const GAMMA_APP_VERSION = "v0.3.96";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2817,7 +2817,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-30`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-31`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -3292,12 +3292,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   // A banquine platform requires two inward-facing bases, never a single support.
-  function banquineGroup(flyer, pieces, size) {
+  function banquineGroup(flyer, pieces, size, legacy = false) {
+    legacy ||= typeof migratingPerformerMounts !== "undefined" && migratingPerformerMounts;
     if (flyer.pose !== "banquine_flyer") return null;
-    const bases = pieces.filter(p => p.type === "performer" && p.pose === "banquine_base" && !p.heldBy)
+    const bases = pieces.filter(p => p.type === "performer" && p.pose === "banquine_base" && !p.heldBy
+      && ((legacy && !Object.prototype.hasOwnProperty.call(flyer, "mountOn")) || flyer.mountOn === p.id || flyer.mountWith === p.id))
       .map(p => ({ p, x: (p.u - flyer.u) * size.width, z: (p.v - flyer.v) * size.depth }))
-      .filter(q => Math.hypot(q.x, q.z) < .6).sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z)).slice(0, 2);
+      .filter(q => !(legacy && !Object.prototype.hasOwnProperty.call(flyer, "mountOn")) || Math.hypot(q.x, q.z) < .6)
+      .sort((a, b) => legacy && !Object.prototype.hasOwnProperty.call(flyer, "mountOn")
+        ? Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z)
+        : Number(b.p.id === flyer.mountOn) - Number(a.p.id === flyer.mountOn)).slice(0, 2);
     if (bases.length !== 2) return null;
+    if (!(legacy && !Object.prototype.hasOwnProperty.call(flyer, "mountOn"))) {
+      return { bases: bases.map(q => q.p), palmY: .30 * bases.reduce((sum, q) => sum + pieceHeightM(q.p) * q.p.size / 100, 0) };
+    }
     const [a, b] = bases, gap = Math.hypot(a.x - b.x, a.z - b.z);
     if (gap < .5 || gap > 1.05 || Math.hypot((a.x + b.x) / 2, (a.z + b.z) / 2) > .14) return null;
     if (bases.some(q => {
@@ -3580,9 +3588,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return joints;
   }
 
-  function piggybackSupport(piece, pieces, size) {
+  function piggybackSupport(piece, pieces, size, legacy = false) {
+    legacy ||= typeof migratingPerformerMounts !== "undefined" && migratingPerformerMounts;
     if (piece.pose !== "piggyback_rider") return null;
+    if (!(legacy && !Object.prototype.hasOwnProperty.call(piece, "mountOn"))) {
+      return pieces.find(p => p.id === piece.mountOn && p.type === "performer" && !p.heldBy) || null;
+    }
     return pieces.filter(p => p.type === "performer" && p.pose === "piggyback_base" && !p.heldBy
+      && ((legacy && !Object.prototype.hasOwnProperty.call(piece, "mountOn")) || piece.mountOn === p.id)
       && Math.cos(((piece.facing || 0) - (p.facing || 0)) * Math.PI / 180) > .95)
       .map(base => ({ base, distance: Math.hypot((piece.u - base.u) * size.width, (piece.v - base.v) * size.depth) }))
       .filter(hit => hit.distance < .3).sort((a, b) => a.distance - b.distance)[0]?.base || null;
@@ -6778,6 +6791,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (type === "performer" && window.SHOSAI_CUE_SHEET) {
       window.SHOSAI_CUE_SHEET.setPieceCueSheet(normalized, piece && piece.cueSheet);
     }
+    if (type === "performer" && !Object.prototype.hasOwnProperty.call(piece, "mountOn")) normalized.mountOn = null;
     return normalized;
   }
 
@@ -7142,7 +7156,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function normalizeScenePieces(raw) {
     const source = Array.isArray(raw) ? raw : [];
-    const pieces = source.map(normalizePiece);
+    const pieces = source.map((piece, index) => {
+      const normalized = normalizePiece(piece, index);
+      if (!Object.prototype.hasOwnProperty.call(piece, "mountOn")) delete normalized.mountOn;
+      return normalized;
+    });
     const byId = new Map(pieces.map((piece) => [piece.id, piece]));
     // Undo/読み込みでは未表示のシーンも通る。保存済みの支持関係は同じシーン内で保ち、
     // 次の描画で位置から引き直す。単体の駒を作る normalizePiece には参照を持ち越さない。
@@ -7165,6 +7183,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       path.forEach((id) => valid.set(id, safe));
     });
     pieces.forEach((piece) => { if (!valid.get(piece.id)) piece.supportId = null; });
+    pieces.forEach(piece => {
+      if (piece.type !== "performer" || !Object.prototype.hasOwnProperty.call(piece, "mountOn")) return;
+      const safe = (id, path) => {
+        if (!id) return true;
+        const p = byId.get(id);
+        if (!p || p.type !== "performer" || path.has(id)) return false;
+        const next = new Set(path); next.add(id);
+        return safe(p.mountOn, next) && safe(p.mountWith, next);
+      };
+      if (!safe(piece.mountOn, new Set([piece.id])) || !safe(piece.mountWith, new Set([piece.id]))) {
+        piece.mountOn = null; delete piece.mountWith;
+      }
+    });
     return pieces;
   }
 
@@ -7296,6 +7327,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       /* 一度きちんとした駒として通してから、控える分だけを抜き直す。
          前の版が丸ごと控えていた保存も、ここで同じ形に揃う。 */
       const full = normalizePiece(piece, 0);
+      // G-017 (v0.3.96): a stash without a saved mountOn stays without one, like normalizeScenePieces;
+      // set-piece stashes have no type and would otherwise gain mountOn: null on every open.
+      if (!Object.prototype.hasOwnProperty.call(piece, "mountOn")) delete full.mountOn;
       const kept = stashFields(full);
       out[setId] = kept;
     });
@@ -7686,6 +7720,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       normalizeHolds(scene.pieces, normalized.project);
     });
+    if (typeof performerMountsReady !== "undefined" && performerMountsReady) migratePerformerMounts(normalized);
+    // Mount fields participate in the legacy-edit signature. Finalize it AFTER
+    // this known migration, or the next open would invent another adopted plan.
     sceneAlternatives?.restore(normalized.project, { reconcile: false });
     if (discardedCarry) discardedPackageCarryStates.add(normalized);
     else if (normalized.projectPackageCarry) {
@@ -7945,6 +7982,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     };
   }
 
+  let performerMountsReady = false;
+  let migratingPerformerMounts = false;
+  let performerMountPick = null;
   const loaded = loadState();
   let state = loaded.value;
   let storageBand = null;
@@ -7989,6 +8029,49 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   // いま選んでいるスクリーンの文字（掴んで動かす・つまみで直す対象）
   let selectedTextId = null;
   let pointerAction = null;
+  /* @stageFrameRender:start */
+  const STAGE_FRAME_MIN_MS = Math.max(33, 1000 / 30);
+  function stageFramePaintDue(now, lastPaintAt, finalFrame = false, controlled = false) {
+    return controlled || finalFrame || now - lastPaintAt >= STAGE_FRAME_MIN_MS;
+  }
+
+  // Only paint is deferred. Callers update the model before requesting a frame.
+  function createStageDragRender(paint, requestFrame, cancelFrame, clock) {
+    let frame = null;
+    let pending = false;
+    let lastPaintAt = -Infinity;
+    function step() {
+      frame = null;
+      if (!pending) return;
+      const now = clock();
+      if (!stageFramePaintDue(now, lastPaintAt)) {
+        frame = requestFrame(step);
+        return;
+      }
+      pending = false;
+      lastPaintAt = now;
+      paint();
+    }
+    return {
+      request() {
+        pending = true;
+        if (frame === null) frame = requestFrame(step);
+      },
+      flush() {
+        if (frame !== null) cancelFrame(frame);
+        frame = null;
+        if (!pending) return;
+        pending = false;
+        lastPaintAt = clock();
+        paint();
+      },
+    };
+  }
+  /* @stageFrameRender:end */
+  const dragRender = createStageDragRender(
+    () => render(), callback => requestAnimationFrame(callback),
+    frame => cancelAnimationFrame(frame), () => performance.now(),
+  );
   let selectionMarquee = null;
   let dragHoldPreview = null;
   // 確定前の自由矢印。ショーの保存やUndoへは、指を離した時点で初めて入れる。
@@ -8244,6 +8327,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // not an autoplay denial, and must not overwrite the new cue's status.
       if (request !== audioPlayRequest || trackId !== audioPlayback.trackId || error?.name === "AbortError") return false;
       audioPlayback.playAfterLoad = false;
+      window.dispatchEvent(new CustomEvent("stage-timeline-audio-playback-failed", {
+        detail: { trackId, reason: error?.name || "play-rejected" },
+      }));
       setAudioStatus(tx("自動では再生できませんでした。タイムラインの再生操作で再開してください。"),
         "Playback needs another tap. Use timeline playback to resume.", "error");
       syncAudioControls();
@@ -9102,7 +9188,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261027-v0390&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261031-v0396&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -12672,7 +12758,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* (u,v) の真下にあるもののうち、いちばん高い上面。
    * 候補は「自分より先に並んでいるもの」だけ。互いを支えにすると高さが
    * 際限なく積み上がるので、並び順で循環を断つ。
-   * 動かしている駒は並びの最後へ回すので、必ず重なった相手の上に乗る。 */
+   * 演者同士は明示の mountOn だけを使い、旧ショー移行時だけ従来の幾何を使う。 */
   const PERFORMER_UNSUPPORTABLE_TYPES = { chair: true, table: true, bench: true, stool: true, block: true, model: true };
   const stairShapeOf = (piece) => piece && piece.type === "prop"
     && ["stairs", "stairs6"].includes(propShapeOf(piece)) ? propShapeOf(piece) : null;
@@ -12685,13 +12771,23 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const halfDepth = halfShoulder * BODY_DEPTH_RATIO;
     return 1 / Math.hypot(lateral / halfShoulder, forward / halfDepth);
   }
-  function supportUnder(piece, size, candidates, footprintFor = supportFootprint) {
+  function supportUnder(piece, size, candidates, footprintFor = supportFootprint, legacy = false) {
     let top = 0;
     let holder = null;
     if (piece.heldBy) return { top, holder };
     candidates.forEach((other) => {
       if (other === piece) return;
       if (other.heldBy) return;
+      if (piece.type === "performer" && piece.mountOn && other.id !== piece.mountOn) return;
+      // 人同士は保存した関係だけで支える。幾何は旧ショーを開く一度だけ使う。
+      if (piece.type === "performer" && other.type === "performer"
+          && !(legacy && !Object.prototype.hasOwnProperty.call(piece, "mountOn"))) {
+        if (piece.mountOn !== other.id) return;
+        const ridden = rideTopLocal(piece, other);
+        const t = (other.base || 0) + (ridden === null ? pieceTopLocal(other) : ridden);
+        if (t > top) { top = t; holder = other.id; }
+        return;
+      }
       // ハープの枠は足場ではない。演奏を止めても演者を楽器の天面へ乗せない。
       if (piece.type === "performer" && other.type === "prop" && propShapeOf(other) === "harp") return;
       if (other.type === "performer" && piece.type === "prop" && ["germanwheel", "motorcycle"].includes(propShapeOf(piece))) return;
@@ -12853,7 +12949,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     finally { scene.pieces = pieces; displayBasesDepth -= 1; }
   }
 
-  function refreshBases(size, pieces = sc().pieces) {
+  function refreshBases(size, pieces = sc().pieces, legacy = false) {
     normalizeHolds(pieces, state.project);
     // Earlier candidates have finished their support/pose update before they
     // can be queried here. Reuse their footprint only within this one pass;
@@ -12864,7 +12960,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       return footprints.get(piece);
     };
     const motorcycleSeats = new Map();
-    pieces.forEach((piece, i) => {
+    const ordered = performerMountOrder(pieces);
+    ordered.forEach((piece) => {
+      const i = pieces.indexOf(piece);
       const previousMount = piece.type === "performer" ? mountKindFrom(piece, pieces) : null;
       if (piece.type === "performer" && String(piece.pose).replace(LEFT_HAND_SUFFIX, "") === "ride_astride") {
         const hit = pieces.filter(other => other.type === "prop" && !other.heldBy && !isFlown(other) && propShapeOf(other) === "motorcycle")
@@ -12878,14 +12976,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       if (piece.type === "performer" && ["piggyback_base", "piggyback_rider"].includes(piece.pose)) {
         piece.base = 0; piece.supportId = null;
-        const base = piggybackSupport(piece, pieces, size);
+        const base = piggybackSupport(piece, pieces, size, legacy);
         if (base) { piece.base = .6 * pieceHeightM(base) * base.size / 100; piece.supportId = base.id; }
         return;
       }
-      if (piece.type === "performer" && ["banquine_base", "banquine_flyer"].includes(piece.pose)) {
+      if (piece.type === "performer" && ["banquine_base", "banquine_flyer"].includes(piece.pose)
+          && (piece.pose === "banquine_base" || !piece.mountOn || piece.mountWith)) {
         piece.base = 0; piece.supportId = null;
         if (piece.pose === "banquine_flyer") {
-          const group = banquineGroup(piece, pieces, size);
+          const group = banquineGroup(piece, pieces, size, legacy);
           if (group) { piece.base = group.palmY + .02; piece.supportId = group.bases[0].id; }
         }
         return;
@@ -12909,11 +13008,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         .concat(pieces.slice(i + 1).filter((p) => p.type === "seri"
           || (piece.type === "performer" && piece.pose === "cajon_play" && p.type === "prop" && propShapeOf(p) === "cajon")))
         .filter(p => !(piece.type === "prop" && propShapeOf(piece) === "cajon" && p.type === "performer" && p.pose === "cajon_play"));
-      const found = supportUnder(piece, size, candidates, footprintFor);
+      if (piece.type === "performer" && piece.mountOn) {
+        const explicit = pieces.find(p => p.id === piece.mountOn && p.type === "performer");
+        if (explicit && !candidates.includes(explicit) && !explicit.heldBy) candidates.push(explicit);
+      }
+      const found = supportUnder(piece, size, candidates, footprintFor, legacy);
       piece.base = found.top;
       piece.supportId = found.holder;
       if (piece.type !== "performer") return;
       const foundHolder = found.holder ? pieces.find((other) => other.id === found.holder) : null;
+      // A chosen performer wins over overlapping props and nearby aerial apparatus.
+      if (piece.mountOn && foundHolder?.type === "performer") return;
       /* この版で椅子へ座らせた演者を椅子から下ろしたら、見えない椅子へ座り続けず立つ。
          読み込み時から床で sit の旧データは previousMount が無いので、そのまま保つ。 */
       if (!motorcycleSeats.has(piece.id)) {
@@ -13087,16 +13192,110 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     });
   }
 
-  /* 動かし始めた駒を並びのいちばん後ろへ回す。重なった相手の上に乗るため。
+  // G-017: null records an explicit floor choice, absence denotes an old show.
+  function performerMountOrder(pieces) {
+    // Stable dependency order: leave unrelated props in their original order.
+    const byId = new Map(pieces.map(p => [p.id, p])), done = new Set(), out = [];
+    let pending = pieces.slice();
+    while (pending.length) {
+      const waiting = [];
+      for (const piece of pending) {
+        const parents = piece.type === "performer" ? [piece.mountOn, piece.mountWith] : [];
+        if (parents.some(id => byId.has(id) && !done.has(id))) { waiting.push(piece); continue; }
+        out.push(piece); done.add(piece.id);
+      }
+      if (waiting.length === pending.length) { out.push(...waiting); break; }
+      pending = waiting;
+    }
+    return out;
+  }
+
+  function migratePerformerMounts(next) {
+    const previous = state, wasMigrating = migratingPerformerMounts, changes = [];
+    try {
+      migratingPerformerMounts = true;
+      const project = next.project;
+      for (const scene of project.scenes) {
+        const contents = [scene, ...(scene.sceneAlternatives?.items || []).map(item => item.content)];
+        for (const content of contents) {
+          if (!content?.pieces?.some(p => p.type === "performer" && !Object.prototype.hasOwnProperty.call(p, "mountOn"))) continue;
+          const pieces = projectIoClone(content.pieces), row = { ...scene, ...content, pieces };
+          state = { ...next, project: { ...project, scenes: [row], activeSceneId: row.id } };
+          refreshBases(venueSize(), pieces, true);
+          for (const piece of content.pieces) {
+            if (piece.type !== "performer" || Object.prototype.hasOwnProperty.call(piece, "mountOn")) continue;
+            const calculated = pieces.find(p => p.id === piece.id);
+            const holder = pieces.find(p => p.id === calculated.supportId && p.type === "performer");
+            const group = holder && piece.pose === "banquine_flyer" ? banquineGroup(calculated, pieces, venueSize(), true) : null;
+            changes.push({ piece, mountOn: holder?.id || null, mountWith: group?.bases.find(p => p.id !== holder.id)?.id });
+          }
+        }
+      }
+    } finally { state = previous; migratingPerformerMounts = wasMigrating; }
+    // Commit only after every scene succeeds. Never copy derived poses, positions or order.
+    for (const {piece, mountOn, mountWith} of changes) {
+      piece.mountOn = mountOn;
+      if (mountWith) piece.mountWith = mountWith;
+    }
+    return changes.length;
+  }
+
+  function performerMountAllowed(piece, other, pieces = sc().pieces) {
+    if (!piece || !other || piece.type !== "performer" || other.type !== "performer"
+        || piece.id === other.id || piece.heldBy || other.heldBy) return false;
+    const byId = new Map(pieces.map(p => [p.id, p])), seen = new Set();
+    const reaches = id => {
+      if (id === piece.id) return true;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      const p = byId.get(id);
+      return Boolean(p && [p.mountOn, p.mountWith, p.supportId].some(reaches));
+    };
+    return !reaches(other.id);
+  }
+
+  function performerMountCandidates(piece, pieces = sc().pieces, size = venueSize()) {
+    const probe = { ...piece }; delete probe.mountOn; delete probe.mountWith;
+    // Contact for the existing pair poses includes their actual hand/hip reach.
+    const piggyback = piggybackSupport(probe, pieces, size, true);
+    const banquine = banquineGroup(probe, pieces, size, true);
+    const poseContacts = new Set([piggyback?.id, ...(banquine?.bases || []).map(p => p.id)]);
+    return pieces.filter(p => performerMountAllowed(piece, p, pieces)).map(other => {
+      const dx = (piece.u - other.u) * size.width, dz = -(piece.v - other.v) * size.depth;
+      const distance = Math.hypot(dx, dz), nx = distance ? dx / distance : 1, nz = distance ? dz / distance : 0;
+      const contact = performerBodyRadiusAlong(piece, nx, nz) + performerBodyRadiusAlong(other, nx, nz);
+      return { other, distance, near: distance < contact || poseContacts.has(other.id) };
+    }).sort((a, b) => Number(b.near) - Number(a.near) || a.distance - b.distance);
+  }
+
+  // Explicitly moved roots win; their unselected riders retain horizontal offsets.
+  function moveMountedLoad(pieces, before) {
+    const moved = new Set(before.keys());
+    for (const piece of performerMountOrder(pieces)) {
+      if (moved.has(piece.id) || piece.type !== "performer" || !piece.mountOn) continue;
+      const parents = [piece.mountOn, piece.mountWith].filter(id => pieces.some(p => p.id === id));
+      if (!parents.some(id => before.has(id))) continue;
+      let du = 0, dv = 0;
+      for (const id of parents) {
+        const old = before.get(id), base = pieces.find(p => p.id === id);
+        if (old) { du += base.u - old.u; dv += base.v - old.v; }
+      }
+      before.set(piece.id, { u: piece.u, v: piece.v });
+      piece.u += du / parents.length; piece.v += dv / parents.length;
+    }
+  }
+
+  /* 動かし始めた駒を並びのいちばん後ろへ回す。道具の支持順を保つため。
    * ただし、その駒に乗っているものは一緒に連れていく。
    * 連れていかないと、下の台をずらしただけで台が上の演者へ乗ってしまう。 */
   function bringToTop(piece) {
     const arr = sc().pieces;
     const carried = new Set([piece.id]);
     const load = [];
-    arr.forEach((p) => {
+    performerMountOrder(arr).forEach((p) => {
       if (p === piece) return;
-      if (p.supportId && carried.has(p.supportId)) { carried.add(p.id); load.push(p); }
+      const parent = p.type === "performer" && p.mountOn ? p.mountOn : p.supportId;
+      if (parent && carried.has(parent)) { carried.add(p.id); load.push(p); }
     });
     const rest = arr.filter((p) => p !== piece && !carried.has(p.id));
     sc().pieces = rest.concat([piece], load);
@@ -16644,11 +16843,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   /* はけの動線の行き先（自動で描く線と同じ計算）。
      取っ手を掴まれたら、この形のまま piece.route へ実体化する。 */
-  function exitRouteFor(piece, next) {
+  function exitRouteFor(piece, next, project = state.project) {
     if (!next || piece.type !== "performer" || !piece.castId || piece.route) return null;
     if (!onStageArea(piece.u, piece.v)) return null;
     if (twinOf(piece, next.pieces || [])) return null;
-    const g = backstageGhostsFor(next).find((x) => x.member.id === piece.castId);
+    const g = backstageGhostsFor(next, project).find((x) => x.member.id === piece.castId);
     const dest = g ? { u: g.u, v: g.v } : wingDest(piece);
     return { u: dest.u, v: dest.v, bu: (piece.u + dest.u) / 2, bv: (piece.v + dest.v) / 2 };
   }
@@ -19303,7 +19502,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let timelineMotionGuard={samples:[],slow:0,stopped:false};
   const timelineMotionEnabled=()=>!!timelineLightGo?.playing && prefs.playbackLightMotion!=="stop" && !timelineMotionGuard.stopped;
   let timelineLightFrameSeconds=null;
-  const timelineLightSeconds=()=>timelineLightFrameSeconds??(timelineLightGo ? timelineLightGo.seconds+(timelineLightGo.playing?(performance.now()-timelineLightGo.at)/1000:0) : 0);
+  const timelineLightSeconds=()=>timelineLightFrameSeconds??(timelineLightGo ? timelineLightGo.seconds+(timelineLightGo.playing?(performance.now()-timelineLightGo.at)/1000*finite(timelineLightGo.playbackRate,1):0) : 0);
   const timelineEffectSeconds=()=>timelineLightGo ? finite(timelineLightGo.effectSeconds,timelineLightGo.seconds)+timelineLightSeconds()-timelineLightGo.seconds : 0;
   function timelineMotionStatus() {
     let note=document.getElementById("timeline-light-motion-status");
@@ -19327,7 +19526,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const motionLabels=({en:["Light motion during playback","Animate","Stop"],ko:["재생 중 빛의 움직임","움직임","정지"],zh:["播放时的灯光运动","运动","停止"]})[code]||["再生中の光の動き","動かす","止める"];
       const motion=prefSelectRow(motionLabels[0],prefs.playbackLightMotion||"move",[["move",motionLabels[1]],["stop",motionLabels[2]]],"",next=>{
         prefs.playbackLightMotion=next;savePrefs();timelineLightStateCache=null;lightCueOverlayCache={};
-        if(timelineLightGo)applyTimelineLightClock({seconds:timelineLightSeconds(),effectSeconds:timelineEffectSeconds(),playing:timelineLightGo.playing});else render();
+        if(timelineLightGo)applyTimelineLightClock({seconds:timelineLightSeconds(),effectSeconds:timelineEffectSeconds(),playing:timelineLightGo.playing,playbackRate:timelineLightGo.playbackRate});else render();
       });
       motion.id="playback-light-motion-pref";els.prefsList?.append(motion);
   }
@@ -19393,7 +19592,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if(timelineLightFadeRaf){cancelAnimationFrame(timelineLightFadeRaf);timelineLightFadeRaf=0;}
     if(clock?.playing&&!timelineLightGo?.playing)timelineMotionGuard={samples:[],slow:0,stopped:false};
     timelineLightStateCache=null;
-    timelineLightGo=clock?{seconds:finite(clock.seconds,0),effectSeconds:finite(effectSeconds,finite(clock.seconds,0)),playing:!!clock.playing,at:performance.now()}:null;
+    timelineLightGo=clock?{seconds:finite(clock.seconds,0),effectSeconds:finite(effectSeconds,finite(clock.seconds,0)),playing:!!clock.playing,playbackRate:clamp(finite(clock.playbackRate,1),.5,2),at:performance.now()}:null;
     const st=timelineLxState();
     timelineLightCue={cueId:st?.event?.kind==='lx'?st.event.id:'',sceneId:state.project.activeSceneId,playing:!!clock?.playing};
     lightCueOverlayCache={};syncSpinRun(false);render();
@@ -20586,6 +20785,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // 平面で囲んだ対象は正面でも同じだけ囲み、二つの図の選択状態を一致させる。
       const selected = selectedPieces();
       selected.forEach((piece) => drawSelection(target, piece, L));
+      if (performerMountPick && performerMountPick.sceneId === sc().id) {
+        performerMountPick.candidates.filter(c => c.near || c.id === performerMountPick.focused).forEach(c => {
+          const piece = sc().pieces.find(p => p.id === c.id);
+          if (piece) drawSelection(target, piece, L);
+        });
+      }
       if (selectionMarquee?.view === view) drawSelectionMarquee(target, selectionMarquee);
     }
 
@@ -23370,8 +23575,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      シーンで袖へのはけ動線が手で引いてあれば、その行き先を舞台裏の立ち位置にする。
      引いていなければ null（＝既定の並びに立つ）。袖のどちら側・どの深さに
      居るかを本人が決められるようにするため。 */
-  function backstageSpotFor(member, scene) {
-    const rows = state.project.scenes.filter((row) => row.kind === "scene");
+  function backstageSpotFor(member, scene, project = state.project) {
+    const rows = project.scenes.filter((row) => row.kind === "scene");
     for (let i = rows.indexOf(scene) - 1; i >= 0; i -= 1) {
       const p = (rows[i].pieces || []).find((q) => q.castId === member.id);
       if (!p) continue;   // このシーンにも居ない。さらに前を見る
@@ -23386,15 +23591,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      スラストは奥の袖に左から並べる。描く側と掴む側で同じ計算を使う。
      シーンを渡せば「そのシーンでの舞台裏」を出す（入り・はけの動線の両端に使う）。
      はけ先を手で決めた人は、その場所に立つ（既定の並びから外す）。 */
-  function backstageGhostsFor(scene) {
-    const off = state.project.cast.filter((member) =>
+  function backstageGhostsFor(scene, project = state.project) {
+    const off = project.cast.filter((member) =>
       !(scene.pieces || []).some((piece) => piece.castId === member.id));
     if (!off.length) return [];
     const b = planBounds();
     const out = [];
     let slot = 0;   // 既定の並びの席。手で決めた人は席を使わない
     off.forEach((member) => {
-      const spot = backstageSpotFor(member, scene);
+      const spot = backstageSpotFor(member, scene, project);
       if (spot) {
         out.push({
           member,
@@ -23823,6 +24028,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function releaseHeldBy(scene, holderId) {
     (scene && scene.pieces || []).forEach((piece) => {
       if (piece.heldBy === holderId) piece.heldBy = null;
+      if (piece.mountOn === holderId || piece.mountWith === holderId) {
+        piece.mountOn = null; delete piece.mountWith;
+      }
     });
   }
 
@@ -26118,6 +26326,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function openProjectSettings() {
+    if (window.GAMMA_UI.layers.isOpen(els.projectSettingsModal)) return;
     if (!els.projectSettingsModal) return;
     projectSettingsReturnFocus = document.activeElement;
     if (els.projectTitle) els.projectTitle.value = state.project.title;
@@ -26152,6 +26361,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     isNative: () => Boolean(nativeProject), version:GAMMA_APP_VERSION.replace(/^v/, ""),
   });
   document.getElementById("stage-shows-samples-open")?.addEventListener("click", () => window.STAGE_PROJECT_LIBRARY?.open("samples"));
+  document.getElementById("stage-project-samples-open")?.addEventListener("click", (event) => {
+    // Safariのタップでも既存ライブラリが戻す焦点をこの入口にそろえる。
+    event.currentTarget.focus({ preventScroll: true });
+    window.STAGE_PROJECT_LIBRARY?.open("samples");
+  });
 
   document.getElementById("stage-show-save-export")?.addEventListener("click", () => exportProject());
 
@@ -27306,6 +27520,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     clone.base = 0;
     clone.supportId = null;
     clone.heldBy = null;
+    if (clone.type === "performer") { clone.mountOn = null; delete clone.mountWith; }
     return clone;
   }
 
@@ -27897,6 +28112,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function openSetInfo(setId) {
+    if (window.GAMMA_UI.layers.isOpen(els.setInfo)) return;
     const item = (state.project.sets || []).find((t) => t.id === setId);
     if (!item || !els.setInfo) return;
     setInfoId = setId;
@@ -27995,6 +28211,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function openProfile(castId) {
+    if (window.GAMMA_UI.layers.isOpen(els.profile)) return;
     for (const input of [els.profileName, els.profileHeight, els.profileColor, els.profileNote]) noteEditCheckpoints.delete(input);
     const member = state.project.cast.find((c) => c.id === castId);
     if (!member || !els.profile) return;
@@ -29268,6 +29485,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function openSceneCreate(scene, returnFocus) {
+    if (window.GAMMA_UI.layers.isOpen(els.sceneCreateModal)) return;
     if (!scene || scene.kind !== "scene" || !els.sceneCreateModal || !els.sceneCreateBackdrop) return;
     sceneCreateSourceId = scene.id;
     sceneCreateMode = null;
@@ -29456,6 +29674,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function openRename(scene, returnTo = document.activeElement) {
+    if (window.GAMMA_UI.layers.isOpen(els.rename)) return;
     if (!scene || !els.rename) return;
     renameReturnFocus = returnTo;
     renameTarget = scene;
@@ -32155,6 +32374,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         : clamp(finite(state.sceneAnimMs, 2000), 200, 3000);
     const start = performance.now();
     const controlled = Number.isFinite(timelineProgress);
+    let lastPaintAt = -Infinity;
     const step = (now) => {
       const t = clamp((now - start) / span, 0, 1);
       const visualT = blackout ? (t < 0.2 ? 0 : 1) : t;
@@ -32279,7 +32499,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const fpv = document.getElementById("stage-fpv-overlay");
       // Motion and progress still advance above; only paint visible stage canvases.
       // Lighting renders the same transition from its own frame snapshot.
-      if ((!fpv || fpv.hidden) && (presenting || stageCanvasesShown())) {
+      if (stageFramePaintDue(now, lastPaintAt, t >= 1, controlled)
+          && (!fpv || fpv.hidden) && (presenting || stageCanvasesShown())) {
+        lastPaintAt = now;
         if (state.showFront || presenting) drawStage(ctx, true, "front");
         if ((state.showPlan || presenting) && planCtx) drawStage(planCtx, true, "plan");
         renderSecondSeatView();
@@ -34809,6 +35031,7 @@ ${propsPlotHtml}
     });
     copy.pieces.forEach((piece) => {
       if (piece.heldBy) piece.heldBy = swap.get(piece.heldBy) || null;
+      for (const key of ["mountOn", "mountWith"]) if (piece[key]) piece[key] = swap.get(piece[key]) || null;
     });
     copy.notes = (copy.notes || []).map((note) => ({
       ...note,
@@ -34940,6 +35163,7 @@ ${propsPlotHtml}
       });
     entries.forEach(({ copy, wasHeld }) => {
       copy.heldBy = copy.heldBy ? (swap.get(copy.heldBy) || null) : null;
+      for (const key of ["mountOn", "mountWith"]) if (copy[key]) copy[key] = swap.get(copy[key]) || null;
       if (moveToRouteEnd && !wasHeld && copy.route) {
         const routeU = Number(copy.route.u);
         const routeV = Number(copy.route.v);
@@ -37934,6 +38158,27 @@ ${propsPlotHtml}
       { W: size.width, D: size.depth, H: size.height || 8 }));
   }
 
+  // All host entry points share one on-demand load. The embedded editor and
+  // Node fixture generator retain their explicit script order.
+  let partsLoading = null;
+  function ensurePartLightingModel() {
+    if (window.GAMMA_PART_LIGHTING) return Promise.resolve(window.GAMMA_PART_LIGHTING);
+    if (!partsLoading) {
+      partsLoading = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'light-design/part-lighting-model.js?v=20261031-v0396';
+        script.onload = () => {
+          script.remove();
+          if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
+          else reject(new Error('照明データを読み込めませんでした。'));
+        };
+        script.onerror = () => { script.remove(); reject(new Error('照明データを読み込めませんでした。')); };
+        document.head.appendChild(script);
+      }).catch(error => { partsLoading = null; throw error; });
+    }
+    return partsLoading;
+  }
+
   function simpleDesignForProject(project) {
     const selected=VENUES.byId(project.venue),size=VENUES.sizeById(selected,project.venueSize);
     const stage={W:size.width,D:size.depth,H:size.height||8};
@@ -37980,7 +38225,7 @@ ${propsPlotHtml}
     const marker = design?.rig?.simpleLighting;
     if (!simple || !saved || !marker || !design.stage) return null;
     const builtFor = marker.stage || design.stage;
-    if (!simple.isCommon(design.rig, builtFor, marker.venueType)) return null;
+    if (!window.GAMMA_PART_LIGHTING.compatible(design.rig, builtFor, marker.venueType)) return null;
     const target = VENUES.byId(saved.id);
     const size = target && VENUES.sizeById(target, venueApplySizeId(saved));
     if (!size) return null;
@@ -37989,14 +38234,14 @@ ${propsPlotHtml}
     const unchanged = sameStageExactly(stage, builtFor) && sameStageExactly(design.stage, stage) && venueType === marker.venueType;
     try { simple.validateStage(stage, venueType); }
     catch (_) { return { rebuild: false, fits: false, unchanged, stage, venueType }; }
-    return { rebuild: !unchanged, fits: true, unchanged, stage, venueType };
+    return { rebuild: !unchanged, fits: true, unchanged, stage, venueType, presetId:marker.presetId };
   }
 
   /* 共通24灯セットを新しい寸法で組み直す。灯体の id（simple-*）は寸法が変わっても同じなので、
      シーンごとの明かり・LXキュー・グループ・保存済みの照明プラン（plans・activePlanRef）はそのまま使える。 */
   function venueApplyRebuiltCommonDesign(design, plan) {
     const next = projectIoClone(design);
-    next.rig = window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(plan.stage, plan.venueType);
+    next.rig = plan.presetId ? window.GAMMA_PART_LIGHTING.createRig(plan.stage, plan.venueType,plan.presetId) : window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(plan.stage, plan.venueType);
     next.stage = { ...plan.stage };
     return window.GAMMA_LIGHT_MODEL.validate(next);
   }
@@ -38008,7 +38253,7 @@ ${propsPlotHtml}
     const message = plan?.rebuild ? "照明（共通24灯セット）を新しい劇場の寸法に合わせて組み直します。"
       : plan && !plan.fits ? "照明（共通24灯セット）はこの劇場の形・寸法に合わないため、組み直さずにそのまま残します。機材配置の「プリセット」から選び直せます。"
         : "";
-    note.textContent = message ? tx(message) : "";
+    note.textContent = plan?.presetId && plan.rebuild ? tx("照明設備の種類と数を保ち、新しい劇場の寸法に合わせて配置を調整します。明かりは変更後に確認してください。") : message ? tx(message) : "";
     note.hidden = !message;
     return plan;
   }
@@ -38024,6 +38269,7 @@ ${propsPlotHtml}
     return { stage: { W: size.width, D: size.depth, H: size.height || 8 }, venueType: lightingVenueTypeOf(state.project.venue) };
   }
   async function venueRigPresetChoices() {
+    await ensurePartLightingModel();
     const target = currentLightingVenueTarget();
     const rows = [];
     let simpleReason = "";
@@ -38038,6 +38284,7 @@ ${propsPlotHtml}
       detail: "スポット8灯・ウォッシュ16灯。トラス2本・フロント・両側SSを劇場の寸法に合わせて組みます。",
       why: "劇場の寸法から組む型なので、劇場を反映し直したときは新しい寸法へ自動で組み直します。",
       available: !simpleReason, reason: simpleReason });
+    for(const preset of window.GAMMA_PART_LIGHTING.presets.filter(item=>item.id!=='common24'))rows.push({key:'parts-'+preset.id,group:'venue',name:preset.name,count:preset.count,lead:'位置ごとの明かりを組み合わせる対応プリセット。',detail:'元のショーを残し、新しい版で照明を組み直します。',why:'同じ機材数で劇場寸法に合わせて配置します。',available:!simpleReason,reason:simpleReason});
     let catalog = null, catalogError = "";
     try { catalog = await loadLightingCatalog(); }
     catch (_) { catalogError = "劇場カタログを読み込めませんでした。通信を確かめて、もう一度開いてください。"; }
@@ -38080,6 +38327,7 @@ ${propsPlotHtml}
     const row = list.rows.find((item) => item.key === key);
     if (!row) throw new Error("選んだ型が見つかりません。");
     if (!row.available) throw new Error(row.reason);
+    if(key.startsWith('parts-'))return {kind:'parts',name:row.name,rig:window.GAMMA_PART_LIGHTING.createRig(list.stage,list.venueType,key.slice(6)),lights:{},stage:list.stage};
     if (key === "simple-24") return { kind: "simple", name: row.name, venueType: list.venueType, stage: list.stage };
     const catalog = await loadLightingCatalog();
     const preset = catalog.presets.find((item) => item.id === key);
@@ -38340,6 +38588,13 @@ document.addEventListener("keydown", function (event) {
       if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = false;
       return;
     }
+    const loadingRequest = ++venueApplyRequest, loadingProject = state.project;
+    try { if (loadingProject.lightingDesign?.rig?.simpleLighting) await ensurePartLightingModel(); }
+    catch (_) {
+      announce(tx("照明データを読み込めませんでした。"));
+      detail.transitionResolved?.(false);return;
+    }
+    if (loadingRequest !== venueApplyRequest || loadingProject !== state.project || (detail.transitionIsCurrent && !detail.transitionIsCurrent())) {detail.transitionResolved?.(false);return;}
     const request = ++venueApplyRequest;
     pendingVenueApply = detail;
     els.venueApplyModal.hidden = false;
@@ -38683,6 +38938,7 @@ document.addEventListener("keydown", function (event) {
        広い台の上の演者が、台に負けて掴めないことがないように。
        同じ面積なら、上に描かれている方（並びの後ろ）を取る。 */
     const candidates = sc().pieces.filter((piece) => {
+      if (performerMountPick && !performerMountPick.candidates.some(c => c.id === piece.id)) return false;
       if (!anyKind && (piece.type === "light") !== wantLight) return false;
       if (anyKind && piece.heldBy) return false;
       // 平面図で隠している吊物は掴めない（見えないものを掴むことになるため）
@@ -38690,7 +38946,7 @@ document.addEventListener("keydown", function (event) {
       // 消している図の照明も同じ（見えないものを掴ませない）
       if (piece.type === "light"
         && !(L.plan ? state.showLightsPlan : state.showLightsFront)) return false;
-      return !isLocked(piece);
+      return Boolean(performerMountPick) || !isLocked(piece);
     });
     if (!wantLight && tool === "select") {
       const held = pieceAtSelectionBounds(point,
@@ -39875,7 +40131,141 @@ document.addEventListener("keydown", function (event) {
     checkpoint();for(const {target,values} of changes)Object.assign(target,values);
     renderScenes();render();updateInspector();persistSoon();announce(tx('以降のシーンへ適用しました。元に戻すで取り消せます。'));
   }
+  function performerMountEditingAllowed(piece = selectedPiece()) {
+    return Boolean(piece?.type === "performer" && !isLocked(piece) && !STUDY_READ_ONLY
+      && !guestSessionActive() && !contractReadOnly() && !nativeProject?.readOnly && !fullscreenModalOpen()
+      && !presenting && !phoneViewerActive && currentWorkspaceMode() === "normal" && !sceneAnim && !pointerAction && !idleClock.playing);
+  }
+
+  function cancelPerformerMountPick(focus = false) {
+    if (!performerMountPick) return;
+    performerMountPick = null;
+    syncPerformerMountControls(); render();
+    if (focus) document.getElementById("stage-performer-mount")?.focus();
+  }
+
+  function setPerformerMount(otherId) {
+    const piece = selectedPiece(), pieces = sc().pieces;
+    if (!performerMountEditingAllowed(piece) || selectedPieces().length !== 1) return false;
+    const other = otherId ? pieces.find(p => p.id === otherId) : null;
+    if (otherId && !performerMountAllowed(piece, other, pieces)) return false;
+    if (!otherId && !piece.mountOn) return false;
+    checkpoint();
+    const before = new Map([[piece.id, { u: piece.u, v: piece.v }]]);
+    piece.mountOn = other?.id || null; delete piece.mountWith;
+    if (other) {
+      // Two-base banquine keeps its existing midpoint and the second explicit base.
+      const legacyProbe = { ...piece }; delete legacyProbe.mountOn; delete legacyProbe.mountWith;
+      const group = piece.pose === "banquine_flyer" ? banquineGroup(legacyProbe, pieces, venueSize(), true) : null;
+      if (group?.bases.some(base => base.id === other.id)) {
+        piece.mountWith = group.bases.find(base => base.id !== other.id).id;
+      } else { piece.u = other.u; piece.v = other.v; }
+      bringToTop(piece);
+    }
+    moveMountedLoad(sc().pieces, before);
+    performerMountPick = null;
+    refreshBases(venueSize());
+    updateInspector(); renderScenes(); render(); persistSoon();
+    document.getElementById("stage-performer-mount")?.focus();
+    return true;
+  }
+
+  function beginPerformerMountPick() {
+    const piece = selectedPiece();
+    if (!performerMountEditingAllowed(piece) || selectedPieces().length !== 1) return;
+    if (piece.mountOn) { setPerformerMount(null); return; }
+    if (performerMountPick) { cancelPerformerMountPick(true); return; }
+    const candidates = performerMountCandidates(piece);
+    const nearby = candidates.filter(c => c.near);
+    if (nearby.length === 1) { setPerformerMount(nearby[0].other.id); return; }
+    performerMountPick = { projectId: state.project.id, sceneId: sc().id, pieceId: piece.id,
+      candidates: candidates.map(({other, near}) => ({ id: other.id, near })), focused: candidates[0]?.other.id || null };
+    syncPerformerMountControls(); render();
+    // Explicit tabindex and focus do not depend on Safari's button Tab preference.
+    document.querySelector('#stage-performer-mount-targets [tabindex="0"]')?.focus();
+  }
+
+  function syncPerformerMountControls() {
+    if (!els.selectionControls) return;
+    let host = document.getElementById("stage-performer-mount-controls");
+    if (!host) {
+      host = document.createElement("div"); host.id = "stage-performer-mount-controls";
+      const button = document.createElement("button");
+      button.type = "button"; button.id = "stage-performer-mount"; button.className = "stage-minor-action";
+      button.addEventListener("click", beginPerformerMountPick);
+      const status = document.createElement("p"); status.id = "stage-performer-mount-status"; status.setAttribute("role", "status");
+      const targets = document.createElement("div"); targets.id = "stage-performer-mount-targets";
+      targets.setAttribute("role", "listbox"); targets.setAttribute("aria-labelledby", status.id);
+      host.append(button, status, targets); els.selectionControls.prepend(host);
+    }
+    const piece = selectedPiece(), visible = piece?.type === "performer" && selectedPieces().length === 1;
+    if (performerMountPick && (!visible || performerMountPick.projectId !== state.project.id
+      || performerMountPick.sceneId !== sc().id || performerMountPick.pieceId !== piece.id
+      || !performerMountEditingAllowed(piece))) performerMountPick = null;
+    host.hidden = !visible;
+    const button = host.querySelector("button"), status = host.querySelector("p"), targets = host.lastElementChild;
+    button.textContent = tx(performerMountPick ? "やめる" : piece?.mountOn ? "降ろす" : "上に乗せる");
+    button.disabled = !visible || !performerMountEditingAllowed(piece)
+      || (!piece?.mountOn && !performerMountCandidates(piece).length);
+    button.title = visible && !piece?.mountOn && !performerMountCandidates(piece).length
+      ? tx("乗せる相手の演者がいません。") : "";
+    button.setAttribute("aria-expanded", String(Boolean(performerMountPick)));
+    button.setAttribute("aria-controls", targets.id);
+    status.hidden = targets.hidden = !performerMountPick;
+    status.textContent = performerMountPick ? tx("乗せる相手を選んでください（矢印キーで移動、Enter で確定、Esc で取消）") : "";
+    if (!performerMountPick) { targets.replaceChildren(); delete targets.dataset.key; return; }
+    const key = JSON.stringify(performerMountPick.candidates) + lang;
+    if (targets.dataset.key === key) return;
+    const restoreFocus = targets.contains(document.activeElement);
+    targets.dataset.key = key; targets.replaceChildren();
+    performerMountPick.candidates.forEach(({id, near}) => {
+      const other = sc().pieces.find(p => p.id === id);
+      if (!other) return;
+      const choice = document.createElement("button"); choice.type = "button";
+      choice.className = "stage-minor-action"; choice.dataset.mountTarget = id; choice.dataset.mountNear = String(near);
+      choice.textContent = pieceLabel(other);
+      choice.setAttribute("role", "option");
+      choice.tabIndex = performerMountPick.focused === id ? 0 : -1;
+      choice.setAttribute("aria-selected", String(performerMountPick.focused === id));
+      choice.addEventListener("click", () => setPerformerMount(id));
+      choice.addEventListener("focus", () => {
+        if (!performerMountPick) return;
+        performerMountPick.focused = id;
+        for (const target of targets.querySelectorAll("[data-mount-target]")) {
+          target.tabIndex = target === choice ? 0 : -1;
+          target.setAttribute("aria-selected", String(target === choice));
+        }
+        render();
+      });
+      targets.append(choice);
+    });
+    if (restoreFocus) targets.querySelector('[tabindex="0"]')?.focus();
+  }
+  function onPerformerMountPickKeyDown(event) {
+    if (!performerMountPick || fullscreenModalOpen() || event.isComposing || event.keyCode === 229) return;
+    if (event.key === "Escape") {
+      event.preventDefault(); event.stopImmediatePropagation(); cancelPerformerMountPick(true); return;
+    }
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const targets = document.getElementById("stage-performer-mount-targets");
+    const choice = event.target?.closest?.("[data-mount-target]");
+    if (!choice || !targets?.contains(choice)) return;
+    const choices = Array.from(targets.querySelectorAll("[data-mount-target]"));
+    const at = choices.indexOf(choice);
+    const step = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[event.key];
+    if (step) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      choices[(at + step + choices.length) % choices.length].focus();
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault(); event.stopImmediatePropagation(); setPerformerMount(choice.dataset.mountTarget);
+    }
+  }
+  window.addEventListener("keydown", onPerformerMountPickKeyDown, true);
+  window.addEventListener("stage-scene-change", () => cancelPerformerMountPick());
+  window.addEventListener("gamma-workspace-change", () => cancelPerformerMountPick());
+
   function updateInspector() {
+    syncPerformerMountControls();
     syncMoveHelp();
     let forward=document.getElementById('stage-apply-forward');
     if(!forward && els.selectionControls){forward=document.createElement('button');forward.id='stage-apply-forward';forward.type='button';forward.className='stage-minor-action';forward.textContent=tx('この位置・姿勢を以降へ');forward.onclick=applySelectionForward;els.selectionControls.append(forward);}
@@ -40358,7 +40748,7 @@ document.addEventListener("keydown", function (event) {
       pieces.push(piece); copiedIds.add(piece.id);
     }
     pieceClipboard = { showId: state.project.id, pieces: projectIoClone(pieces),
-      references: sc().pieces.map(({id, castId, setId, originId, type, heldBy, supportId}) => ({id, castId, setId, originId, type, heldBy, supportId})) };
+      references: sc().pieces.map(({id, castId, setId, originId, type, heldBy, supportId, mountOn, mountWith}) => ({id, castId, setId, originId, type, heldBy, supportId, mountOn, mountWith})) };
     announce(tx("選んだ駒をコピーしました。同じショーのシーンへ貼り付けられます。"));
     return true;
   }
@@ -40379,7 +40769,7 @@ document.addEventListener("keydown", function (event) {
       return false;
     })) { announce(tx("固定中または同じ登録の駒が複数あるため、貼り付けできません。")); return false; }
     const closedSelection = (pieces, selected) => !pieces.some(piece =>
-      [piece.heldBy, piece.supportId].some(ref => ref && selected.has(piece.id) !== selected.has(ref)));
+      [piece.heldBy, piece.supportId, piece.mountOn, piece.mountWith].some(ref => ref && selected.has(piece.id) !== selected.has(ref)));
     const sourceIds = new Set(entries.map(entry => entry.source.id));
     const targetIds = new Set(entries.filter(entry => entry.target).map(entry => entry.target.id));
     const rejectRelations = () => { announce(tx("持ち物・器具と関係する駒をすべて選び、固定を解除してから貼り付けてください。")); return false; };
@@ -40399,6 +40789,11 @@ document.addEventListener("keydown", function (event) {
         if (Object.prototype.hasOwnProperty.call(source, key)) target[key] = source[key];
       target.heldBy = source.heldBy ? ids.get(source.heldBy) || null : null;
       target.supportId = source.supportId ? ids.get(source.supportId) || null : null;
+      if (target.type === "performer") {
+        target.mountOn = source.mountOn ? ids.get(source.mountOn) || null : null;
+        if (source.mountWith) target.mountWith = ids.get(source.mountWith) || null;
+        else delete target.mountWith;
+      }
       target.base = 0;
     });
     // Resolve on a detached proposal before committing: no external holder/support may be moved.
@@ -40428,6 +40823,7 @@ document.addEventListener("keydown", function (event) {
     if (!canAddScenePieces(sc())) return;
     checkpoint();
     const copy = { ...piece, id: nextId(), heldBy: null,
+      ...(piece.type === "performer" ? { mountOn: null, mountWith: undefined } : {}),
       look: piece.look ? normalizeLook(piece.look) : null,
       u: clamp(piece.u + 0.06, 0, 1), v: clamp(piece.v + 0.04, 0, 1) };
     sc().pieces.push(copy);
@@ -40439,8 +40835,8 @@ document.addEventListener("keydown", function (event) {
     announce(`${pieceTypeName(piece.type)}を複製しました。`);
   }
 
-  /* 重なりの上下を手で入れ替える仕組みは置かない。
-   * 動かしている駒が、重なった相手の上に乗る（bringToTop）で決まるため。 */
+  /* 描画の前後だけを手で入れ替える操作は置かない。
+   * 人同士の上下は「上に乗せる」で保存した関係から決める。 */
 
   /* ---------- 前のシーンの動線の追従 ----------
      前のシーンでこの駒へ引いてあった動線は、駒を動かしたら先も付いてくる。
@@ -40495,6 +40891,7 @@ document.addEventListener("keydown", function (event) {
       if (pinch && touches.size < 2) pinch = null;
     }
     if (!pointerAction || pointerAction.pointerId !== event.pointerId) return;
+    dragRender.flush();
     const el = pointerAction.el || canvas;
     try { if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId); } catch (_) { /* 同上 */ }
     if (pointerAction.kind === "idleArea") {
@@ -40669,6 +41066,7 @@ document.addEventListener("keydown", function (event) {
     };
     // 駒を掴んでいたら手を離す（二本目が置かれた時点で、拡大の操作へ移る）
     if (pointerAction) {
+      dragRender.flush();
       pointerAction.el.dataset.dragging = "false";
       if (pointerAction.kind === "arrow") arrowDraft = null;
       if (pointerAction.kind === "marquee") selectionMarquee = null;
@@ -40874,6 +41272,13 @@ document.addEventListener("keydown", function (event) {
     if (phoneViewerActive) return;
     // 共有ゲストが舞台上で使える作図操作は、正面・平面の自由矢印だけ。
     if (guestSessionActive() && tool !== "arrow") return;
+
+    if (performerMountPick) {
+      event.preventDefault();
+      const hit = hitTest(point, L);
+      if (hit) setPerformerMount(hit.id);
+      return;
+    }
 
     // The hand tool pans even over objects, notes or route handles.
     if (tool === "pan") {
@@ -41502,31 +41907,35 @@ document.addEventListener("keydown", function (event) {
           pointerAction.groupStart, pointerAction.id, next.u, next.v, bounds,
         );
         const byId = new Map(moved.map((entry) => [entry.id, entry]));
+        const mountBefore = new Map(selectedPieces().map(p => [p.id, { u: p.u, v: p.v }]));
         selectedPieces().forEach((item) => {
           const position = byId.get(item.id);
           if (!position) return;
           item.u = position.u;
           item.v = position.v;
         });
-        render();
+        moveMountedLoad(sc().pieces, mountBefore);
+        dragRender.request();
         return;
       }
       // 組の明かりは一体で動く。どの一つを掴んでも組ごと平行移動する
       const dragGroup = piece.type === "light" ? lightGroupOf(piece) : null;
       if (dragGroup) {
         moveLightGroup(dragGroup, next.u - piece.u, next.v - piece.v);
-        render();
+        dragRender.request();
         return;
       }
+      const mountBefore = new Map([[piece.id, { u: piece.u, v: piece.v }]]);
       piece.u = next.u;
       piece.v = next.v;
+      moveMountedLoad(sc().pieces, mountBefore);
       // 真下に落ちている明かりは、灯体もついてくる
       if (pointerAction.linked && piece.type === "light" && piece.beam) {
         piece.beam.u = next.u;
         piece.beam.v = next.v;
       }
       dragHoldPreview = dragHoldPreviewFor(piece, pointerAction, L);
-      render();
+      dragRender.request();
       return;
     }
 
@@ -41545,6 +41954,7 @@ document.addEventListener("keydown", function (event) {
   }
 
   function onKeyDown(event) {
+    if (performerMountPick) return;
     // 全画面では、駒の選択が残っていても矢印キーをシーン送りへ渡す。
     if (presenting || guestSessionActive()) return;
     const note = selectedNote();
@@ -41573,7 +41983,7 @@ document.addEventListener("keydown", function (event) {
     }
     checkpoint();
     const amount = event.shiftKey ? 0.05 : 0.016;
-    bringToTop(piece);   // 動かしたものが、重なった相手の上に乗る
+    bringToTop(piece);   // 道具の支持順を保つ。人同士は mountOn が正本
     const wasU = piece.u;
     const wasV = piece.v;
     /* 上キーで画面の上＝奥へ。正面図でも平面図でも同じ向きになる。
@@ -41584,6 +41994,7 @@ document.addEventListener("keydown", function (event) {
     );
     piece.u = moved.u;
     piece.v = moved.v;
+    moveMountedLoad(sc().pieces, new Map([[piece.id, { u: wasU, v: wasV }]]));
     syncRouteFromPrev(piece, wasU, wasV);
     render();
     persistSoon();
@@ -42366,17 +42777,11 @@ document.addEventListener("keydown", function (event) {
     });
   }
   document.addEventListener("keydown", (event) => {
-    // タブに置いたQシートは Escape で閉じない（他のタブと同じ扱い）。窓として開いているときだけ閉じる。
-    if (event.key === "Escape" && els.cueSheetModal && !els.cueSheetModal.hidden && !cueSheetHosted()) {
-      event.preventDefault();
-      closeCueSheet();
-      return;
+    if (event.key === "Escape" && !event.isComposing && event.keyCode !== 229) {
+      if (window.GAMMA_UI.layers.closeTop()) {
+        event.preventDefault(); event.stopImmediatePropagation();
+      }
     }
-    if (event.key === "Escape" && els.feedbackModal && !els.feedbackModal.hidden) closeFeedback();
-    if (event.key === "Escape" && els.releaseModal && !els.releaseModal.hidden) closeReleaseHistory();
-    if (event.key === "Escape" && els.sceneGridModal && !els.sceneGridModal.hidden) closeSceneGrid();
-    if (event.key === "Escape" && els.reachModal && !els.reachModal.hidden) closeReachTable();
-    if (event.key === "Escape" && els.helpModal && !els.helpModal.hidden) closeManualHelp();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !wrapPickStartId) return;
@@ -43322,8 +43727,10 @@ document.addEventListener("keydown", function (event) {
           checkpoint();
           bringToTop(piece);
         }
+        const mountBefore = new Map([[piece.id, { u: piece.u, v: piece.v }]]);
         piece.u = nextU;
         piece.v = nextV;
+        moveMountedLoad(sc().pieces, mountBefore);
         render();
         persistSoon();
         return true;
@@ -45936,22 +46343,20 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     announce(tx("Qシートを印刷用の窓で開きました。"));
   }
 
-  async function downloadCueSheetCsv(kind, key) {
-    const sheet = selectedCueSheet(kind, key);
-    if (!sheet) return;
+  async function downloadTableCsv(sheet, filename) {
     try {
       const csv = window.SHOSAI_CUE_SHEET.sheetToCsv(sheet);
-      const filename = window.SHOSAI_CUE_SHEET.csvFileName(sheet, projectExportDate());
       const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
-      if (!didChooseDestination) {
-        announce(tx("書き出しをやめました。"));
-        return;
-      }
-      announce(tx("CSVを書き出しました。"));
+      if (!didChooseDestination) { announce(tx("書き出しをやめました。")); return false; }
+      announce(tx("CSVを書き出しました。")); return true;
     } catch (error) {
-      console.error(error);
-      announce(tx("CSVを書き出せませんでした。"));
+      console.error(error); announce(tx("CSVを書き出せませんでした。")); return false;
     }
+  }
+  async function downloadCueSheetCsv(kind, key) {
+    const sheet = selectedCueSheet(kind, key);
+    if (!sheet) return false;
+    return downloadTableCsv(sheet, window.SHOSAI_CUE_SHEET.csvFileName(sheet, projectExportDate()));
   }
 
   /* Qシートは進行表の中央へ同じDOMを移す。保存・印刷・CSVは既存の経路を保つ。 */
@@ -46934,6 +47339,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
 
   /* 実ブラウザでは /whoami を待ってから初回描画する。DOMだけの単体テストなど
      fetch が無い環境では、従来どおり同期的に組み立てる。 */
+  performerMountsReady = true;
+  // Startup normalization precedes the geometry helpers, so its deferred mount
+  // migration must finalize the same projection signature as later imports.
+  if (migratePerformerMounts(state)) sceneAlternatives?.restore(state.project, { reconcile: false });
   if (whoamiRequest) {
     whoamiRequest.then(finishInitialStageSetup, () => finishInitialStageSetup(null));
   } else {
@@ -47110,12 +47519,13 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   /* K5: one guarded, durable transaction; existing gesture/button paths are unchanged. */
   let stageEditPending = false;
   const stageEditRequests = new Set();
-  function stageEditReasons(ignorePending = false) {
+  function stageEditReasons(ignorePending = false, mode = "newAlternative") {
     const reasons = [];
     if (contractReadOnly()) reasons.push("contract-read-only");
     if (STUDY_READ_ONLY || nativeProject?.readOnly) reasons.push("read-only");
     if (nativeProject) reasons.push("native");
-    if (!editionAllows("sceneAlternatives") || !sceneAlternatives) reasons.push("lite");
+    if (mode !== "current" && (!editionAllows("sceneAlternatives") || !sceneAlternatives)) reasons.push("lite");
+    if (mode === "current" && (typeof trialEnabled !== "undefined" && trialEnabled)) reasons.push("trial");
     const hooks = window.SHOSAI_STAGE_SESSION_HOOKS;
     if (guestSessionActive() || hooks?.role?.() || hooks?.guestView?.()) reasons.push("shared");
     if (phoneViewerActive || window.matchMedia?.("(max-width:680px)").matches) reasons.push("phone");
@@ -47131,23 +47541,86 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (!sc() || sc().kind === "section") reasons.push("scene");
     return reasons;
   }
-  function stageEditContext(ignorePending = false) {
+  function stageEditContext(ignorePending = false, mode = "newAlternative") {
     const row = sc(), alternativeId = sceneAlternatives?.current(row)?.id || null;
     // Capture only a detached copy for the basis: context never hands out mutable references.
     const project = alternativesState(projectIoClone(state)).project;
     return {projectId:state.project.id, sceneId:row.id, alternativeId, generation:loadedStateGeneration,
-      basis:gammaBasisFingerprint(JSON.stringify(project)), editable:stageEditReasons(ignorePending).length === 0,
-      reasons:stageEditReasons(ignorePending), pieces:projectIoClone(row.pieces),
+      basis:gammaBasisFingerprint(JSON.stringify(project)), editable:stageEditReasons(ignorePending,mode).length === 0,
+      reasons:stageEditReasons(ignorePending,mode), pieces:projectIoClone(row.pieces),
       cast:(state.project.cast || []).map(p => ({castId:p.id,name:p.name})),
       sets:(state.project.sets || []).map(p => ({setId:p.id,name:p.name,kind:p.kind}))};
   }
-  function stageEditMatches(expected) {
-    const current = stageEditContext(true);
-    return current.editable && expected && ["projectId","sceneId","alternativeId","generation","basis"].every(key => current[key] === expected[key]);
+  function stageEditMatches(expected, mode = "newAlternative") {
+    const current = stageEditContext(true,mode);
+    return current.editable && expected && (!expected.selectionBasis || expected.selectionBasis === JSON.stringify(typeof selectedPieces === "function" ? selectedPieces().map(p=>p.id).sort() : [])) && ["projectId","sceneId","alternativeId","generation","basis"].every(key => current[key] === expected[key]);
   }
   function stageEditFailure(code, message = code) { return {ok:false, committed:false, error:{code,message}}; }
-  function stageEditCandidate(next, operations, label) {
+  function stageEditDirectionPlan(project, operations) {
+    if (!editionAllows("routeTool") || !window.GAMMA_ASSIST_OPS) throw Object.assign(Error("direction-unavailable"), {code:"direction-unavailable"});
+    return window.GAMMA_ASSIST_OPS.planDirections(project, project.activeSceneId, operations, {
+      bounds:planBounds(), numbers:sceneNumberMap(project.scenes), onStage:onStageArea, wing:wingDest, ghosts:backstageGhostsFor, exit:exitRouteFor, locked:isLocked,
+    });
+  }
+  function stageEditDirectionPreview(expected, operations) {
+    if (!stageEditMatches(expected,"current")) return stageEditFailure("stale-or-blocked");
+    try { return {ok:true,diff:stageEditDirectionPlan(projectIoClone(state).project, operations)}; }
+    catch (error) { return stageEditFailure(error.code || "direction-invalid"); }
+  }
+  // OPS2 plans against a detached project; the existing guarded store/Undo transaction owns writes.
+  function stageEditOps2Plan(project, operations) {
+    if (!window.GAMMA_ASSIST_OPS2 || !window.STAGE_TIME_DOMAIN || !window.STAGE_RUN_OF_SHOW_MODEL) throw Object.assign(Error("ops2-unavailable"), {code:"ops2-unavailable"});
+    const timing = window.STAGE_TIME_DOMAIN;
+    sceneAlternatives?.capture(project);
+    return window.GAMMA_ASSIST_OPS2.plan(project, operations, {
+      selected: typeof selectedPieces === "function" ? selectedPieces().map(p => p.id) : [],
+      timing, size:venueSize(), locked:isLocked, onStage:onStageArea,
+      footprint:typeof supportFootprint === "function" ? supportFootprint : null,
+      relationsChanged:(row,before) => {const calculated=projectIoClone(row.pieces);refreshBases(venueSize(),calculated);return calculated.some(p=>{const old=before.find(q=>q.id===p.id);return (p.supportId||null)!==(old?.supportId||null)||(p.heldBy||null)!==(old?.heldBy||null)||p.pose!==old?.pose;});},
+      allowed:(u,v) => {const p=clampToPieceArea(u,v);return p.u===u && p.v===v && u>=-.5 && u<=1.5 && v>=-.5 && v<=1;},
+      name:p => (project.cast.find(c=>c.id===p.castId) || project.sets.find(c=>c.id===p.setId))?.name || p.name || p.id,
+      numbers:sceneNumberMap, maxRows:typeof GAMMA_EDITION !== "undefined" && GAMMA_EDITION === "lite" ? Infinity : PROJECT_LIMITS.sceneRows,
+      children:(rows,id) => timing.sectionScenes({scenes:rows},id),
+      cloneScene:row => {
+        const data=sceneAlternatives?.validate(row);
+        if(data && sceneAlternatives.current(row)?.id!==data.adoptedId) throw Object.assign(Error("ops2-alternative"),{code:"ops2-alternative"});
+        const copy=cloneScene(row),map=new Map(row.pieces.map((p,i)=>[p.id,copy.pieces[i]?.id]));
+        if(!data)copy.pieces.forEach((p,i)=>{for(const key of ["heldBy","supportId","parentId","mountedOn"]){const id=row.pieces[i][key];if(id && map.has(id))p[key]=map.get(id);}});
+        return copy;
+      }, makeId:() => rid("cue"),
+      newScene:depth => newScene(sceneTitle(project.scenes.filter(s=>s.kind==="scene").length+1),false,"scene",depth),
+      copyTitle:title => (typeof packValue === "function" ? packValue("text",text=>text["assist.ops2CopyTitle"]) || "{title}" : "{title}").replace("{title}",title),
+      refreshTime:p => {refreshSectionDurationCache(p);timing.refreshCueAnchors(p);}, remapMedia:(p,map) => timing.remapPlacements(p,map,()=>rid("media")),
+      ros:p => window.STAGE_RUN_OF_SHOW_MODEL.projectDocument(p),
+      validateTime:(before,after) => {
+        const errors=p => {const d=timing.resolve(p);return [...d.errors,...timing.resolveMedia(d).errors];};
+        const old=new Set(errors(before).map(e=>JSON.stringify(e)));
+        if(errors(after).some(e=>!old.has(JSON.stringify(e))))throw Object.assign(Error("ops2-linked-timing"),{code:"ops2-linked-timing"});
+      },
+    });
+  }
+  function stageEditOps2Preview(expected, operations) {
+    if (!stageEditMatches(expected,"current")) return stageEditFailure("stale-or-blocked");
+    try { return {ok:true,diff:stageEditOps2Plan(projectIoClone(state).project,operations)}; }
+    catch(error) {return stageEditFailure(error.code || "ops2-conditions");}
+  }
+  function stageEditCandidate(next, operations, label, mode = "newAlternative") {
     const fail = code => { throw Object.assign(new Error(code), {code}); };
+    if (Array.isArray(operations) && operations.some(op => ["formation","scene"].includes(op?.op))) {
+      if(mode !== "current") fail("unsupported");
+      const diff=stageEditOps2Plan(next.project,operations);
+      if(diff.blocked) fail("ops2-outside");
+      sceneAlternatives?.capture(next.project);
+      for(const row of next.project.scenes) sceneAlternatives?.validate(row);
+      return {changed:diff.changed};
+    }
+    if (Array.isArray(operations) && operations.some(op => op?.op === "direction")) {
+      if (mode !== "current" || operations.some(op => op?.op !== "direction")) fail("unsupported");
+      const diff = stageEditDirectionPlan(next.project, operations);
+      sceneAlternatives?.capture(next.project);
+      for (const row of next.project.scenes) sceneAlternatives?.validate(row);
+      return {alternativeId:sceneAlternatives?.current(next.project.scenes.find(s => s.id === next.project.activeSceneId))?.id || null,changed:diff.changed};
+    }
     const object = value => value && typeof value === "object" && !Array.isArray(value);
     const keys = (value, allowed) => object(value) && Object.keys(value).every(key => allowed.includes(key));
     const angle = value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 359;
@@ -47160,8 +47633,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     const row = next.project.scenes.find(s => s.id === next.project.activeSceneId);
     const source = projectIoClone(row.pieces), touched = new Set(), removed = new Set();
     if (new Set(source.map(p => p.id)).size !== source.length) fail("invalid-id");
-    const item = sceneAlternatives.add(next.project, row, () => rid("scene-plan"));
-    if (label !== undefined) {
+    const item = mode === "current" ? sceneAlternatives?.current(row) : sceneAlternatives.add(next.project, row, () => rid("scene-plan"));
+    if (mode !== "current" && label !== undefined) {
       if (typeof label !== "string" || !label.trim() || [...label].length > 40) fail("invalid-label");
       // Labels remain unique for the existing alternatives picker.
       const used = new Set(row.sceneAlternatives.items.filter(p => p !== item).map(p => p.label));
@@ -47196,7 +47669,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         if (!piece) fail("unknown-id");
         if (piece.type === "light" || piece.type === "route" || piece.route) fail("unsupported");
         if (isLocked(piece)) fail("locked");
-        if (related(piece) || op.op !== "remove" && row.pieces.some(p => p.heldBy === piece.id)) fail("relationship");
+        if (related(piece) || (mode === "current" || op.op !== "remove") && row.pieces.some(p => p.heldBy === piece.id)) fail("relationship");
         if (op.op === "move") { position(op); piece.u = op.u; piece.v = op.v; }
         if (op.op === "remove") {
           if (row.pieces.some(p => p.heldBy === piece.id && isLocked(p))) fail("locked");
@@ -47222,18 +47695,20 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           || p.pose !== edited.pose || touched.has(p.id) && p.supportId) fail("relationship");
     }
     if (!canAddScenePieces(row,0)) fail("capacity");
-    sceneAlternatives.capture(next.project);
-    sceneAlternatives.validate(row);
-    return {alternativeId:item.id, alternativeLabel:item.label, changed:operations.length};
+    sceneAlternatives?.capture(next.project);
+    sceneAlternatives?.validate(row);
+    if (mode === "current" && JSON.stringify(source) === JSON.stringify(row.pieces)) fail("no-change");
+    return {alternativeId:item?.id || null, alternativeLabel:item?.label || null, changed:operations.length};
   }
   async function applyStageEdit(request) {
-    if (request?.target?.mode !== "newAlternative") return stageEditFailure("not-enabled");
+    const mode = request?.target?.mode;
+    if (!["newAlternative","current"].includes(mode)) return stageEditFailure("not-enabled");
     if (!request || typeof request.requestId !== "string" || !request.requestId || request.requestId.length > 120) return stageEditFailure("invalid-request");
     if (stageEditRequests.has(request.requestId)) return stageEditFailure("duplicate-request");
-    if (stageEditPending || !stageEditMatches(request.expected)) return stageEditFailure("stale-or-blocked",stageEditReasons().join(", ") || "stale");
+    if (stageEditPending || !stageEditMatches(request.expected,mode)) return stageEditFailure("stale-or-blocked",stageEditReasons(false,mode).join(", ") || "stale");
     // Copy caller-owned input before the first await.
     const input = projectIoClone(request), origin = state.project;
-    const valid = () => state.project === origin && stageEditMatches(input.expected);
+    const valid = () => state.project === origin && stageEditMatches(input.expected,mode);
     stageEditPending = true;
     let committed = false, outcome;
     try {
@@ -47242,10 +47717,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       await flushAutosave(); await ProjectStore.whenIdle();
       if (!valid() || autosaveFailed || saveProtectionCode()) return stageEditFailure("source-save-failed");
       const before = snapshot(), next = projectIoClone(state);
-      outcome = stageEditCandidate(next,input.operations,input.target.label);
+      outcome = stageEditCandidate(next,input.operations,input.target.label,mode);
       const serializedState = JSON.stringify(alternativesState(next));
       const receipt = captureFileAutosave(serializedState);
-      const result = await ProjectStore.commit({projectId:next.project.id,serializedState,expectedRevision:null,intent:"assist-new-alternative",guard:valid});
+      const result = await ProjectStore.commit({projectId:next.project.id,serializedState,expectedRevision:null,intent:mode === "current" ? "assist-current-scene" : "assist-new-alternative",guard:valid});
       if (!result.ok) { reportProjectStoreFailure(result); return stageEditFailure(result.error?.code || "save-failed"); }
       // Recheck after the asynchronous store boundary as well as inside its flush guard.
       committed = true;
@@ -47261,7 +47736,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         : stageEditFailure(error.code || "invalid-operations",error.message);
     } finally { stageEditPending = false; }
   }
-  window.GAMMA_STAGE_EDIT = Object.freeze({context:() => stageEditContext(), apply:applyStageEdit});
+  window.GAMMA_STAGE_EDIT = Object.freeze({context:() => stageEditContext(), currentContext:() => ({...stageEditContext(false,"current"), dimensions:{width:venueSize().width,depth:venueSize().depth},
+    selectionBasis:JSON.stringify(typeof selectedPieces === "function" ? selectedPieces().map(p=>p.id).sort() : []),
+    stashedFacing:Object.fromEntries(Object.entries(sc().stashed || {}).map(([id,p]) => [id,p.facing ?? 0]))}), previewDirections:stageEditDirectionPreview, previewOperations:stageEditOps2Preview, apply:applyStageEdit});
 
   window.STAGE_SCENE_ALTERNATIVES_HOST = Object.freeze({
     context() {
@@ -47573,7 +48050,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
             base: Math.max(0, finite(visual.base, 0)),
             parts: lightingContextParts(visual, dims),
             round: lightingContextRound(visual, dims),
-            w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
+            w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open, sheer:visual.sheer };
         }),
       };
     });
@@ -47645,6 +48122,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   const nativeLightingApplyRequests = new Set();
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
+    ensureParts: ensurePartLightingModel,
     assistReasons: () => stageEditReasons(),
     recoveryDrafts:()=>nativeProject?.draftRecoveryEntries || [],
     readRecoveryDraft:(owner,vector)=>nativeProject?.readRecoveryDraft(owner,vector) ?? Promise.resolve(null),
@@ -47652,26 +48130,39 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     readSceneStepPrevious,
     readPlaybackPreview: readLightingPlaybackPreview,
     async beginSimpleCopy(design, basis, options = {}) {
-      if (nativeProject) throw Error("複製を保存できませんでした。元のショーを維持しています");
+      await ensurePartLightingModel();
       const current=gammaLightingContext();
       if(current.readOnly || gammaStorageChanged || current.basis!==basis) throw Error("ショーが更新されています。元のショーを確認してから複製してください");
       const model=window.GAMMA_LIGHT_MODEL, simple=window.GAMMA_SIMPLE_LIGHT_MODEL;
       const checked=model.validate(design,current.scenes.map(row=>row.id));
-      if(!simple.isCommon(checked.rig,current.stage,current.venueType)) throw Error("共通セットの配置を確認できません");
+      if(!window.GAMMA_PART_LIGHTING.compatible(checked.rig,current.stage,current.venueType)) throw Error("共通セットの配置を確認できません");
       const original=state.project;
       const copy=sceneAlternatives?sceneAlternatives.projectCopy(original):projectIoClone(original);
-      const oldLightIds=new Set((copy.sets||[]).filter(item=>item.kind==="light").map(item=>item.id));
       copy.id=rid("proj");copy.parentVersionId=original.id;copy.createdAt=nowIso();
-      copy.versionLabel=nextVersionLabel(original.versionLabel);copy.branchReason="照明かんたんモードの共通24灯セットを導入";
-      clearVenueDependentLighting(copy);copy.lightingDesign=checked;
+      copy.versionLabel=nextVersionLabel(original.versionLabel);copy.branchReason="かんたん照明の対応プリセットを導入";
+      copy.lightingDesign=checked;
       for(const row of copy.scenes) for(const item of row.sceneAlternatives?.items||[]) {
-        item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
-        item.content.lightingIntent=null;item.cues=item.cues.filter(q=>!(["timeline","light-unplaced","light-disabled"].includes(q.kind)&&q.cueType==="light"));
-        item.lighting={native:projectIoClone(checked.scenes.find(s=>s.id===row.id)||null)};
+        item.lighting=item.lighting||{};
+        const source=item.lighting.native||checked.scenes.find(scene=>scene.id===row.id);
+        if(source)item.lighting.native=window.GAMMA_PART_LIGHTING.withRig(
+          {...checked,scenes:[source],archivedScenes:[]},current.stage,current.venueType,
+          checked.rig.simpleLighting?.presetId || 'common24').scenes[0];
+        item.lighting.intent=null;if(item.content)item.content.lightingIntent=null;
       }
       sceneAlternatives?.restore(copy,{reconcile:false});
       const next={...state,project:copy};
-      if(!await applyLoadedState(next,"共通24灯セットのショーを複製しました。元の版はショー一覧に残っています")) throw Error("複製を保存できませんでした。元のショーを維持しています");
+      if(nativeProject) {
+        const operationId=nativeProject.venueOperationFor(JSON.stringify({kind:'lighting-preset',basis,rig:checked.rig}));
+        const receipt=await nativeProject.createVenueVersion(async()=>{
+          if(gammaLightingContext().basis!==basis)throw Error('ショーが更新されています');
+          const doc=makeProjectExportDocument(copy,true,next.projectFileEnvelope);
+          refreshSectionDurationCache(doc.project);
+          return {show:JSON.stringify(doc),title:copy.title,versioned:true};
+        },operationId);
+        if(!receipt?.ok)throw Error('新版を保存できませんでした。元のショーを維持しています');
+        return gammaLightingContext();
+      }
+      if(!await applyLoadedState(next,"照明設備の新版を作りました。元の版はショー一覧に残っています")) throw Error("複製を保存できませんでした。元のショーを維持しています");
       return gammaLightingContext();
     },
     async apply(design, basis, options = {}) {
@@ -47847,6 +48338,11 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     return result;
   }
   window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = Object.freeze({
+    exportCsv(sheet) {
+      // Read-only export: use the same download/native destination path as Q sheets.
+      const filename = projectExportFilename(state.project, tx("進行表"), "csv");
+      return downloadTableCsv(sheet, filename);
+    },
     overview() {
       const p=state.project, doc=runOfShowModel.projectDocument(p);
       return {projectId:p.id,rows:p.scenes.map(({id,kind,depth,title})=>({id,kind,depth,title})),
@@ -48025,7 +48521,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     setTimelineLightSchedule,
     applyTimelineLightClock,
-    refreshTimelineLightClock(clock) { if (!editionAllows("lightRender")) return false; if(timelineLightGo?.playing&&clock.playing){timelineLightGo.seconds=finite(clock.seconds,0);timelineLightGo.effectSeconds=finite(clock.effectSeconds,timelineLightGo.seconds);timelineLightGo.at=performance.now();} },
+    refreshTimelineLightClock(clock) { if (!editionAllows("lightRender")) return false; if(timelineLightGo?.playing&&clock.playing){timelineLightGo.seconds=finite(clock.seconds,0);timelineLightGo.effectSeconds=finite(clock.effectSeconds,timelineLightGo.seconds);timelineLightGo.playbackRate=clamp(finite(clock.playbackRate,1),.5,2);timelineLightGo.at=performance.now();} },
     applyTimelineLightCue(cue) {
       if (!editionAllows("lightRender")) return false;
       return setTimelineLightCue(cue);
@@ -48818,10 +49314,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   });
   window.SHOSAI_STAGE_CUE_SHEET_HOST = contractBridge(window.SHOSAI_STAGE_CUE_SHEET_HOST, ["open", "close", "printOpened", "available", "choices", "readOnly", "selection", "mount", "show", "refresh"]);
   window.STAGE_SCENE_ALTERNATIVES_HOST = contractBridge(window.STAGE_SCENE_ALTERNATIVES_HOST, ["context", "compare"]);
-  window.GAMMA_STAGE_EDIT = contractBridge(window.GAMMA_STAGE_EDIT, ["context"]);
+  window.GAMMA_STAGE_EDIT = contractBridge(window.GAMMA_STAGE_EDIT, ["context","currentContext","previewDirections","previewOperations"]);
   window.GAMMA_FORMATION_HOST = contractBridge(window.GAMMA_FORMATION_HOST, ["availability", "context"]);
   window.GAMMA_LIGHT_HOST = contractBridge(window.GAMMA_LIGHT_HOST, ["context", "assistReasons", "recoveryDrafts", "readRecoveryDraft", "retainDraft", "readSceneStepPrevious", "readPlaybackPreview", "openScene", "selectCue", "draftChanged", "placementChoices"]);
-  window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = contractBridge(window.SHOSAI_STAGE_RUN_OF_SHOW_HOST, ["overview", "renderSceneImages", "sceneStamps", "timing", "cues", "uiLanguage", "edition", "read", "export", "openScene", "save", "historyStatus"]);
+  window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = contractBridge(window.SHOSAI_STAGE_RUN_OF_SHOW_HOST, ["overview", "renderSceneImages", "sceneStamps", "timing", "cues", "uiLanguage", "edition", "read", "export", "exportCsv", "openScene", "save", "historyStatus"]);
   window.SHOSAI_STAGE_SESSION_BRIDGE = contractBridge(window.SHOSAI_STAGE_SESSION_BRIDGE, ["ensureMusicCueMigration", "arrowKeysVoxOnly", "historyStatus", "transitionGeometry", "exportDocumentString", "resetVisibleStageViews", "sceneOverviewById", "sceneThumbnailById", "openSceneById", "focusTimelineScene", "setTimelineLightSchedule", "applyTimelineLightClock", "refreshTimelineLightClock", "applyTimelineLightCue", "suspendSceneDetailsForSearch", "openSceneDetailsById", "hasTimelineAudioFile", "activateTimelineAudio", "getActiveSceneId", "getTimelineAudioTrackId", "isTimelineAudioActive", "getTimelineAudioBlob", "getTimelineAudioAssignments", "pauseTimelineAudio", "getProjectScript", "syncTimelineSceneTransition", "finishTimelineSceneTransition", "finishSceneTransition", "replaySceneTransition", "isEnglish"]);
   if (!STUDY_READ_ONLY) {
     window.STAGE_SAVE_LIFECYCLE.install({
