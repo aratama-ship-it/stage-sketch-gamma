@@ -127,7 +127,12 @@
     const lighting={simple:{available:c.simple.available,...(c.simple.reason?{reason:c.simple.reason}:{}),presets:c.simple.presets.map(p=>({id:p.id,spots:p.spots}))},
       fixtures:c.fixtures.map((f,i)=>({k:'f'+(i+1),name:clip(f.name,40),type:clip(f.type,40),mount:clip(Object.entries(f.mount||{}).filter(([k])=>['type','side','u','v','h','ahead'].includes(k)).map(([k,v])=>k+':'+v).join(' '),200),fixed:f.fixed,level:f.level,color:f.color})),
       performers:c.performers.map((p,i)=>({k:'p'+(i+1),name:clip(p.name,40),u:Math.round(p.u*100)/100,v:Math.round(p.v*100)/100}))};
-    if(JSON.stringify(lighting).length>24000)throw Error('too-large');
+    if(c.light2){
+      lighting.v2={scope:c.light2.scope,layers:c.light2.layers.map((l,i)=>({k:'l'+(i+1),name:clip(l.name,40),function:l.function,level:l.level,color:l.color,adjusted:l.adjusted})),
+        cues:c.light2.cues.map((q,i)=>({k:'q'+(i+1),no:clip(q.no,30),name:clip(q.name,80),scene:clip(q.scene,80),timing:Object.fromEntries(Object.entries(q.timing).filter(([k])=>['fadeInSec','fadeOutSec','delayInSec','delayOutSec'].includes(k)))})),
+        current:c.cueId?'q'+(c.light2.cues.findIndex(q=>q.id===c.cueId&&q.sceneId===c.sceneId)+1):null};
+    }
+    if(JSON.stringify(lighting).length>(c.light2?48000:24000))throw Error('too-large');
     return {lighting,context:c,owner};
   }
   function resolveLightingOps(ops,draft) {
@@ -147,6 +152,20 @@
       const f=draft.lighting.fixtures.find(f=>f.k===op.fixture),i=draft.lighting.fixtures.indexOf(f);if(!f)throw Error('fixture');
       return {fid:draft.context.fixtures[i].fid,...(Object.hasOwn(op,'level')?{level:op.level}:{}),...(Object.hasOwn(op,'color')?{color:op.color}:{}),...(Object.hasOwn(op,'aim')?{aim:target(op.aim)}:{})};
     })}};
+  }
+  function resolveLight2Op(ops,draft){
+    if(!draft.lighting.v2||!Array.isArray(ops)||ops.length!==1)throw Error('invalid');
+    const op=ops[0],own=(o,fields)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).every(k=>fields.includes(k));
+    if(op?.op==='layer'&&own(op,['op','layer','function','level','color'])){
+      const i=draft.lighting.v2.layers.findIndex(l=>l.k===op.layer);if(i<0)throw Error('layer');
+      return {kind:'layer',id:draft.context.light2.layers[i].id,function:op.function,...(Object.hasOwn(op,'level')?{level:op.level}:{}),...(Object.hasOwn(op,'color')?{color:op.color}:{})};
+    }
+    if(op?.op==='one'&&own(op,['op','fixture','level','color'])){
+      const i=draft.lighting.fixtures.findIndex(f=>f.k===op.fixture);if(i<0)throw Error('fixture');
+      return {kind:'detail',fid:draft.context.fixtures[i].fid,...(Object.hasOwn(op,'level')?{level:op.level}:{}),...(Object.hasOwn(op,'color')?{color:op.color}:{})};
+    }
+    if(op?.op==='cues'&&own(op,['op','cues','prefix','start','fadeInSec','fadeOutSec'])&&Array.isArray(op.cues))return {kind:'cues',ids:op.cues.map(k=>{const i=draft.lighting.v2.cues.findIndex(q=>q.k===k);if(i<0)throw Error('cue');return draft.context.light2.cues[i].id;}),...Object.fromEntries(Object.entries(op).filter(([k])=>!['op','cues'].includes(k)))};
+    throw Error('invalid');
   }
   function referenceHref(ref) {
     if (ref.kind === 'manual' && /^manual-gamma\/index\.html\?lang=(ja|en)#[A-Za-z0-9_%.-]+$/.test(ref.href || '')) return ref.href;
@@ -173,7 +192,7 @@
     if(kind==='field'&&!['level','colour','aim','beam','gobo','shutter'].includes(key))return null;
     return {doc,tab,kind,key,selector:kind==='field'?`#insp [data-assist-field="${key}"]`:kind==='panel'?`section.stage-panel[data-panel="${key}"]`:'#'+key};
   }
-  const model = {isNative, eligible, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps};
+  const model = {isNative, eligible, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps, resolveLight2Op};
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   if (!root.document) return;
   const panel = document.querySelector('[data-panel="assist"]');
@@ -217,6 +236,17 @@
             </div>`;
   const style = document.createElement("link"); style.rel="stylesheet"; style.href="gamma-assist.css?v=20261031-v0396"; document.head.append(style);
   const $ = key => panel.querySelector('[data-assist="'+key+'"]');
+  const light2Button=document.createElement('button');light2Button.type='button';light2Button.className='assist-draft';
+  light2Button.dataset.assist='light2';light2Button.dataset.assistText='light2.button';light2Button.disabled=true;
+  light2Button.setAttribute('aria-describedby','assist-light2-reason');$('lighting').after(light2Button);
+  const light2Reason=document.createElement('p');light2Reason.id='assist-light2-reason';light2Reason.className='assist-notice';light2Reason.dataset.assistText='light2.notice';$('lightReason').after(light2Reason);
+  const light2ScopeLabel=document.createElement('label');light2ScopeLabel.className='assist-context';
+  const scopeText=document.createElement('span');scopeText.dataset.assistText='light2.scope';
+  const light2Scope=document.createElement('select');light2Scope.className='assist-back';light2Scope.dataset.assist='light2Scope';
+  for(const [value,key]of [['scene','scopeScene'],['show','scopeShow']]){const option=document.createElement('option');option.value=value;option.dataset.assistText='light2.'+key;light2Scope.append(option);}
+  light2ScopeLabel.append(scopeText,light2Scope);light2Reason.before(light2ScopeLabel);
+
+
   // The supplied SVG style is global in an HTML document; its equivalent is
   // scoped to .assist-character in CSS so existing stage vectors are unaffected.
   const figure = $('figure');
@@ -301,7 +331,7 @@
   const guide=document.createElement('aside');guide.className='assist-guide';guide.hidden=true;
   const guideText=document.createElement('p');guideText.setAttribute('role','status');
   const guideChanges=document.createElement('div');guideChanges.className='assist-light-changes';
-  const back=document.createElement('button');back.type='button';back.className='assist-back';
+  const back=document.createElement('button');back.type='button';back.className='assist-back';back.dataset.assist='back'; // v0.3.97: N3 reuses .assist-back as a button style, so the guide's return control carries its own hook
   guide.append(guideText,guideChanges,back);document.body.append(guide);
   let guidance=null, guideKey='', guideValues={};
   function guideLabel(){guide.setAttribute('aria-label',t('guide'));guideText.textContent=t(guideKey,guideValues);back.textContent=t('back');}
@@ -392,7 +422,7 @@
       // Simple lighting hides the detail list/inspector with CSS. Use the existing
       // display switch before locating them; never stage a user's pending preview.
       const simple=frame.contentWindow?.GAMMA_SIMPLE_LIGHT_UI;
-      if(simple?.active()){
+      if(simple?.active()&&!destination.keepSimple){
         const status=simple.status?.();
         if(!status||status.busy||status.preview)return;
         simple.detailForAssist();
@@ -477,7 +507,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261031-v0396';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261031-v0397';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;
@@ -534,19 +564,26 @@
   const lightAPI=()=>lightFrame()?.contentWindow?.GAMMA_LIGHT_ASSIST;
   const lightOwner=()=>{const s=lightFrame()?.contentWindow?.GAMMA_LIGHT_EDITOR?.status();return s?JSON.stringify([s.showId,s.documentSessionId,s.pageGeneration,s.deliveryGeneration,s.contextGeneration,s.baseBasis,s.alternativeVector]):'';};
   function lightReasons(){try{return root.GAMMA_LIGHT_HOST?.assistReasons?.()||['unavailable'];}catch{return ['unavailable'];}}
-  function lightReasonKey(reasons){const map={shared:'lightShared',lite:'lightLite',unapplied:'lightUnapplied','common-rig-required':'lightCommon','proscenium-required':'lightTheatre',stale:'lightStale','changed-elsewhere':'lightStale','read-only':'lightReadOnly','contract-read-only':'lightReadOnly',playing:'lightPlaying',preview:'lightPlaying',rehearsal:'lightRehearsal',field:'lightField'};return reasons.map(r=>map[r]).find(Boolean)||'lightBlocked';}
+  function lightReasonKey(reasons){const map={'detail-required':'light2.detailOnly','fixed-color':'light2.fixedColor',shared:'lightShared',lite:'lightLite',unapplied:'lightUnapplied','common-rig-required':'lightCommon','proscenium-required':'lightTheatre',stale:'lightStale','changed-elsewhere':'lightStale','read-only':'lightReadOnly','contract-read-only':'lightReadOnly',playing:'lightPlaying',preview:'lightPlaying',rehearsal:'lightRehearsal',field:'lightField'};return reasons.map(r=>map[r]).find(Boolean)||'lightBlocked';}
   function refreshLightAvailability(){
     const reasons=lightReasons();
     try {if(lightAPI()){const s=lightFrame().contentWindow.GAMMA_LIGHT_EDITOR.status();if(s.active)reasons.push(...lightAPI().context().reasons);else if(s.dirty||s.hasUnappliedDrafts)reasons.push('unapplied');}}catch{reasons.push('unavailable');}
     $('lighting').disabled=busy||ended||reasons.length>0||!$('input').value.trim();
+    const reviewReasons=[...reasons,...(root.GAMMA_STAGE_EDIT?.currentContext?.().reasons||['unavailable'])];
+    light2Button.disabled=busy||ended||reviewReasons.length>0||!$('input').value.trim();
+    light2Button.hidden=reviewReasons.some(r=>['shared','read-only','contract-read-only','lite','trial','native'].includes(r));light2Reason.hidden=light2Button.hidden;light2ScopeLabel.hidden=light2Button.hidden;light2Scope.disabled=busy||ended;
+    light2Button.title=reviewReasons.length?t(lightReasonKey(reviewReasons)):t('light2.notice');
     $('lightReason').textContent=t(reasons.length?lightReasonKey(reasons):'lightInput');$('lighting').title=$('lightReason').textContent;
   }
-  async function prepareLighting(){
+  async function prepareLighting(review=false){
     if(lightReasons().length)throw Error('blocked');
     // K3 owns the tab switch, bounded readiness wait, cancellation and return.
-    await startGuidance({doc:'light-design',tab:'light-design',kind:'id',key:'apply',selector:'#apply'});
+    // LIGHT2 v2 (N3): a review proposal becomes a per-position draft inside Easy lighting, so when Easy lighting is
+    // active the guidance stays there and points at its own Apply; the detail switch is only for legacy proposals.
+    const simpleActive=!!lightFrame()?.contentWindow?.GAMMA_SIMPLE_LIGHT_UI?.active?.();
+    await startGuidance(review&&simpleActive?{doc:'light-design',tab:'light-design',kind:'id',key:'apply',selector:'#simple-adopt',keepSimple:true}:{doc:'light-design',tab:'light-design',kind:'id',key:'apply',selector:'#apply'});
     const api=lightAPI();if(!api||!tabActive(tabOf('light-design')))throw Error('preparing');
-    const c=api.context();if(!c.ready)throw Error(lightReasonKey(c.reasons));
+    const c=review?api.reviewContext(light2Scope.value):api.context();if(!c.ready)throw Error(lightReasonKey(c.reasons));
     return buildLightingSnapshot(c,lightOwner());
   }
   function lightChangeText(change,result,draft){
@@ -575,6 +612,32 @@
     if(guidance&&target){guidance.destination={doc:'light-design',tab:'light-design',kind:'id',key:target.id};showRing(target,frame,guidance);guideKey='lightReview';guideLabel();}
     return result;
   }
+  function showLight2(ops,draft){
+    const api=lightAPI();if(lightOwner()!==draft.owner)return {ok:false,reasons:['stale']};
+    let input;try{input=resolveLight2Op(ops,draft);}catch{return {ok:false,reasons:['invalid']};}
+    const plan=api.planReview(input,draft.context);if(!plan.ok)return plan;
+    const card=document.createElement('section');card.className='assist-confirm';card.dataset.assist='light2Review';
+    const title=document.createElement('strong');title.textContent=t('light2.review');const list=document.createElement('ul');
+    for(const change of plan.changes){const li=document.createElement('li');
+      li.textContent=plan.kind==='cues'?t('light2.cueChange',{no:change.name,from:change.from.name,to:change.to.name,fromFadeIn:change.from.timing.fadeInSec??'—',fromFadeOut:change.from.timing.fadeOutSec??'—',fadeIn:change.to.timing.fadeInSec??'—',fadeOut:change.to.timing.fadeOutSec??'—'}):lightChangeText(change,{kind:'detail'},draft)+(change.function?' · '+t('light2.function.'+change.function):'');list.append(li);}
+    card.append(title,list);
+    for(const warning of plan.warnings||[]){const note=document.createElement('p');note.textContent=lightFrame().contentWindow.GAMMA_LIGHT_UI_TEXT?.(warning)||t('light2.warning');card.append(note);}
+    const make=document.createElement('button'),cancel=document.createElement('button'),status=document.createElement('p');
+    make.dataset.assist='light2Stage';cancel.dataset.assist='light2Cancel';
+    for(const b of [make,cancel]){b.type='button';b.className='assist-back';}make.textContent=t('light2.stage');cancel.textContent=t('cancelDraft');status.setAttribute('role','status');
+    const actions=document.createElement('div');actions.className='assist-actions';actions.append(make,cancel);card.append(actions,status);cancel.onclick=()=>{card.remove();};
+    make.onclick=()=>{
+      if(busy||ended)return;
+      if(lightAPI()!==api||lightOwner()!==draft.owner){status.textContent=t('lightStale');make.disabled=true;return;}
+      const result=api.stageReview(input,draft.context);
+      if(!result.ok){status.textContent=t(lightReasonKey(result.reasons||[]));make.disabled=true;return;}
+      actions.remove();status.textContent=t('lightReview');
+      const frame=lightFrame(),id=result.kind==='layer'?'simple-adopt':'apply',target=frame.contentDocument.getElementById(id);
+      if(guidance&&target){guidance.destination={doc:'light-design',tab:'light-design',kind:'id',key:id};showRing(target,frame,guidance);guideKey='lightReview';guideLabel();}
+      refreshLightAvailability();
+    };
+    guideChanges.replaceChildren(card);guide.classList.add('has-lighting');guideKey='light2.review';guideLabel();return {ok:true};
+  }
   // context() copies and fingerprints the whole show (about 9 ms for the 870 KB test show),
   // so bursty sources (window resize, body class changes) are coalesced; discrete events stay immediate.
   let refreshTimer=0;const refreshSoon=()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(refreshEditAvailability,120);};
@@ -582,7 +645,7 @@
   root.addEventListener('resize',refreshSoon);
   new MutationObserver(refreshSoon).observe(document.body,{attributes:true,attributeFilter:['class','data-gamma-rehearsal-pending','data-gamma-workspace']});
   document.addEventListener('focusout',()=>queueMicrotask(refreshEditAvailability));
-  function cancelDraft() {currentOps?.cancel();pendingDraft?.card.remove();pendingDraft=null;}
+  function cancelDraft() {document.querySelectorAll('[data-assist=light2Review]').forEach(n=>n.remove());currentOps?.cancel();pendingDraft?.card.remove();pendingDraft=null;}
   function editFailureKey(code) {
     if(/save|WRITE|QUOTA|PARTIAL|CONCURRENT|CANCELLED/.test(code||''))return 'editFailureSave';
     if(code==='stale-or-blocked')return 'editFailureStale';
@@ -621,8 +684,9 @@
   $('check').addEventListener('click',()=>send('check'));
   $('draft').addEventListener('click',()=>send('draft'));
   $('lighting').addEventListener('click',()=>send('lighting'));
+  light2Button.addEventListener('click',()=>send('light2'));
   async function send(mode) {
-    const checkScene=mode==='check',editing=mode==='draft',lighting=mode==='lighting',operating=mode==='ops';
+    const checkScene=mode==='check',editing=mode==='draft',lighting=mode==='lighting'||mode==='light2',reviewLight=mode==='light2',operating=mode==='ops';
     const extension=docs?.isMode(mode)?docs:quick;
     const quickMode=extension?.isMode(mode),docsMode=docs?.isMode(mode), batchMode=mode==='batchCheck';
     const text = batchMode ? t('batch.prompt') : quickMode ? extension.text(mode,$('input').value) : checkScene ? sceneCheckText(t('checkPrompt'),$('input').value) : $('input').value.trim();
@@ -630,7 +694,7 @@
     if(operating&&!currentOps?.allowed()){currentOps?.refresh();return;}
     if(editing&&!editContext()?.editable){refreshEditAvailability();return;}
     stopGuidance();cancelDraft();
-    busy=true; clearTimeout(talkTimer); $('input').disabled=true; $('send').disabled=true; $('context').disabled=true; $('check').disabled=true; $('draft').disabled=true; $('lighting').disabled=true;
+    busy=true; clearTimeout(talkTimer); $('input').disabled=true; $('send').disabled=true; $('context').disabled=true; $('check').disabled=true; $('draft').disabled=true; $('lighting').disabled=true;if($('light2'))$('light2').disabled=true;
     statusKey='thinking'; seconds=0; $('status').classList.remove('is-error'); relabel(); setState('thinking');
     const count = setInterval(() => {seconds++; relabel();},1000);
     const archiveTicket=archive?.ticket();
@@ -640,7 +704,7 @@
       const payload={lang:lang(),persona:'a',messages};
       let draft,lightDraft;
       if(operating){draft=currentOps.prepare();payload.scene=draft.scene;payload.opsRequest=draft.opsRequest;}
-      if(lighting){try{lightDraft=await prepareLighting();payload.lighting=lightDraft.lighting;}catch(e){statusKey=['lightUnapplied','lightBlocked'].includes(e.message)?e.message:'lightBlocked';throw e;}}
+      if(lighting){try{lightDraft=await prepareLighting(reviewLight);payload.lighting=lightDraft.lighting;}catch(e){statusKey=['lightUnapplied','lightBlocked'].includes(e.message)?e.message:'lightBlocked';throw e;}}
       if(editing){
         try{draft=buildEditSnapshot(editContext(),sceneContext().sceneTitle);payload.scene=draft.scene;payload.edit=draft.edit;}
         catch{statusKey='draftBlocked';throw Error('blocked');}
@@ -652,7 +716,7 @@
       }
       if(batchMode){const prepared=await batch?.prepare();if(!prepared){statusKey='';restingState();return;}Object.assign(payload,prepared);}
       if(quickMode)Object.assign(payload,await extension.prepare(mode));
-      if (!batchMode && !quickMode && $('context').checked) payload.context=sceneContext();
+      if (!batchMode && !quickMode && !reviewLight && $('context').checked) payload.context=sceneContext();
       const response=await fetch('/assist/chat',{method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const data=await response.json();
       if (!response.ok) {
@@ -665,7 +729,7 @@
       const reply=docsMode?{text:data.text}:splitGuidance(data.text,data.refs);
       if(!reply.text&&!(editing&&Array.isArray(data.ops)))throw new Error('payload');
       if(editing&&!reply.text)reply.text=t('draftReady');
-      if(lighting&&data.ops?.length){const result=showLighting(data.ops,lightDraft);if(!result.ok)reply.text=t('lightFailed')+' '+t(lightReasonKey(result.reasons||[]));}
+      if(lighting&&data.ops?.length){const result=reviewLight?showLight2(data.ops,lightDraft):showLighting(data.ops,lightDraft);if(!result.ok)reply.text=t('lightFailed')+' '+t(lightReasonKey(result.reasons||[]));}
       else if(lighting&&data.rejected?.length)reply.text=t('draftRejected',{n:data.rejected.length});
       if(batchMode)batch.after(reply.text);
       else {

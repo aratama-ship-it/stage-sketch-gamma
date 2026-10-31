@@ -71,8 +71,8 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 #simple-front{flex:1;min-height:0;max-height:100%;object-fit:contain}
 .simple-browser{flex:0 0 auto}
 .simple-operations{min-width:0;min-height:0;overflow:auto;padding:2px 4px 4px;container-type:inline-size}
-.simple-operations>.simple-controls{display:flex;flex-direction:column;gap:0;padding-top:16px}
-.simple-operations>.simple-controls>*{flex:0 0 auto}
+.simple-operations .simple-controls{display:flex;flex-direction:column;gap:0;padding-top:16px}
+.simple-operations .simple-controls>*{flex:0 0 auto}
 .simple-operations .simple-catalog .simple-preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (max-width:360px){.simple-operations .simple-catalog .simple-preset-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){
@@ -98,9 +98,9 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 
 html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44px;min-width:44px}#simple-column-resize{z-index:1}#simple-column-resize::before{content:"";position:absolute;inset:0;cursor:col-resize}
 
-/* Transient rig locator: does not take space or intercept preview input. */
-.simple-preview{position:relative}
-#simple-location-hint{position:absolute;top:var(--simple-gap);left:var(--simple-gap);max-width:calc(100% - 2 * var(--simple-gap));margin:0;padding:4px 8px;background:var(--desk);color:var(--milk);border:1px solid var(--brass);font-size:14px;pointer-events:none}
+/* Keep the transient locator inside the drawing, below the separate tool row. */
+.simple-preview-figure{position:relative;display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
+.simple-mode-panel #simple-location-hint{position:absolute;top:var(--simple-gap);left:var(--simple-gap);box-sizing:border-box;max-width:calc(100% - 2 * var(--simple-gap));margin:0;padding:4px 8px;background:var(--desk);color:var(--milk);border:1px solid var(--brass);font-size:var(--simple-body);line-height:1.5;overflow-wrap:anywhere;pointer-events:none}
 #simple-location-hint[hidden]{display:none}
 
 /* Choose an intended result before a physically capable position. */
@@ -126,8 +126,9 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 .part-light-patterns small,.part-light-list small{font-size:var(--simple-label);font-weight:400;min-width:0;max-width:52%;overflow:hidden;text-overflow:ellipsis;text-align:right}
 .simple-operations .part-light-list button:disabled{color:var(--simple-used);cursor:not-allowed}
 .simple-operations .part-light-list button:disabled small{color:inherit}
-.simple-operations>.simple-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;padding:0;border-top:0}
+.simple-operations .simple-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;padding:0;border-top:0}
 .simple-controls label,.simple-level-control>label{margin:0;font-size:var(--simple-label)}
+#simple-fade-label{grid-column:1/-1}
 .simple-controls input,.simple-controls select{box-sizing:border-box;min-width:0;max-width:100%}
 .simple-level-control{grid-column:1/-1}
 .simple-controls .part-light-number{display:grid;grid-template-columns:minmax(44px,1fr) var(--simple-number-width) auto;gap:8px}
@@ -151,3 +152,32 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 #simple-warning:empty,#simple-rig-info:empty{display:none}
 @container (max-width:360px){.simple-layer{grid-template-columns:minmax(0,1fr) auto auto}.simple-layer-name{grid-column:1/-1;padding-top:6px}.simple-layer-level{text-align:right}}
 @media(max-width:600px){.simple-operations>.simple-actions{position:sticky}.simple-operations>.simple-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.simple-layer{grid-template-columns:minmax(0,1fr) auto auto}.simple-layer-name{grid-column:1/-1;padding-top:6px}}
+
+/* N4: layout sections keep status and Apply outside the collapsible content. */
+.light-layout-sections{display:flex;flex-direction:column;gap:var(--simple-gap)}
+.light-layout-section{min-width:0;flex:0 0 auto;border-top:1px solid var(--simple-border)}
+.simple-mode-panel .light-layout-fold{display:flex;align-items:center;min-height:44px;width:100%;padding:0;text-align:left;border:0;background:transparent}
+.simple-mode-panel .light-layout-fold h3{margin:0;color:var(--simple-text)}
+.light-layout-fold::before{content:'▾';margin-inline:4px 8px;color:var(--simple-accent)}
+.is-collapsed>.light-layout-fold::before{content:'▸'}
+.light-layout-content{max-height:var(--light-panel-height);overflow:auto}
+.light-layout-content[hidden]{display:none}
+.simple-operations .light-layout-content>.simple-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;padding:0;border:0}
+.simple-operations .light-layout-content>:is(.part-light-patterns,.part-light-list){grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:0}
+@container(min-width:620px){.light-layout-sections[data-style=split]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+
+@media(min-width:1024px){
+ .simple-light-active .simple-mode-panel:not([hidden]){overflow:auto}
+ .simple-light-active .simple-workbench{min-height:224px}
+ .simple-light-active #simple-front{min-height:160px}
+}
+@media(max-width:600px){.simple-operations>.simple-actions{position:sticky}.simple-operations .simple-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.simple-layer{grid-template-columns:minmax(0,1fr) auto auto}.simple-layer-name{grid-column:1/-1;padding-top:6px}}
+
+/* N8 / G-022: the same collapsible controls follow the selected layer. */
+#simple-adjust { min-width:0; grid-column:1/-1; border:1px solid var(--simple-border); padding:0 var(--simple-card-gap); background:var(--desk-2); }
+#simple-adjust>summary { box-sizing:border-box; min-height:var(--simple-tap); padding:var(--simple-card-gap) 0; cursor:pointer; font-size:var(--simple-body); color:var(--simple-text); overflow-wrap:anywhere; }
+#simple-adjust>summary:focus-visible { outline:2px solid var(--simple-accent); outline-offset:-2px; }
+#simple-adjust[open] { padding-bottom:var(--simple-panel-pad); }
+#simple-adjust .simple-controls { border:0; padding-top:0; }
+/* v0.3.97: N4 height preference for the relocating adjustment block (N8 G-022). */
+#simple-adjust.light-layout-sized>.simple-controls { max-height:var(--light-panel-height); overflow:auto; }

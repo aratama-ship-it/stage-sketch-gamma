@@ -1,3 +1,35 @@
+/* N4 LAYOUT MODEL: device preferences, never a show document. */
+(function(root){
+  'use strict';
+  const KEY='gamma:light-panel-style-v1';
+  const KEYS={simple:['layers','functions','positions','adjust'],detail:['fixtures','lxq','selected']};
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const compact=(w,h)=>w<=1500&&h<=840;
+  function normalize(raw){
+    const out={};
+    for(const mode of Object.keys(KEYS)){
+      const x=raw?.[mode]||{}, keys=KEYS[mode];
+      const order=[...new Set((Array.isArray(x.order)?x.order:[]).filter(k=>keys.includes(k)))];
+      keys.forEach(k=>{if(!order.includes(k))order.push(k);});
+      out[mode]={style:x.style==='single'?'single':'split',order,closed:{},heights:{}};
+      keys.forEach(k=>{
+        out[mode].closed[k]=x.closed?.[k]===true;
+        const n=x.heights?.[k];out[mode].heights[k]=typeof n==='number'&&Number.isFinite(n)&&n>0?clamp(n,120,1200):0;
+      });
+    }
+    return out;
+  }
+  function columns(width,height,requested={},single=false,solo=''){
+    const leftMin=single?280:320,rightMin=single?0:280;
+    const left=solo&&solo!=='plan'?0:clamp(requested.leftWidth||320,leftMin,Math.max(leftMin,width-rightMin-240-16));
+    const gaps=left?(single?8:16):8;
+    const right=single?0:clamp(requested.rightWidth||(compact(width,height)?320:360),280,Math.max(280,width-left-240-gaps));
+    return {left,right,mid:Math.max(240,width-left-right-gaps),leftMin,rightMin};
+  }
+  function move(list,key,delta){const out=list.slice(),i=out.indexOf(key),j=i+delta;if(i>=0&&j>=0&&j<out.length)[out[i],out[j]]=[out[j],out[i]];return out;}
+  root.GAMMA_LIGHT_LAYOUT_MODEL=Object.freeze({KEY,KEYS,normalize,columns,move,compact});
+})(typeof window==='object'?window:globalThis);
+/* END N4 LAYOUT MODEL */
 /* Detail figures: device-only split and camera transforms. No show/model writes. */
 (function (root, factory) {
   const api = factory();
@@ -850,9 +882,8 @@
     const headSec=Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2);
     if (state.mode === "move" && state.soloFigure !== "side") {
       const solo = state.soloFigure;
-      const left = solo && solo !== 'plan' ? 0 : E.clamp(panelLayout.leftWidth || 320, 320, Math.max(320, r.width - 280 - 240 - PAD.gap * 2));
-      const right = E.clamp(panelLayout.rightWidth || 360, 280, Math.max(280, r.width - left - 240 - PAD.gap * (left ? 2 : 1)));
-      const mid = Math.max(240, r.width - left - right - PAD.gap * (left ? 2 : 1));
+      const single=document.documentElement.dataset.lightPanelStyle==='single';
+      const {left,right,mid,leftMin}=window.GAMMA_LIGHT_LAYOUT_MODEL.columns(r.width,document.documentElement.hasAttribute('data-gamma-embedded')?parent.innerHeight:innerHeight,panelLayout,single,solo);
       const heights = FIGURE_VIEW.split(r.height, figureSplit);
       const height = solo ? Math.max(160, r.height) : heights.available + PAD.gap;
       // The row frames depend only on viewport height. Each canvas contains its drawing.
@@ -878,10 +909,10 @@
       g.style.setProperty('--side-reserved', (sideH + PAD.headSec + PAD.gap) + 'px');
       const lc = document.querySelector('.leftcol'); lc.style.width = left + 'px';
       const share = E.clamp(panelLayout.fixtureShare, .15, .85);
-      for (const [id, width] of [['panel-fixtures',left * share],['panel-lxq',left * (1-share)],['panel-insp',right]]) {
+      for (const [id, width] of [['panel-fixtures',single?left:left * share],['panel-lxq',single?left:left * (1-share)],['panel-insp',single?left:right]]) {
         const panel=$(id);panel.style.width = width + 'px'; if(id !== 'panel-insp')panel.style.flexBasis=width+'px';
       }
-      for (const [id,width,min,max] of [['light-left-resize',left,320,r.width-right-240-PAD.gap*2],['light-right-resize',right,280,r.width-left-240-PAD.gap*2],['light-figure-resize',heights.top,heights.min,heights.max]]) {
+      for (const [id,width,min,max] of [['light-left-resize',left,leftMin,r.width-right-240-PAD.gap*2],['light-right-resize',right,280,r.width-left-240-PAD.gap*2],['light-figure-resize',heights.top,heights.min,heights.max]]) {
         const handle=$(id);if(handle)for(const [name,value] of [['now',width],['min',min],['max',Math.max(min,max)]])handle.setAttribute('aria-value'+name,String(Math.round(value)));
       }
       return;
@@ -1014,6 +1045,10 @@
     Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0 });
     refreshPanelLayout(); savePanelLayout();
   };
+  window.GAMMA_LIGHT_LAYOUT = Object.freeze({
+    refresh:refreshPanelLayout,
+    reset(){Object.assign(panelLayout,{leftExtra:0,fixtureShare:.5,leftWidth:0,rightWidth:0});figureSplit=.5;savePanelLayout();saveFigureSplit();refreshPanelLayout();}
+  });
   // Shared panel-divider interaction: use displayed width at pointer-down, never a clamped saved value.
   window.GAMMA_LIGHT_PANEL_RESIZE = (handle,{read,change,reset,direction=1}) => {
     let drag=null;
@@ -1029,10 +1064,9 @@
     document.querySelector(".figgrid").append(handle);
     const read=()=>document.querySelector(side==="left"?".leftcol":"#panel-insp").getBoundingClientRect().width;
     window.GAMMA_LIGHT_PANEL_RESIZE(handle,{read,direction:side==="left"?1:-1,
-      change:width=>{const g=document.querySelector(".figgrid").getBoundingClientRect(),other=document.querySelector(side==="left"?"#panel-insp":".leftcol").getBoundingClientRect().width;
-        panelLayout.leftWidth=document.querySelector(".leftcol").getBoundingClientRect().width;
-        panelLayout.rightWidth=$("panel-insp").getBoundingClientRect().width;
-        panelLayout[side+"Width"]=E.clamp(width,side==="left"?320:280,Math.max(side==="left"?320:280,g.width-other-240-PAD.gap*2));refreshPanelLayout();savePanelLayout();},
+      change:width=>{const g=document.querySelector(".figgrid").getBoundingClientRect(),other=side==="left"&&document.documentElement.dataset.lightPanelStyle==='single'?0:document.querySelector(side==="left"?"#panel-insp":".leftcol").getBoundingClientRect().width;
+        const min=side==='left'&&document.documentElement.dataset.lightPanelStyle==='single'?280:side==='left'?320:280;
+        panelLayout[side+"Width"]=E.clamp(width,min,Math.max(min,g.width-other-240-PAD.gap*2));refreshPanelLayout();savePanelLayout();},
       reset:()=>{panelLayout.leftWidth=0;panelLayout.rightWidth=0;panelLayout.leftExtra=0;refreshPanelLayout();savePanelLayout();}});
   }
   const figureDivider = document.createElement('div');
@@ -5530,14 +5564,14 @@
       const cur = same && lvs.size === 1 ? [...lvs][0] : 100;
       b.append(field(lvMovers.length ? (same ? "始点" : "始点（バラバラ）") : (same ? null : "バラバラ"),
         range(0, 100, 1, cur, fmtLv,
-          (v) => { bulkEach(ids, (f, l) => { l.level = v; }); draw(); },
+          (v) => { bulkEach(ids, (f, l) => { l.level = v; }); requestDraw(); },
           () => commit(`${ids.length}灯の光量を変えました`)), true));
       if (lvMovers.length) {
         const tos = new Set(lvMovers.map((fid) => Math.round(E.clamp(E.finite((lightOf(fid) || {}).levelTo, levelOf(lightOf(fid))), 0, 100))));
         const sameTo = tos.size <= 1, curTo = sameTo && tos.size === 1 ? [...tos][0] : 100;
         b.append(field(sameTo ? "終点" : "終点（バラバラ）",
           range(0, 100, 1, curTo, fmtLv,
-            (v) => { lvMovers.forEach((fid) => { const l = lightOf(fid); if (l) l.levelTo = v; }); draw(); },
+            (v) => { lvMovers.forEach((fid) => { const l = lightOf(fid); if (l) l.levelTo = v; }); requestDraw(); },
             () => commit(`${lvMovers.length}灯の終点の光量を変えました`)), true));
       }
       /* 明滅（旧「ストロボ」）は強さのオートメーションの中身。入れている灯があるときだけ出す。
@@ -5914,7 +5948,7 @@
     const strength = el("div", "pbox"); strength.append(el("p", "kicker", "光量"));
     const level = same((l) => levelOf(l), 100);
     strength.append(field(level == null ? "バラバラ" : null, range(0, 100, 1, level == null ? 100 : level,
-      (v) => `${Math.round(v)}%`, (v) => { active.forEach((id) => { const l = getLight(id); l.level = v; }); draw(); }, () => commit()), true));
+      (v) => `${Math.round(v)}%`, (v) => { active.forEach((id) => { const l = getLight(id); l.level = v; }); requestDraw(); }, () => commit()), true));
     host.append(strength);
 
     /* ---- 狙いの動き（位置オートメーション・サーチライト・組の動き） ----
@@ -6912,8 +6946,8 @@
           }));
           b.append(head);
         }
-        b.append(field(autoLevel ? "始点" : null, range(0, 100, 1, levelOf(l), fmtLv, (v) => { l.level = v; draw(); }, () => commit()), true));
-        if (autoLevel) b.append(field("終点", range(0, 100, 1, E.clamp(E.finite(l.levelTo, levelOf(l)), 0, 100), fmtLv, (v) => { l.levelTo = v; draw(); }, () => commit()), true));
+        b.append(field(autoLevel ? "始点" : null, range(0, 100, 1, levelOf(l), fmtLv, (v) => { l.level = v; requestDraw(); }, () => commit()), true));
+        if (autoLevel) b.append(field("終点", range(0, 100, 1, E.clamp(E.finite(l.levelTo, levelOf(l)), 0, 100), fmtLv, (v) => { l.levelTo = v; requestDraw(); }, () => commit()), true));
         /* 明滅（旧「ストロボ」の箱）。2026-09-13 本人要望で<b>光の強さのオートメーションの中身</b>にした。
            始点・終点の往復に、時間で繰り返す点滅を上乗せする——往復のどの位置でも同じように点滅する。
            種類は2択: 〈ストロボ〉＝矩形波でパパパッと切り替わる（旧「くっきり」。これがストロボそのもの）／
@@ -7187,6 +7221,8 @@
   /* ---------- 全体 ---------- */
   function renderAll() { return preservePanelScroll(renderAllContent); }
   function renderAllContent() {
+    // A settled edit paints below; discard its queued slider/drag preview.
+    cancelPendingDraw();
     state.front3d = true; // Old files/drafts cannot restore the retired flat view.
     refreshApplyState();
     window.dispatchEvent(new Event("gamma-light-edit"));
@@ -8191,9 +8227,9 @@
   });
 
   document.addEventListener('pointerdown',ev=>{if(ev.target.matches('input[type=range]'))spatialQuick=true;},true);
-  document.addEventListener('pointerup',()=>{if(spatialQuick){spatialQuick=false;draw();}});
-  document.addEventListener('pointercancel',()=>{if(spatialQuick){spatialQuick=false;draw();}});
-  window.addEventListener('blur',()=>{if(spatialQuick){spatialQuick=false;draw();}});
+  document.addEventListener('pointerup',()=>{if(spatialQuick){spatialQuick=false;flushDraw();}});
+  document.addEventListener('pointercancel',()=>{if(spatialQuick){spatialQuick=false;flushDraw();}});
+  window.addEventListener('blur',()=>{if(spatialQuick){spatialQuick=false;flushDraw();}});
   clearLog();                      // R-01: 常設欄に案内を出しておく（空の枠だけが浮かないように）
   markApplied();
   renderAll();

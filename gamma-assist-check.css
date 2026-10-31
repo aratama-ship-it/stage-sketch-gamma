@@ -17,3 +17,7 @@
 #stage-workspace-tabs .assist-batch-entry {min-height:44px;min-width:44px;max-height:none;font:15px/1.6 var(--sans);padding:0 16px;border-radius:0;}
 #stage-workspace-tabs .assist-batch-entry[hidden],html.stage-phone-viewer .assist-batch-entry {display:none!important;}
 @media (max-width:680px) {.assist-batch-entry {display:none!important;}}
+/* v0.3.97: the side columns narrow on short desktop windows (N4); let long CJK text break instead of widening the panel. */
+.assist-batch { min-width:0; overflow-wrap:anywhere; }
+.assist-batch .assist-status, .assist-batch .assist-batch-advice, .assist-batch summary, .assist-batch label { overflow-wrap:anywhere; white-space:normal; }
+.assist-batch-group-label > * { min-width:0; overflow-wrap:anywhere; }

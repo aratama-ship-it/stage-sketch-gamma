@@ -149,6 +149,20 @@
     let resolveInitial, bufferedOpen = null;
     const initialOpen = new Promise(resolve => { resolveInitial = resolve; });
     const capability = "documentSessionV1";
+    const driveRequests = new Map();
+    const driveBackupAvailable = () => active && opened && owner && !readOnly && !tentative && !transition && !prepared
+      && shellSession?.capabilities?.includes("driveBackupV1") === true;
+    function driveBackupRequest(action, options = {}) {
+      if (!driveBackupAvailable() || !['select','start','now','pause','resume','list','restore','status','policy'].includes(action))
+        return Promise.reject(Object.assign(Error('capability'),{code:'capability'}));
+      const source={...identity(),requestId:requestId()}, token=generation;
+      return new Promise((resolve,reject)=>{
+        const timer=host.setTimeout(()=>{driveRequests.delete(source.requestId);reject(Object.assign(Error('timeout'),{code:'timeout'}));},120000);
+        driveRequests.set(source.requestId,{source,token,timer,resolve,reject});
+        ownedPost('driveBackup',source,{action,limits:options.limits,cleanup:options.cleanup,kind:options.kind,id:options.id});
+      });
+    }
+
     const fields = ["documentSessionId", "pageGeneration", "deliveryGeneration"];
     const tokenOK = value => typeof value === "string" && value.length > 0 && value.length <= 128;
     let shellSession = null, owner = null, tentative = null, transition = null, prepared = null;
@@ -173,6 +187,8 @@
     // Publish the same runtime capability used by every document operation.
     // A prepared/tentative delivery stays blocked until explicit commit or rollback.
     function setTransitioning(value) {
+      if(value)for(const [id,pending] of driveRequests){host.clearTimeout(pending.timer);driveRequests.delete(id);pending.reject(Object.assign(Error('stale-context'),{code:'stale-context'}));}
+
       runtime.setTransitioning?.(value);
       host.GammaUndoOwner?.context({...identity(), transitioning:!!value});
     }
@@ -406,6 +422,19 @@
     }
     const welcomeActions = new Set(["openRecent", "new", "open", "samples", "legacy", "setStartupAction", "openUpdate", "dismissUpdate"]);
     const facade = {
+      driveBackupReply(payload) {
+        const pending=driveRequests.get(payload?.requestId);
+        if(!pending || pending.token!==generation || !matches(payload) || !matches(pending.source))return false;
+        driveRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
+        if(payload.ok===true)pending.resolve(payload.value);
+        else pending.reject(Object.assign(Error(payload.code || 'write-failed'),{code:payload.code,name:payload.code==='cancelled'?'AbortError':'Error'}));
+        return true;
+      },
+      driveBackupState(payload) {
+        if(!matches(payload) || !payload.value || !driveBackupAvailable())return false;
+        if(payload.value.bindingReset)for(const [id,pending] of driveRequests){host.clearTimeout(pending.timer);driveRequests.delete(id);pending.reject(Object.assign(Error('stale-context'),{code:'stale-context'}));}
+        host.dispatchEvent?.(new CustomEvent('stageSketchProject:driveBackup',{detail:payload.value}));return true;
+      },
       draftRecoveryState:()=>({unavailable:draftRecoveryUnavailable,stopped:draftRecoveryStopped,exitSupported:draftRecoveryExitSupported}),
       repairDraftRecovery(action) {
         if(!draftRecoveryUnavailable || !draftRecoveryExitSupported || !opened || !owner || tentative || transition || prepared
@@ -783,13 +812,13 @@
       file.text().then(text => post("openLegacyFile", {text, filename:file.name}),
         () => post("openLegacyFile", {error:"legacy-read-failed"}));
     }, true);
-    const sendReady = () => post("ready", { formatVersion:1, capabilities:[capability,"draftOwnerV2","venueVersionV1"] });
+    const sendReady = () => post("ready", { formatVersion:1, capabilities:[capability,"draftOwnerV2","venueVersionV1","driveBackupV1"] });
     // bfcache restores the installed ports without evaluating this script again.
     // Do not revive a bridge whose initial native handshake already expired.
     host.addEventListener?.("pageshow", event => { if (event.persisted && active) sendReady(); });
     sendReady();
     return {
-      initialOpen, store, changed, identity, matches, createVenueVersion, cancelVenueVersion,
+      initialOpen, store, changed, identity, matches, createVenueVersion, cancelVenueVersion, driveBackupAvailable, driveBackupRequest,
       venueOperationFor(intent) {
         const key=JSON.stringify([identity().documentSessionId,contentSignature(runtime.snapshot().show),intent]);
         if(!venueIntents.has(key))venueIntents.set(key,host.crypto.randomUUID());

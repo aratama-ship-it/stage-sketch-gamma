@@ -17,6 +17,30 @@
 
   const TEXT = {
 
+    "かんたん照明で灯体の多い設備を使うとき、詳細の光量入力の描き直しをまとめて、入力に遅れずついてくるようにしました。かんたん照明の描き方は前のままです。": "在簡易燈光中使用燈具較多的設備時，詳細的光量輸入會合併重繪，跟上輸入不再延遲。簡易燈光本身的繪製方式不變。",
+
+    "Mac 版に、ショーの控えを Google Drive などのフォルダへ自動で残す「バックアップ先」の設定を追加しました。世代数の初期値と自動整理（既定でオン）、保存先が満杯のときの表示を備えます。実際の Google Drive への保存と復元は、まだ十分に確認できていません。": "Mac 版新增「備份位置」設定，可將演出的副本自動保存到 Google Drive 等資料夾，包含世代數初始值、自動整理（預設開啟）以及保存位置已滿時的提示。向真實 Google Drive 的保存與還原尚未充分確認。",
+
+    "ブラウザ版の相談の照明提案を作り直しました。提案は位置ごとの下書きとしてかんたん照明に入り、見てから適用するか戻すかを選べます。適用するまでショーは変わりません。": "重做了瀏覽器版諮詢的燈光提案。提案作為依位置劃分的草稿進入簡易燈光，可先查看再選擇套用或還原。套用之前演出不會改變。",
+
+    "規約に、照明提案で送る情報の範囲、AI 点検・文書の下書き（端末の履歴をオンにしたときの扱い）、操作の代行についての説明を追加しました（日英）。": "條款中新增了燈光提案傳送資訊的範圍、AI 檢查與文件草稿（開啟裝置歷史時的處理）以及操作代辦的說明（日文、英文）。",
+
+    "高さの低い画面（13 インチ級・1440×800 前後）で、見出しとタブの余白を詰め、照明タブのかんたん 4 区画と詳細 3 パネルの大きさを設定で変えられるようにしました。設定した高さは上限として扱い、内容が少ないときはそれより低くなります。": "在高度較低的螢幕（13 吋級、約 1440×800）上收緊了標題與分頁的間距，並可在設定中調整燈光分頁的簡易 4 區與詳細 3 面板的大小。設定的高度視為上限，內容較少時會更低。",
+
+    "かんたん照明で位置の候補に触れたときの吹き出しを、図の左上の内側に出すようにしました。図の外にはみ出しません。": "簡易燈光中觸碰位置候選時的提示氣泡改為顯示在圖的左上方內側，不再溢出圖外。",
+
+    "タイムラインの 4 倍・8 倍の再生で、照明の動きとフェードの時計も同じ倍率で進むようにしました。これまでは 2 倍で止まっていました。": "時間軸以 4 倍、8 倍回放時，燈光的運動與漸變時鐘也按相同倍率推進。此前會停在 2 倍。",
+
+    "時間の無いキューは、かんたん照明で「未設定（0秒で切り替え）」と表示します。時間だけを変えて採用したときに、表示中の未使用の位置へ灯体が書き足されることがなくなりました。": "沒有時間的提示在簡易燈光中顯示為「未設定（0 秒切換）」。僅修改時間後套用時，不再向正在顯示的未使用位置新增燈具。",
+
+    "タイムラインを閉じているとき、左下の取っ手の横に再生中のシーン名・経過時間・速度を表示し、一時停止・頭出し・再開ができるようにしました。止めた後も位置が残ります。リハーサルでも同じ表示を使います。": "時間軸收起時，在左下把手旁顯示正在回放的場景名、已過時間與速度，並可暫停、回到開頭、繼續。停止後位置仍保留。排練中使用相同的顯示。",
+
+    "舞台裏の控えから戻した演者が、以前の版で保存した「肩の上に立つ」などの積み重ねを失っていた不具合を直しました。控えの椅子・テーブル・スツールに、読み込みのたびに不要な値が増えることもなくなりました。": "修正了從後台暫存放回的演員遺失早期版本保存的「站在肩上」等疊放關係的問題。暫存中的椅子、桌子、凳子也不再在每次讀取時增加多餘的值。",
+
+    "ブラウザ版の相談が参照する書斎の索引に鮮度の検査を加え、古くなったときは公開前の確認で止まるようにしました。": "為瀏覽器版諮詢引用的書房索引增加了新鮮度檢查，過舊時會在發布前檢查中停止。",
+    "現在の記録では再生・頭出しできません。リハーサルの操作欄を確認してください。": "目前記錄無法播放或返回開頭。請查看排練操作區。",
+    "再生位置（経過 / 全体）": "播放位置（已過 / 總時長）",
+
     "照明の画面を作り直しました。上部のタブを7つに整理し、「機材配置」は「劇場設計」（空間・客席・幕と機材の配置）になりました。照明は「かんたん照明」から開き、細部は「詳細」で調整します。": "重新製作了燈光畫面。頂部索引標籤整理為7個，「器材配置」改為「劇場設計」（空間、觀眾席、幕與器材配置）。燈光從「簡易燈光」開啟，細節在「詳細」中調整。",
 
     "かんたん照明は、先に機能（人物・場所、輪郭・補助、背景など）を選び、次にその明かりを出せる位置を選ぶ順になりました。位置の候補にマウスを乗せると、図の中に灯体本体の輪郭が一時的に表示され、離すと消えます。保存される値は変わりません。": "簡易燈光改為先選擇功能（人物／場所、輪廓／輔助、背景等），再選擇能發出該光的位置。將滑鼠移到位置候選上時，圖中會暫時顯示燈具本體的輪廓，移開後消失。儲存的值不會改變。",
@@ -956,6 +980,7 @@
     "詳細の未適用編集を先に適用してください": "請先套用詳細模式中尚未套用的編輯",
     "現在の明かり（適用時にキューを作成）": "目前明暗（套用時建立提示）",
     "適用しています…": "正在套用…",
+    "未設定（0秒で切り替え）": "未設定（0秒切換）",
     "適用済みの明かりを表示中": "顯示已套用的明暗",
     "適用を戻す": "復原套用",
     "適用済みに戻す": "回到已套用設定",
@@ -6349,4 +6374,87 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "図を全体表示（空き場所のダブルクリックでも戻ります）": "顯示完整圖（也可按兩下空白處返回）",
   "ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動": "滾輪縮放；放大時按空白鍵拖曳或用滑鼠中鍵拖曳平移",
   "平面図と正面図の高さ配分": "平面圖和正面圖的高度分配"
+});
+
+// N4: lighting panel layout, device preferences only.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "パネルを2列に": "面板分兩欄",
+  "パネルを1列に": "面板分一欄",
+  "照明の初期配置に戻す": "恢復照明初始配置",
+  "パネルの高さ（px・0は自動）": "面板高度（px，0為自動）",
+  "パネルを上へ": "面板上移",
+  "パネルを下へ": "面板下移"
+});
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.light2.button": "調整燈光", "assist.light2.notice": "傳送目前場景的層、燈具及所選範圍內提示的名稱與數值。確認後建立草稿，再按「套用」。", "assist.light2.review": "擬議變更（尚未建立草稿）", "assist.light2.stage": "建立草稿", "assist.light2.cueChange": "Q{no}：名稱 {from} → {to} ／ 淡入 {fromFadeIn}→{fadeIn}秒·淡出 {fromFadeOut}→{fadeOut}秒", "assist.light2.function.spot": "追光", "assist.light2.function.wash": "整體照明", "assist.light2.function.background": "背景染色", "assist.light2.function.rim": "輪廓·輔助", "assist.light2.function.custom": "已詳細調整", "assist.light2.detailOnly": "請在詳細畫面檢查已詳細調整的層和組。尚未替換其設定。", "assist.light2.fixedColor": "此固定燈具的顏色影響所有場景，請在詳細畫面檢查。", "assist.light2.warning": "請在詳細畫面檢查照射範圍和背景幕。", "assist.light2.scope": "傳送的提示", "assist.light2.scopeScene": "目前場景", "assist.light2.scopeShow": "整個演出的提示"});
+// G-010: independent folder backups.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "drive.title": "備份到Google Drive",
+  "drive.choose": "選擇Google Drive資料夾",
+  "drive.start": "開始自動備份",
+  "drive.cancel": "取消",
+  "drive.now": "立即備份",
+  "drive.pause": "暫停備份",
+  "drive.reconnect": "重新連線並繼續",
+  "drive.history": "開啟備份",
+  "drive.restore": "作為另一個演出開啟",
+  "drive.details": "備份詳細設定",
+  "drive.defaults": "儲存後2秒（連續編輯10秒），音訊變更後5秒。有變更時每10分鐘儲存歷史。初始值：20份JSON、3份含音訊備份、2GiB。 初始設定：自動清理舊備份（保留最新及上一份完整備份）。",
+  "drive.cleanup": "自動清理舊備份",
+  "drive.jsonLimit": "JSON保留份數",
+  "drive.zipLimit": "含音訊備份保留份數",
+  "drive.capacity": "容量上限（GiB）",
+  "drive.invalidLimit": "請輸入所示範圍內的整數。",
+  "drive.setup": "設定電腦版Google Drive",
+  "drive.cloud": "此處顯示本機儲存狀態。請在Google Drive中確認雲端到達及同步狀態。",
+  "drive.confirm": "資料夾：{folder}。僅備份目前演出的JSON、含音訊備份及歷史。",
+  "drive.permission": "無法使用此資料夾。請重新連線或選擇資料夾。",
+  "drive.differs": "本機儲存與備份不同，已停止。請將備份作為另一個演出開啟，或選擇新資料夾。",
+  "drive.audioMissing": "JSON已儲存，含音訊備份未完成。請重新連接音訊後繼續。",
+  "drive.failed": "備份未完成，一般儲存和先前完整備份仍保留。請檢查資料夾、空間和權限。",
+  "drive.quota": "可用空間不足，無法完成備份。一般儲存和先前完整備份仍保留。請檢查可用空間後重新連線並繼續，或選擇其他資料夾。",
+  "drive.package": "含音訊",
+  "drive.json": "僅JSON（無音訊檔案）",
+  "drive.unavailable": "尚未到達或已損毀，無法開啟",
+  "drive.unindexed": "未登記備份（日期未確認）",
+  "drive.empty": "沒有可開啟的備份。",
+  "drive.state.unsupported": "此環境不支援資料夾備份，請使用現有手動匯出。",
+  "drive.state.disabled": "備份未設定或已暫停",
+  "drive.state.ready": "備份就緒",
+  "drive.state.queued": "等待備份",
+  "drive.state.saving": "正在建立備份",
+  "drive.state.saved": "備份已儲存到本機",
+  "drive.state.partial": "備份已儲存到本機，部分處理未完成",
+  "drive.state.stopped": "備份已停止"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.firstSave": "請先將演出儲存為檔案，再選擇備份資料夾。"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.packageCurrent": "含音訊備份也是最新", "drive.packageOlder": "含音訊備份（與JSON版本時間不同）", "drive.packagePending": "含音訊備份未完成"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.loadFailed": "無法載入備份工具。請連線重新開啟，一般儲存仍可使用。"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.decrease": "減少", "drive.increase": "增加"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.cleanupDeferred": "無法驗證上一份備份，已停止清理舊的含音訊備份。現有備份仍保留。"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.activeFolder": "目前備份資料夾：{folder}"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.sourceFolder": "請選擇原演出專案資料夾之外的資料夾。"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text,{"drive.reserved": "此檔案已用於JSON檔案自動儲存，請為其中一項選擇其他儲存位置。"});
+
+// N2-D: retention and capacity outcomes; shared by Chrome and Mac.
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "drive.cleanupConfirm": "自動清理舊備份（保留最新及上一份完整備份）。",
+  "drive.historyLimit": "已達保留數量上限，未建立新的JSON歷史備份。請開啟舊備份自動清理，或增加JSON保留數量。",
+  "drive.packageLimit": "已達保留數量上限，未建立新的含音訊備份。請開啟舊備份自動清理，或增加含音訊備份的保留數量。",
+  "drive.capacityLimit": "已達容量上限，未建立部分新備份。請提高容量上限或選擇其他儲存位置。一般儲存和上一份完整備份仍保留。"
+});
+// N8: contextual piece actions and adjacent lighting adjustment. ("調整" is supplied by gamma-ui-i18n.js in every language.)
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
+  "駒を1つ選んでください。": "請選擇一個棋子。",
+  "駒の操作": "棋子操作",
+  "駒を貼り付ける": "貼上棋子",
+  "先に同じショーの駒をコピーしてください。": "請先複製同一演出的棋子。",
+  "調整: {position}": "調整：{position}"
 });

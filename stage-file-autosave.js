@@ -184,6 +184,13 @@
       return {ok:!code, code};
     }
     // Must be called directly by a click handler: picker runs before any await.
+    async function assertDestination(handle) {
+      if(typeof options.destinationAllowed==='function' && await options.destinationAllowed(handle)!==true)throw fault('reserved-destination');
+    }
+    async function ownsFile(handle) {
+      const current=binding;
+      return Boolean(current?.handle && handle && await current.handle.isSameEntry(handle));
+    }
     async function selectFromGesture({suggestedName = 'show-autosave.stagesketch'} = {}) {
       const guardEpoch = epoch;
       try {
@@ -194,6 +201,7 @@
         if (guardEpoch !== epoch || eligibility()) throw fault('stale-context');
         if (!validHandle(handle)) throw fault('unsupported-file');
         if (await handle.queryPermission({mode:'readwrite'}) !== 'granted') throw fault('permission-required');
+        await assertDestination(handle);
         const original = await read(handle);
         if (guardEpoch !== epoch || eligibility()) throw fault('stale-context');
         if (original.size) validateDocument(original.text, context.projectId);
@@ -213,6 +221,8 @@
         if (!c || c.candidateId !== candidateId || c.epoch !== epoch) throw fault('stale-candidate');
         if (c.original.size && confirmedOverwrite !== true) throw fault('overwrite-confirmation-required');
         if (inFlight) return {ok:false, code:'save-in-progress'};
+        await assertDestination(c.handle);
+        if(guardEpoch!==epoch || eligibility())throw fault('stale-context');
         epoch++; guardEpoch = epoch; altered = true; clearPending(); publish('binding');
         const projectId = context.projectId;
         const active = () => { if (guardEpoch !== epoch || eligibility()) throw fault('stale-context'); };
@@ -273,6 +283,7 @@
         binding = {...b, persistence:'durable'};
         const t = token();
         if (await b.handle.queryPermission({mode:'readwrite'}) !== 'granted') throw fault('permission-required');
+        await assertDestination(b.handle);check(t);
         const current = await read(b.handle);
         check(t);
         if (current.digest !== b.lastWrittenDigest) throw fault('destination-changed');
@@ -328,6 +339,7 @@
           }
           if (await b.handle.queryPermission({mode:'readwrite'}) !== 'granted') throw fault('permission-required');
           check(t);
+          await assertDestination(b.handle);check(t);
           const current = await read(b.handle); check(t);
           if (current.digest !== b.lastWrittenDigest) throw fault('destination-changed');
           const expectedDigest = await hash(new TextEncoder().encode(item.text)); check(t);
@@ -373,7 +385,7 @@
       publish('disabled', 'disabled-by-caller');
     }
     return Object.freeze({setContext, selectFromGesture, activateCandidate, restore, reauthorizeFromGesture,
-      enqueuePersisted, flush, browserSaveFailed, disable, getState:() => status, getToken:token});
+      enqueuePersisted, flush, browserSaveFailed, disable, ownsFile, getState:() => status, getToken:token});
   }
   const api = Object.freeze({DB, STORE, DELAY_MS, MAX_WAIT_MS, createController, createHandleRepository, validateDocument, digestBytes});
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -427,6 +439,7 @@
     }
     const controller = options.foundation.createController({enabled:true, environment:env,
       canWrite:() => allowed() && !host.context().browserSaveFailed,
+      destinationAllowed:handle=>host.destinationAllowed?.(handle) ?? true,
       onState(value) { status = value; render(); }});
     function refresh(force = false) {
       const c = host.context();
@@ -541,6 +554,7 @@
     }
     refresh();
     return Object.freeze({refresh,capture,persisted,failed,restore,render,
+      ownsFile:handle=>controller.ownsFile(handle),
       wantsSnapshot:() => Boolean(controller.getToken()) && allowed()});
   }
   const api = Object.freeze({create,KEY,COPY});

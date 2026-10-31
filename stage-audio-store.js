@@ -40,13 +40,13 @@
     return openDb(dbName).then((db) => new Promise((resolve, reject) => {
       const tx = db.transaction(STORE, mode);
       const store = tx.objectStore(STORE);
-      let result = Promise.resolve();
+      let result = Promise.resolve(), operationError = null;
       let settled = false;
       const fail = () => {
         if (settled) return;
         settled = true;
         db.close();
-        reject(tx.error || new Error("Audio storage transaction failed"));
+        reject(operationError || tx.error || new Error("Audio storage transaction failed"));
       };
       tx.onerror = fail;
       tx.onabort = fail;
@@ -60,7 +60,7 @@
         result = Promise.resolve(operation(store));
         // request失敗時はtransactionもabortする。oncompleteを待たずに拒否されても
         // unhandled rejectionへせず、外側Promiseはtx.onerror/onabortで返す。
-        result.catch(() => {});
+        result.catch(error => { operationError = error; });
       } catch (error) {
         try { tx.abort(); } catch (_) { /* すでに閉じていても元の例外を返す */ }
         if (!settled) {
@@ -86,7 +86,7 @@
       store.put(blob, trackId);
       store.delete(GC_PREFIX + trackId);
       return true;
-    });
+    }).then(value=>{window.dispatchEvent?.(new Event('stage-audio-changed'));return value;});
   }
 
   function get(trackId) {
@@ -167,6 +167,54 @@
     return withStore("readonly", store => requestValue(store.get(trackId), null));
   }
 
+  // Read the current generation in a single readonly transaction. This does
+  // not migrate missing legacy audio and does not claim the blobs match a show
+  // save: the backup caller must also prove ownership and saved-state coherence.
+  function readBatch(trackIds, { guard = () => false } = {}) {
+    if (!Array.isArray(trackIds) || typeof guard !== "function"
+        || trackIds.some(id => !validTrackId(id)) || new Set(trackIds).size !== trackIds.length)
+      return Promise.reject(new TypeError("Invalid trackIds"));
+    if (!guard()) return Promise.reject(new Error("Audio snapshot context changed"));
+    return withStore("readonly", store => Promise.all(trackIds.map(id =>
+      requestValue(store.get(id), null).then(blob => [id, blob])))).then(entries => {
+        if (!guard()) throw new Error("Audio snapshot context changed");
+        return new Map(entries);
+      });
+  }
+
+  // The proof point is a synchronous callback inside one active readonly
+  // transaction. IndexedDB excludes every current/older tab's audio writer
+  // until this transaction completes. LocalStorage is checked at that same
+  // point (not before/after an await). Immutable Blob references survive it.
+  // Legacy-only audio is deliberately missing here: normal playback may copy
+  // it first, but two different databases are never claimed to be atomic.
+  function readCommitted(trackIds, {token, documentString, verifySavedDocument} = {}) {
+    if (!Array.isArray(trackIds) || trackIds.some(id => !validTrackId(id))
+        || new Set(trackIds).size !== trackIds.length || typeof token !== "string"
+        || typeof documentString !== "string" || typeof verifySavedDocument !== "function")
+      return Promise.reject(new TypeError("Invalid committed audio request"));
+    return withStore("readonly", store => new Promise((resolve, reject) => {
+      const blobs = new Map(); let pending = Math.max(1, trackIds.length);
+      const accept = () => {
+        if (--pending) return;
+        try {
+          if (verifySavedDocument() !== true) throw Object.assign(Error("Saved show changed"),{code:"saved-state-differs"});
+          resolve(Object.freeze({coherent:true, token, documentString, blobs}));
+        } catch (error) { reject(error); store.transaction.abort(); }
+      };
+      // Even an audio-free show needs an active transaction proof point.
+      if (!trackIds.length) {
+        const request = store.get("\u0000backup-proof");
+        request.onsuccess = accept; request.onerror = () => reject(request.error);
+      }
+      for (const id of trackIds) {
+        const request = store.get(id);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { blobs.set(id, request.result ?? null); accept(); };
+      }
+    }));
+  }
+
   function listKeys() {
     return withStore("readonly", (store) => {
       if (typeof store.getAllKeys === "function") return requestValue(store.getAllKeys(), []);
@@ -223,6 +271,6 @@
   }
 
   window.SHOSAI_STAGE_AUDIO_STORE = Object.freeze({
-    put, putIfAbsent, get, peek, remove, removeSelected, listKeys, pruneExcept, validTrackId,
+    put, putIfAbsent, get, peek, readBatch, readCommitted, remove, removeSelected, listKeys, pruneExcept, validTrackId,
   });
 })();

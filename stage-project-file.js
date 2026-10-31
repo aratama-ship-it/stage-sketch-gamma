@@ -74,7 +74,7 @@
       && (!verifyContent || reference.projectDigest === carryProjectDigest(project)));
   }
   const managedPath = (name, audioPaths) => ['project.json','show.json','Thumbnail.png'].includes(name)
-    || name.startsWith('Backups/') || audioPaths.has(name);
+    || /^Backups\/show-[0-9]{8}-[0-9]{6}\.json$/.test(name) || audioPaths.has(name);
   function fail(code) { const e = new Error(code); e.code = code; throw e; }
   function pathOK(path, directory = false) {
     if (typeof path !== "string" || !path || /[\\:\x00-\x1f\x7f]/.test(path) || path.startsWith("/")) return false;

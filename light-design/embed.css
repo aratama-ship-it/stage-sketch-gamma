@@ -299,3 +299,28 @@ html[data-gamma-embedded] #gamma-light-return-saved { max-width:100%; white-spac
 
 /* Extremely short detail windows retain both frames and scroll the surrounding controls. */
 html[data-gamma-embedded][data-gamma-light-mode="move"] .body{overflow:auto}
+
+/* N4: device-only panel styles; original controls and model remain in place. */
+:root{--light-layout-tap:44px;--light-layout-gap:8px;--light-layout-menu-width:520px;--light-layout-font:13px}
+html[data-gamma-embedded] #light-panel-layout-toggle{min-height:var(--light-layout-tap);max-width:100%;white-space:normal}
+.light-layout-menu{position:fixed;box-sizing:border-box;z-index:160;width:min(var(--light-layout-menu-width),calc(100% - 16px));max-height:calc(100dvh - 16px);overflow:auto;padding:var(--light-layout-gap);background:var(--desk);color:var(--milk);border:1px solid var(--line-dark);font:400 var(--light-layout-font)/1.5 var(--sans)}
+.light-layout-menu[hidden]{display:none}
+.light-layout-menu-head,.light-layout-choices{display:flex;align-items:center;gap:var(--light-layout-gap);justify-content:space-between}
+.light-layout-menu button,.light-layout-menu input,.light-detail-fold{box-sizing:border-box;min-width:var(--light-layout-tap);min-height:var(--light-layout-tap);font:inherit;color:var(--milk);background:var(--desk-2);border:1px solid var(--line-dark);white-space:normal}
+.light-layout-menu button[aria-pressed=true]{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.light-layout-choices{justify-content:flex-start;margin-block:var(--light-layout-gap)}
+.light-layout-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--light-layout-gap);padding-block:var(--light-layout-gap);border-top:1px solid var(--line-dark)}
+.light-layout-row label{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:var(--light-layout-gap)}
+.light-layout-row input{width:96px;padding:4px}
+html[data-gamma-light-mode=move] .light-detail-fold{flex:0 0 auto;width:100%;text-align:left;padding:4px 8px}
+html:not([data-gamma-light-mode=move]) .light-detail-fold{display:none}
+html[data-gamma-light-mode=move] .light-layout-collapsed>:not(.light-detail-fold){display:none!important}
+html[data-gamma-light-mode=move] .light-layout-collapsed{flex:0 0 auto!important;min-height:var(--light-layout-tap)!important;height:var(--light-layout-tap)!important;overflow:hidden}
+html[data-gamma-light-mode=move] .light-layout-sized:not(.light-layout-collapsed){max-height:min(var(--light-panel-height),100%);overflow:auto}
+html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns>.leftcol{flex-direction:column;overflow:auto;gap:var(--light-layout-gap)}
+html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns>.leftcol>.panel{width:100%!important;flex:0 0 auto!important;min-width:0;min-height:120px;max-height:var(--light-panel-height)}
+html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns{grid-template-columns:var(--detail-left-width) minmax(0,var(--detail-mid-width));column-gap:var(--light-layout-gap)}
+html[data-gamma-light-mode=move][data-light-panel-style=single] #light-right-resize{display:none}
+html[data-gamma-light-mode=move][data-light-panel-style=single] .leftcol>#panel-insp{grid-column:auto;grid-row:auto;align-self:stretch}
+html[data-gamma-light-mode=move] .light-layout-collapsed>.light-detail-fold::before{content:'▸ ';color:var(--brass)}
+html[data-gamma-light-mode=move] .panel:not(.light-layout-collapsed)>.light-detail-fold::before{content:'▾ ';color:var(--brass)}

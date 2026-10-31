@@ -9,6 +9,7 @@
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
   const countTimelineEnabled = window.GAMMA_EDITIONS?.RELEASE_FEATURES.countTimeline === true;
   const panel = document.getElementById("stage-timeline-panel");
+  let compactTransport = null;
   // The app restores large projects asynchronously; its bridge can arrive after
   // this parser-loaded script. Wait without hiding a valid timeline permanently.
   if (panel && !bridge) {
@@ -92,7 +93,9 @@
   let musicMigrationAttempt = null;
   const timecodeError = document.getElementById("stage-timecode-error");
   const UI_KEY = "gamma:shosai-stage-timeline-ui-v1";
-  const DEFAULT_HEIGHT = 360;
+  // New/reset device preferences only; explicit saved heights keep priority.
+  const DEFAULT_HEIGHT = window.innerWidth<=1500&&window.innerHeight<=840
+    ? Math.max(240,Math.min(300,Math.round(window.innerHeight*.36))):360;
   const MIN_HEIGHT = 260;
   /* 2026-09-18 本人指摘「取っ手を一番下まで持っていってもタイムラインが収納できない」:
      下限（MIN_HEIGHT）に着いてから、さらにこれだけ引き下げて離すと畳む。
@@ -770,6 +773,7 @@
       else element.removeAttribute("aria-hidden");
     });
     if (save) saveUi();
+    syncCompactTransport();
   }
 
   function clickElement(element) {
@@ -881,6 +885,7 @@
     const blocked = timelineInteractionIsBlocked();
     panel.classList.toggle("is-suspended", blocked);
     panel.inert = blocked;
+    syncCompactTransport();
   }
 
   let fieldCuePresentations = [];
@@ -3683,6 +3688,7 @@
         relativeSeconds:timeDomain.valid?seekSeconds-timeDomain.origin:null,timecodeSeconds,timecodeText:TD.timecodeText(timecodeSeconds),
         transition:info.phase?{fromSceneId:info.phase.fromSceneId,toSceneId:info.phase.toSceneId,progress:info.phase.progress}:null
       }}));
+      syncCompactTransport();
       keepPlayheadInView();return;
     }
     const playingThisTimeline = els.audio && audioMatchesTimeline();
@@ -3704,6 +3710,7 @@
     const playLabel = tx(playing ? "タイムラインを一時停止" : "タイムラインを再生");
     els.play.setAttribute("aria-label", playLabel);
     els.play.title = playLabel;
+    syncCompactTransport();
     keepPlayheadInView();
   }
 
@@ -5554,5 +5561,99 @@
     new MutationObserver(scheduleClearance).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     scheduleClearance();
   }
+  // G-020: expand the existing grip only after playback/seek. The editor and
+  // independent run retain their own clocks, permissions and pause semantics.
+  function initializeCompactTransport() {
+    if (!els.grip) return;
+    const dock = document.createElement("div");
+    dock.id = "stage-playback-dock";
+    dock.className = "stage-playback-dock";
+    els.grip.before(dock);
+    dock.append(els.grip);
+    const summary = document.createElement("span");
+    summary.id = "stage-playback-summary";
+    summary.hidden = true;
+    summary.setAttribute("data-no-i18n", "");
+    summary.setAttribute("aria-live", "off");
+    const scene = document.createElement("span"), position = document.createElement("span");
+    scene.className = "stage-playback-scene";
+    position.className = "stage-playback-position";
+    summary.append(scene, position);
+    els.grip.append(summary);
+    const controls = document.createElement("div");
+    controls.className = "stage-playback-controls";
+    controls.hidden = true;
+    controls.setAttribute("data-no-i18n", "");
+    const copyButton = (original, id) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.id = id;
+      button.className = original.className;
+      button.innerHTML = original.innerHTML;
+      controls.append(button);
+      return button;
+    };
+    const head = copyButton(els.head, "stage-playback-head");
+    const play = copyButton(els.play, "stage-playback-toggle");
+    play.addEventListener("click", () => {
+      if (!play.disabled && !timelineInteractionIsBlocked()) void toggleTimelinePlayback();
+    });
+    head.addEventListener("click", () => {
+      if (head.disabled || timelineInteractionIsBlocked()) return;
+      const record = rehearsal();
+      if (record) record.seek(0);
+      else clickElement(els.head);
+    });
+    dock.append(controls);
+    compactTransport = { dock, summary, scene, position, controls, head, play, seen: "" };
+    new MutationObserver(syncCompactTransport).observe(root, { attributes: true, attributeFilter: ["lang"] });
+  }
+
+  function syncCompactTransport() {
+    if (!compactTransport) return;
+    const c = compactTransport, record = rehearsal();
+    const workspace = document.body.dataset.gammaWorkspace || "normal";
+    const identity = `${workspace}:${renderedTimelineIdentity}`;
+    const playing = Boolean(record ? record.info.playing : timelineIsPlaying());
+    const seconds = record ? record.info.seconds : seekSeconds;
+    if (c.identity !== identity) { c.identity = identity; c.seen = ""; }
+    if (timeline && (playing || seconds > 0)) c.seen = identity;
+    const visible = Boolean(timeline && ui.collapsed && c.seen === identity && !panel.hidden
+      && !timelineInteractionIsBlocked() && (workspace === "normal" || workspace === "rehearsal"));
+    // Moving focus precedes hiding either surface; opening the drawer never
+    // leaves keyboard focus in its now-hidden compact transport.
+    if (!visible && c.controls.contains(document.activeElement)) {
+      (ui.collapsed ? els.grip : els.play).focus({ preventScroll: true });
+    }
+    c.dock.classList.toggle("is-active", visible);
+    c.summary.hidden = !visible;
+    c.controls.hidden = !visible;
+    if (!visible) return;
+    const phase = record ? record.info.phase : timelineTransitionAt(seconds);
+    const sceneName = id => timeDomain?.byId.get(id)?.title || tx("シーン");
+    const sceneId = record ? record.info.sceneId : segmentAt(seconds)?.sceneId;
+    const name = phase
+      ? `${tx("転換")} · ${sceneName(phase.fromSceneId || phase.source?.sceneId)} → ${sceneName(phase.toSceneId || phase.target?.sceneId)}`
+      : sceneName(sceneId);
+    const scope = tx(record || timeline.source === "show" ? "ショー全体" : "セクション");
+    const position = `${scope} ${TD.durationText(seconds)} / ${TD.durationText(timeline.duration)} · ${record ? 1 : reviewRate.get()}×`;
+    // Preserve the text nodes and buttons while the clock advances (WebKit).
+    if (c.scene.textContent !== name) c.scene.textContent = name;
+    if (c.position.textContent !== position) c.position.textContent = position;
+    c.summary.title = `${name}\n${tx("再生位置（経過 / 全体）")} · ${position}`;
+    c.position.setAttribute("aria-label", `${tx("再生位置（経過 / 全体）")} · ${position}`);
+    const canPlay = record ? record.canPlay : !els.play.disabled;
+    c.play.disabled = !canPlay;
+    c.head.disabled = !canPlay;
+    c.play.setAttribute("aria-pressed", String(playing));
+    for (const [button, label] of [[c.head, tx("先頭へ")],
+      [c.play, tx(playing ? "タイムラインを一時停止" : "タイムラインを再生")]]) {
+      button.setAttribute("aria-label", label);
+      button.title = record && !canPlay
+        ? tx("現在の記録では再生・頭出しできません。リハーサルの操作欄を確認してください。") : label;
+    }
+  }
+
+  initializeCompactTransport();
   initializeTimelineDrawer();
 }());

@@ -85,7 +85,103 @@
           warnings:patches.filter(p=>p.spread).map(p=>({code:'fixed-all-scenes',name:p.old.name}))};
       }catch(e){if(saved)editor().restoreRuntime(saved);return {ok:false,reasons:[e.message]};}
     }
-    return Object.freeze({context,previewSimple,draftDetail});
+    // LIGHT2 v2 uses detached review data. Only stageReview enters an existing
+    // draft owner; the ordinary Apply button remains the sole durable write.
+    function reviewContext(scope='scene') {
+      if(!['scene','show'].includes(scope))throw Error('scope');
+      const c=context(),r=rig(),P=w.GAMMA_PART_LIGHTING,host=w.parent.GAMMA_STAGE_EDIT?.currentContext?.();
+      c.reasons=[...new Set([...c.reasons,...(host?.reasons||['unavailable'])])];
+      if(w.parent.document?.querySelector('[data-panel=assist]')?.dataset.assistAvailable!=='true')c.reasons.push('unavailable');
+      c.ready=!c.reasons.length;
+      if(!c.ready||!P)return {...c,ready:false,reasons:[...c.reasons,'unavailable']};
+      const design=clone(editor().build());delete design.savedAt;
+      const row=design.scenes.find(s=>s.id===c.sceneId);
+      const selection=w.GAMMA_SIMPLE_LIGHT_UI?.selectionForAssist?.();
+      const cueId=selection?.active?selection.cueId:c.cueId;
+      const cue=cueId?row.lxq.find(q=>q.id===cueId)?.cue:row.cue;
+      if(!cue)throw Error('stale');
+      c.cueId=cueId||null;
+      c.fixtures=c.fixtures.map(f=>({...f,level:cue.lights[f.fid]?.on?r.E.levelOf(cue.lights[f.fid]):0,color:cue.lights[f.fid]?.color||'#f2ead6'}));
+      const compatible=P.compatible(design.rig,design.stage,editor().status().venueType);
+      const layers=compatible?P.parts(design.rig).map(part=>{
+        const m=cue.simpleComposition?.parts?.[part.id],adjusted=P.detailAdjusted(cue,design.rig,part.id);
+        return {id:part.id,name:part.name,function:m?.patternId||(adjusted?'custom':'off'),level:m?.level??(adjusted?100:0),color:m?.color||'white',adjusted};
+      }):[];
+      const cues=design.scenes.filter(s=>scope==='show'||s.id===row.id).flatMap(s=>(s.lxq||[]).map(q=>({id:q.id,sceneId:s.id,scene:s.name||'',no:String(q.no),name:q.name||'',timing:clone(q.timing||{})})));
+      if(layers.length>80||cues.length>256)throw Error('too-large');
+      // Full authored design stays local, covering hidden cues/metadata as well
+      // as visible values. savedAt is an incidental serialization timestamp.
+      return {...c,light2:{scope,layers,cues},design,editorOwner:((s)=>[s.showId,s.documentSessionId,s.pageGeneration,s.deliveryGeneration,s.contextGeneration,s.baseBasis,s.alternativeVector])(editor().status()),hostOwner:[host.projectId,host.sceneId,host.alternativeId,host.generation]};
+    }
+    const canonical=x=>JSON.stringify(x,(_k,v)=>obj(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
+    function reviewMatches(saved) {
+      try {const now=reviewContext(saved?.light2?.scope);return now.ready&&canonical(now)===canonical(saved);}catch{return false;}
+    }
+    function planReview(input,saved) {
+      if(!reviewMatches(saved))return {ok:false,reasons:['stale']};
+      try {
+        const next=clone(saved.design),row=next.scenes.find(s=>s.id===saved.sceneId),q=row.lxq.find(q=>q.id===saved.cueId),base=q?.cue||row.cue;
+        const P=w.GAMMA_PART_LIGHTING,changes=[];
+        if(input?.kind==='layer') {
+          if(!keys(input,['kind','id','function','level','color'])||(!Object.hasOwn(input,'level')&&!Object.hasOwn(input,'color')))throw Error('invalid');
+          const layer=saved.light2.layers.find(l=>l.id===input.id);
+          if(!layer||layer.function==='off'||layer.function!==input.function)throw Error('layer');
+          if(Object.hasOwn(input,'level')&&!number(input.level,0,100))throw Error('level');
+          if(Object.hasOwn(input,'color')&&!color(input.color))throw Error('color');
+          // Never replace a detailed layer's authored setup with a simple role.
+          if(layer.adjusted&&Object.hasOwn(input,'color'))throw Error('detail-required');
+          const result=layer.adjusted?P.gain(base,next.rig,input.id,input.level):P.compose(base,next.rig,next.stage,rig().hooks.scene().pieces,input.id,{...base.simpleComposition.parts[input.id],...(Object.hasOwn(input,'level')?{level:input.level}:{}),...(Object.hasOwn(input,'color')?{color:input.color}:{})});
+          changes.push({name:layer.name,function:layer.function,from:{level:layer.level,color:layer.color},to:{level:input.level??layer.level,color:input.color??layer.color}});
+          if(canonical(base)===canonical(result.cue))throw Error('no-change');
+          return {ok:true,kind:'layer',input:clone(input),cue:clone(result.cue),changes,warnings:result.warnings};
+        }
+        if(input?.kind==='detail') {
+          if(!keys(input,['kind','fid','level','color'])||(!Object.hasOwn(input,'level')&&!Object.hasOwn(input,'color')))throw Error('invalid');
+          const f=next.rig.fixtures.find(f=>f.id===input.fid);if(!f)throw Error('fixture');
+          if((base.groups||[]).some(g=>g.members?.includes(f.id)))throw Error('detail-required');
+          if(Object.hasOwn(input,'level')&&!number(input.level,0,100))throw Error('level');
+          if(Object.hasOwn(input,'color')&&(!color(input.color)||f.kind==='fixed'&&!f.cueColor))throw Error('fixed-color');
+          const old=base.lights[f.id],aim=rig().hooks.defaultAim(f);
+          const l=clone(old||rig().E.newLightCue({on:false,surface:aim.surface,path:{kind:'still',a:aim.a}}));
+          if(Object.hasOwn(input,'level')){l.level=input.level;l.on=input.level>0;}
+          if(Object.hasOwn(input,'color')){l.color=color(input.color);if(f.mount.type==='cyc')l.cycGradient=null;}
+          if(canonical(old)===canonical(l))throw Error('no-change');
+          base.lights[f.id]=l;
+          changes.push({name:saved.fixtures.find(x=>x.fid===f.id).name,from:{level:old?.on?rig().E.levelOf(old):0,color:old?.color||'#f2ead6'},to:{level:l.on?rig().E.levelOf(l):0,color:l.color}});
+          if(q)row.cue=clone(base);
+        } else if(input?.kind==='cues') {
+          if(!keys(input,['kind','ids','prefix','start','fadeInSec','fadeOutSec'])||!Array.isArray(input.ids)||!input.ids.length||input.ids.length>256||new Set(input.ids).size!==input.ids.length)throw Error('invalid');
+          const rename=Object.hasOwn(input,'prefix');
+          if(rename&&(typeof input.prefix!=='string'||[...input.prefix].length>40||!Number.isInteger(input.start)||input.start<1||input.start>9999))throw Error('name');
+          if(!rename&&Object.hasOwn(input,'start'))throw Error('invalid');
+          for(const k of ['fadeInSec','fadeOutSec'])if(Object.hasOwn(input,k)&&!number(input[k],0,600))throw Error('fade');
+          if(!rename&&!Object.hasOwn(input,'fadeInSec')&&!Object.hasOwn(input,'fadeOutSec'))throw Error('empty');
+          const targets=input.ids.map(id=>{const found=next.scenes.filter(s=>saved.light2.scope==='show'||s.id===row.id).flatMap(s=>s.lxq.filter(q=>q.id===id).map(q=>({q,scene:s})));if(found.length!==1)throw Error('cue');return found[0];});
+          targets.sort((a,b)=>next.scenes.indexOf(a.scene)-next.scenes.indexOf(b.scene)||(a.q.seq||0)-(b.q.seq||0));
+          for(const [i,{q:cue,scene}] of targets.entries()){
+            const from={name:cue.name||'',timing:clone(cue.timing||{})};
+            if(rename)cue.name=input.prefix+(input.start+i);
+            for(const k of ['fadeInSec','fadeOutSec'])if(Object.hasOwn(input,k))cue.timing={...cue.timing,[k]:input[k]};
+            const to={name:cue.name||'',timing:clone(cue.timing||{})};
+            if(canonical(from)!==canonical(to))changes.push({name:(scene.name||'')+' · '+String(cue.no),from,to});
+          }
+          if(!changes.length)throw Error('no-change');
+        } else throw Error('invalid');
+        w.GAMMA_LIGHT_MODEL.validate(next,next.scenes.map(s=>s.id));
+        return {ok:true,kind:input.kind,input:clone(input),design:next,changes,warnings:[]};
+      }catch(e){return {ok:false,reasons:[e.message]};}
+    }
+    function stageReview(input,saved) {
+      // Recompute after the click, never trust a caller-supplied candidate.
+      const plan=planReview(input,saved);if(!plan.ok)return plan;
+      const runtime=editor().captureRuntime();
+      try {
+        if(plan.kind==='layer')w.GAMMA_SIMPLE_LIGHT_UI.previewLayerForAssist(input.id,plan.cue,saved.cueId);
+        else {w.GAMMA_SIMPLE_LIGHT_UI.detailForAssist();editor().stageDraft(plan.design);}
+        return plan;
+      }catch(e){editor().restoreRuntime(runtime);return {ok:false,reasons:[e.message]};}
+    }
+    return Object.freeze({context,previewSimple,draftDetail,reviewContext,reviewMatches,planReview,stageReview});
   }
   if(typeof module!=='undefined'&&module.exports)module.exports={createLightAssist};
   if(root.document&&root.__RIG)root.GAMMA_LIGHT_ASSIST=createLightAssist(root);

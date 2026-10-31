@@ -32,6 +32,30 @@
 
   const TEXT = {
 
+    "かんたん照明で灯体の多い設備を使うとき、詳細の光量入力の描き直しをまとめて、入力に遅れずついてくるようにしました。かんたん照明の描き方は前のままです。": "When Easy lighting uses a rig with many fixtures, the Detail level inputs now coalesce their redraws so the drawing keeps up with the input. Easy lighting itself draws as before.",
+
+    "Mac 版に、ショーの控えを Google Drive などのフォルダへ自動で残す「バックアップ先」の設定を追加しました。世代数の初期値と自動整理（既定でオン）、保存先が満杯のときの表示を備えます。実際の Google Drive への保存と復元は、まだ十分に確認できていません。": "The Mac app gains a Backup destination setting that keeps copies of a show in a folder such as Google Drive, with a default number of generations, automatic clean-up (on by default) and a notice when the destination is full. Saving to and restoring from a real Google Drive folder has not yet been verified.",
+
+    "ブラウザ版の相談の照明提案を作り直しました。提案は位置ごとの下書きとしてかんたん照明に入り、見てから適用するか戻すかを選べます。適用するまでショーは変わりません。": "Rebuilt the lighting proposals of the browser consultation. A proposal enters Easy lighting as a per-position draft that you can look at, then apply or return. The show does not change until you apply.",
+
+    "規約に、照明提案で送る情報の範囲、AI 点検・文書の下書き（端末の履歴をオンにしたときの扱い）、操作の代行についての説明を追加しました（日英）。": "The terms now describe what a lighting proposal sends, how AI checks and document drafts are handled (including when device history is on), and the assisted operations (Japanese and English).",
+
+    "高さの低い画面（13 インチ級・1440×800 前後）で、見出しとタブの余白を詰め、照明タブのかんたん 4 区画と詳細 3 パネルの大きさを設定で変えられるようにしました。設定した高さは上限として扱い、内容が少ないときはそれより低くなります。": "On short screens (13-inch class, around 1440×800) the header and tab spacing is tighter, and the sizes of the four Easy lighting areas and the three Detail panels can be set in the preferences. A set height is a maximum; the area gets shorter when there is less content.",
+
+    "かんたん照明で位置の候補に触れたときの吹き出しを、図の左上の内側に出すようにしました。図の外にはみ出しません。": "The hint shown when touching a position candidate in Easy lighting now appears inside the top-left of the drawing and no longer spills outside it.",
+
+    "タイムラインの 4 倍・8 倍の再生で、照明の動きとフェードの時計も同じ倍率で進むようにしました。これまでは 2 倍で止まっていました。": "At 4× and 8× timeline review, the lighting movement and fade clock now advance at the same rate. Previously they stopped at 2×.",
+
+    "時間の無いキューは、かんたん照明で「未設定（0秒で切り替え）」と表示します。時間だけを変えて採用したときに、表示中の未使用の位置へ灯体が書き足されることがなくなりました。": "Cues without timing are shown in Easy lighting as “not set (0-second cut)”. Adopting a timing-only change no longer adds fixtures to an unused position that happened to be displayed.",
+
+    "タイムラインを閉じているとき、左下の取っ手の横に再生中のシーン名・経過時間・速度を表示し、一時停止・頭出し・再開ができるようにしました。止めた後も位置が残ります。リハーサルでも同じ表示を使います。": "While the timeline is collapsed, the current scene name, elapsed time and speed appear next to the lower-left grip, with pause, go-to-start and resume. The position stays after stopping. Rehearsal uses the same display.",
+
+    "舞台裏の控えから戻した演者が、以前の版で保存した「肩の上に立つ」などの積み重ねを失っていた不具合を直しました。控えの椅子・テーブル・スツールに、読み込みのたびに不要な値が増えることもなくなりました。": "Fixed performers returned from the backstage stash losing stacking saved in earlier versions, such as standing on someone's shoulders. Stashed chairs, tables and stools no longer gain extra values on every load.",
+
+    "ブラウザ版の相談が参照する書斎の索引に鮮度の検査を加え、古くなったときは公開前の確認で止まるようにしました。": "Added a freshness check to the Shosai index used by the browser consultation; a stale index now stops the pre-publication check.",
+    "現在の記録では再生・頭出しできません。リハーサルの操作欄を確認してください。": "Playback and rewind are unavailable for this record. Check the Rehearsal controls.",
+    "再生位置（経過 / 全体）": "Playback position (elapsed / total)",
+
     "照明の画面を作り直しました。上部のタブを7つに整理し、「機材配置」は「劇場設計」（空間・客席・幕と機材の配置）になりました。照明は「かんたん照明」から開き、細部は「詳細」で調整します。": "Rebuilt the lighting screens. The top tabs are reorganised into seven, and Rig layout is now Theatre design (space, seating, curtains and the rig). Lighting opens in Easy lighting; fine adjustments are made in Detail.",
 
     "かんたん照明は、先に機能（人物・場所、輪郭・補助、背景など）を選び、次にその明かりを出せる位置を選ぶ順になりました。位置の候補にマウスを乗せると、図の中に灯体本体の輪郭が一時的に表示され、離すと消えます。保存される値は変わりません。": "Easy lighting now starts with the function (person or place, rim or fill, background and so on), then the position that can produce that light. Hovering a position candidate temporarily outlines the fixture bodies in the drawing; the outline disappears when the pointer leaves. Saved values do not change.",
@@ -928,6 +952,7 @@
     "詳細の未適用編集を先に適用してください": "Apply the pending detailed edits first",
     "現在の明かり（適用時にキューを作成）": "Current lighting (create a cue when applying)",
     "適用しています…": "Applying…",
+    "未設定（0秒で切り替え）": "Unset (switches in 0s)",
     "適用済みの明かりを表示中": "Showing applied lighting",
     "適用を戻す": "Undo application",
     "適用済みに戻す": "Return to applied settings",
@@ -6541,4 +6566,87 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "図を全体表示（空き場所のダブルクリックでも戻ります）": "Fit the whole figure (or double-click empty space)",
   "ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動": "Wheel to zoom; while enlarged, Space + drag or middle-button drag to pan",
   "平面図と正面図の高さ配分": "Plan and front figure height split"
+});
+
+// N4: default English layout copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "パネルを2列に": "2 columns",
+  "パネルを1列に": "1 column",
+  "照明の初期配置に戻す": "Reset lighting layout",
+  "パネルの高さ（px・0は自動）": "Panel height (px; 0 = auto)",
+  "パネルを上へ": "Move panel up",
+  "パネルを下へ": "Move panel down"
+});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Wash", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
+// G-010: independent folder backups.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "drive.title": "Back up to Google Drive",
+  "drive.choose": "Choose a Google Drive folder",
+  "drive.start": "Start automatic backup",
+  "drive.cancel": "Cancel",
+  "drive.now": "Back up now",
+  "drive.pause": "Pause backup",
+  "drive.reconnect": "Reconnect and resume",
+  "drive.history": "Open a backup",
+  "drive.restore": "Open as another show",
+  "drive.details": "Backup details",
+  "drive.defaults": "After saving: 2 seconds (10 during continuous edits); audio changes: 5 seconds. Changed history: every 10 minutes. Defaults: 20 JSON copies, 3 packages, 2 GiB. Initially, Older backups are cleaned up automatically (the latest and previous complete packages are kept).",
+  "drive.cleanup": "Automatically remove older backups",
+  "drive.jsonLimit": "JSON copies to keep",
+  "drive.zipLimit": "Packages to keep",
+  "drive.capacity": "Storage limit (GiB)",
+  "drive.invalidLimit": "Enter a whole number within the shown range.",
+  "drive.setup": "Set up Google Drive for desktop",
+  "drive.cloud": "This shows copies saved on this device. Check Google Drive for cloud arrival and sync status.",
+  "drive.confirm": "Folder: {folder}. Back up only the open show as JSON, audio packages and history.",
+  "drive.permission": "The folder is unavailable. Reconnect or choose a folder.",
+  "drive.differs": "The saved show differs from the backup. Open a backup as another show or choose a new folder.",
+  "drive.audioMissing": "JSON saved. The audio package is incomplete. Reconnect the audio before resuming.",
+  "drive.failed": "Backup incomplete. The ordinary save and previous complete packages are retained. Check the folder, space and permissions.",
+  "drive.quota": "There is not enough space to complete the backup. The ordinary save and previous complete packages are retained. Check free space, then reconnect, or choose another folder.",
+  "drive.package": "With audio",
+  "drive.json": "JSON only (no audio bytes)",
+  "drive.unavailable": "Missing or damaged; unavailable",
+  "drive.unindexed": "Unindexed backup (date unverified)",
+  "drive.empty": "No backups to open.",
+  "drive.state.unsupported": "Folder backup is unavailable here. Use the existing manual export.",
+  "drive.state.disabled": "Backup not set up or paused",
+  "drive.state.ready": "Backup ready",
+  "drive.state.queued": "Backup queued",
+  "drive.state.saving": "Creating backup",
+  "drive.state.saved": "Backup saved on this device",
+  "drive.state.partial": "Local copy saved; some backup steps are incomplete",
+  "drive.state.stopped": "Backup stopped"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.firstSave": "Save the show to a file first, then choose a backup folder."});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.packageCurrent": "Audio package is current", "drive.packageOlder": "Audio package (separate from the JSON revision)", "drive.packagePending": "Audio package incomplete"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.loadFailed": "Backup tools could not load. Reopen while online. Ordinary saving remains available."});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.decrease": "Decrease", "drive.increase": "Increase"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.cleanupDeferred": "Older packages were kept because the previous backup could not be verified."});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.activeFolder": "Current backup folder: {folder}"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.sourceFolder": "Choose a folder outside the original show package."});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{"drive.reserved": "This file is already used by JSON file autosave. Choose a different destination for one of them."});
+
+// N2-D: retention and capacity outcomes; shared by Chrome and Mac.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "drive.cleanupConfirm": "Older backups are cleaned up automatically (the latest and previous complete packages are kept).",
+  "drive.historyLimit": "No new JSON history was created because its retention limit was reached. Turn on automatic cleanup or increase the JSON retention limit.",
+  "drive.packageLimit": "No new audio-inclusive backup was created because its retention limit was reached. Turn on automatic cleanup or increase the package retention limit.",
+  "drive.capacityLimit": "Some new backups were not created because the capacity limit was reached. Increase the capacity limit or choose another destination. Your ordinary save and previous complete backup are kept."
+});
+// N8: contextual piece actions and adjacent lighting adjustment. ("調整" is supplied by gamma-ui-i18n.js in every language.)
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "駒を1つ選んでください。": "Select one piece.",
+  "駒の操作": "Piece actions",
+  "駒を貼り付ける": "Paste pieces",
+  "先に同じショーの駒をコピーしてください。": "Copy pieces from this show first.",
+  "調整: {position}": "Adjust: {position}"
 });
