@@ -27,14 +27,16 @@
   const metrics={drawCalls:0,drawnScenes:0,totalRenderMs:0,maxRenderMs:0};
   try{enabled=localStorage.getItem(KEY)==='1';}catch(_){}
   const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
-  function appendSetting(menu){
-    if(!menu)return;
-    const existing=menu.querySelector('[data-scene-thumbnails-setting]');
-    if(existing){existing.querySelector('span').textContent=tx('シーンの小さな絵');existing.title=tx('見えているシーンだけに小さな絵を表示します（この端末）');return;}
-    const row=make('label','stage-panel-visibility-item');row.dataset.sceneThumbnailsSetting='';
-    const check=make('input');check.type='checkbox';check.checked=enabled;check.id='stage-scene-thumbnails-toggle';
-    const label=make('span','',tx('シーンの小さな絵'));row.title=tx('見えているシーンだけに小さな絵を表示します（この端末）');row.append(check,label);
-    check.addEventListener('change',()=>setEnabled(check.checked));menu.append(row);
+  function appendSetting(container=document.getElementById('stage-scene-thumbnails-preference')){
+    if(!container||container.id!=='stage-scene-thumbnails-preference')return;
+    const existing=container.querySelector('[data-scene-thumbnails-setting]');
+    if(existing){existing.querySelector('.stage-pref-name').textContent=tx('シーンの小さな絵');existing.querySelector('.stage-pref-hint').textContent=tx('見えているシーンだけに小さな絵を表示します（この端末）');return;}
+    const row=make('label','stage-pref-row');row.dataset.sceneThumbnailsSetting='';
+    const body=make('span','stage-pref-toggle-body');
+    body.append(make('span','stage-pref-name',tx('シーンの小さな絵')),make('span','stage-pref-hint',tx('見えているシーンだけに小さな絵を表示します（この端末）')));
+    const hit=make('span','stage-pref-switch-hit'),check=make('input');check.type='checkbox';check.setAttribute('role','switch');check.checked=enabled;check.id='stage-scene-thumbnails-toggle';
+    const visual=make('span','stage-pref-switch');visual.setAttribute('aria-hidden','true');hit.append(check,visual);row.classList.add('stage-pref-toggle');row.append(hit,body);
+    check.addEventListener('change',()=>setEnabled(check.checked));container.append(row);
   }
   function setEnabled(value){enabled=Boolean(value);try{localStorage.setItem(KEY,enabled?'1':'0');}catch(_){}document.querySelectorAll('[data-scene-thumbnails-setting] input').forEach(n=>n.checked=enabled);cache.clear();stamps=new WeakMap();scan();schedule();}
   function format(seconds){return seconds===null?tx('未定'):timing.formatDuration(seconds);}
@@ -87,7 +89,7 @@
     if(result?.url){cache.set(next.id,{stamp:next.stamp,url:result.url});if(next.image.isConnected){next.image.src=result.url;stamps.set(next.image,next.stamp);}}
     if(pending.length>1)queueDraw();
   }
-  function refresh(){refreshTimer=0;if(!started)return;appendSetting(document.getElementById('stage-panels-menu'));renderSummary();scan();queueDraw();}
+  function refresh(){refreshTimer=0;if(!started)return;appendSetting();renderSummary();scan();queueDraw();}
   function schedule(){if(refreshTimer)return;refreshTimer=setTimeout(refresh,120);}
   function init(){
     if(started)return;host=root.SHOSAI_STAGE_RUN_OF_SHOW_HOST;list=document.getElementById('stage-scene-list');const strip=document.querySelector('.stage-timeline-menu-strip.is-transport');
@@ -99,7 +101,7 @@
     new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['lang','data-stage-skin']});
     const play=document.getElementById('stage-timeline-play');if(play)new MutationObserver(()=>{if(play.getAttribute('aria-pressed')!=='true')queueDraw();}).observe(play,{attributes:true,attributeFilter:['aria-pressed']});
     for(const event of ['stage-run-of-show-change','stage-timeline-structure-change','gamma-workspace-change','resize','visibilitychange'])root.addEventListener(event,schedule);
-    appendSetting(document.getElementById('stage-panels-menu'));refresh();
+    appendSetting();refresh();
   }
   Object.assign(api,{appendSetting,setEnabled,refresh:schedule,status:()=>({enabled,cacheSize:cache.size,observed:observed.size,visible:[...visible].filter(onScreen).length,...metrics})});
   root.addEventListener('stage-gamma-runtime-ready',init);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();

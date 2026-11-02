@@ -1074,8 +1074,8 @@
       }
     }
     if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
-      const lightStatus=editor()?.status?.();
-      if(lightStatus?.dirty) {
+      const lightEditor=editor();
+      if(lightEditor?.leaveDirty?.() ?? lightEditor?.status?.()?.dirty) {
         const answer=await askLeaveOnce(null,returnFocus);
         if(answer==='cancel') return;
         if(answer==='apply') {
@@ -1120,7 +1120,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261031-v0397'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261102-v03100'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
@@ -1325,7 +1325,7 @@
     if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
     // 3D reads the saved show. Settle a real lighting draft through the same
     // apply/keep/cancel question as the other tabs before opening that view.
-    if(isLightMode(mode) && editor()?.status?.()?.dirty) {
+    if(isLightMode(mode) && (editor()?.leaveDirty?.() ?? editor()?.status?.()?.dirty)) {
       event.preventDefault();event.stopImmediatePropagation();
       const button=event.currentTarget;
       void select('normal').then(()=>{if(mode==='normal')button.click();});return;
@@ -1457,7 +1457,7 @@
   ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
   ops.onload = ops.onerror = () => {
     const script = document.createElement('script');
-    script.src = 'gamma-assist.js?v=20261031-v0397';
+    script.src = 'gamma-assist.js?v=20261101-v0398';
     document.body.append(script);
   };
   const extension = document.createElement('script');

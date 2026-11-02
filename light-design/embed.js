@@ -588,7 +588,25 @@
       && record.raw===raw).sort((a,b)=>b.contextGeneration-a.contextGeneration)[0] || null;
   }
   let draftRedo=false;
+  // A restored draft stays unapplied, but leaving asks only about this visit.
+  // Compare content rather than edit counters so Undo/value reversion is quiet.
+  let visitBaseline = null;
+  function visitFingerprint() {
+    const ui=window.GAMMA_SIMPLE_LIGHT_UI;
+    const pending=ui?.hasPending?.() ? ui.captureRuntime() : null;
+    return JSON.stringify([hooks.applyFingerprint(),hooks.appliedContentFingerprint(), pending &&
+      [pending.sceneId,pending.targetId,pending.draft,pending.timeEdited ? pending.fade : null]],
+      (_key,value)=>value && typeof value==='object' && !Array.isArray(value)
+        ? Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])) : value);
+  }
+  function hasVisitEdits() { return hasDraft() && visitFingerprint()!==visitBaseline; }
   function open(next, mode) {
+    const entering=!active || !sameOwner(context,next);
+    const result=openContext(next,mode);
+    if(entering && active) visitBaseline=visitFingerprint();
+    return result;
+  }
+  function openContext(next, mode) {
     if(playbackPreview && sameOwner(context,next)) return false;
     const retained=retainedDraft(next);
     if(context && !sameOwner(context,next)) {
@@ -784,7 +802,9 @@
       const accepted=result.designExpanded?model.clone(context.design):design;
       appliedExtras=model.clone(accepted);
       if(result.designExpanded)hooks.applyDesign(accepted,{host:true,preserveHistory:true});else hooks.applyDesign(accepted);
-      synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();draftRedo=false;
+      // The accepted candidate also synchronized the host's LX list. Clear the
+      // editor's cached pending flag here, just as the normal apply path does.
+      synchronizePieces(context);synchronizeVenueMask(context);hooks.setCueSyncPending(false);hooks.markApplied();draftRedo=false;
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · 照明をショーへ保存しました。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
@@ -875,7 +895,7 @@
     let draftRecord=null;
     try {if(context)draftRecord={key:key(context),raw:localStorage.getItem(key(context))};} catch(_) {}
     return {drafts:new Map(drafts),editor:hooks.captureDocumentState(),context:context&&structuredClone(context),active,changedElsewhere,draftRecord,
-      appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,recoveredWithoutHistory,lastScene,cuePanelStamp,
+      appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,recoveredWithoutHistory,lastScene,cuePanelStamp,visitBaseline,
       placementUnderlaySnapshot:structuredClone(placementUnderlaySnapshot),
       draftRedo,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.(),
       dialogHidden:dialog.hidden,dialogChildren:[...dialog.childNodes],
@@ -888,6 +908,7 @@
     contextGeneration++;applyRequest=null;applyTask=null;applying=false;loading=true;
     try {
       drafts.clear();for(const [k,v] of saved.drafts || [])drafts.set(k,v);
+      visitBaseline=saved.visitBaseline ?? null;
       context=saved.context&&structuredClone(saved.context);active=saved.active;changedElsewhere=saved.changedElsewhere;draftRedo=!!saved.draftRedo;
       appliedExtras=structuredClone(saved.appliedExtras);draftState=saved.draftState;
       applyError=saved.applyError;appliedNotice=saved.appliedNotice;recoveredWithoutHistory=!!saved.recoveredWithoutHistory;lastScene=saved.lastScene;cuePanelStamp=saved.cuePanelStamp;
@@ -921,6 +942,15 @@
     await draftTask;
     return !applying;
   }
+  // Frequent status readers must not compare this visit’s full lighting content.
+  // Only explicit leave checks call hasVisitEdits().
+  function status() {
+    return {baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:hasDraft(),draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
+      draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
+      hasUnappliedDrafts:hasDraft() || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
+      loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
+      canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)};
+  }
   window.GAMMA_LIGHT_EDITOR=Object.freeze({stageDraft,closeRecoveryRecords,draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
 
     selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
@@ -949,9 +979,5 @@
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(hasDraft())message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:hasDraft(),draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
-      draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
-      hasUnappliedDrafts:hasDraft() || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
-      loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
-      canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)})});
+    status,leaveDirty:hasVisitEdits});
 })();

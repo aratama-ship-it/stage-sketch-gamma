@@ -17,7 +17,7 @@
 <dt>A red warning appears on fixed fixtures</dt><dd>A fixed fixture's direction, colour or spread differs between scenes. In reality it is set at the focus session, so match it with the “match scene …” buttons under the warning (${ref("light-design", "7-5")}).</dd>
 <dt>No sound / “Audio file not found”</dt><dd>Audio is stored per device and not included in show files. Use ${ui("Reconnect")} on the timeline's audio block and pick the original file (${ref("music", "9-2")}). Open the timeline with ${kbd("E")} for audio controls.</dd>
 <dt>A panel is missing (backdrop, alternatives, dialogue cues …)</dt><dd>These start hidden. Show them from ${ui("Panels")} (${ref("panels", "2-4")}).</dd>
-<dt>My work does not appear on another device or browser</dt><dd>Saving is per device and browser. ${ui("Export show")}, then ${ui("Import show")} on the other side (${ref("export-json", "11-3")}).</dd>
+<dt>My work does not appear on another device or browser</dt><dd>Saving is per device and browser. ${ui("Export project (with audio)")}, then ${ui("Import show")} on the other side (${ref("export-json", "11-3")}).</dd>
 <dt>I moved or deleted something by mistake</dt><dd>${ui("Undo")} (${kbd("⌘Z")}). If a whole show is gone, import your exported copy.</dd>
 <dt>Pieces jump instead of moving in transitions</dt><dd>${ui("Transition animation")} is off in Settings. Going backwards (${kbd("↑")}) jumps by design. Pieces without routes do not walk.</dd>
 <dt>The screen looks wrong or out of date</dt><dd>Reload the page. Check that the version at the top left (for example 0.2.19) matches the newest entry in the update history. For the home-screen app, close it and open it again.</dd>
@@ -32,7 +32,7 @@
         html: `
 <p>Since v0.2.39, shows and the show list use a larger browser storage area. Available space still depends on the device and browser. Keep exported show JSON and the original audio files.</p>
 ${table(["Situation", "What the app does", "What to do"], [
-  ["Storage high (caution)", "Changes the storage indicator without repeated large notices", "Keep a copy with " + ui("Export show")],
+  ["Storage high (caution)", "Changes the storage indicator without repeated large notices", "Keep a copy with " + ui("Export project (with audio)")],
   ["Storage critical or a save fails", "Reports the same level once while the page stays open; reports worsening conditions again", "Inspect the status with " + ui("Review storage (new tab)")],
   ["Another tab or an older version conflicts", "Stops older data from overwriting the saved copy", "Export unsaved work in each tab, then close old editor tabs"],
   ["The main saved copy cannot be read", "Stops editing instead of replacing it with an empty show", "Export raw data and backups from the repair page"]
@@ -63,7 +63,7 @@ ${note("Returning to an older version", "Reverting the page code alone does not 
         id: "last-resort", title: "Last resort: returning Gamma's data to a clean state", status: "sourced",
         keywords: ["reset", "factory", "erase everything", "broken", "won't open", "dev-reset", "cannot reset", "safari", "mismatch", "cache"],
         html: `
-${note("Export first — this really is the last resort", "This deletes Gamma's shows, settings, backups, audio and app cache on this device. Always export any show you want to keep with " + ui("Export show") + " first.", true)}
+${note("Export first — this really is the last resort", "This deletes Gamma's shows, settings, backups, audio and app cache on this device. Always export any show you want to keep with " + ui("Export project (with audio)") + " first.", true)}
 <p>If ${ui("Reset this device")} in Settings does not help (for example, browser storage has become inconsistent and the app will not open), add <code>?dev-reset=1</code> to the end of the address.</p>
 <p><code>https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html?dev-reset=1</code></p>
 <p>A confirmation window appears; only if you accept are Gamma's own storage (localStorage, IndexedDB), service worker and caches deleted, after which the page reloads without the parameter. Cancelling deletes nothing. Data of the developer's other apps at the same address is not touched (according to the developer's records).</p>`

@@ -2,6 +2,8 @@
 /* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
 :root {
   --gamma-gap: 8px;
+  --gamma-dialog-border-width: 2px;
+  --gamma-dialog-border-color: #fff;
   --edge: var(--line-dark);
   --gamma-venue-control-height: 38px;
   --gamma-panel-head-padding: 10px 2px 8px;
@@ -198,7 +200,7 @@ html[data-stage-skin] .stage-scene-bar-grid {
 html[data-stage-skin] :is(#stage-timeline-loop-a, #stage-timeline-loop-b) {
   font-size: calc(14px * var(--gamma-icon-scale));
 }
-/* 取っ手はSVG枠が箱の高さ一杯なので、枠は保ち、中の作図だけを下端基準で拡大する。 */
+/* F-01: 箱の寸法は保ち、左の3本の目盛りだけを下端基準で拡大する。 */
 html[data-stage-skin] #stage-timeline-grip > svg > * {
   transform-box: view-box;
   transform-origin: 50% 100%;
@@ -628,7 +630,7 @@ html[data-stage-skin] :is(.stage-panel-title,.stage-control-label,.stage-field-l
 html[data-stage-skin] .stage-scene-more button { font-size:var(--gamma-small-text); }
 /* Tables and full diagram workspaces retain their content-sized shells. */
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-modal:not(.stage-formation-modal,.stage-scene-grid-modal,.stage-venue-pick-modal,.stage-venue-editor-modal,.stage-cue-sheet-modal,.stage-reach-modal) { width:min(var(--gamma-dialog-sm),calc(100vw - 40px)); }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-modal:is(.stage-shows-modal,.stage-export-modal,.stage-rehearsal-export-modal,.stage-help-modal,.stage-about-modal,.stage-release-modal,.stage-scene-create-modal,.stage-project-settings-modal,.stage-background-modal,.stage-venue-import-modal,.stage-lighting-plan-modal,.stage-venue-apply-modal,.stage-beat-template-modal,.stage-feedback-modal) {
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-modal:is(.stage-shows-modal,.stage-export-modal,.stage-rehearsal-export-modal,.stage-help-modal,.stage-about-modal,.stage-release-modal,.stage-scene-create-modal,.stage-project-settings-modal,.stage-venue-import-modal,.stage-lighting-plan-modal,.stage-venue-apply-modal,.stage-beat-template-modal,.stage-feedback-modal) {
   width:min(var(--gamma-dialog-md),calc(100vw - 40px));
 }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-modal:is(.stage-pose-modal,.stage-prefs-modal,.stage-selected-light-preset-modal) {
@@ -868,14 +870,14 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage
 }
 .stage-scene-grid-card.stage-scene-overview-card .stage-scene-grid-caption { grid-template-columns:minmax(0,1fr); gap:4px; }
 .stage-scene-overview-cues { display:flex; flex-wrap:wrap; gap:4px; min-width:0; }
-.stage-scene-overview-cues > .stage-scene-overview-cue { padding:2px 4px; border:1px solid var(--line-dark); color:var(--milk); font-size:var(--fs-3); line-height:1.4; }
+.stage-scene-overview-cues > .stage-scene-overview-cue { padding:2px 4px; border:0; background:transparent; color:var(--milk); font-size:var(--fs-3); line-height:1.4; }
 .stage-scene-overview-cue[data-enabled="false"] { text-decoration:line-through; }
 .stage-scene-overview-cues > button.stage-scene-overview-cue {
   box-sizing:content-box; min-width:0; min-height:0; margin:0; border-radius:0; background:transparent;
   font-family:var(--sans); font-weight:400; letter-spacing:normal;
 }
 .stage-scene-overview-cues > button.stage-scene-overview-cue:hover,
-.stage-scene-overview-cues > button.stage-scene-overview-cue:focus-visible { border-color:var(--brass); }
+.stage-scene-overview-cues > button.stage-scene-overview-cue:focus-visible { text-decoration:underline; text-underline-offset:3px; }
 /* Keep the lighting dialog's existing scroll owner; each section uses the
    shared stage grid. It cannot collapse cards to fit a fixed scroll height. */
 .alllist:has(.stage-scene-overview-card) { display:block; }
@@ -898,6 +900,22 @@ html[data-stage-skin] :is(.stage-timeline-shortcut, .view-key) {
   color:var(--milk-dim); border:1px solid var(--line-dark); background:var(--recess);
 }
 html[data-stage-skin] #stage-timeline-grip { width:max-content; height:var(--stage-timeline-grip-hit-height,44px); min-height:var(--stage-timeline-grip-hit-height,44px); }
+html[data-stage-skin] #stage-timeline-grip .stage-timeline-shortcut {
+  width:22px; height:22px; min-width:22px; margin:0 0 1px 2px;
+  font-weight:400; color:currentColor;
+}
+.stage-playback-dock.is-active #stage-timeline-grip .stage-timeline-shortcut { margin-bottom:0; }
+/* F-02: 同じ再生列の34px階段。タッチ表示の寸法は既存規則へ委ねる。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-playback-rate {
+  box-sizing:border-box; height:var(--ctrl-md); min-height:var(--ctrl-md);
+  padding-inline:10px; border:1px solid var(--stage-timeline-line);
+  background-color:var(--desk-2); color:var(--milk);
+  font-family:var(--sans); font-size:var(--fs-3); letter-spacing:.03em;
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-playback-rate:hover:not(:disabled) {
+  border-color:var(--stage-timeline-accent);
+}
+
 
 /* F-01/F-09/F-14/F-18/F-24: the same work controls in every app surface. */
 :root {
@@ -1022,3 +1040,27 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) [data-venu
 html[data-gamma-embedded] #t-play > svg {
   width:calc(var(--gamma-icon-glyph) * 1.666666667)!important; height:calc(var(--gamma-icon-glyph) * 1.666666667)!important;
 }
+/* B6: keep all three restore decisions readable and keyboard/touch accessible. */
+#stage-drive-restore-audio .btn-quiet {
+  min-height:var(--ctrl-lg, 44px); min-width:0;
+  font-family:inherit; font-size:var(--fs-6, 14px); font-weight:400;
+  line-height:1.5; letter-spacing:inherit; white-space:normal;
+}
+
+/* F-26: a shared white edge for floating windows, including native <dialog>
+   and the lighting iframe's inner dialog. Full-workspace surfaces stay flat. */
+html[data-stage-skin] :is(.stage-modal,dialog:not(.field-run-dialog),.dialog > .in):not(#gamma-venue-workspace .stage-venue-editor-modal,#gamma-cuesheet-workspace .stage-cue-sheet-modal) {
+  border:var(--gamma-dialog-border-width) solid var(--gamma-dialog-border-color);
+}
+
+/* F-19: background controls share the standard movable/collapsible panel. */
+.stage-background-controls { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gamma-gap,8px); min-width:0; }
+.stage-background-panel :is(.stage-background-drawing,.stage-screentext-block,.stage-photo-block) { grid-row:auto; min-width:0; margin:0; padding:0; border:0; }
+.stage-background-tool-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gamma-gap,8px); margin-bottom:var(--gamma-gap,8px); }
+.stage-background-tool-actions button { min-height:44px; }
+.stage-save-location-info { grid-column:1 / -1; color:var(--milk-dim); font-size:13px; line-height:1.5; }
+.stage-save-location-info p { margin:0 0 12px; }
+
+[data-scene-thumbnails-setting] { align-items:center; }
+[data-scene-thumbnails-setting] .stage-pref-switch-hit { min-width:44px; min-height:44px; justify-content:center; }
+[data-scene-thumbnails-setting] .stage-pref-hint { display:block; }

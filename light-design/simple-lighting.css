@@ -1,5 +1,5 @@
 /* The shared warm/blue editor skins provide the surfaces; simple controls add accessible text. */
-:root{--simple-text:#efe7d6;--simple-muted:#b9ad97;--simple-accent:#dec584;--simple-gap:16px;--simple-space:24px;--simple-tap:44px;--simple-border:#908574}
+:root{--simple-text:var(--milk);--simple-muted:var(--milk-dim);--simple-accent:var(--brass);--simple-gap:var(--gamma-gap,8px);--simple-space:calc(var(--gamma-gap,8px)*2);--simple-tap:var(--ctrl-md,34px);--simple-border:var(--line-dark)}
 .simple-mode-choice{display:flex;align-items:center;gap:8px;flex:none;padding:0;white-space:nowrap}
 /* 見出し「照明の操作」は、隣の見出し（.fb>b「詳細画面の表示」）と同じ大きさ・色・太さ・字間（2026-10-06 本人指示） */
 .simple-mode-choice strong{color:var(--brass);font-size:11px;font-weight:600;letter-spacing:.14em;white-space:nowrap}
@@ -55,7 +55,7 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 .simple-catalog .simple-catalog-head label{display:flex;align-items:center;gap:8px;margin:0;font-size:12px}
 .simple-catalog .simple-catalog-head select{width:auto;min-height:32px;padding:2px 6px}
 .simple-catalog .simple-preset-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.simple-catalog .simple-preset{display:block;text-align:left;min-height:44px;padding:12px}
+.simple-catalog .simple-preset{display:block;text-align:left;min-height:var(--ctrl-md,34px);padding:12px}
 .simple-catalog .simple-preset canvas{display:block;width:100%;aspect-ratio:1000/560}
 .simple-catalog .simple-preset span{font-size:16px;line-height:1.5;margin-top:8px}
 @media(max-width:1000px){.simple-catalog{grid-column:1/-1;grid-row:1}.simple-catalog .simple-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.simple-workbench{display:flex;flex-direction:column}.simple-controls{order:0}.simple-catalog{margin-bottom:0}}
@@ -66,7 +66,7 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 .simple-light-active .body{display:flex;flex-direction:column;overflow:hidden}
 .simple-light-active .simple-light-toolbar{flex:0 0 auto}
 .simple-light-active .simple-mode-panel:not([hidden]){display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
-.simple-workbench{display:grid;grid-template-columns:minmax(0,var(--simple-preview-width,7fr)) 44px minmax(280px,4fr);flex:1;min-height:0;margin-bottom:0}
+.simple-workbench{display:grid;grid-template-columns:minmax(0,var(--simple-preview-width,7fr)) 8px minmax(280px,4fr);flex:1;min-height:0;margin-bottom:0}
 .simple-preview{display:flex;flex-direction:column;min-width:0;min-height:0}
 #simple-front{flex:1;min-height:0;max-height:100%;object-fit:contain}
 .simple-browser{flex:0 0 auto}
@@ -89,14 +89,14 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 .part-light-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
 .part-light-list button{text-align:left;white-space:normal}.part-light-list b,.part-light-list small{display:block}.part-light-list small{font-size:13px;color:var(--simple-muted)}
 .part-light-patterns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.part-light-patterns button{white-space:normal;padding:8px}
-.part-light-number{display:flex;align-items:center;gap:8px}.simple-controls .part-light-number input{width:76px;min-height:44px;background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);font:inherit;padding:8px}
-#simple-size{min-height:44px;width:90px;font:inherit;background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);padding:8px}
+.part-light-number{display:flex;align-items:center;gap:8px}.simple-controls .part-light-number input{width:76px;min-height:var(--ctrl-md,34px);background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);font:inherit;padding:8px}
+#simple-size{min-height:var(--ctrl-md,34px);width:90px;font:inherit;background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);padding:8px}
 #simple-unavailable{border-left:3px solid var(--simple-accent);padding:16px;line-height:1.8}#simple-unavailable label{display:block;margin-bottom:16px}.simple-controls{display:block}
 .simple-workbench[hidden],#simple-unavailable[hidden]{display:none}
 
 .simple-controls [hidden]{display:none!important}
 
-html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44px;min-width:44px}#simple-column-resize{z-index:1}#simple-column-resize::before{content:"";position:absolute;inset:0;cursor:col-resize}
+html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:var(--ctrl-md,34px);min-width:var(--ctrl-md,34px)}#simple-column-resize{z-index:1}#simple-column-resize::before{content:"";position:absolute;inset:0 calc(50% - 1px);background:var(--line-dark);cursor:col-resize}
 
 /* Keep the transient locator inside the drawing, below the separate tool row. */
 .simple-preview-figure{position:relative;display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
@@ -112,7 +112,7 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 #simple-role-change:empty{display:none}
 
 /* F-2/F-4–F-7: compact layers above material selection. Tokens: design/TOKEN_SHEET.md. */
-:root{--simple-panel-pad:12px;--simple-body:13px;--simple-title:16px;--simple-section:13px;--simple-label:12px;--simple-card-name:14px;--simple-card-gap:8px;--simple-used:#d8cdbb;--simple-number-width:56px;--simple-view-height:32px}
+:root{--simple-panel-pad:var(--gamma-gap,8px);--simple-body:var(--fs-3,11px);--simple-title:var(--fs-7,16px);--simple-section:var(--fs-5,13px);--simple-label:var(--fs-3,11px);--simple-card-name:var(--fs-4,12px);--simple-card-gap:8px;--simple-used:var(--milk-dim);--simple-number-width:56px;--simple-view-height:var(--ctrl-md,34px)}
 .simple-mode-panel{padding:var(--simple-panel-pad);font-size:var(--simple-body)}
 .simple-mode-panel h2{font-size:var(--simple-title);margin:0 0 8px}
 .simple-mode-panel h3{font-size:var(--simple-section);letter-spacing:.08em;color:var(--simple-muted);margin:12px 0 6px}
@@ -131,12 +131,12 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 #simple-fade-label{grid-column:1/-1}
 .simple-controls input,.simple-controls select{box-sizing:border-box;min-width:0;max-width:100%}
 .simple-level-control{grid-column:1/-1}
-.simple-controls .part-light-number{display:grid;grid-template-columns:minmax(44px,1fr) var(--simple-number-width) auto;gap:8px}
-.simple-controls .part-light-number input[type=number]{width:var(--simple-number-width);padding:6px;min-height:var(--simple-tap);font-size:var(--simple-body)}
-.simple-controls .part-light-number input[type=range]{width:100%;min-width:44px;min-height:var(--simple-tap);margin:0;padding:0;border:0}
+.simple-controls .part-light-number{display:grid;grid-template-columns:minmax(34px,1fr) var(--simple-number-width) auto;gap:8px}
+.simple-controls .part-light-number input[type=number]{width:var(--simple-number-width);padding:6px;min-height:var(--simple-tap);font-size:var(--fs-4,12px)}
+.simple-controls .part-light-number input[type=range]{width:100%;min-width:var(--ctrl-md,34px);min-height:var(--simple-tap);margin:0;padding:0;border:0}
 .simple-preview-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 0 auto;min-height:var(--simple-tap);margin-bottom:8px}
 .simple-preview-tools label{display:flex;align-items:center;gap:8px;min-height:var(--simple-tap);font-size:var(--simple-label)}
-.simple-preview-tools select{height:var(--simple-view-height);min-height:var(--simple-view-height);padding:2px 6px;max-width:100%;font-size:var(--simple-label)}
+.simple-preview-tools select{height:var(--simple-view-height);min-height:var(--simple-view-height);padding:2px 6px;max-width:100%;font-size:var(--fs-4,12px)}
 .simple-preview-tools #simple-work-light{display:flex;align-items:center;min-height:var(--simple-tap);padding:0;border:0;background:transparent;box-shadow:none;font-size:var(--simple-label)}
 #simple-work-light>span{display:flex;align-items:center;box-sizing:border-box;min-height:var(--simple-view-height);padding:2px 6px;border:1px solid var(--simple-border);background:var(--desk-2)}
 #simple-work-light[aria-pressed=true]>span{border-color:var(--simple-accent);box-shadow:inset 0 0 0 1px var(--simple-accent)}
@@ -156,7 +156,7 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 /* N4: layout sections keep status and Apply outside the collapsible content. */
 .light-layout-sections{display:flex;flex-direction:column;gap:var(--simple-gap)}
 .light-layout-section{min-width:0;flex:0 0 auto;border-top:1px solid var(--simple-border)}
-.simple-mode-panel .light-layout-fold{display:flex;align-items:center;min-height:44px;width:100%;padding:0;text-align:left;border:0;background:transparent}
+.simple-mode-panel .light-layout-fold{display:flex;align-items:center;min-height:var(--ctrl-md,34px);width:100%;padding:0;text-align:left;border:0;background:transparent}
 .simple-mode-panel .light-layout-fold h3{margin:0;color:var(--simple-text)}
 .light-layout-fold::before{content:'▾';margin-inline:4px 8px;color:var(--simple-accent)}
 .is-collapsed>.light-layout-fold::before{content:'▸'}
@@ -181,3 +181,28 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:44p
 #simple-adjust .simple-controls { border:0; padding-top:0; }
 /* v0.3.97: N4 height preference for the relocating adjustment block (N8 G-022). */
 #simple-adjust.light-layout-sized>.simple-controls { max-height:var(--light-panel-height); overflow:auto; }
+
+/* B12 / F-03–18. The same desktop controls as the detailed lighting editor. */
+.simple-mode-panel{font-family:var(--sans);line-height:1.5}
+.simple-mode-panel [hidden]{display:none!important}
+.simple-mode-panel button,.simple-mode-panel select{font-size:var(--fs-4,12px);border-radius:var(--radius-sm);padding:4px 8px}
+.simple-mode-panel :is(button,select,input):focus-visible{outline:2px solid var(--brass);outline-offset:-2px}
+.simple-context-tools,.simple-cue-tools{display:flex;align-items:center;gap:var(--gamma-gap,8px);min-width:0}
+.simple-context-tools{flex-wrap:wrap;flex:none;margin-bottom:var(--gamma-gap,8px)}
+.simple-context-tools label,.simple-preview-tools label{display:flex;align-items:center;white-space:nowrap;gap:var(--gamma-gap,8px);min-width:0;font-size:var(--fs-3,11px)}
+.simple-context-tools>label,.simple-cue-tools{flex:1 1 200px}
+.simple-cue-tools label{flex:1}
+.simple-context-tools select{width:100%;min-width:0;max-width:100%;flex:1}
+#simple-new-cue,.simple-preview-tools button,.simple-actions button{white-space:nowrap;overflow-wrap:normal;flex-shrink:0}
+.simple-preview-tools #simple-fade-label{margin:0}
+.simple-preview-tools #simple-fade{width:auto}
+.simple-layer{grid-template-columns:minmax(0,1fr) auto auto auto auto}
+.simple-layer-name{flex-wrap:wrap;gap:0 6px}
+.simple-layer-name small{font-size:var(--fs-3,11px)}
+.simple-layer .simple-layer-remove{color:var(--simple-danger,#efaaa0)}
+html[data-stage-skin="paper-light"] .simple-mode-panel{--simple-danger:#aa2828}
+.simple-controls #simple-size-label{grid-column:1/-1}
+.simple-controls #simple-size{width:var(--simple-number-width);padding:6px}
+#simple-column-resize:hover::before,#simple-column-resize:focus-visible::before{background:var(--brass)}
+#simple-return{font-size:var(--fs-3,11px)}
+@container(max-width:400px){.simple-layer{grid-template-columns:minmax(0,1fr) auto auto auto}.simple-layer-name{grid-column:1/-1;padding-top:4px}}

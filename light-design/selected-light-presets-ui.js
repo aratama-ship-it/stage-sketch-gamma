@@ -242,7 +242,7 @@
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   function planRangePoint(ev) {
     if (!plan || !R.planBox) return null;
-    const rect = plan.getBoundingClientRect(), B = R.planBox();
+    const rect = R.canvasViewRect?.(plan) || plan.getBoundingClientRect(), B = R.planBox();
     const X = (ev.clientX - rect.left) * plan.width / rect.width, Y = (ev.clientY - rect.top) * plan.height / rect.height;
     if (X < B.x || X > B.x + B.w || Y < B.y || Y > B.y + B.h) return null;
     return { u: clamp((X - B.x) / B.w, 0, 1), v: clamp((Y - B.y) / B.h, 0, 1) };
@@ -329,7 +329,7 @@
     if (rangeDraw && !draftRegion) { if (overlay) overlay.style.display = "none"; if (rangeEdit) rangeEdit.hidden = true; return; }
     const region = draftRegion || appliedCustomRegion();
     if (!overlay || !plan || !region) { if (overlay) overlay.style.display = "none"; if (rangeEdit) rangeEdit.hidden = true; if (rangeHud) rangeHud.hidden = true; return; }
-    const rect = plan.getBoundingClientRect(), B = R.planBox();
+    const rect = R.canvasViewRect?.(plan) || plan.getBoundingClientRect(), B = R.planBox();
     overlay.width = plan.width; overlay.height = plan.height;
     overlay.style.left = `${rect.left}px`; overlay.style.top = `${rect.top}px`; overlay.style.width = `${rect.width}px`; overlay.style.height = `${rect.height}px`; overlay.style.display = "block";
     const ctx = overlay.getContext("2d"); ctx.clearRect(0, 0, overlay.width, overlay.height); ctx.save();
@@ -349,7 +349,7 @@
   }
   function showRangeHud() {
     if (!plan) return;
-    ensureRangeOverlay(); const rect = plan.getBoundingClientRect();
+    ensureRangeOverlay(); const rect = R.canvasViewRect?.(plan) || plan.getBoundingClientRect();
     rangeHud.hidden = false; rangeHud.style.left = `${Math.max(12, rect.left + 8)}px`; rangeHud.style.top = `${Math.max(12, rect.top + 8)}px`;
     rangeHud.innerHTML = `<b>範囲指定</b><span>${rangeDraw.shape === "circle" ? "中心から外周まで" : "対角どうし"}をドラッグ　／　Escで中止</span>`;
   }
@@ -396,6 +396,7 @@
       finishRangeDraw();
     };
     plan.addEventListener("pointerup", endRangePointer, true); plan.addEventListener("pointercancel", endRangePointer, true);
+    window.addEventListener("gamma-light-figure-view", () => { if (rangeDraw) showRangeHud(); drawRangeOverlay(); });
     window.addEventListener("resize", () => { if (rangeDraw) showRangeHud(); drawRangeOverlay(); });
     document.addEventListener("scroll", () => { if (rangeDraw) showRangeHud(); drawRangeOverlay(); }, true);
     document.addEventListener("keydown", (ev) => {

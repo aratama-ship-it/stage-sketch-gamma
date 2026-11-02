@@ -626,8 +626,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"assist.light2.button": "照明を調整", "assist.light2.notice": "現在のシーンの層・灯体と、選んだ範囲のキューの名前・値を送ります。確認後に下書きを作り、「適用する」で反映します。", "assist.light2.review": "変わること（まだ下書きにしていません）", "assist.light2.stage": "下書きにする", "assist.light2.cueChange": "Q{no}: 名前 {from} → {to} ／ 入り {fromFadeIn}→{fadeIn}秒・出 {fromFadeOut}→{fadeOut}秒", "assist.light2.function.spot": "ピンスポット", "assist.light2.function.wash": "全体照らし", "assist.light2.function.background": "背景染め", "assist.light2.function.rim": "輪郭・補助", "assist.light2.function.custom": "詳細で調整済み", "assist.light2.detailOnly": "詳細で調整済みの層や組は、詳細画面で確認してください。強さ以外の層の変更は行っていません。", "assist.light2.fixedColor": "この固定灯の色は全シーンに関わるため、ここから変更できません。詳細画面で確認してください。", "assist.light2.warning": "照射範囲と背景幕を詳細画面で確認してください。", "assist.light2.scope": "送るキュー", "assist.light2.scopeScene": "現在のシーン", "assist.light2.scopeShow": "ショー全体のキュー"});
 // G-010: independent folder backups.
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
-  "drive.title": "Google Driveにバックアップ",
-  "drive.choose": "Google Driveのフォルダを選ぶ",
+  "drive.title": "フォルダにバックアップ（Google Drive・Dropbox など）",
+  "drive.choose": "バックアップ先のフォルダを選ぶ",
   "drive.start": "自動バックアップを開始",
   "drive.cancel": "キャンセル",
   "drive.now": "今すぐ控えを作る",
@@ -643,7 +643,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "drive.capacity": "容量上限（GiB）",
   "drive.invalidLimit": "欄の範囲内の整数を入れてください。",
   "drive.setup": "パソコン版Google Driveの準備",
-  "drive.cloud": "この端末への保存を表示しています。Driveへの到着・同期状況はGoogle Driveで確認してください。",
+  "drive.cloud": "この端末への保存を表示しています。クラウドへの到着・同期状況は同期アプリで確認してください。",
   "drive.confirm": "保存先：{folder}。開いているショーだけのJSON・音源入りの控え・履歴を作ります。",
   "drive.permission": "保存先を使えません。「再接続・再開」またはフォルダの選択を行ってください。",
   "drive.differs": "端末の通常保存と控えが異なるため停止しました。控えから別ショーとして開くか、新しい保存先を選んでください。",
@@ -696,3 +696,92 @@ Object.assign(window.SHOSAI_I18N_PACKS.ja.text, {
   "先に同じショーの駒をコピーしてください。": "先に同じショーの駒をコピーしてください。",
   "調整: {position}": "調整: {position}"
 });
+
+// B6: Drive restore audio decisions and the v0.3.97 display correction.
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "drive.audioConflict": "この控えと端末に、同じIDで中身が違う音源があります。復元を止めています。使う音源を選んでください。現在のショーと元の控えは変更しません。",
+  "drive.useLocalAudio": "端末側の音源を使う",
+  "drive.copyBackupAudio": "控えの音源を別IDで入れる",
+  "drive.cancelRestore": "復元をやめる",
+  "drive.audioRestoreFailed": "音源の一致または保存を確認できないため、復元を止めました。現在のショーと元の控えは変更していません。",
+  "高さの低い画面（13 インチ級・1440×800 前後）で、見出しとタブの余白を詰めました。かんたん照明は3区画（層・機能・位置）と、選んだ層の直下の調整欄で構成されています。かんたん照明の区画と詳細照明の3パネルの大きさは設定で変えられます。設定した高さは上限として扱い、内容が少ないときはそれより低くなります。": "高さの低い画面（13 インチ級・1440×800 前後）で、見出しとタブの余白を詰めました。かんたん照明は3区画（層・機能・位置）と、選んだ層の直下の調整欄で構成されています。かんたん照明の区画と詳細照明の3パネルの大きさは設定で変えられます。設定した高さは上限として扱い、内容が少ないときはそれより低くなります。"
+});
+// B12: Japanese source keys.
+Object.assign(window.SHOSAI_I18N_PACKS.ja.text, {
+  "レイヤー": "レイヤー",
+  "照明の種類": "照明の種類",
+  "直径": "直径",
+  "SS": "SS",
+  "両袖": "両袖",
+  "下手から": "下手から",
+  "上手から": "上手から",
+  "左右で違う": "左右で違う",
+  "試しをやめる": "試しをやめる",
+  "＋ 新規": "＋ 新規",
+  "まだレイヤーはありません。照明の種類から選んでください。": "まだレイヤーはありません。照明の種類から選んでください。",
+  "レイヤーの点灯: {position}": "レイヤーの点灯: {position}",
+  "レイヤーの一覧から選んで編集してください": "レイヤーの一覧から選んで編集してください",
+  "削除: {position}": "削除: {position}",
+  "この種類を使える空き位置がありません": "この種類を使える空き位置がありません",
+  "適用するか、試しをやめてから詳細へ進んでください": "適用するか、試しをやめてから詳細へ進んでください",
+  "適用するか、試しをやめてからシーンを切り替えてください": "適用するか、試しをやめてからシーンを切り替えてください",
+  "適用するか、試しをやめてからキューを切り替えてください": "適用するか、試しをやめてからキューを切り替えてください",
+  "適用するか、試しをやめてからキューを追加してください": "適用するか、試しをやめてからキューを追加してください"
+});
+// v0.3.98 B3: lighting types and the new equipment family.
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "標準26器具（ホリゾント・ミラーボール入り）": "標準26器具（ホリゾント・ミラーボール入り）",
+  "逆光": "逆光",
+  "横から": "横から",
+  "足もと": "足もと",
+  "シルエット": "シルエット",
+  "模様": "模様",
+  "点滅": "点滅",
+  "ミラーボール用ピン": "ミラーボール用ピン",
+  "シルエットにするには、人物を照らす他のレイヤーをOFFにしてください": "シルエットにするには、人物を照らす他のレイヤーをOFFにしてください"
+});
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"ミラーボール": "ミラーボール"});
+
+/* C4: selected folder and one audio-inclusive project export. */
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "work.title": "作業フォルダ",
+  "work.choose": "作業フォルダを選ぶ",
+  "work.reconnect": "フォルダを再接続",
+  "work.move": "いまのショーをフォルダへ保存",
+  "work.save": "フォルダへ保存",
+  "work.files": "フォルダのファイルを表示",
+  "work.open": "開く",
+  "work.empty": "このフォルダにプロジェクトはありません。",
+  "work.note": "フォルダの音源入りプロジェクトが保存先です。ブラウザにはショーの控えを残します。未接続の音源は含まれません。クラウドの同期状況は同期アプリで確認してください。",
+  "work.startNote": "デスクトップのフォルダを選び、ショーと音源の保存先にします。",
+  "work.state.disabled": "フォルダのファイルを開くか、いまのショーを保存してください。",
+  "work.state.ready": "フォルダを選択しました。ファイルを開くか、いまのショーを保存してください。",
+  "work.state.pending": "フォルダへの保存待ち",
+  "work.state.saving": "フォルダへ保存中",
+  "work.state.saved": "フォルダへ保存しました",
+  "work.state.stopped": "フォルダへの保存を停止しました",
+  "work.permission": "保存先の許可がありません。フォルダを再接続してください。このタブは開いたままにしてください。",
+  "work.busy": "別のタブでこのファイルを開いています。そちらを閉じてから開き直してください。",
+  "work.changed": "ファイルが外部で変更されました。上書きを止めました。いまの編集は別ファイルへ書き出してください。",
+  "work.audio": "音源を読み出せません。元ファイルを再接続してください。",
+  "work.quota": "フォルダの空き容量が不足しています。以前のファイルを残して停止しました。",
+  "work.context": "ショーが変わったため操作を止めました。もう一度選んでください。",
+  "work.carry": "追加データを読み出せません。元のパッケージを保管してください。",
+  "work.failed": "フォルダへの操作を完了できませんでした。このタブを開いたまま、保存先・権限・容量を確認してください。",
+  "work.reserved": "自動保存・バックアップで使用中のファイルは作業フォルダの保存先にできません。",
+  "プロジェクトを書き出す（音源入り）": "プロジェクトを書き出す（音源入り）",
+  "＋ プロジェクトを書き出す（音源入り）": "＋ プロジェクトを書き出す（音源入り）",
+  "作業フォルダへ保存できませんでした。保存パネルを確認し、このタブを開いたままにしてください。": "作業フォルダへ保存できませんでした。保存パネルを確認し、このタブを開いたままにしてください。",
+  "音源を読み出せないため書き出しを止めました。音源を再接続してください。": "音源を読み出せないため書き出しを止めました。音源を再接続してください。",
+  "未接続の音源は含まれません。音源の設定は残しています。元ファイルを再接続してください。": "未接続の音源は含まれません。音源の設定は残しています。元ファイルを再接続してください。",
+  "この名前は書き出すファイルだけに使います。ショー名は変わりません。音源と一緒に .stageproj.zip へ書き出します。": "この名前は書き出すファイルだけに使います。ショー名は変わりません。音源と一緒に .stageproj.zip へ書き出します。",
+  "フォルダにバックアップ（Google Drive・Dropbox など）": "フォルダにバックアップ（Google Drive・Dropbox など）"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"作業フォルダ": "作業フォルダ"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"work.opened": "開いています"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"作業フォルダには保存しました。ブラウザ内の控えは容量不足で保存できませんでした。保存容量を確認してください。": "作業フォルダには保存しました。ブラウザ内の控えは容量不足で保存できませんでした。保存容量を確認してください。"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"work.currentFile": "保存先：{file}", "work.selectedFolder": "選択したフォルダ：{folder}"});

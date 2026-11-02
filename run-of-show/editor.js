@@ -293,7 +293,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
 }};
 (() => {
   const $ = id => document.getElementById(id);
-  let leftPanels;
+  let leftPanels,rowMenu=null;
   const bridge=parent.SHOSAI_STAGE_RUN_OF_SHOW_HOST;
   const canRenderStage=typeof bridge?.renderSceneImages==="function";
   const canReadCues=typeof bridge?.cues==="function"&&Boolean(parent.SHOSAI_CUE_SHEET&&parent.STAGE_TIME_DOMAIN);
@@ -502,11 +502,6 @@ window.ROSLeftPanels={install(band,{store,text,format}){
         const label=el("label");label.htmlFor=toggle.id;label.append(name);li.append(toggle,label);if(def.required)li.append(el("span",uiText("常時"),"small"));if(paperFormat==="a4-portrait")li.append(previous,next);list.append(li);
       });section.append(title,list);host.append(section);
     }
-    $("stage-view-control").hidden=!canRenderStage||!orderedColumns().some(c=>c.id==="stage");$("stage-view").value=profile.stage;
-    // G1 #4: the select is the default for every row; rows switched by clicking their diagram keep their own view.
-    const rowViews=Object.keys(layout.packStageByItem(stageByItem,items.map(i=>i.id))||{}).length;$("stage-view-rows").hidden=$("stage-view-control").hidden;
-    $("stage-view-hint").textContent=profile.stage==="both"?"「両方」のときは行ごとの切り替えはしません。":uiText("図を押すと、その行だけ正面図⇔平面図を切り替えます（ショーに保存・印刷にも反映）。")+(rowViews?" "+uiFormat("行ごとに切り替えた行：{count}件",{count:rowViews}):"");
-    $("stage-view-reset").hidden=!rowViews;
     $("undo-layout").disabled=history.undo.length===0;$("redo-layout").disabled=history.redo.length===0;
     $("column-status").textContent=profile.hidden.length?`非表示：${orderedColumns().filter(c=>profile.hidden.includes(c.id)).map(c=>c.ja).join("、")}。内容は編集欄に保持しています。`:"すべての欄を表示しています。";
   }
@@ -836,8 +831,8 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   }
   document.querySelector(".doc-frame").addEventListener("click",event=>{const link=event.target.closest("[data-cue-link]");if(link){event.preventDefault();openCue(link.dataset.cueLink);}});
   function headContents(row){const item=items.find(i=>i.id===row.itemId),wrap=el('div','','cue-heading');wrap.append(el('strong',row.no),document.createTextNode(' '),directMark(el('span',row.title),row.itemId,'title','項目名'),document.createTextNode(' '));const meta=el('span','','small');meta.append(document.createTextNode(`${row.start} ／ `),directMark(el('span',pfmt(item.hold)),row.itemId,'hold','見せる秒数','number'),document.createTextNode(' '+P('next')),directMark(el('span',pfmt(item.transition)),row.itemId,'transition','転換の秒数','number'),document.createTextNode(' ／ '),directMark(el('span',item.owner),row.itemId,'owner','担当・出演'));wrap.append(meta);if(row.empty)wrap.append(el('span',P('noCues'),'small'));return wrap;}
-  // G1 #4 (D6 = A): each row shows the view chosen for it (stageByItem, saved in the show and printed); the column
-  // popover's choice is the default for every row. "both" shows both diagrams and is not switched per row.
+  // F-31: the diagram itself switches this row (stageByItem, saved and printed).
+  // Legacy profile.stage values remain readable, including "both", pending the owner's migration decision.
   function renderStageCells(rows){
     if(!canRenderStage||!orderedColumns().some(c=>c.id==='stage')||layoutFor().hidden.includes('stage'))return;
     const defaultView=layoutFor().stage,requests=[],targets=[];
@@ -870,7 +865,6 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   }
   frame.addEventListener('click',event=>{const fig=event.target.closest('[data-stage-toggle]');if(fig){event.preventDefault();toggleStage(fig);}});
   frame.addEventListener('keydown',event=>{const fig=event.target.closest?.('[data-stage-toggle]');if(fig&&(event.key==='Enter'||event.key===' ')&&!event.isComposing){event.preventDefault();toggleStage(fig);}});
-  $('stage-view-reset').addEventListener('click',()=>{if(!Object.keys(stageByItem).length)return;try{bridge.canEdit(token);}catch(error){showError(error);return;}stageByItem={};markDirty();renderPaper();$("column-status").textContent="行ごとの切り替えを既定に戻しました";});
   const stagePanelKey='gamma:ros:stage-panel-open';
   let stagePanelOpen=true,indexPanelCollapsed=false;
   try {
@@ -902,11 +896,11 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     if(stagePanelOpen&&indexMode==="closed")openIndex(true);
     else updateStageFigures();
   });
-  $('stage-view').addEventListener('change',e=>changeLayout(p=>{p.stage=e.target.value;},'舞台上の図（全行の既定）を変更しました'));
   if(!canReadCues){$('row-mode').querySelector('[value=cue]')?.remove();document.querySelector('[data-row-mode=cue]').hidden=true;}
   for(const button of document.querySelectorAll('[data-row-mode]'))button.addEventListener('click',()=>{$('row-mode').value=button.dataset.rowMode;$('row-mode').dispatchEvent(new Event('change'));});
   $('row-mode').addEventListener('change',e=>{if(!paperEditor.finish()){e.target.value=rowMode;return;}rowMode=e.target.value;rowModeTouched=true;selection={kind:'none'};markDirty();renderPaper();});
   function renderPaper(){
+    closeRowMenu();
     syncLanguage();
     const body=$("ros-body");body.replaceChildren();
     let sceneTiming={};try{sceneTiming=bridge.timing?.().scenes||{};}catch(error){showError(error);}
@@ -1511,7 +1505,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   new MutationObserver(()=>{syncCueSkin();syncCueChoices();if(cueView)cueHost.refresh();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:["lang","data-stage-skin"]});
   new MutationObserver(()=>{if(document.body.classList.contains("readonly-cue-shell")===readOnlyPaper())return;syncCueChoices();if(cueView)cueHost?.refresh?.(true);}).observe(parent.document.body,{attributes:true,attributeFilter:["class"]});
   syncCueChoices();
-  document.querySelector('.band-view').append($('stage-view-control'),$('stage-view-rows'),$('widths-reset').closest('.toolbar'));
+  document.querySelector('.band-view').append($('widths-reset').closest('.toolbar'));
   if(!lite){
     leftPanels=window.ROSLeftPanels.install($('paper-band'),{store,text:uiText,format:uiFormat});
     const toggle=el('button','','is-icon ros-left-toggle');toggle.id='ros-left-toggle';toggle.type='button';toggle.dataset.noI18n='';
@@ -1578,7 +1572,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     } catch (error) { showError(error); }
   });
 
-  window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>paperEditor.finish(),hasDraft:()=>paperEditor?.hasDraft,
+  window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>{closeRowMenu();return paperEditor.finish();},hasDraft:()=>paperEditor?.hasDraft,
     showCueSheet,showRunOfShow,printCurrent,
     selectScene(id){const found=items.find(i=>i.sceneId===id);if(found){selected=found.id;render();}},
     getDocument:()=>files.clone(packDocument())};
@@ -1639,6 +1633,98 @@ window.ROSLeftPanels={install(band,{store,text,format}){
       paperEditor.focus({itemId:selected,key:'title',info:false,start:null});
     }catch(error){showError(error);}
   });
+  // F-32: a second entrance to the same edit commands, never a second writer.
+  rowMenu=el('div','','ros-row-menu');rowMenu.id='ros-row-menu';rowMenu.hidden=true;
+  rowMenu.setAttribute('role','menu');rowMenu.tabIndex=-1;document.body.append(rowMenu);
+  let rowMenuTarget=null,rowMenuItem=null,rowMenuAnchor=null;
+  function positionRowMenu(){
+    if(rowMenu.hidden||!rowMenuAnchor)return;
+    const edge=8,probe=100;
+    // clientX/Y and DOMRects belong to THIS iframe's viewport. Calibrate the
+    // fixed element's CSS origin/scale instead of assuming left === rect.left
+    // (a zoomed/transformed containing block can change that relationship).
+    rowMenu.style.left='0px';rowMenu.style.top='0px';
+    const origin=rowMenu.getBoundingClientRect();
+    rowMenu.style.left=probe+'px';rowMenu.style.top=probe+'px';
+    const shifted=rowMenu.getBoundingClientRect();
+    const sx=(shifted.left-origin.left)/probe,sy=(shifted.top-origin.top)/probe;
+    if(!(sx>0&&sy>0))return;
+    const w=Math.min(innerWidth,document.documentElement.clientWidth||innerWidth);
+    const h=Math.min(innerHeight,document.documentElement.clientHeight||innerHeight);
+    rowMenu.style.maxWidth=Math.max(0,w-2*edge)/sx+'px';
+    rowMenu.style.maxHeight=Math.max(0,h-2*edge)/sy+'px';
+    const bounds=rowMenu.getBoundingClientRect();
+    const x=Math.max(edge,Math.min(rowMenuAnchor.x,w-bounds.width-edge));
+    const y=Math.max(edge,Math.min(rowMenuAnchor.y,h-bounds.height-edge));
+    rowMenu.style.left=(x-origin.left)/sx+'px';
+    rowMenu.style.top=(y-origin.top)/sy+'px';
+  }
+  // gamma-appearance wraps labels after opening; font loading can also change
+  // intrinsic size. Refit the real final size, not just the first layout.
+  const rowMenuResize=new ResizeObserver(()=>positionRowMenu());
+  rowMenuResize.observe(rowMenu);
+  window.addEventListener('pagehide',()=>rowMenuResize.disconnect(),{once:true});
+  const rowCommands=[['paper-add','項目を追加'],['paper-duplicate','選択した項目を複製'],['paper-up','項目を上へ'],['paper-down','項目を下へ']];
+  function closeRowMenu(restore=false){
+    if(!rowMenu||rowMenu.hidden)return;
+    rowMenu.hidden=true;
+    if(restore&&rowMenuTarget?.isConnected)rowMenuTarget.focus({preventScroll:true});
+    rowMenuTarget=null;rowMenuItem=null;rowMenuAnchor=null;
+  }
+  function openRowMenu(event,keyboard=false){
+    if(event.target.closest('input,textarea,select,[contenteditable=true]'))return;
+    const cell=event.target.closest('td[data-column-id],.pg-cell,.portrait-field');
+    if(!cell||!frame.contains(cell))return;
+    // A transition/cue cell belongs to its linked item; headers have no row menu.
+    const row=cell.closest('[data-row-id]'),rowId=row?.dataset.rowId||cell.dataset.rowId;
+    const itemId=row?.dataset.itemId||document.querySelector(`#ros-body tr[data-row-id="${CSS.escape(rowId||'')}"]`)?.dataset.itemId||rowId;
+    if(!items.some(item=>item.id===itemId))return;
+    try{bridge.canEdit(token);}catch(_){return;}
+    event.preventDefault();event.stopPropagation();
+    if(!paperEditor.finish())return;
+    closeRowMenu();selectItem(itemId,false);selectCell(cell,false);
+    rowMenuItem=itemId;rowMenuTarget=cell.querySelector('[tabindex]')||cell;
+    if(!rowMenuTarget.hasAttribute('tabindex'))rowMenuTarget.tabIndex=-1;
+    rowMenu.replaceChildren();rowMenu.setAttribute('aria-label',uiText('編集'));
+    for(const [id,label] of rowCommands){
+      const command=el('button',uiText(label));command.type='button';command.dataset.command=id;
+      command.setAttribute('role','menuitem');command.tabIndex=-1;
+      command.disabled=$(id).disabled;command.setAttribute('aria-disabled',String(command.disabled));
+      if(command.disabled)command.title=uiText(id==='paper-up'?'先頭の項目です':id==='paper-down'?'最後の項目です':'項目を選択してください');
+      command.addEventListener('click',()=>{
+        const target=rowMenuItem;
+        closeRowMenu(true);
+        if(!items.some(item=>item.id===target))return;
+        try{bridge.canEdit(token);}catch(error){showError(error);return;}
+        selectItem(target,false);if(!$(id).disabled)$(id).click();
+      });rowMenu.append(command);
+    }
+    const r=cell.getBoundingClientRect();
+    rowMenuAnchor={x:keyboard?r.left:event.clientX,y:keyboard?r.bottom:event.clientY};
+    rowMenu.hidden=false;
+    positionRowMenu();
+    (rowMenu.querySelector('button:not(:disabled)')||rowMenu).focus({preventScroll:true});
+  }
+  frame.addEventListener('contextmenu',event=>openRowMenu(event));
+  frame.addEventListener('keydown',event=>{
+    if(!event.isComposing&&(event.key==='ContextMenu'||event.key==='F10'&&event.shiftKey))openRowMenu(event,true);
+  });
+  rowMenu.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeRowMenu(true);return;}
+    if(event.key==='Tab'){closeRowMenu(true);return;}
+    if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+    event.preventDefault();event.stopPropagation();
+    const commands=[...rowMenu.querySelectorAll('button:not(:disabled)')],at=commands.indexOf(document.activeElement);
+    const next=event.key==='Home'?0:event.key==='End'?commands.length-1:(at+(event.key==='ArrowDown'?1:-1)+commands.length)%commands.length;
+    commands[next]?.focus();
+  });
+  document.addEventListener('pointerdown',event=>{if(!rowMenu.contains(event.target))closeRowMenu();},true);
+  document.addEventListener('scroll',event=>{if(!rowMenu.contains(event.target))closeRowMenu();},true);
+  window.addEventListener('resize',()=>closeRowMenu());window.addEventListener('blur',()=>closeRowMenu());
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)closeRowMenu();});
+  // The editor lives in an iframe: parent chrome clicks also dismiss the menu.
+  if(parent!==window)parent.document.addEventListener('pointerdown',()=>closeRowMenu(),{signal:rowMenuAbortSignal()});
+  function rowMenuAbortSignal(){const controller=new AbortController();window.addEventListener('pagehide',()=>controller.abort(),{once:true});return controller.signal;}
   const distributionUI=window.ROSDistributionUI.create({read:packDocument,basis:()=>token,language:()=>{syncLanguage();return language;},finish:()=>{if(!paperEditor.finish())return false;refresh();return true;},report:error=>{console.warn(error.message);},
     async persist(){const result=await bridge.save();if(!result.ok)throw Error('ショーを保存できませんでした。配布ファイルは作成していません。γの保存欄を確認してください。');},
     async apply(doc,basis){const result=bridge.apply(doc,basis);token=result.token;accept(result.document);render();const saved=await bridge.save();if(!saved.ok)throw Error('ショーの保存を完了できませんでした。配布・返答の内容は画面内に保持しています。再保存してから配布してください。');}

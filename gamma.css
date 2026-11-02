@@ -1935,8 +1935,10 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
   align-items: center;
   color: var(--milk);
 }
-.stage-playback-dock.is-active > .stage-timeline-resize-handle::before { display: none; }
+.stage-playback-dock.is-active > .stage-timeline-resize-handle::before,
+.stage-playback-dock.is-active > .stage-timeline-resize-handle::after { display: none; }
 .stage-playback-dock.is-active :is(.stage-timeline-grip-label, .stage-timeline-shortcut) { margin-bottom: 0; }
+.stage-playback-dock.is-active > .stage-timeline-resize-handle > svg { margin-bottom: 0; }
 #stage-playback-summary:not([hidden]) {
   display: grid;
   min-width: 0;
@@ -2013,8 +2015,8 @@ body.is-timeline-cue-drag, body.is-timeline-lx-drop { user-select:none; -webkit-
   outline-offset: 2px;
 }
 
-/* W1-B: iPadのショーパネルから既存ライブラリへ。デスクトップは既存の一覧入口を使う。 */
-.stage-project-panel-actions > .stage-tablet-samples-open { display: none; }
+/* F-23: the same sample library entry is available on desktop, Mac and iPad. */
+.stage-project-panel-actions > .stage-tablet-samples-open { display: flex; }
 html.stage-pwa-tablet .stage-project-panel-actions > .stage-tablet-samples-open {
   display: flex;
   min-height: 44px;
@@ -2063,3 +2065,8 @@ html.stage-pwa-tablet .stage-project-panel-actions > .stage-tablet-samples-open 
 #stage-piece-actions[hidden] { display:none!important; }
 #stage-piece-actions svg { width:24px; height:24px; }
 #stage-piece-actions.stage-icon-action { display:inline-grid; place-items:center; width:44px; height:44px; padding:0; margin:0; }
+
+/* C4: reuse the save-panel tokens; desktop folder control targets stay 44px. */
+#stage-work-folder { --drive-gap:8px; font-size:var(--fs-5,13px); line-height:1.5; }
+#stage-work-folder summary,#stage-work-folder .stage-drive-body button { min-height:var(--ctrl-lg,44px); }
+#stage-work-folder summary { cursor:pointer; align-content:center; }

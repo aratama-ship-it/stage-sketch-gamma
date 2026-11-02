@@ -18740,13 +18740,14 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
  * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
  * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
 /* T-08 三度目（2026-09-18 本人選択）: 取っ手ではなく「時間の目盛りが覗く箱」にする。
- * W1-B: 目盛り箱40×22は維持し、名称12px＋補助のEを添える。操作域は44px高。
+ * F-01 案A: 目盛り箱を名称12px＋補助のEまで広げる。操作域は44px高。
  * 地は不透明＝下のパネルの文字と重なって読めなくなるのを防ぐ。
  * 数値・コントラストの実測値・却下した案は design/TOKEN_SHEET_timeline_grip_2026-09-18.md が正本。
  * ★上へ引くとタイムラインが上がるので、取っ手もそれに合わせて上がる。
  *   位置は stage-timeline.js が --stage-timeline-grip-bottom へ入れる
  *   （開いているときはタイムラインの高さ、畳んでいるときは残した帯の高さ）。 */
 .stage-timeline-resize-handle {
+  --timeline-grip-face-height: 30px;
   position: fixed;
   z-index: 47;
   left: 14px;
@@ -18757,7 +18758,7 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   width: max-content;
   height: 44px;
   min-height: 44px;
-  padding: 0 8px 0 4px;
+  padding: 0 3px 0 8px;
   border: 0;
   background: none;
   color: var(--milk-dim);
@@ -18767,29 +18768,42 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   transition: color 120ms ease;
 }
 
-/* 地は28px、操作域は上の余白まで44px。文字の背後を不透明に保つ。 */
+/* F-01: 目盛り箱そのものを外枠へ。透明な上14pxも44pxの操作域に含む。 */
 .stage-timeline-resize-handle::before {
   content: "";
   position: absolute;
   z-index: -1;
   inset: auto 0 0;
-  height: 28px;
+  height: var(--timeline-grip-face-height);
   box-sizing: border-box;
-  border: 1px solid var(--line-dark);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1.1px solid currentColor;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
   background: var(--desk-2);
   transition: border-color 120ms ease;
 }
+.stage-timeline-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: calc(var(--timeline-grip-face-height) - 1.3px - 2.6px);
+  height: 2.6px;
+  border-radius: 2px;
+  background: currentColor;
+  pointer-events: none;
+}
 .stage-timeline-resize-handle svg {
-  flex: 0 0 40px;
+  flex: 0 0 18px;
   display: block;
-  width: 40px;
-  height: 22px;
+  width: 18px;
+  height: 14px;
+  margin-bottom: 5px;
   fill: none;
   stroke: currentColor;
 }
 .stage-timeline-grip-label {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 12px;
   line-height: 16px;
   font-weight: 400;
@@ -18797,7 +18811,6 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 }
 .stage-timeline-shortcut {
   flex: 0 0 auto;
-  margin-bottom: 8px;
   color: currentColor;
   font-size: 11px;
   font-weight: 400;

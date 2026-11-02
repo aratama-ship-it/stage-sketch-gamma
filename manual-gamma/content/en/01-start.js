@@ -33,7 +33,7 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release097-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release0100-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {
@@ -69,7 +69,7 @@ ${steps([
   "Use " + ui("Draw route") + " in the plan to draw an arrow to where they go next.",
   "In the " + ui("Scenes") + " panel, press " + ui("Create next scene") + " → " + ui("Inherit from current scene") + " → " + ui("Create") + ". The performer now stands at the end of the route.",
   "Go back with " + ui("◀ Previous") + ", then press " + ui("Next ▶") + ". You see them walk across.",
-  "At a good stopping point, press " + ui("Export show") + " and keep the file (" + ref("saving", "1-5") + ")."
+  "At a good stopping point, press " + ui("Export project (with audio)") + " and keep the file (" + ref("saving", "1-5") + ")."
 ])}
 ${note("Why the theatre comes first", "How the front view looks (distance, height, wing positions) and the outline of the plan both come from the theatre's dimensions. You can change the theatre later, but some pieces may end up in odd places (" + ref("venue-apply", "Part 5, 5-4") + ").")}
 ${vid("scene-workflow", "Create a new show, choose a theatre, add a performer and a route, inherit the next scene, then export JSON.")}`
@@ -81,7 +81,7 @@ ${vid("scene-workflow", "Create a new show, choose a theatre, add a performer an
 <p>Changes are <strong>saved automatically inside this device's browser</strong>. There is no save button to press. The ${ui("Info")} panel on the right shows the “last saved” time.</p>
 <p>Since v0.2.39, show documents and the show list use the browser's larger storage area (IndexedDB). Device settings stay in their existing settings area. Migration keeps a copy of the original text and verifies the saved data before switching. Before closing the tab, check that the “last saved” time has updated. If the browser warns when you try to close with unfinished work, choose to stay and wait for saving to finish. This cannot protect against forced termination, power loss, or browsers that do not show a close warning.</p>
 <p>That storage is <strong>not a cloud — it is only this device and this browser</strong>. It will not appear on another device, and it can vanish when browser data is cleared or storage runs short.</p>
-${note("Our one request", "At every good stopping point, press " + ui("Export show") + " in the " + ui("Show") + " panel and keep the file (.json). As long as the file exists, " + ui("Import show") + " brings everything back. Carrying work to another device is this same export-and-import round trip.", true)}
+${note("Our one request", "At every good stopping point, press " + ui("Export project (with audio)") + " in the " + ui("Show") + " panel and keep the file (.json). As long as the file exists, " + ui("Import show") + " brings everything back. Carrying work to another device is this same export-and-import round trip.", true)}
 <h4>What the file contains</h4>
 <ul>
 <li>Included: scenes, performers, set pieces, props, lighting (pieces, equipment placement and LX cues), script, cues, alternatives, notes, painted backdrops and photos. When exporting you choose ${ui("Include theatre data")} or ${ui("Export without the theatre")}.</li>

@@ -11,7 +11,7 @@
         keywords: ["image", "export", "png", "save picture", "export, save & print", "save show", "backup", "venue library", "Q sheets", "csv", "working drawing", "pitch", "front", "plan", "both", "all scenes", "section", "style", "poster", "sketch", "generative ai", "size", "1920", "4k", "caption text"],
         html: `
 <p>Start, status and performer-link actions in the Share dialog use the same height, type and centered labels. Session start is distinguished by its primary color.</p>
-<p>${ui("Export, save & print")} (the paper icon) in the header opens this window. The tabs at the top switch between ${ui("Images & print")}, ${ui("Save show")}, ${ui("Q sheets")} and ${ui("Venue")} (2026-10-06). ${ui("Save show")} runs ${ui("Export show")} (${ref("export-json", "11-3")}), ${ui("Q sheets")} opens the Q sheets (print or CSV per sheet), and ${ui("Venue")} exports the venue library file. The original entry points (information panel, show list, Run of show Q sheets, venue settings) still work. Below is the ${ui("Images & print")} tab.</p>
+<p>${ui("Export, save & print")} (the paper icon) in the header opens this window. The tabs at the top switch between ${ui("Images & print")}, ${ui("Save show")}, ${ui("Q sheets")} and ${ui("Venue")} (2026-10-06). ${ui("Save show")} runs ${ui("Export project (with audio)")} (${ref("export-json", "11-3")}), ${ui("Q sheets")} opens the Q sheets (print or CSV per sheet), and ${ui("Venue")} exports the venue library file. The original entry points (information panel, show list, Run of show Q sheets, venue settings) still work. Below is the ${ui("Images & print")} tab.</p>
 ${fig("41-export", "Export, save & print (Images & print tab): pick the kind with the tabs at the top, then choose the purpose, which view and which scenes, and export.", "Export, save & print window")}
 ${table(["Choice", "Contents"], [
   [ui("Purpose") + ": " + ui("As a working drawing"), "The drawing as it is (name tags, arrows and notes included)"],
@@ -37,23 +37,25 @@ ${table(["Table", "Setting", "Contents"], [
 <p>Q sheets (master, per performer, per department) and the script (${ui("Export script")} in the Lines tab) are printed from the Run of show left menu and the Lines tab respectively.</p>`
       },
       {
-        id: "export-json", title: "Exporting and importing a show (passing files around)", status: "sourced",
+        id: "export-json", title: "Exporting and importing a project (passing files around)", status: "sourced",
         keywords: ["export", "import", "file", "json", "send", "pass on", "another device", "email", "airdrop", "theatre data", "include", "compare", "replace", "separate show", "open file"],
         html: `
-<p>To include audio, choose ${ui("Export, save and print")} → ${ui("Save show")} → ${ui("Export project (with audio, .stageproj.zip)")}. The zip contains the show and connected audio files, without Backups. Import the zip with ${ui("Import show")} or drop it onto the window. For an extracted .stageproj folder, use ${ui("Import project folder")} or drag it onto the window; use the zip if the file picker cannot select the folder. Different existing audio is preserved. Missing or mismatched audio stays offline. Check the list and use Reconnect when needed. The existing .stagesketch import and export remain available.</p>
+<p>To export, choose ${ui("Export, save and print")} → ${ui("Save show")} → ${ui("Export project (with audio)")}. The zip contains the show and connected audio files, without Backups. Import the zip with ${ui("Import show")} or drop it onto the window. For an extracted .stageproj folder, use ${ui("Import project folder")} or drag it onto the window; use the zip if the file picker cannot select the folder. Different existing audio is preserved. Missing or mismatched audio stays offline. Check the list and use Reconnect when needed. Existing .stagesketch and legacy JSON imports remain available.</p>
+<p>On desktop Chrome, open ${ui("Work folder")} in the save panel. Select a folder and save the current show as a new audio-inclusive project, or open an existing project in that folder. Edits save directly to the file, with a show copy in the browser. Audio lives in the folder project file and working memory; new audio is not duplicated into browser audio storage. After restarting, reconnect and open the disk file before writing again. Import legacy JSON through the existing preview, then save it in the folder. Safari, Firefox, iPad and the Mac app retain their existing save flows.</p>
+<p>${ui("Back up to a folder (Google Drive, Dropbox, etc.)")} keeps versioned copies without changing the primary file. Check cloud arrival in the sync app. Permission loss, conflicts and storage failures stop work-folder writes and retain the previous complete file. Keep the tab open to reconnect or export your edits to another file. Large audio files may take time to save.</p>
 <p>On Mac, use Open project in the Show panel, Finder, or drag and drop to open an older .stagesketch or beta .json export. The duplicate Import show entry is hidden on Mac; the web edition keeps both Shows and Import show. Choose Open in the confirmation dialog to create an untitled project. The first Command-S asks for a destination and suggests the show title for the new .stageproj. The original file is never changed or used as an autosave destination. Old JSON exports do not contain audio files; reconnect them when needed. A damaged file or unsupported version does not replace the current show.</p>
 <p>In the Mac project edition, use File → Previous shows → Save as project to turn old browser-saved shows into project files with their available audio. The original shows and audio stay on this device. A cancelled or failed save does not count as completed.</p>
-<p>${ui("Export show")} in the ${ui("Show")} panel saves the show as one file (.json). Give it a ${ui("File name")} and choose ${ui("Include theatre data")} or ${ui("Export without the theatre")} (leave out a theatre whose source may not be shared).</p>
+<p>${ui("Export project (with audio)")} in the ${ui("Show")} panel saves the show and connected audio as one .stageproj.zip file. Give it a ${ui("File name")} and choose ${ui("Include theatre data")} or ${ui("Export without the theatre")} (leave out a theatre whose source may not be shared).</p>
 <p>The receiver uses ${ui("Import show")} and picks the file. The ${ui("Compare before importing")} window shows what it contains (scenes, performers, version); choose ${ui("Open as a separate show")} or ${ui("Replace the current show")}.</p>
 <ul>
-<li>Audio files are not included. On the receiving device use ${ui("Reconnect")} on the timeline's audio block to choose the original file again.</li>
+<li>Unconnected audio files are not included; their settings and reference IDs are preserved. On the receiving device use ${ui("Reconnect")} on the timeline's audio block to choose the original file again.</li>
 <li>Shows with Gamma lighting (equipment placement and LX cues) cannot be read by the beta. Open them in Gamma.</li>
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release097-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
-${fig("release097-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release097-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
+${fig("release0100-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
+${fig("release0100-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release0100-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
 `
       },
       {

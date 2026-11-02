@@ -19,7 +19,7 @@ ${table(["Item", "What it does"], [
   [ui("Version") + " / ＋", "Versions start at v1. ＋ saves and moves to the next version; earlier versions stay in All shows"],
   [ui("All shows"), "Shows on this device plus the bundled samples. Click to open, ✕ to remove. " + ui("Create from a structure template") + " is here too"],
   [ui("Create a new show"), "A blank show. It starts in Theatre settings (" + ref("venue-gate", "3-2") + ")"],
-  [ui("Export show"), "Save the show as a file (.json). You are asked whether to include the theatre (" + ref("export-json", "Part 11, 11-3") + ")"],
+  [ui("Export project (with audio)"), "Save the show and connected audio as .stageproj.zip. You are asked whether to include the theatre (" + ref("export-json", "Part 11, 11-3") + ")"],
   [ui("Import show"), "Open a show from a file. The " + ui("Compare before importing") + " window lets you choose " + ui("Open as a separate show") + " or " + ui("Replace the current show")],
   [ui("Return to previous show"), "Right after making a new show, a band offers to leave it and go back to the show you had open"]
 ])}

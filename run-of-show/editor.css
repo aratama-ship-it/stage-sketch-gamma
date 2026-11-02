@@ -768,3 +768,47 @@ body.is-ros-panel-dragging { user-select:none; cursor:grabbing; }
 body:not(.lite-paper) #paper-band > details.band-group { display:block; }
 
 /* b63: order guidance and live position stay available to assistive technology. */
+
+/* C2 F-30/F-32: same rail anatomy as style.css .stage-panel / head / grip.
+   Body padding belongs to the visible body, so collapsed panels have none. */
+@media screen and (min-width:900px) {
+  body:not(.lite-paper) #paper-band > .band-group:not(.ros-display-band),
+  body:not(.lite-paper) #paper-band > #band-settings {
+    padding:0; border:0; border-top:1px solid var(--line-dark); border-radius:var(--radius-sm); gap:0;
+  }
+  body:not(.lite-paper) #paper-band > .band-group > .ros-left-content { padding:0 0 14px; }
+  body:not(.lite-paper) #paper-band .ros-side-head { text-align:left; }
+  body:not(.lite-paper) #paper-band .ros-side-head .ros-panel-grip {
+    width:auto; min-width:0; height:auto; min-height:0; padding:3px 2px; line-height:1; align-self:center; flex:0 0 auto;
+  }
+  body:not(.lite-paper) #paper-band .ros-side-head:hover .ros-panel-grip { color:var(--brass); }
+  body:not(.lite-paper) #paper-band .ros-side-disclosure {
+    width:0; height:0; font-size:0; border-left:4px solid transparent; border-right:4px solid transparent;
+    border-top:5px solid var(--milk-dim); transition:transform .12s ease;
+  }
+  body:not(.lite-paper) #paper-band .ros-side-head[aria-expanded="false"] .ros-side-disclosure { transform:rotate(-90deg); }
+}
+body:not(.lite-paper) #paper-band .band-items .band-subgroup { grid-template-columns:repeat(2,minmax(0,1fr)); }
+body:not(.lite-paper) #paper-band .band-items .band-subgroup .action-tip-target > button {
+  /* The shared SVG pass adds .gamma-icon-button to Duplicate. Override its
+     important square box here, while retaining the shared glyph and colours. */
+  width:100%!important; min-width:0!important; max-width:100%!important;
+  height:var(--ctrl-lg)!important; min-height:var(--ctrl-lg)!important; max-height:var(--ctrl-lg)!important;
+  flex:1 1 auto!important;
+}
+.ros-row-menu {
+  position:fixed; z-index:800; width:max-content; max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px);
+  display:flex; flex-direction:column; align-items:stretch;
+  overflow:auto; padding:calc(var(--gamma-gap) / 2); border:1px solid var(--line-dark);
+  background:var(--desk-2); color:var(--milk); font-family:var(--sans); font-size:var(--fs-4);
+}
+.ros-row-menu[hidden] { display:none; }
+.ros-row-menu > button {
+  display:block; flex:0 0 auto; width:auto; min-width:0; min-height:var(--ctrl-lg); border:0; border-radius:var(--radius-sm);
+  padding:calc(var(--gamma-gap) / 2) var(--gamma-gap); text-align:left; white-space:normal;
+  font:inherit; color:inherit; background:transparent;
+}
+.ros-row-menu > button:hover:not(:disabled),.ros-row-menu > button:focus-visible { background:var(--desk-3); outline:2px solid var(--brass); outline-offset:-2px; }
+.ros-row-menu > button:disabled { color:var(--milk-dim); }
+@media (prefers-reduced-motion:reduce) { #paper-band .ros-side-disclosure { transition:none; } }
+@media print { .ros-row-menu { display:none!important; } }

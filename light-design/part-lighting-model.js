@@ -2,11 +2,30 @@
 (function(root){
 'use strict';
 const M=root.GAMMA_SIMPLE_LIGHT_MODEL,E=root.RIG_ENGINE,clone=M.clone;
-const presets=Object.freeze([{id:'common24',name:'共通24灯',count:24},{id:'balanced22',name:'背景付き22器具',count:22},{id:'balanced24',name:'背景・転がし付き24器具',count:24}]);
-const patterns=Object.freeze([{id:'off',name:'消灯'},{id:'wash',name:'全体'},{id:'background',name:'背景'},{id:'spot',name:'人物・場所'},{id:'rim',name:'輪郭・補助'}]);
+const DEFAULT_PRESET_ID='standard26';
+const presets=Object.freeze([{id:DEFAULT_PRESET_ID,name:'標準26器具（ホリゾント・ミラーボール入り）',count:26},{id:'common24',name:'共通24灯',count:24},{id:'balanced22',name:'背景付き22器具',count:22},{id:'balanced24',name:'背景・転がし付き24器具',count:24}]);
+// Public choices are distinct from legacy saved roles (off / rim / custom).
+const presetChoices=Object.freeze(presets.filter(p=>p.id===DEFAULT_PRESET_ID));
+const patterns=Object.freeze([
+ ['spot','ピンスポット'],['wash','全体照らし'],['background','背景染め'],
+ ['backlight','逆光'],['side','横から'],['foot','足もと'],['silhouette','シルエット'],
+ ['gobo','模様'],['mirrorball','ミラーボール'],['strobe','点滅']
+].map(([id,name])=>Object.freeze({id,name,defaults:Object.freeze({patternId:id,level:70,color:'white',target:'place:center',sizeM:id==='gobo'?3:1.6})})));
+
 const color=x=>M.colors[x]||(/^#[0-9a-f]{6}$/i.test(x||'')?x.toLowerCase():null);
-function createRig(dims,venueType,presetId='balanced22'){
+function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
  if(!presets.some(p=>p.id===presetId))throw Error('対応する機材配置を選んでください');
+ // Add a new family without changing a byte of the three legacy generators.
+ if(presetId===DEFAULT_PRESET_ID){
+  const rig=createRig(dims,venueType,'balanced24');
+  rig.fixtures.push({id:'parts-mirrorball',no:25,name:'ミラーボール',kind:'mirrorball',
+   mount:{type:'truss',trussId:'simple-truss-back',u:.5},mirrorBall:{diameterM:.3,rpm:1},simpleRole:'mirrorball'});
+  rig.fixtures.push({id:'parts-mirrorball-pin',no:26,name:'ミラーボール用ピン',kind:'moving',
+   fixtureType:'moving-profile',opticalType:'spot',beamDeg:7,colorMode:'mix',
+   mount:{type:'truss',trussId:'simple-truss-front',u:.5},simpleRole:'mirrorball'});
+  rig.simpleLighting.presetId=presetId;
+  return rig;
+ }
  const rig=M.createRig(dims,venueType);if(presetId==='common24')return rig;
  const counts={};rig.fixtures=rig.fixtures.filter(f=>{const key=f.simpleRole==='side'?f.mount.side:f.simpleRole;counts[key]=(counts[key]||0)+1;return key==='front-light'?counts[key]<=4:['shimote','kamite'].includes(key)?counts[key]<=2:true;});
  for(const f of rig.fixtures)if(['front-light','side'].includes(f.simpleRole)){
@@ -18,7 +37,7 @@ function createRig(dims,venueType,presetId='balanced22'){
  if(presetId==='balanced24')for(const [side,u]of [['shimote',.15],['kamite',.85]])rig.fixtures.push({id:'parts-floor-'+side,no:rig.fixtures.length+1,name:side==='shimote'?'転がし下手':'転がし上手',kind:'fixed',fixtureType:'led-par',opticalType:'wash',beamDeg:50,cueColor:true,mount:{type:'floor',u,v:.8},fixedSetup:{surface:'air',path:{kind:'still',a:{u,v:.5,hM:1}}}});
  rig.simpleLighting={version:2,presetId,stage:clone(dims),venueType};return rig;
 }
-function assessStage(dims,venueType,presetId='balanced22'){
+function assessStage(dims,venueType,presetId=DEFAULT_PRESET_ID){
  try{createRig(dims,venueType,presetId);}catch(e){return {status:'unavailable',message:e.message};}
  // These are drawing limits, not structural or photometric certification.
  const conditional=dims.W>14||dims.D>10||dims.H>8||dims.H<3.5;
@@ -26,28 +45,56 @@ function assessStage(dims,venueType,presetId='balanced22'){
 }
 function signature(rig){return JSON.stringify({trusses:rig.trusses,fixtures:rig.fixtures.map(f=>({id:f.id,kind:f.kind,fixtureType:f.fixtureType,opticalType:f.opticalType,mount:f.mount,cueColor:f.cueColor}))});}
 function compatible(rig,dims,venueType){try{if(['W','D','H'].some(k=>rig?.simpleLighting?.stage?.[k]!==dims[k]))return false;if(rig?.simpleLighting?.version===1)return M.isCommon(rig,dims,venueType);if(rig?.simpleLighting?.version!==2)return false;return signature(rig)===signature(createRig(dims,venueType,rig.simpleLighting.presetId));}catch{return false;}}
-function parts(rig){const list=[];for(const f of rig.fixtures||[]){const m=f.mount||{};const id=m.type==='truss'?'truss:'+m.trussId:m.type==='side'?'side:'+m.side:m.type==='floor'?'floor:'+f.id:m.type==='cyc'?'cyc:'+m.rung:m.type;
+function parts(rig){const list=[];for(const f of rig.fixtures||[]){const m=f.mount||{};const id=f.simpleRole==='mirrorball'?'mirrorball:parts-mirrorball':m.type==='truss'?'truss:'+m.trussId:m.type==='side'?'side:'+m.side:m.type==='floor'?'floor:'+f.id:m.type==='cyc'?'cyc:'+m.rung:m.type;
  if(!['truss','front','side','floor','cyc'].includes(m.type))continue;
- let p=list.find(x=>x.id===id);if(!p){let name=m.type==='truss'?(rig.trusses.find(t=>t.id===m.trussId)?.label||(m.trussId.includes('back')?'奥の吊り':'手前の吊り')):m.type==='front'?'前明かり':m.type==='side'?(m.side==='shimote'?'下手SS':'上手SS'):m.type==='cyc'?(m.rung==='top'?'ホリゾント上':'ホリゾント床'):f.name||'転がし';p={id,name,mountType:m.type,fixtureIds:[],patterns:['off']};list.push(p);}p.fixtureIds.push(f.id);}
- for(const p of list){const fs=p.fixtureIds.map(id=>rig.fixtures.find(f=>f.id===id));if(p.mountType==='cyc')p.patterns.push('background');else{if(fs.some(f=>f.opticalType==='wash'))p.patterns.push('wash','rim');if(p.mountType==='truss'&&fs.some(f=>f.kind==='moving'&&f.opticalType==='wash'))p.patterns.push('background');if(fs.some(f=>f.kind==='moving'&&f.opticalType==='spot'))p.patterns.push('spot');}}
+ let p=list.find(x=>x.id===id);if(!p){let name=f.simpleRole==='mirrorball'?'ミラーボール':m.type==='truss'?(rig.trusses.find(t=>t.id===m.trussId)?.label||(m.trussId.includes('back')?'奥の吊り':'手前の吊り')):m.type==='front'?'前明かり':m.type==='side'?(m.side==='shimote'?'下手SS':'上手SS'):m.type==='cyc'?(m.rung==='top'?'ホリゾント上':'ホリゾント床'):f.name||'転がし';p={id,name,mountType:f.simpleRole==='mirrorball'?'mirrorball':m.type,fixtureIds:[],patterns:['off']};list.push(p);}p.fixtureIds.push(f.id);}
+ for(const p of list){
+  const fs=p.fixtureIds.map(id=>rig.fixtures.find(f=>f.id===id));
+  if(p.mountType==='mirrorball'){p.patterns.push('mirrorball');continue;}
+  if(p.mountType==='cyc'){p.patterns.push('background','silhouette');continue;}
+  const wash=fs.some(f=>f.opticalType==='wash'),spot=fs.some(f=>f.kind==='moving'&&f.opticalType==='spot');
+  // Keep legacy rim available to old layer edits, but never offer it as a new type.
+  if(wash)p.patterns.push('wash','rim','strobe');
+  if(p.mountType==='truss'&&fs.some(f=>f.kind==='moving'&&f.opticalType==='wash'))p.patterns.push('background');
+  if(spot)p.patterns.push('spot','gobo');
+  if(wash&&fs.some(f=>f.simpleRole==='back'))p.patterns.push('backlight');
+  if(wash&&p.mountType==='side')p.patterns.push('side');
+  if(wash&&p.mountType==='floor')p.patterns.push('foot');
+ }
+
  return list;
 }
-function defaults(){return {patternId:'off',level:70,color:'white',target:'place:center',sizeM:1.6};}
+function defaults(id='off'){
+ const definition=patterns.find(p=>p.id===id);
+ if(definition)return {...definition.defaults};
+ if(!['off','rim','custom'].includes(id))throw Error('この位置ではその明かりを作れません');
+ return {patternId:id,level:70,color:'white',target:'place:center',sizeM:1.6};
+}
+function availableParts(rig,patternId){return parts(rig).filter(p=>p.patterns.includes(patternId));}
+
 function target(ref,pieces){if(ref?.startsWith('person:')){const person=pieces.find(p=>p.kind==='performer'&&p.id===ref.slice(7));if(!person)throw Error('対象の人物が不在です。選び直してください');if(person.u<0||person.u>1||person.v<0||person.v>1)throw Error('対象が舞台の外にあります');return {u:person.u,v:person.v,hM:(person.base||0)+Math.min(1,(person.hM||1.7)*.6)};}const places={left:[.25,.6],center:[.5,.6],right:[.75,.6],back:[.5,.25],front:[.5,.85]},v=places[(ref||'').slice(6)];if(!v)throw Error('当て先を選んでください');return {u:v[0],v:v[1],hM:1};}
 function compose(base,rig,dims,pieces,partId,raw){
  if(!compatible(rig,dims,rig.simpleLighting?.venueType))throw Error('対応する機材配置を確認してください');
  if(base?.simpleComposition&&base.simpleComposition.version!==1)throw Error('新しい形式の明かりです。詳細で確認してください');
- const p=parts(rig).find(p=>p.id===partId),o=Object.fromEntries(Object.entries(defaults()).map(([key,value])=>[key,raw?.[key]??value]));
+ const p=parts(rig).find(p=>p.id===partId),o=Object.fromEntries(Object.entries(defaults(raw?.patternId)).map(([key,value])=>[key,raw?.[key]??value]));
  if(!p||!p.patterns.includes(o.patternId))throw Error('この位置ではその明かりを作れません');
  if(!Number.isFinite(o.level)||o.level<0||o.level>100||!color(o.color)||!Number.isFinite(o.sizeM)||o.sizeM<.5||o.sizeM>4)throw Error('調整値を確認してください');
  const cue=clone(base||{lights:{},groups:[],environment:{haze:35}}),warnings=[];cue.lights=cue.lights||{};cue.groups=cue.groups||[];
  if(cue.groups.some(g=>(g.members||[]).some(id=>p.fixtureIds.includes(id))))throw Error('組の効果がある位置です。詳細で調整してください');
- const point=o.patternId==='spot'?target(o.target,pieces):null;
- for(const id of p.fixtureIds){const f=rig.fixtures.find(f=>f.id===id),cyc=f.mount.type==='cyc';const eligible=o.patternId!=='off'&&(cyc||f.opticalType===(o.patternId==='spot'?'spot':'wash'));let aim=point||{u:f.mount.u??(f.mount.side==='shimote'?.65:.35),v:f.mount.v??.6,hM:o.patternId==='rim'?1.2:0},deg=f.beamDeg||50;
- if(o.patternId==='background'){aim={u:f.mount.u??.5,v:0,hM:Math.min(dims.H*.55,5)};deg=60;if(!pieces.some(x=>x.kind==='curtain'&&x.curtainKind==='cyc'))warnings.push('背景幕がありません。仮想背景面での試し表示です');}
+ const focused=['spot','gobo'].includes(o.patternId),backdrop=['background','silhouette'].includes(o.patternId);
+ const ball=o.patternId==='mirrorball'?rig.fixtures.find(f=>p.fixtureIds.includes(f.id)&&E.isMirrorBall(f)):null;
+ const point=focused?target(o.target,pieces):ball?E.mirrorBallAimPoint(ball,rig,dims):null;
+ if(o.patternId==='silhouette'&&Object.entries(cue.lights).some(([id,l])=>!p.fixtureIds.includes(id)&&rig.fixtures.find(f=>f.id===id)?.mount.type!=='cyc'&&E.isLit(l)))warnings.push('シルエットにするには、人物を照らす他のレイヤーをOFFにしてください');
+
+ for(const id of p.fixtureIds){const f=rig.fixtures.find(f=>f.id===id),cyc=f.mount.type==='cyc';const eligible=o.patternId!=='off'&&!E.isMirrorBall(f)&&(cyc||f.opticalType===((focused||ball)?'spot':'wash'));let aim=point||{u:f.mount.u??(f.mount.side==='shimote'?.65:.35),v:f.mount.v??.6,hM:['rim','backlight','side','foot'].includes(o.patternId)?1.2:0},deg=f.beamDeg||50;
+ if(backdrop){aim={u:f.mount.u??.5,v:0,hM:Math.min(dims.H*.55,5)};deg=60;if(!pieces.some(x=>x.kind==='curtain'&&x.curtainKind==='cyc'))warnings.push('背景幕がありません。仮想背景面での試し表示です');}
  if(f.kind==='fixed')aim=clone(f.fixedSetup?.path?.a||aim);
- if(point&&eligible){const s=E.fixtureWorld(f,rig,dims),t=E.pointWorld(point,dims),L=Math.hypot(s.x-t.x,s.y-t.y,s.z-t.z);const wanted=2*Math.atan(o.sizeM/2/L)*180/Math.PI;const range=E.BEAM_RANGES?.[f.fixtureType]||{min:7,max:50};deg=Math.max(range.min,Math.min(range.max,wanted));if(Math.abs(deg-wanted)>.01)warnings.push('スポット径が機材の照射角の範囲で変わります');}
- const old=cue.lights[id];cue.lights[id]=E.newLightCue({on:eligible,level:eligible?o.level:0,color:color(o.color),surface:cyc||o.patternId==='background'?'back':'air',beamDeg:f.kind==='fixed'?null:deg,...(f.kind==='fixed'?{beamDegTo:null}:{}),path:{kind:'still',a:aim}});
+ if(point&&eligible&&!ball){const s=E.fixtureWorld(f,rig,dims),t=E.pointWorld(point,dims),L=Math.hypot(s.x-t.x,s.y-t.y,s.z-t.z);const wanted=2*Math.atan(o.sizeM/2/L)*180/Math.PI;const range=E.BEAM_RANGES?.[f.fixtureType]||{min:7,max:50};deg=Math.max(range.min,Math.min(range.max,wanted));if(Math.abs(deg-wanted)>.01)warnings.push('スポット径が機材の照射角の範囲で変わります');}
+ if(ball&&eligible)deg=7;
+ const effect=o.patternId==='gobo'?{gobo:'break-mid',goboSoft:10,goboSpin:0}:
+  o.patternId==='strobe'?{strobe:{on:true,kind:'sharp',hz:2,duty:50,depth:0,phaseNorm:0}}:
+  ball&&eligible?{target:{fixtureId:ball.id}}:{};
+ const old=cue.lights[id];cue.lights[id]=E.newLightCue({on:eligible,level:eligible?o.level:0,color:color(o.color),surface:cyc||backdrop?'back':'air',beamDeg:f.kind==='fixed'?null:deg,...(f.kind==='fixed'?{beamDegTo:null}:{}),path:{kind:'still',a:aim},...effect});
  if(o.patternId==='off'&&old)cue.lights[id]={...clone(old),on:false,level:0};
  if(f.kind==='fixed'&&!f.cueColor&&old?.color)cue.lights[id].color=old.color;
  }
@@ -86,9 +133,9 @@ function setEnabled(base,rig,id,enabled){
  m.detailAdjusted=adjusted;
  return {cue,warnings:[]};
 }
-function targetStatus(cue,pieces){const warnings=[];for(const value of Object.values(cue?.simpleComposition?.parts||{})){if(value.patternId!=='spot'||!value.target?.startsWith('person:'))continue;try{if(JSON.stringify(target(value.target,pieces))!==JSON.stringify(value.targetPoint))warnings.push('対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください');}catch(e){warnings.push(e.message);}}return [...new Set(warnings)];}
+function targetStatus(cue,pieces){const warnings=[];for(const value of Object.values(cue?.simpleComposition?.parts||{})){if(!['spot','gobo'].includes(value.patternId)||!value.target?.startsWith('person:'))continue;try{if(JSON.stringify(target(value.target,pieces))!==JSON.stringify(value.targetPoint))warnings.push('対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください');}catch(e){warnings.push(e.message);}}return [...new Set(warnings)];}
 function withRig(design,dims,venueType,id){const next=clone(design);next.rig=createRig(dims,venueType,id);next.fixtureGroups=[];delete next.plans;delete next.activePlanRef;
  for(const row of [...next.scenes,...(next.archivedScenes||[])]){const reset=cue=>{const value={...clone(cue||{}),lights:{},groups:[],migrationState:'needs-reset',simpleComposition:{version:1,parts:{}}};delete value.simplePreset;return value;};row.cue=reset(row.cue);for(const q of row.lxq||[])q.cue=reset(q.cue);}
  return next;}
-root.GAMMA_PART_LIGHTING=Object.freeze({presets,patterns,createRig,compatible,parts,defaults,compose,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage});
+root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage});
 })(typeof window==='undefined'?globalThis:window);

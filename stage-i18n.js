@@ -32,6 +32,45 @@
 
   const TEXT = {
 
+    "ブラウザ版と共有リンクを Mac 版と同じ内容にしました。v0.3.98・v0.3.99 で Mac 版だけに入っていた変更（標準26器具と新しい照明の種類、キューの札、音源入りの「プロジェクトを書き出す」、作業フォルダ、進行表の改善、かんたん照明の SS の左右の保持、かんたん照明で適用した直後の「LXキューを適用」の直し）が、ブラウザ版と共有リンクでも使えます。保存の形式は変わりません。": "The browser version and shared links now match the Mac version. Changes that were previously only in the Mac version (v0.3.98 and v0.3.99) are now available in the browser and in shared links: the Standard 26 rig and the new lighting types, cue badges, the audio-inclusive “Export project”, the work folder, the Run of show improvements, keeping each side's own lighting for SS in Easy lighting, and the fix for “Apply LX cue” after applying in Easy lighting. The saved format is unchanged.",
+
+    "かんたん照明の正面プレビューを、客席から見る遠近図のまま、劇場設定の袖まで収める枠取りにしました。席や袖の広さによって、図の縮尺と人物・光の見え方が前の版と異なります。舞台タブの正面図・詳細照明・3D の描き方は変わりません。": "The Easy lighting front preview keeps the audience perspective and now frames the view out to the wings of the selected theatre. Depending on the seat and the wing width, the scale of the figure and how performers and light appear differ from the previous version. The Stage tab front view, Detailed lighting and 3D are drawn as before.",
+
+    "照明の編集中に繰り返していた確認処理を減らしました。画面を離れるときに確認する条件は変わりません。": "Reduced repeated checks while editing lighting. The conditions for asking before you leave the screen are unchanged.",
+
+    "かんたん照明の SS で、方向を変えずに強さ・色・種類・点灯／消灯を調整したとき、下手と上手それぞれの明かりをそのまま保つようにしました。以前は片側の設定がもう片側に置き換わり、消灯していた側が点き直すことがありました。方向（下手から／上手から／両袖）を明示して変えたときだけ、これまでどおり両側を合成します。保存の形式は変わりません。": "In Easy lighting, adjusting the SS position's level, colour, type or on/off without changing its direction now keeps each side's own lighting. Previously one side's settings could replace the other side's, and a side that was off could come back on. Both sides are composed together, as before, only when you explicitly change the direction (from stage left / from stage right / both wings). The saved format is unchanged.",
+
+    "かんたん照明で適用した直後に詳細照明へ切り替えると、「LXキューを適用」が押せるまま残っていた不具合（v0.3.97 から）を直しました。保存が成功したときにだけ待ち状態を解除します。": "Fixed a bug (since v0.3.97) where “Apply LX cue” stayed enabled after switching to Detailed lighting right after applying in Easy lighting. The pending state is now cleared only when the save succeeds.",
+
+    "前の版（v0.3.98）の更新のお知らせにあった進行表の説明を訂正しました。以前「両方」を選んで保存した行は表示専用のままで、正面図か平面図の 1 つを選んだ行だけが、表の図を押すと切り替わります。": "Corrected the Run of show description in the previous version's (v0.3.98) release notes: rows saved earlier with “both” stay display-only, and only rows set to a single drawing (front or plan) switch when you press the drawing in the table.",
+
+    "照明タブに入って何も変えずに出たときに「照明をショーへ適用しますか？」が出ることがあった不具合を直しました。復元された下書きがあっても、その訪問で変更がなければ聞きません。照明の平面図・正面図をホイールで拡大したあと、止まったら同じ画素数で鮮明に描き直します。照明タブを開いたまま別のシーンへ移るとき WebKit で出ていた描画エラーの原因（負の寸法）を防ぎました。": "Fixed a case where leaving the Lighting tab without changing anything still asked “Apply the lighting to the show?”. A restored draft no longer triggers the question when nothing changed during that visit. After zooming the lighting plan or front view with the wheel, the drawing is redrawn sharply at the same pixel count once the zoom stops. Also prevented the WebKit drawing error (negative size) that appeared when moving to another scene with the Lighting tab open.",
+
+    "正面図の右上から開いていた「背景」の小窓を、ほかと同じパネル「背景」にしました（アイコンからも開けます）。ショーパネルからサンプルライブラリを直接開けます。「シーンの小さな絵」はパネルの一覧から環境設定へ移しました。小窓（モーダル）の輪郭を白で少し太くして背景と見分けやすくし、シーン一覧の各シーンの下に LX キューと並べて M キューも枠なしで表示します。環境設定の冒頭に常に出ていた赤い枠の保存案内をやめました。": "The “Background” dialog opened from the top-right of the front view is now a regular “Background” panel (the icon still opens it). The sample library opens directly from the Show panel. “Scene thumbnails” moved from the panel list to the preferences. Modal dialogs get a slightly thicker white outline so they stand out from the background, and the scene list shows M cues next to the LX cues under each scene, without boxes. The red-framed save notice at the top of the preferences is gone.",
+
+    "進行表タブの左のパネル群を舞台タブのパネルと同じ作りにそろえ、閉じたときの見出しの上下の余白を直しました。「表示」にあった全行の図の選択（正面図／平面図／両方）をやめ、表の図を押すとその行だけ正面図と平面図が切り替わります。「編集」パネルを整理し、表のセルを右クリックすると追加・複製・上へ・下への操作を一覧から選べます。": "The left panels of the Run of show tab now use the same construction as the Stage tab panels, and the uneven spacing above and below the heading when collapsed is fixed. The per-table default drawing choice (front / plan / both) under “Display” is gone; for rows set to a single drawing, pressing the drawing switches that row only between front and plan (rows saved earlier with “both” stay display-only). The “Edit” panel is tidied, and right-clicking a cell offers add, duplicate, move up and move down.",
+    "進行表タブの左のパネル群を舞台タブのパネルと同じ作りにそろえ、閉じたときの見出しの上下の余白を直しました。「表示」にあった全行の図の選択（正面図／平面図／両方）をやめ、正面図か平面図の 1 つを選んだ行は、表の図を押すとその行だけ切り替わります（以前「両方」を選んだ行は表示専用のままです）。「編集」パネルを整理し、表のセルを右クリックすると追加・複製・上へ・下への操作を一覧から選べます。": "The left panels of the Run of show tab now use the same construction as the Stage tab panels, and the uneven spacing above and below the heading when collapsed is fixed. The per-table default drawing choice (front / plan / both) under “Display” is gone; for rows set to a single drawing, pressing the drawing switches that row only between front and plan (rows saved earlier with “both” stay display-only). The “Edit” panel is tidied, and right-clicking a cell offers add, duplicate, move up and move down.",
+
+    "対応するデスクトップブラウザ（Chrome 系）に「作業フォルダ」を追加しました。デスクトップのフォルダを選ぶと、その中の音源入りプロジェクト（.stageproj.zip）を作業ファイルとして開き、保存はそのファイルへ直接書きます（ブラウザの中にも控えを残します）。世代の控えを作る機能の名前を「フォルダにバックアップ（Google Drive・Dropbox など）」に変えました。書き出しは音源入りの「プロジェクトを書き出す」に一本化しました。以前の JSON やショーのファイルも読み込めます。": "Supported desktop browsers (Chromium family) gain a “Work folder”. Pick a folder on your desktop and the project files with audio (.stageproj.zip) inside it open as work files; saving writes straight to that file (a copy is also kept in the browser). The generation-backup feature is renamed “Back up to a folder (Google Drive, Dropbox, …)”. Export is unified into “Export project” with audio. Older JSON and show files can still be opened.",
+
+    "かんたん照明の流れを「照明の種類 → 使える位置 → レイヤー」に組み替えました。種類を押すとすぐに試し表示が点き、位置を選び直せます。レイヤーごとに点灯・調整・削除ができ、種類から「消灯」は無くなりました。適用するまでショーは変わらず、未適用の変更があるときだけ「試しをやめる」が出ます。": "Easy lighting now flows as “lighting type → available positions → layers”. Pressing a type lights a preview at once and you can move it to another position. Each layer can be switched on or off, adjusted and deleted, and “Off” is no longer offered as a type. The show does not change until you apply, and “Discard preview” appears only while there are unapplied changes.",
+
+    "かんたん照明の見出しを「層」から「レイヤー」、「明かりの機能」から「照明の種類」に改めました。「スポットの直径」は「直径」として、強さと同じフェーダーと数値欄（0.5〜4m・0.1m 刻み）で動かせます。操作の大きさ・文字・間隔・仕切りの線を詳細照明と同じ共通の作りに揃えました。": "Easy lighting renames “level” to “Layers” and “light function” to “Lighting type”. “Spot diameter” is now “Diameter”, with the same fader and number field as the intensity (0.5–4 m in 0.1 m steps). Control sizes, text, spacing and the divider line now use the same shared design as Detail lighting.",
+
+    "かんたん照明の「使う位置」で、下手SS と上手SS を 1 つの「SS」にまとめました。既定は両袖で、調整で「下手から／上手から」の片側に切り替えられます。保存の形式は変えず、左右で違う明かりはそのまま保たれます。": "In the Easy lighting positions, stage-right SS and stage-left SS are shown as one “SS”. Both wings is the default, and the adjustment can switch to one side (“From stage right” / “From stage left”). The saved format is unchanged and lights that differ between the two sides are kept as they are.",
+
+    "かんたん照明で、シーンと対象キューの選択を図の側（左）へ移し、対象キューの隣の「＋ 新規」で照明キューを追加できるようにしました。": "In Easy lighting, the scene and target cue selectors moved to the drawing side (left), and “＋ New” next to the target cue adds a lighting cue.",
+
+    "照明の種類を 10 種類（ピンスポット・全体照らし・背景染め・逆光・横から・足もと・シルエット・模様・ミラーボール・点滅）に増やしました。機材配置に「標準26器具（ホリゾント・ミラーボール入り）」を追加し、新しいショーの既定にしました。既存の 3 つの配置と明かりはそのまま開けます。": "Lighting types grew to ten (pin spot, wash, background, backlight, side light, floor uplight, silhouette, pattern, mirror ball and strobe). A new rig preset “Standard 26 fixtures (cyclorama and mirror ball)” is the default for new shows. The three existing presets and their lights open as before.",
+
+    "かんたん照明の図を、舞台タブの正面図と同じ座標と描き方にしました。床・額縁・舞台袖の位置が舞台タブと揃います。光の描き方は変えていません。": "The Easy lighting drawing now uses the same coordinates and drawing as the front view of the Stage tab, so the floor, proscenium and wings line up with the Stage tab. The way light itself is drawn is unchanged.",
+
+    "Google Drive などの控え（音源入り）を別のショーとして開くとき、同じ ID で中身の違う音源があれば、「端末側の音源を使う／控えの音源を別 ID で入れる／復元をやめる」を選んでから開くようにしました。元の音源と控えは上書きしません。": "When a backup with audio from Google Drive or a similar folder is opened as a separate show and an audio track with the same ID has different contents, you now choose first: use the audio on this device, add the backup's audio under a new ID, or cancel the restore. The original audio and the backup are never overwritten.",
+
+    "タイムラインの左下の取っ手を、目盛り・名前・E が収まる 1 つの箱に整えました。再生列の速度の欄の高さと線を、周りのボタンと揃えました。": "The lower-left timeline grip is now one box holding the tick marks, the name and the E. The speed field in the playback row matches the height and line of the buttons around it.",
+
+    "前の版（v0.3.97）の更新のお知らせにあった「かんたん 4 区画」の表記を、3 区画（層・機能・位置）と選んだ層の直下の調整欄に訂正しました。": "The previous release note (v0.3.97) that mentioned “four Easy lighting areas” has been corrected to three areas (layers, functions, positions) plus the adjustment field under the selected layer.",
+
     "かんたん照明で灯体の多い設備を使うとき、詳細の光量入力の描き直しをまとめて、入力に遅れずついてくるようにしました。かんたん照明の描き方は前のままです。": "When Easy lighting uses a rig with many fixtures, the Detail level inputs now coalesce their redraws so the drawing keeps up with the input. Easy lighting itself draws as before.",
 
     "Mac 版に、ショーの控えを Google Drive などのフォルダへ自動で残す「バックアップ先」の設定を追加しました。世代数の初期値と自動整理（既定でオン）、保存先が満杯のときの表示を備えます。実際の Google Drive への保存と復元は、まだ十分に確認できていません。": "The Mac app gains a Backup destination setting that keeps copies of a show in a folder such as Google Drive, with a default number of generations, automatic clean-up (on by default) and a notice when the destination is full. Saving to and restoring from a real Google Drive folder has not yet been verified.",
@@ -2046,7 +2085,7 @@
     "ハンドバランス用cane": "Handbalancing canes",
     "車": "Car",
     "照明の名前": "Light name",
-    "照明の種類": "Light type",
+    "照明の種類": "Lighting type",
     "プリセットから組む": "Build from preset",
     "照明プリセット": "Lighting presets",
     "吊り（バトンから真下へ）": "Overhead (straight down from the bar)",
@@ -4594,7 +4633,7 @@ Object.assign(window.SHOSAI_I18N.text, {
   "該当なし": "None",
   "一時停止": "Pause",
   "タイムラインを再生・一時停止": "Play or pause the timeline",
-  "タイムラインを確認してください": "Check the timeline",
+  "タイムラインを確認してください": "Check the timeline"
 });
 
 // B-9: new strings belong to the language pack.
@@ -4632,7 +4671,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 // v0.3.32 release notes.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "劇場設定に「舞台機構」の手順が戻り、『前紗幕を置く（一番手前・透け30%）』で紗幕を舞台の一番手前へ置けるようになりました。置いた前紗幕は舞台機構として登録され、舞台タブの「舞台機構」一覧の ON/OFF でシーンごとに出し入れできます。": "Theatre settings has a Stage machinery step again: “Place a front scrim (downstage edge, 30% sheer)” puts a scrim at the very front of the stage. The scrim is registered as stage machinery, so you can show or hide it per scene with ON/OFF in the Stage machinery list of the Stage tab.",
-  "舞台タブの左列に「舞台機構」の一覧が出るようになりました（登録した機構の ON/OFF）。紗幕の「透け」は選んだものの欄で変えられます。": "The left column of the Stage tab now shows the Stage machinery list (ON/OFF for registered machinery). A scrim's sheer is adjusted in the selection panel.",
+  "舞台タブの左列に「舞台機構」の一覧が出るようになりました（登録した機構の ON/OFF）。紗幕の「透け」は選んだものの欄で変えられます。": "The left column of the Stage tab now shows the Stage machinery list (ON/OFF for registered machinery). A scrim's sheer is adjusted in the selection panel."
 });
 
 // v0.3.34 release notes.
@@ -5108,7 +5147,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
     "劇場設定で、畳んでいる手順には「?」を出さないようにそろえました。": "In Theatre settings, the “?” is now consistently hidden for collapsed steps.",
     "劇場設定の平面図は、舞台や客席の上をドラッグしても図を動かせるようにしました。図形を動かすのは、選んでから掴んだときだけです。": "In the Theatre settings plan, dragging over the stage or house now pans the drawing too. A shape moves only when you select it first and then drag it.",
     "タイムラインのアイコンと文字の大きさを、舞台タブにそろえました。": "Matched the timeline icon and text sizes to the Stage tab.",
-    "タイムラインを閉じていても、スペースキーで再生・停止できるようにしました。": "The Space key now plays or stops playback even when the timeline is closed.",
+    "タイムラインを閉じていても、スペースキーで再生・停止できるようにしました。": "The Space key now plays or stops playback even when the timeline is closed."
 });
 
 // v0.3.56 release notes and share entry.
@@ -6580,8 +6619,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Wash", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
 // G-010: independent folder backups.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
-  "drive.title": "Back up to Google Drive",
-  "drive.choose": "Choose a Google Drive folder",
+  "drive.title": "Back up to a folder (Google Drive, Dropbox, etc.)",
+  "drive.choose": "Choose backup folder",
   "drive.start": "Start automatic backup",
   "drive.cancel": "Cancel",
   "drive.now": "Back up now",
@@ -6597,7 +6636,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "drive.capacity": "Storage limit (GiB)",
   "drive.invalidLimit": "Enter a whole number within the shown range.",
   "drive.setup": "Set up Google Drive for desktop",
-  "drive.cloud": "This shows copies saved on this device. Check Google Drive for cloud arrival and sync status.",
+  "drive.cloud": "This shows local saves. Check cloud arrival and sync status in your sync app.",
   "drive.confirm": "Folder: {folder}. Back up only the open show as JSON, audio packages and history.",
   "drive.permission": "The folder is unavailable. Reconnect or choose a folder.",
   "drive.differs": "The saved show differs from the backup. Open a backup as another show or choose a new folder.",
@@ -6650,3 +6689,90 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "先に同じショーの駒をコピーしてください。": "Copy pieces from this show first.",
   "調整: {position}": "Adjust: {position}"
 });
+
+// B6: Drive restore audio decisions and the v0.3.97 display correction.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "drive.audioConflict": "This backup and this device have different audio with the same ID. Restore is paused. Choose which audio to use. The current show and original backup stay unchanged.",
+  "drive.useLocalAudio": "Use audio on this device",
+  "drive.copyBackupAudio": "Import backup audio with new IDs",
+  "drive.cancelRestore": "Cancel restore",
+  "drive.audioRestoreFailed": "Restore stopped because audio could not be verified or saved. The current show and original backup stay unchanged.",
+  "高さの低い画面（13 インチ級・1440×800 前後）で、見出しとタブの余白を詰めました。かんたん照明は3区画（層・機能・位置）と、選んだ層の直下の調整欄で構成されています。かんたん照明の区画と詳細照明の3パネルの大きさは設定で変えられます。設定した高さは上限として扱い、内容が少ないときはそれより低くなります。": "On short screens (13-inch class, around 1440×800), the header and tab spacing is tighter. Easy lighting has three areas (layer, function and position), with adjustments directly below the selected layer. The sizes of these areas and the three Detail lighting panels can be set in preferences. A set height is a maximum; areas get shorter when there is less content."
+});
+// B12: simple lighting flow; Japanese keys are also the Japanese UI text.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "レイヤー": "Layers",
+  "SS": "Side light",
+  "両袖": "Both wings",
+  "下手から": "From stage right",
+  "上手から": "From stage left",
+  "左右で違う": "Different on each side",
+  "試しをやめる": "Discard preview",
+  "＋ 新規": "＋ New",
+  "まだレイヤーはありません。照明の種類から選んでください。": "Choose a lighting type to add a layer.",
+  "レイヤーの点灯: {position}": "Layer power: {position}",
+  "レイヤーの一覧から選んで編集してください": "Choose a layer in the list to edit it.",
+  "削除: {position}": "Delete: {position}",
+  "この種類を使える空き位置がありません": "No free position supports this type.",
+  "適用するか、試しをやめてから詳細へ進んでください": "Apply or discard the preview before opening Detail.",
+  "適用するか、試しをやめてからシーンを切り替えてください": "Apply or discard the preview before switching scenes.",
+  "適用するか、試しをやめてからキューを切り替えてください": "Apply or discard the preview before switching cues.",
+  "適用するか、試しをやめてからキューを追加してください": "Apply or discard the preview before adding a cue."
+});
+// v0.3.98 B3: lighting types and the new equipment family.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "標準26器具（ホリゾント・ミラーボール入り）": "Standard 26 fixtures (cyclorama and mirror ball)",
+  "逆光": "Backlight",
+  "横から": "Side light",
+  "足もと": "Floor uplight",
+  "シルエット": "Silhouette",
+  "模様": "Pattern",
+  "点滅": "Strobe",
+  "ミラーボール用ピン": "Mirror ball pinspot",
+  "シルエットにするには、人物を照らす他のレイヤーをOFFにしてください": "For a silhouette, turn off other layers that light the performers."
+});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"ミラーボール": "Mirror ball"});
+
+/* C4: selected folder and one audio-inclusive project export. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "work.title": "Work folder",
+  "work.choose": "Choose work folder",
+  "work.reconnect": "Reconnect folder",
+  "work.move": "Save current show in folder",
+  "work.save": "Save to folder",
+  "work.files": "Show folder files",
+  "work.open": "Open",
+  "work.empty": "No projects in this folder.",
+  "work.note": "The project file in this folder stores the show and connected audio. A show copy stays in the browser. Unconnected audio is not included. Check cloud sync in your sync app.",
+  "work.startNote": "Choose a desktop folder to store your show and audio.",
+  "work.state.disabled": "Open a folder file or save the current show.",
+  "work.state.ready": "Folder selected. Open a file or save the current show.",
+  "work.state.pending": "Waiting to save to folder",
+  "work.state.saving": "Saving to folder",
+  "work.state.saved": "Saved to folder",
+  "work.state.stopped": "Folder saving stopped",
+  "work.permission": "Folder permission is required. Reconnect the folder and keep this tab open.",
+  "work.busy": "Another tab has this file open. Close it before trying again.",
+  "work.changed": "The file changed outside this tab. Overwriting stopped. Export your edits to another file.",
+  "work.audio": "Audio could not be read. Reconnect the original file.",
+  "work.quota": "The folder is out of space. Saving stopped with the previous file retained.",
+  "work.context": "The show changed. Select it again.",
+  "work.carry": "Extra data is unavailable. Keep the original package.",
+  "work.failed": "The folder operation did not finish. Keep this tab open and check the location, permission and space.",
+  "work.reserved": "A file used by autosave or backup cannot be used as a work file.",
+  "プロジェクトを書き出す（音源入り）": "Export project (with audio)",
+  "＋ プロジェクトを書き出す（音源入り）": "＋ Export project (with audio)",
+  "作業フォルダへ保存できませんでした。保存パネルを確認し、このタブを開いたままにしてください。": "Could not save to the work folder. Check the save panel and keep this tab open.",
+  "音源を読み出せないため書き出しを止めました。音源を再接続してください。": "Export stopped because audio is unavailable. Reconnect the audio.",
+  "未接続の音源は含まれません。音源の設定は残しています。元ファイルを再接続してください。": "Unconnected audio is not included. Its settings are preserved. Reconnect the original files.",
+  "この名前は書き出すファイルだけに使います。ショー名は変わりません。音源と一緒に .stageproj.zip へ書き出します。": "This name applies only to the exported file. The show name stays the same. Export as .stageproj.zip with audio.",
+  "フォルダにバックアップ（Google Drive・Dropbox など）": "Back up to a folder (Google Drive, Dropbox, etc.)"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"作業フォルダ": "Work folder"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"work.opened": "Open here"});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"作業フォルダには保存しました。ブラウザ内の控えは容量不足で保存できませんでした。保存容量を確認してください。": "Saved to the work folder. The browser copy could not be saved because browser storage is full. Check storage capacity."});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"work.currentFile": "Saving to: {file}", "work.selectedFolder": "Selected folder: {folder}"});

@@ -58,9 +58,26 @@
   function wheelFactor(event) {
     return event.ctrlKey ? Math.exp(clamp(-event.deltaY * .01, -1, 1)) : Math.pow(1.1, -Math.sign(event.deltaY));
   }
-  function mount({ canvases, enabled, editing, aimWheel, hit, text }) {
+  function relative(view, painted) {
+    const z=view.z/painted.z;
+    return {z,x:view.x-painted.x*z,y:view.y-painted.y*z};
+  }
+  function mount({ canvases, enabled, editing, aimWheel, hit, text, redraw, changed }) {
     const views = new Map(); let hovered = null, space = false, drag = null;
     const consume = e => { e.preventDefault(); e.stopImmediatePropagation(); };
+    function settle(canvas) {
+      const item=views.get(canvas);clearTimeout(item.timer);item.timer=0;
+      if(!redraw || !enabled() || editing() || drag || document.hidden || !canvas.offsetWidth || !canvas.offsetHeight)return;
+      if(JSON.stringify(item.painted)===JSON.stringify(item.view))return;
+      const previous=item.painted;item.painted={...item.view};
+      try { redraw(); } catch(error) {item.painted=previous;throw error;}
+      apply(canvas);
+    }
+    function schedule(canvas) {
+      if(!redraw)return;
+      const item=views.get(canvas);clearTimeout(item.timer);
+      item.timer=setTimeout(()=>settle(canvas),140);
+    }
     function apply(canvas) {
       const item = views.get(canvas), on = enabled();
       item.panel.classList.toggle('light-figure-active', on);
@@ -70,7 +87,10 @@
       const w = canvas.offsetWidth, h = canvas.offsetHeight;
       if (on && w && h) item.view = bound(item.view, w, h);
       const v = item.view;
-      canvas.style.transform = on ? `translate(${v.x}px,${v.y}px) scale(${v.z})` : '';
+      const css=relative(v,item.painted);
+      canvas.style.transform = on ? `translate(${css.x}px,${css.y}px) scale(${css.z})` : '';
+      canvas.dataset.figureRasterZoom=String(item.painted.z);
+      canvas.dataset.figureSettled=String(!on || JSON.stringify(item.painted)===JSON.stringify(v));
       canvas.dataset.figureZoom = String(v.z); canvas.dataset.figureX = String(v.x); canvas.dataset.figureY = String(v.y);
       item.output.textContent = Math.abs(v.z - 1) < .001 ? '' : `×${v.z.toFixed(1)}`;
       item.wrap.classList.toggle('is-panning', !!drag && drag.canvas === canvas);
@@ -78,11 +98,12 @@
       item.button.setAttribute('aria-label',text('図を全体表示'));
       item.button.title = text('図を全体表示（空き場所のダブルクリックでも戻ります）');
       item.wrap.title = text('ホイールで拡縮、拡大中はスペース＋ドラッグまたは中ボタンで移動');
+      changed?.(canvas);
     }
-    function reset(canvas) { views.get(canvas).view = { z: 1, x: 0, y: 0 }; apply(canvas); }
+    function reset(canvas) { views.get(canvas).view = { z: 1, x: 0, y: 0 }; if(redraw)settle(canvas); apply(canvas); }
     function end(e) {
       if (!drag || e && e.pointerId !== drag.id) return;
-      const canvas = drag.canvas; drag = null; apply(canvas);
+      const canvas = drag.canvas; drag = null; apply(canvas); schedule(canvas);
     }
     for (const canvas of canvases) {
       const panel = canvas.parentElement, wrap = document.createElement('div');
@@ -92,7 +113,7 @@
       button.type = 'button'; button.className = 'btn small light-figure-fit';
       output.className = 'light-figure-scale'; output.setAttribute('data-no-i18n','');
       tools.append(output, button); wrap.append(tools);
-      views.set(canvas, { panel, wrap, tools, button, output, view: { z: 1, x: 0, y: 0 } });
+      views.set(canvas, { panel, wrap, tools, button, output, view: { z: 1, x: 0, y: 0 }, painted: { z:1,x:0,y:0 }, timer:0 });
       button.onclick = () => reset(canvas);
       wrap.addEventListener('pointerenter', () => { hovered = canvas; });
       wrap.addEventListener('pointerleave', () => { if (hovered === canvas) hovered = null; });
@@ -111,12 +132,13 @@
           const r = wrap.getBoundingClientRect();
           item.view = zoomAt(v, wheelFactor(e), { x: e.clientX - r.left, y: e.clientY - r.top }, w, h);
         }
-        apply(canvas);
+        apply(canvas); schedule(canvas);
       }, { capture: true, passive: false });
       wrap.addEventListener('pointerdown', e => {
         if(enabled() && e.target===canvas && e.button===0)canvas.focus({preventScroll:true});
         const v = views.get(canvas).view;
         if (!enabled() || editing() || v.z <= 1 || e.target !== canvas || !(e.button === 1 || e.button === 0 && space)) return;
+        if(redraw)clearTimeout(views.get(canvas).timer);
         consume(e); drag = { canvas, id: e.pointerId, x: e.clientX, y: e.clientY, view: { ...v } };
         wrap.setPointerCapture(e.pointerId); apply(canvas);
       }, true);
@@ -150,9 +172,30 @@
       const languageRoot=(window.parent!==window?window.parent:window).document.documentElement;
       new MutationObserver(()=>canvases.forEach(apply)).observe(languageRoot,{attributes:true,attributeFilter:['lang']});
     }
-    return { sync: () => { if (!enabled()) { space = false; end(); } canvases.forEach(apply); }, reset };
+    return {
+      sync: () => { if (!enabled()) { space = false; end(); } canvases.forEach(canvas=>{apply(canvas);schedule(canvas);}); }, reset,
+      rect(canvas) {
+        const item=views.get(canvas);if(!item || !enabled())return canvas.getBoundingClientRect();
+        const r=item.wrap.getBoundingClientRect(),v=item.view,left=r.left+v.x,top=r.top+v.y;
+        const width=canvas.offsetWidth*v.z,height=canvas.offsetHeight*v.z;
+        return {x:left,y:top,left,top,width,height,right:left+width,bottom:top+height};
+      },
+      point(canvas,event,width,height) {
+        const item=views.get(canvas);if(!item || !enabled())return null;
+        const r=item.wrap.getBoundingClientRect(),v=item.view;
+        return {X:(event.clientX-r.left-v.x)/v.z*width/canvas.offsetWidth,
+          Y:(event.clientY-r.top-v.y)/v.z*height/canvas.offsetHeight};
+      },
+      paint(canvas,ctx,width,height,background="#0d0c0b") {
+        const item=views.get(canvas);if(!item || !enabled() || !canvas.offsetWidth || !canvas.offsetHeight)return;
+        const v=item.painted;
+        if(v.z===1 && !v.x && !v.y)return;
+        ctx.clearRect(0,0,width,height);ctx.fillStyle=background;ctx.fillRect(0,0,width,height);
+        ctx.transform(v.z,0,0,v.z,v.x*width/canvas.offsetWidth,v.y*height/canvas.offsetHeight);
+      }
+    };
   }
-  return { SPLIT_KEY, ratio, split, bound, zoomAt, wheelFactor, mount };
+  return { SPLIT_KEY, ratio, split, bound, zoomAt, wheelFactor, relative, mount };
 });
 
 /* END W1-A FIGURE VIEW CONTROLLER */
@@ -809,9 +852,12 @@
   /* 舞台の矩形は実寸の比率（幅:奥行き／奥行き:高さ／幅:高さ）を保って中央へ収める。
      T字配置で図ごとに縦横比が大きく違うので、余白の割合だけで決めると舞台が歪む。 */
   const fitBox = (avail, aspect) => {
-    let w = avail.w, h = w / aspect;
-    if (h > avail.h) { h = avail.h; w = h * aspect; }
-    return { x: Math.round(avail.x + (avail.w - w) / 2), y: Math.round(avail.y + (avail.h - h) / 2), w: Math.round(w), h: Math.round(h) };
+    // A hidden/resizing figure can be smaller than its padding during scene sync.
+    // Never feed a negative stage scale to Canvas geometry (WebKit IndexSizeError).
+    const availableW=Math.max(1,avail.w),availableH=Math.max(1,avail.h);
+    let w = availableW, h = w / aspect;
+    if (h > availableH) { h = availableH; w = h * aspect; }
+    return { x: Math.round(avail.x + (avail.w - w) / 2), y: Math.round(avail.y + (avail.h - h) / 2), w: Math.max(1,Math.round(w)), h: Math.max(1,Math.round(h)) };
   };
   /* 図の余白（CSS px。内部pxはこの2倍）。syncFigureSizes と planBox/secBox で同じ値を使う。
      平面図の左右は、舞台の外に出る横置き灯の印（B.x−60内部px）が入るぶん広め。 */
@@ -1010,20 +1056,22 @@
   }
   const positionPlanProjector=(P,B)=>(w)=>{const q=P(w);if(!distanceMetric){if(w.x < -state.dims.W/2)q.X=B.x-SIDE_DX;else if(w.x>state.dims.W/2)q.X=B.x+B.w+SIDE_DX;if(w.y<0)q.Y=B.y-24;else if(w.y>state.dims.D)q.Y=B.y+B.h+FRONT_DY;}return q;};
   const planProj = () => E.makePlanProjector(state.dims, planBox());
-  // キャンバスの内部解像度を表示サイズへ合わせる（拡大してもぼやけない）
+  // Backing pixels follow the display size and resolution preference, never zoom.
   function resizeDisplayBacking(c) {
     const size = displayCanvasSizes.get(c); if (!size) return;
     const { width, height } = size, factor = window.GAMMA_RENDER_RESOLUTION?.factor() || 1;
     const backingWidth = Math.max(1, Math.round(width * factor)), backingHeight = Math.max(1, Math.round(height * factor));
     if (c.width !== backingWidth || c.height !== backingHeight) { c.width = backingWidth; c.height = backingHeight; }
-    c.getContext("2d").setTransform(c.width / width, 0, 0, c.height / height, 0, 0);
+    const ctx=c.getContext("2d");
+    ctx.setTransform(c.width / width, 0, 0, c.height / height, 0, 0);
+    figureViews?.paint(c,ctx,width,height,surface("#0d0c0b"));
   }
   function syncCanvasSize() {
     syncFigureSizes();   // 先に各図の表示高さを決めてから内部解像度を合わせる
     figureViews?.sync();
     const fit = (c) => {
       // Camera CSS transforms must never feed back into backing size / logical coordinates.
-      const r = { width:c.offsetWidth, height:c.offsetHeight }; if (!r.width) return;
+      const r = { width:c.offsetWidth, height:c.offsetHeight }; if (!r.width || !r.height) return;
       const width = Math.max(300, Math.round(r.width * 2)), height = Math.max(2, Math.round(r.height * 2));
       displayCanvasSizes.set(c, { width, height });
       resizeDisplayBacking(c);
@@ -1102,8 +1150,10 @@
         : E.makeFrontFarProjector(state.dims, secBox(sec.cv, "front")))
     : E.makeSideProjector(state.dims, secBox(sec.cv, sec.kind), sec.kind));
   const positionSectionProjector=(P,canvas)=>w=>{const q=P(w);q.X=Math.max(24,Math.min(logicalWidth(canvas)-24,q.X));return q;};
-  const canvasPoint = (c, ev) => { const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * logicalWidth(c) / r.width, Y: (ev.clientY - r.top) * logicalHeight(c) / r.height }; };
+  const canvasViewRect = c => figureViews?.rect(c) || c.getBoundingClientRect();
+  const canvasPoint = (c, ev) => { const camera=typeof figureViews!=="undefined" && figureViews?.point(c,ev,logicalWidth(c),logicalHeight(c)); if(camera)return camera; const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * logicalWidth(c) / r.width, Y: (ev.clientY - r.top) * logicalHeight(c) / r.height }; };
   figureViews = FIGURE_VIEW.mount({
+    redraw:()=>draw(), changed:()=>window.dispatchEvent(new Event("gamma-light-figure-view")),
     canvases:[plan,secF], enabled:()=>state.mode==='move', editing:()=>!!state.drag,
     aimWheel:(canvas,event)=>{if(canvas!==plan)return false;const h=hitHandle(canvasPoint(plan,event),houseProjPlan(planProj(),planBox()),['floor','air','house']);return !!h&&h.handle!=='r';},
     hit:(canvas,event)=>{const pt=canvasPoint(canvas,event);return fixtureLabelAt(canvas,pt) || (canvas===plan ? hitFixturePlan(pt) || hitHandle(pt,houseProjPlan(planProj(),planBox()),['floor','air','house']) : hitFixtureSec(secOf('front'),pt) || hitHandle(pt,secProj(secOf('front')),['back','air','house'],secHandleProj(secProj(secOf('front')),'front')));},
@@ -1939,6 +1989,7 @@
     let layerToken = frameCost?.begin("lighting.layer.static.plan");
     try {
     const w = logicalWidth(plan), h = logicalHeight(plan), P = planProj(), B = planBox(), d = state.dims;
+    if (B.w <= 2 || B.h <= 2) return;  // v0.3.98 integration: a collapsed figure (1px fallback box from fitBox) costs seconds per paint in WebKit and shows nothing
     pctx.clearRect(0, 0, w, h); pctx.fillStyle = surface("#0d0c0b"); pctx.fillRect(0, 0, w, h);
     // 袖・客席の帯
     pctx.fillStyle = workSurface("wing", "rgba(255,255,255,0.02)"); pctx.fillRect(0, B.y, B.x, B.h); pctx.fillRect(B.x + B.w, B.y, w - B.x - B.w, B.h);
@@ -3712,6 +3763,7 @@
     try {
     const fctx = sec.ctx, front = sec.cv;
     const w = logicalWidth(front), h = logicalHeight(front), B = secBox(front, sec.kind), P = secProj(sec), d = state.dims;
+    if (B.w <= 2 || B.h <= 2) return;  // v0.3.98 integration: a collapsed figure (1px fallback box from fitBox) costs seconds per paint in WebKit and shows nothing
     const frontView = E.frontFarSetup(d, B);
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     if(state.mode==="move"&&!showOn("blackout")){fctx.fillStyle=workSurface("wing",surface("#0d0c0b"));fctx.fillRect(0,B.y,w,B.h);}
@@ -3785,6 +3837,7 @@
     try {
     const fctx = sec.ctx, front = sec.cv, side = sec.kind;
     const w = logicalWidth(front), h = logicalHeight(front), B = secBox(front, sec.kind), d = state.dims, P = secProj(sec);
+    if (B.w <= 2 || B.h <= 2) return;  // v0.3.98 integration: a collapsed figure (1px fallback box from fitBox) costs seconds per paint in WebKit and shows nothing
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     const backX = P({ x: 0, y: 0, z: 0 }).X, frontX = P({ x: 0, y: d.D, z: 0 }).X;
     const left = Math.min(backX, frontX), right = Math.max(backX, frontX);
@@ -3865,8 +3918,11 @@
     try {
     const fctx = sec.ctx, cv = sec.cv, w = logicalWidth(cv), h = logicalHeight(cv);
     const B = secBox(cv, "front"), d = state.dims;
+    if (B.w <= 2 || B.h <= 2) return;  // v0.3.98 integration: a collapsed figure (1px fallback box from fitBox) costs seconds per paint in WebKit and shows nothing
     // Simple preview uses its device-local audience seat, independently of the detail view.
     const seat = simple ? simpleSeat : state.frontSeats?.[state.seat] || state.seat;
+    // E5/F-14: retain the audience-seat perspective; borrow only wing bounds.
+    // The shared stage painter exceeded the authorized GPU latency budget.
     let P = simple ? E.makeFrontPerspProjector(d, B, seat) : secProj(sec);
     let L = E.frontPerspSetup(d, B, seat);
     if(simple) {
@@ -3874,6 +3930,9 @@
       // keep one framing and front lights do not get cropped at the top.
       const raw=P,points=[];
       for(const x of [-d.W/2,d.W/2])for(const y of [0,d.D])for(const z of [0,d.H])points.push(raw({x,y,z}));
+      const wings = window.parent !== window
+        ? window.parent.SHOSAI_STAGE_VIEW?.lightingFrontFitPoints?.({dims:d}) || [] : [];
+      for(const point of wings) points.push(raw(point));
       for(const f of state.rig.fixtures){const S=fixtureWorld(f);if(S)points.push(raw(S));}
       const minX=Math.min(...points.map(p=>p.X)),maxX=Math.max(...points.map(p=>p.X));
       const minY=Math.min(...points.map(p=>p.Y)),maxY=Math.max(...points.map(p=>p.Y));
@@ -3989,6 +4048,8 @@
     try {
     if (playbackPreviewActive) return;
     const started = performance.now();
+    // Start each paint from the stable backing transform. Zoom consumes no extra pixels.
+    [plan,secF,secL,secR].forEach(resizeDisplayBacking);
     drawCueOverride = lxFadeCue();
     fixtureLabelFrame = new Map();
     const previousRigFrame = pieceRigFrame, previousClipFrame = foregroundClipFrame;
@@ -8214,9 +8275,9 @@
     renderAll();refreshApplyState();if(resume)play();
   }
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
-  window.__RIG = { state, E, planBox, secBox, secOf, SECS,
+  window.__RIG = { state, E, planBox, canvasViewRect, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, clearLog, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, clearLog, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, applyFingerprint, appliedContentFingerprint:()=>appliedFingerprint, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */
