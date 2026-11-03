@@ -2414,6 +2414,58 @@
   /* 人物を塗り直すための実際の照射。選択による帯のdimは人物の受光へ混ぜない。
      cycは壁を照らす専用灯なので、人物への直射としては数えない。 */
   const spatialScene = () => state.mode === "move" && state.rig.fixtures.some(f => { const l = lightOf(f.id); return visibleLight(f, l) && ["air", "house"].includes(l.surface); });
+  // One reusable alpha sheet replaces the escaping cone's hard polygon fill.
+  // Its transverse profile is drawBeam's profile; its last 28% fades like a
+  // landing beam. Level, geometry and view are applied at draw time, not cached.
+  const AIR_BEAM_SHEET_SIZE = 256, AIR_BEAM_SHEET_LIMIT = 8;
+  const airBeamSheets = new Map();
+  function airBeamSheet(color, light) {
+    const profile = beamEdgeProfile(light), key = color + ':' + JSON.stringify(profile);
+    if (airBeamSheets.has(key)) return airBeamSheets.get(key);
+    const cv = document.createElement('canvas'); cv.width = cv.height = AIR_BEAM_SHEET_SIZE;
+    const c = cv.getContext('2d'), image = c.createImageData(cv.width, cv.height);
+    const rgb = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16));
+    const edge = t => {
+      if (t <= 0 || t >= 1) return 0;
+      for (let i = 1; i < profile.length; i++) {
+        const [a, wa] = profile[i - 1], [b, wb] = profile[i];
+        if (t <= b) return wa + (wb - wa) * (t - a) / (b - a);
+      }
+      return 0;
+    };
+    for (let y = 0; y < cv.height; y++) {
+      const distance = (y + .5) / cv.height;
+      const fade = Math.min(1, (1 - distance) / (1 - BEAM_LANDING_FADE_START));
+      for (let x = 0; x < cv.width; x++) {
+        const i = (y * cv.width + x) * 4;
+        image.data[i] = rgb[0]; image.data[i + 1] = rgb[1]; image.data[i + 2] = rgb[2];
+        image.data[i + 3] = Math.round(255 * .24 * fade * edge(.5 + ((x + .5) / cv.width - .5) / distance));
+      }
+    }
+    c.putImageData(image, 0, 0); // CPU upload only; no extra light paint passes.
+    if (airBeamSheets.size >= AIR_BEAM_SHEET_LIMIT) airBeamSheets.delete(airBeamSheets.keys().next().value);
+    airBeamSheets.set(key, cv);
+    return cv;
+  }
+  function airBeamFrame(from, cone) {
+    const dx = cone.centre.X - from.X, dy = cone.centre.Y - from.Y, span = Math.hypot(dx, dy);
+    if (!(span > 1e-6)) return null;
+    const ux = dx / span, uy = dy / span;
+    let low = Infinity, high = -Infinity;
+    for (const p of cone.hull) {
+      const x = p.X - from.X, y = p.Y - from.Y, along = x * ux + y * uy;
+      if (along <= 1e-6) continue;
+      const angle = Math.atan2(-x * uy + y * ux, along);
+      low = Math.min(low, angle); high = Math.max(high, angle);
+    }
+    // Use the two projected tangent rays, not a symmetric width about the
+    // world centre ray. Perspective can put that ray off the visual bisector.
+    if (!(high > low)) return null;
+    const mid = (low + high) / 2, vx = ux * Math.cos(mid) - uy * Math.sin(mid), vy = uy * Math.cos(mid) + ux * Math.sin(mid);
+    const length = Math.max(...cone.hull.map(p => (p.X - from.X) * vx + (p.Y - from.Y) * vy));
+    const width = length * Math.tan((high - low) / 2);
+    return length > 1e-6 && width > 1e-6 ? { ax: -vy * width, ay: vx * width, bx: vx * length, by: vy * length } : null;
+  }
   function spatialLight(ctx, P, k, kind, f, spots) {
     const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
     const frameCostToken = frameCost?.begin("lighting.layer.spatial", {canvas:ctx.canvas?.id});
@@ -2434,16 +2486,24 @@
         const facingViewer = compiled && V.glareWeight(compiled, kind) > 0.35;
         ctx.save(); ctx.globalCompositeOperation = 'screen';
         ctx.beginPath(); cone.hull.forEach((p,i) => i ? ctx.lineTo(p.X,p.Y) : ctx.moveTo(p.X,p.Y)); ctx.closePath(); ctx.clip();
-        const gradient = facingViewer || span < radius * .5
-          ? ctx.createRadialGradient(cone.centre.X,cone.centre.Y,0,cone.centre.X,cone.centre.Y,radius)
-          : ctx.createLinearGradient(from.X,from.Y,cone.centre.X,cone.centre.Y);
+        const frame = !facingViewer && span >= radius * .5 ? airBeamFrame(from, cone) : null;
+        if (frame) {
+          const sheet = airBeamSheet(colorOf(f, l), renderLight(f, l));
+          ctx.globalAlpha *= visualAlpha(lv);
+          ctx.transform(frame.ax, frame.ay, frame.bx, frame.by, from.X, from.Y);
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(sheet, -1, 0, 2, 1);
+        } else {
+        const gradient = ctx.createRadialGradient(cone.centre.X,cone.centre.Y,0,cone.centre.X,cone.centre.Y,radius);
         gradient.addColorStop(0,hexA(colorOf(f, l),.24*visualAlpha(lv)));
         if (facingViewer) {
           gradient.addColorStop(.55,hexA(colorOf(f, l),.10*visualAlpha(lv)));
           gradient.addColorStop(.85,hexA(colorOf(f, l),.015*visualAlpha(lv)));
         } else gradient.addColorStop(.78,hexA(colorOf(f, l),.18*visualAlpha(lv)));
         gradient.addColorStop(1,hexA(colorOf(f, l),0)); ctx.fillStyle=gradient;
-        ctx.fillRect(0,0,logicalWidth(ctx.canvas),logicalHeight(ctx.canvas)); ctx.restore();
+        ctx.fillRect(0,0,logicalWidth(ctx.canvas),logicalHeight(ctx.canvas));
+        }
+        ctx.restore();
         spots.push({fromX:from.X,fromY:from.Y,coneHull:cone.hull,lv});
         drawDirectionLine(ctx,from,target,colorOf(f, l),lv,false);
         return true;
@@ -2504,7 +2564,7 @@
         if(kind==='plan') plateText(ctx,metresText(m),planBox().x-52,q.Y); else plateText(ctx,metresText(m),q.X-22,logicalHeight(ctx.canvas)-24);
       }ctx.restore();
     }
-    if(kind!=="plan") drawBordersUp(ctx,P,state.dims);
+    if(kind!=="plan" && !options.skipBorders) drawBordersUp(ctx,P,state.dims);
     } finally { frameCost?.end(frameCostToken); }
   }
 
@@ -2595,7 +2655,11 @@
       if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (o.only && pc.id !== o.only) return;
       if (relight && pc.kind !== "performer" && !(receiver && pc.kind === "set" && setPartsOf(pc).length && setPartsOf(pc).every(part => !part.kind || part.kind === "box"))) return;
-      if (pc.kind === "curtain") { drawCurtainUp(ctx, P, pc, d); return; }
+      if (pc.kind === "curtain") {
+        if (o.paintCurtain) o.paintCurtain(ctx, pc.id);
+        else drawCurtainUp(ctx, P, pc, d);
+        return;
+      }
       const foot = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: Math.max(0, E.finite(pc.base, 0)) });
       const sc = foot.scale == null ? 1 : foot.scale;
       const k = pxPerM * sc;
@@ -3060,7 +3124,7 @@
      着地の光だまり＋出どころから着地までの光の柱をやや広め・柔らかめに取るだけで十分
      （マスクなので厳密に一致していなくてよい）。図ごとにオフスクリーンを1枚持って使い回す。 */
   const blackoutCanvases = new WeakMap();
-  function paintBlackout(ctx, canvas, spots) {
+  function paintBlackout(ctx, canvas, spots, clipLight) {
     const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
     const frameCostToken = frameCost?.begin("lighting.layer.blackout", {canvas:ctx.canvas?.id});
     try {
@@ -3086,6 +3150,9 @@
        （2026-09-13 本人指摘。screenshot: 灯体の根元から幅を持って始まる灰色の帯）。
        直し方は「別に作らない」——drawBeam が実際に塗る三角＋着地の丸みと、同じ式・同じ値
        （halfW・ry・lying・pool。ret() で公開）で穴を組む。三角の先端は必ず点になる。 */
+    if (clipLight) mctx.save();
+    try {
+    if (clipLight) clipLight(mctx);
     spots.forEach((sp) => {
       // 灯の強さぶんだけ暗幕を剥がす。20%の灯なら20%ぶんしか明るくならない（2026-09-13）
       const lv = E.clamp(E.finite(sp.lv, 1), 0, 1); if (lv <= 0) return;
@@ -3147,6 +3214,7 @@
       mctx.fillStyle = grad; mctx.beginPath(); mctx.arc(0, 0, 1, 0, Math.PI * 2); mctx.fill();
       mctx.restore();
     });
+    } finally { if (clipLight) mctx.restore(); }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "source-over"; ctx.drawImage(mc, 0, 0); ctx.restore();
     } finally { frameCost?.end(frameCostToken); }
   }
@@ -3910,6 +3978,50 @@
   /* ---------- 描画: 正面図（3D・擬似パース） ----------
      舞台スケッチ本体の正面図と同じ式（rig-engine の makeFrontPerspProjector）で描く。
      床は奥から手前へ広がる台形、奥の壁はその上に立つ。高さも奥行きで縮む。 */
+  // F1: one device-local bitmap, never a saved show field. Snapshot the exact
+  // opaque static paint at the target backing resolution; do not rerasterize it
+  // at a different scale. Lights, performers and border occlusion stay live.
+  let simpleFrontSceneryCache = null;
+  const simpleFrontContextProperties = ["fillStyle","strokeStyle","lineWidth","lineCap","lineJoin",
+    "miterLimit","lineDashOffset","font","textAlign","textBaseline","direction","globalAlpha",
+    "globalCompositeOperation","shadowBlur","shadowColor","shadowOffsetX","shadowOffsetY",
+    "filter","imageSmoothingEnabled","imageSmoothingQuality","fontKerning","fontStretch",
+    "fontVariantCaps","letterSpacing","wordSpacing","textRendering"];
+  function paintSimpleFrontScenery(target, view, inputs, paint) {
+    const cv = target.canvas, matrix = target.getTransform();
+    const key = JSON.stringify([view.cacheKey,cv.width,cv.height,
+      matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f,...inputs]);
+    const cached = simpleFrontSceneryCache;
+    const meter = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    if (view.cacheKey !== undefined && cached?.owner === view.cacheOwner && cached.key === key) {
+      const token = meter?.begin("lighting.simple.scenery.reuse");
+      try {
+        target.save();
+        try { target.setTransform(1,0,0,1,0,0); target.drawImage(cached.canvas,0,0); }
+        finally { target.restore(); }
+        // drawFrontVenue also leaves canvas styles for the next layer. Preserve
+        // those effects on a hit, including its dash, without redoing the paths.
+        for (const [name,value] of cached.styles) target[name] = value;
+        target.setLineDash(cached.dash);
+      } finally { meter?.end(token); }
+      return;
+    }
+    const token = meter?.begin("lighting.simple.scenery.rebuild");
+    try {
+      simpleFrontSceneryCache = null; // a failing paint must not reuse an old image
+      paint();
+      if (view.cacheKey === undefined) return;
+      const bitmap = cached?.canvas || document.createElement("canvas");
+      bitmap.width = cv.width; bitmap.height = cv.height;
+      const ctx = bitmap.getContext("2d");
+      if (!ctx) return; // keep the freshly painted, correct direct result
+      const snapshot = meter?.begin("lighting.simple.scenery.snapshot");
+      try { ctx.drawImage(cv,0,0); } finally { meter?.end(snapshot); }
+      simpleFrontSceneryCache = {owner:view.cacheOwner,key,canvas:bitmap,
+        styles:simpleFrontContextProperties.filter(name => name in target).map(name => [name,target[name]]),
+        dash:target.getLineDash()};
+    } finally { meter?.end(token); }
+  }
   function drawFront3D(sec, {simple=false, simpleSeat="rear", fixtureHintIds=[]} = {}) {
     // PERF3: opt-in, test-owned meter; no clock reads or records by default.
     const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
@@ -3921,18 +4033,17 @@
     if (B.w <= 2 || B.h <= 2) return;  // v0.3.98 integration: a collapsed figure (1px fallback box from fitBox) costs seconds per paint in WebKit and shows nothing
     // Simple preview uses its device-local audience seat, independently of the detail view.
     const seat = simple ? simpleSeat : state.frontSeats?.[state.seat] || state.seat;
-    // E5/F-14: retain the audience-seat perspective; borrow only wing bounds.
-    // The shared stage painter exceeded the authorized GPU latency budget.
-    let P = simple ? E.makeFrontPerspProjector(d, B, seat) : secProj(sec);
-    let L = E.frontPerspSetup(d, B, seat);
-    if(simple) {
+    // B4/F-14: the host owns stagePoint/layout and the venue/wing painters.
+    // Keep the light composite below intact; borrow only geometry and scenery.
+    const sharedFront = simple && window.parent !== window
+      ? window.parent.SHOSAI_STAGE_VIEW?.lightingFrontView?.({ width: w, height: h, seat, dims: d }) : null;
+    let P = sharedFront ? sharedFront.project : simple ? E.makeFrontPerspProjector(d, B, seat) : secProj(sec);
+    let L = sharedFront ? sharedFront.layout : E.frontPerspSetup(d, B, seat);
+    if(simple && !sharedFront) {
       // Fit the stage and the whole rig, including unlit fixtures, so comparisons
       // keep one framing and front lights do not get cropped at the top.
       const raw=P,points=[];
       for(const x of [-d.W/2,d.W/2])for(const y of [0,d.D])for(const z of [0,d.H])points.push(raw({x,y,z}));
-      const wings = window.parent !== window
-        ? window.parent.SHOSAI_STAGE_VIEW?.lightingFrontFitPoints?.({dims:d}) || [] : [];
-      for(const point of wings) points.push(raw(point));
       for(const f of state.rig.fixtures){const S=fixtureWorld(f);if(S)points.push(raw(S));}
       const minX=Math.min(...points.map(p=>p.X)),maxX=Math.max(...points.map(p=>p.X));
       const minY=Math.min(...points.map(p=>p.Y)),maxY=Math.max(...points.map(p=>p.Y));
@@ -3942,11 +4053,16 @@
       L={...L,pxPerM:L.pxPerM*k,floorY:L.floorY*k+ty,bottomY:L.bottomY*k+ty,
         frontW:L.frontW*k,backW:L.backW*k,centerX:L.centerX*k+tx};
     }
-    fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
-    if(state.mode==="move"&&!showOn("blackout")){fctx.fillStyle=workSurface("wing",surface("#0d0c0b"));fctx.fillRect(0,B.y,w,B.h);}
     const at = (u, v, hM) => P({ x: (u - 0.5) * d.W, y: v * d.D, z: hM || 0 });
-    // 床（奥から手前へ広がる台形）
     const bl = at(0, 0, 0), br = at(1, 0, 0), fl = at(0, 1, 0), fr = at(1, 1, 0);
+    const paintScenery = () => {
+      fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
+      if(!sharedFront&&state.mode==="move"&&!showOn("blackout")){fctx.fillStyle=workSurface("wing",surface("#0d0c0b"));fctx.fillRect(0,B.y,w,B.h);}
+      if (sharedFront) {
+        const venueToken = frameCost?.begin("lighting.shared.venue");
+        try { sharedFront.paintVenue(fctx); } finally { frameCost?.end(venueToken); }
+      }
+      else {
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.05)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(fr.X, fr.Y); fctx.lineTo(fl.X, fl.Y); fctx.closePath(); fctx.fill();
     // 客席側の暗がり
@@ -3957,15 +4073,38 @@
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(tr.X, tr.Y); fctx.lineTo(tl.X, tl.Y); fctx.closePath(); fctx.fill();
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
+      }
+    };
+    if (sharedFront) paintSimpleFrontScenery(fctx, sharedFront, [w,h,B.x,B.y,B.w,B.h,
+      state.mode,showOn("blackout"),state.curtains,window.devicePixelRatio||1,
+      surface("#0d0c0b"),workSurface("wing",surface("#0d0c0b"))], paintScenery);
+    else paintScenery();
     frameCost?.end(layerToken); layerToken = null;
     drawFrontMasking(fctx, P);
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用
+    // Clip lighting only; the venue, normal performers and hover remain intact.
+    const clipSimpleLight = () => {
+      fctx.save();
+      try { sharedFront?.clipLighting?.(fctx); } catch(error) { fctx.restore(); throw error; }
+    };
+    if(sharedFront) clipSimpleLight();
+    try {
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
     drawLasers(fctx, P, "front3d"); drawMirrorBalls(fctx, P, "front3d");
-    drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
+    } finally { if(sharedFront) fctx.restore(); }
+    // Match drawStage's scrim order: work lights on => in front of beams;
+    // work lights off => below the dark sheet and its subsequent light overlay.
+    const deferredCurtains = [];
+    drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
+      ...(sharedFront ? { paintCurtain: (ctx, id) => showOn("blackout")
+        ? sharedFront.paintCurtain(ctx, id) : deferredCurtains.push(id) } : {}) });
     // 奥バトンは3Dの照明見え方には不要なので描かず、ほかのバトンも名称・高さは注記しない。
     if(!simple) state.rig.trusses.filter((t) => t.label !== "奥バトン").forEach((t) => { const a = at(0, t.v, t.h), b = at(1, t.v, t.h); const sel = state.selTruss === t.id && state.mode === "place";
       fctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.lineWidth = sel ? 5 : 3; fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); });
+    // Light groups share the stage silhouette. No extra raster pass or
+    // per-fixture clip; the cached venue outside it is never lit over.
+    if(sharedFront) clipSimpleLight();
+    try {
     // 光（ホリゾントライトの帯は上で先に塗ってある）
     if (state.mode === "move") state.rig.fixtures.forEach((f) => {
       const l = lightOf(f.id); if (!visibleLight(f, l)) return;
@@ -4004,23 +4143,29 @@
         if (g && g.kind === "line") { fctx.save(); fctx.setLineDash([8, 6]); fctx.strokeStyle = "rgba(223,100,51,0.7)"; fctx.lineWidth = 2; const a = P(g.a ? E.pointWorld(g.a, d) : S), b = P(E.pointWorld(g.b, d)); fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); fctx.restore(); } }
       if (isSel(f.id) && (l.surface === "back" || l.surface === "air")) drawHandles(fctx, (pt) => P(pt), l, f.id);
     });
-    // Keep the physical stage edge readable after the light/blackout composite,
-    // then let performers, scenery and curtains occlude it. No edge in a blackout.
-    const simpleFloorEdge = () => {
-      if(!simple || (showOn("blackout") && !litSpots3D.some(sp=>sp.lv>0))) return;
-      fctx.save();fctx.globalCompositeOperation="source-over";fctx.globalAlpha=1;
-      fctx.strokeStyle="rgba(239,231,214,0.42)";fctx.lineWidth=1.5;fctx.setLineDash([]);
-      fctx.beginPath();fctx.moveTo(bl.X,bl.Y);fctx.lineTo(fl.X,fl.Y);
-      fctx.lineTo(fr.X,fr.Y);fctx.lineTo(br.X,br.Y);fctx.stroke();fctx.restore();
-    };
-    if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, cv, litSpots3D);
-      simpleFloorEdge();
+    } finally { if(sharedFront) fctx.restore(); }
+    // The dark sheet still covers the whole view, like the stage tab. Only its
+    // holes are clipped, so lights cannot brighten the audience or outer wings.
+    if (state.mode === "move" && showOn("blackout")) {
+      if(sharedFront) paintBlackout(fctx, cv, litSpots3D, sharedFront.clipLighting);
+      else paintBlackout(fctx, cv, litSpots3D);
+    }
+    if(sharedFront) clipSimpleLight();
+    try {
+    if (state.mode === "move" && showOn("blackout")) {
       drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35); drawMirrorBalls(fctx, P, "front3d", 0.35);
-    compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
-    if(simple&&!showOn("blackout")) simpleFloorEdge();
-    if(simple) drawBordersUp(fctx,P,d);
+    compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
+      ...(sharedFront ? { skipBorders: true } : {}) });
+    } finally { if(sharedFront) fctx.restore(); }
+    for (const id of deferredCurtains) sharedFront.paintCurtain(fctx, id);
+    if(simple && !sharedFront) drawBordersUp(fctx,P,d);
     if (showOn("fixtures")) redrawFixtureInfo3D(fctx, P, { hideFront: fctx.canvas === secF });
+    if(sharedFront) {
+      const borderToken = frameCost?.begin("lighting.shared.border");
+      try { sharedFront.paintBorder(fctx, { visible: showOn("border") }); }
+      finally { frameCost?.end(borderToken); }
+    }
     drawFrontMasking(fctx, P, true);
     if(simple && fixtureHintIds.length) {
       // Location aids belong to the preview, above light/masking layers. They
@@ -7844,7 +7989,7 @@
     const count = Number.isFinite(row.count) ? `<em>${row.count}灯</em>` : "";
     const reason = row.available ? "" : `<span class="preason" id="venue-rig-reason-${escapeHtml(row.key.replace(/[^a-z0-9]+/gi, "-"))}">${escapeHtml(row.reason)}</span>`;
     const describe = row.available ? "" : ` aria-disabled="true" aria-describedby="venue-rig-reason-${escapeHtml(row.key.replace(/[^a-z0-9]+/gi, "-"))}"`;
-    return `<button type="button" class="pcard" data-venue-preset="${escapeHtml(row.key)}"${describe}>
+    return `<button type="button" class="pcard${row.key==='parts-standard26'?' pcard-standard':''}" data-venue-preset="${escapeHtml(row.key)}"${describe}>
       <span class="pname">${escapeHtml(row.name)}${count}</span>
       <span class="plead">${escapeHtml(row.lead)}</span>
       ${row.detail ? `<span class="pdetail">${escapeHtml(row.detail)}</span>` : ""}
@@ -7856,8 +8001,7 @@
     if((key==='simple-24'||key.startsWith('parts-')) && window.GAMMA_SIMPLE_LIGHT_UI){
       if(state.dirty){toast('詳細の未適用編集を先に適用してください');return;}
       $("dialog").hidden=true;
-      await parent.GAMMA_WORKSPACE.select('light-design');
-      window.GAMMA_SIMPLE_LIGHT_UI.configurePreset(key==='simple-24'?'common24':key.slice(6));return;
+      await window.GAMMA_SIMPLE_LIGHT_UI.configurePreset(key==='simple-24'?'common24':key.slice(6),{stayInPlacement:state.mode==='place'});return;
     }
     try {
       const made = await host.design(key);
@@ -8234,6 +8378,11 @@
     displayCanvasSizes.set(simpleFrontCanvas,{width:1000,height:560});
     simpleFrontCanvas.getContext('2d').setTransform(factor,0,0,factor,0,0);
     const paint = () => {
+      // K1: sample the same interpolated pieces used by this frame, after the
+      // timeline wrapper has installed them. Only this draw-local copy follows.
+      if (window.GAMMA_PART_LIGHTING) drawCueOverride = window.GAMMA_PART_LIGHTING.resolveFollowCue(cue(), piecesOf());
+      // drawFront3D already calls drawLasers with LASER_EFFECTS; do not draw a
+      // second type renderer here. Keep F's static cache and clip ownership.
       drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true, simpleSeat: options.seat || "rear", fixtureHintIds: options.fixtureHintIds || [] });
       paintFixtureLabels(false);
     };

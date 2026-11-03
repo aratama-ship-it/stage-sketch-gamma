@@ -8,7 +8,7 @@
 .simple-mode-choice #simple-playback-open{min-height:var(--ctrl-sm);padding:3px 8px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:var(--fs-3);line-height:1.5;white-space:nowrap;cursor:pointer}
 .simple-mode-choice #simple-playback-open:hover{border-color:var(--brass);color:var(--milk)}
 html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;align-items:center}
-.simple-light-active .simple-light-toolbar .fb>:not(.simple-mode-choice),.simple-light-active .simple-light-toolbar>:not(.fb){display:none!important}
+.simple-light-active .simple-light-toolbar .fb:not(.scenebox)>:not(.simple-mode-choice),.simple-light-active .simple-light-toolbar>:not(.fb){display:none!important}
 .simple-mode-panel button,.simple-mode-panel select{min-height:var(--simple-tap);min-width:var(--simple-tap);padding:8px 12px;font:inherit;border:1px solid var(--simple-border);background:var(--desk-2);color:var(--simple-text);cursor:pointer}
 .simple-mode-panel button[aria-pressed=true]{border-color:var(--simple-accent);box-shadow:inset 0 0 0 1px var(--simple-accent)}
 .simple-mode-panel{padding:var(--simple-gap);color:var(--simple-text);overflow:auto;min-height:0;line-height:1.8}
@@ -206,3 +206,29 @@ html[data-stage-skin="paper-light"] .simple-mode-panel{--simple-danger:#aa2828}
 #simple-column-resize:hover::before,#simple-column-resize:focus-visible::before{background:var(--brass)}
 #simple-return{font-size:var(--fs-3,11px)}
 @container(max-width:400px){.simple-layer{grid-template-columns:minmax(0,1fr) auto auto auto}.simple-layer-name{grid-column:1/-1;padding-top:4px}}
+
+/* J4: the same header context and LX controls in Simple and Detail (the scene row keeps its own child display values; `revert` made them block and 6px taller). */
+.simple-light-active .simple-light-toolbar .fb.scenebox{display:flex!important}
+.simple-context-tools[hidden],#light-key-notice[hidden]{display:none!important}
+.simple-heading:empty{display:none}
+.simple-layer .simple-layer-name{border:0;background:transparent;box-shadow:none;text-align:left;padding:4px 0;min-width:0}
+.simple-layer-name>span{flex:0 0 12px;font-size:11px}
+.simple-controls #simple-spread-label,.simple-controls .simple-strobe-control{grid-column:1/-1}
+.simple-strobe-control>label{display:flex;align-items:center;gap:8px}
+#simple-strobe-on{width:18px;height:18px;min-height:18px;accent-color:var(--simple-accent)}
+#simple-strobe-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-left:16px;border-left:1px solid var(--simple-border)}
+#simple-strobe-settings input{width:100%;min-height:var(--simple-tap);background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);font:inherit;padding:4px 8px}
+.simple-operations>#panel-lxq{box-sizing:border-box;width:100%!important;max-width:100%;height:auto;min-height:200px;flex:0 0 auto;margin-top:var(--simple-space)}
+.simple-operations>#panel-lxq .lxbody{max-height:50vh;overflow:auto}
+
+/* G-19: independently open layer editors share the same component styling. */
+.simple-layer-adjust{min-width:0;grid-column:1/-1;border:1px solid var(--simple-border);padding:0 var(--simple-card-gap);background:var(--desk-2)}
+.simple-layer-adjust>summary{box-sizing:border-box;min-height:var(--simple-tap);padding:var(--simple-card-gap) 0;cursor:pointer;font-size:var(--simple-body);color:var(--simple-text);overflow-wrap:anywhere}
+.simple-layer-adjust[open]{padding-bottom:var(--simple-panel-pad)}
+.simple-layer-adjust .simple-controls{border:0;padding-top:0}
+.simple-layer-adjust .simple-controls>div{grid-column:1/-1}
+.simple-layer-adjust .simple-strobe-control input[type=checkbox]{width:18px;height:18px;min-height:18px;accent-color:var(--simple-accent)}
+.simple-layer-adjust .simple-strobe-control>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-left:16px;border-left:1px solid var(--simple-border)}
+.simple-layer-adjust .simple-strobe-control input[type=number]{box-sizing:border-box;width:100%;min-height:var(--simple-tap);background:var(--desk-2);color:var(--simple-text);border:1px solid var(--simple-border);font:inherit;padding:4px 8px}
+/* F-04: checkbox rows (J4 strobe toggles) are tap targets like every other Simple control. */
+.simple-layer-adjust label:has(> input[type=checkbox]),.simple-mode-panel label:has(> input[type=checkbox]){display:flex;align-items:center;gap:8px;min-height:var(--simple-tap,34px)}

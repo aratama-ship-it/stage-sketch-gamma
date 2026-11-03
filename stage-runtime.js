@@ -138,6 +138,7 @@
     "run-of-show/index.html",
     "run-of-show/layout.js",
     "run-of-show/pagination.js",
+    "run-of-show/panels.js",
     "run-of-show/paper-edit.js",
     "run-of-show/timing.js",
     "run.html",

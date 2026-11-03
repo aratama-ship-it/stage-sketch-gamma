@@ -21,12 +21,12 @@
         "zh-Hant": "用於檢查功能與儲存的48個場景，含音源B。",
         "ko": "기능과 저장을 확인하는 48개 장면. 음원 B 포함."
       },
-      "bytes": 984221,
+      "bytes": 984632,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "c70e524fdc376e5c373c97df6d584e2f3bc168c19a491bd3c00db8d776e0ba6f"
+      "sha256": "1452e64340743f94e9556fbb3a6a5b71dded7cf5b11fd8c8bbc3b5dba44fef99"
     },
     {
       "id": "feature-test-2",
@@ -46,12 +46,12 @@
         "zh-Hant": "用於檢查新增功能的50個場景。",
         "ko": "추가 기능을 확인하는 50개 장면."
       },
-      "bytes": 342585,
+      "bytes": 342583,
       "version": "v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "d52ab439f409cefefcc8747dae69b09db11b8e0db92ee6d3160be79d3796b924"
+      "sha256": "6aa453bc966992407b32aed22898020ba15f95f4f36ebcb5895b330bc6ea349f"
     },
     {
       "id": "eight-circus",
@@ -70,12 +70,12 @@
         "zh-Hant": "8位演員的出入、道具與燈光，共8個場景。",
         "ko": "8명의 출입, 소품, 조명을 담은 8개 장면."
       },
-      "bytes": 20499,
+      "bytes": 20497,
       "version": "sample",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "cdfe7249ad52055fe3f93a36c699efd09bb8c180f08d454646f413612ca334b6"
+      "sha256": "8ad9dc58631e5080b82b7e171aad25b123e973387f5e651b72a3dc5d2e9648d9"
     },
     {
       "id": "seam-garden",
@@ -94,12 +94,12 @@
         "zh-Hant": "8個章節、32個場景的馬戲劇。",
         "ko": "8개 섹션, 32개 장면의 서커스 연극."
       },
-      "bytes": 97868,
+      "bytes": 97866,
       "version": "sample-60m-v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "8cf49cc11ed670daf280cc7274bb9e8feefe137d4bbedfd8ff564acc4e27a985"
+      "sha256": "848d0116946006e1a933f58df3309ce2c8a58c0581ed2fa2683b3461e4a52dfa"
     },
     {
       "id": "romeo-juliet-cued",
@@ -118,12 +118,12 @@
         "zh-Hant": "含劇本、燈光與聲音提示的33個場景。",
         "ko": "대본, 조명, 음향 큐가 있는 33개 장면."
       },
-      "bytes": 1005925,
+      "bytes": 1005923,
       "version": "v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "b079d97a8133a8ec969d9f45fd31cc0d46ef2f39aa7aec7903c17b5dcfe2b5d5"
+      "sha256": "f30b727b5cf8acd8d845c9363a49ce58e1286ea2426cf83e20803081e371775a"
     },
     {
       "id": "romeo-juliet-second",
@@ -142,12 +142,12 @@
         "zh-Hant": "以傳遞的手為核心的第2版，共34個場景。",
         "ko": "손의 전달을 중심으로 한 두 번째 버전, 34개 장면."
       },
-      "bytes": 1538686,
+      "bytes": 1538684,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "446fe9200378a6f3160d8586ecf5e855697abd75e2473fa59e815abeda830ffe"
+      "sha256": "563b9bf7630e690dc8ca4df1d4e1dc146578fdb94034413068bd09c261c5d7a1"
     }
   ]
 }

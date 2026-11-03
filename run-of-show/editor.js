@@ -113,184 +113,6 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   doc.getElementById('stage-cue-sheet-view-print').addEventListener('click',e=>{if(parent.SHOSAI_STAGE_CUE_SHEET_HOST.selection()?.kind==='handover')return;e.stopImmediatePropagation();print().catch(onColumns);},true);
   return {refresh,print,get ready(){return ready;}};
 }};
-/* R-1〜3: retain disclosures/popovers, with a fixed display band and grip reordering. */
-window.ROSLeftPanels={install(band,{store,text,format}){
-  const panels=[...band.children].filter(n=>n.classList.contains('band-group'));
-  const compact=matchMedia('(max-width:899px)'), disclosures=[];
-  const place=(content,head)=>{
-    const edge=parseFloat(getComputedStyle(band).getPropertyValue('--gamma-gap')),r=head.getBoundingClientRect(),box=content.getBoundingClientRect();
-    content.style.left=Math.max(edge,Math.min(innerWidth-box.width-edge,r.left))+'px';
-    content.style.top=Math.max(edge,Math.min(innerHeight-box.height-edge,r.bottom+edge))+'px';
-  };
-  const setup=(panel,head,content,isDetails,paint)=>{
-    disclosures.push({panel,head,content,isDetails,paint,desktopOpen:panel.open});
-    head.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');
-    const position=document.createElement('span');position.id='ros-panel-position-'+panel.dataset.rosPanel;position.className='ros-a11y-status';band.after(position);
-    head.setAttribute('aria-describedby','panel-reorder-help '+position.id);
-    const describe=()=>{position.textContent=positionText(panel);position.lang=document.getElementById('panel-reorder-help').lang;};
-    disclosures[disclosures.length-1].describe=describe;head.addEventListener('focus',describe);
-    head.title=text('Alt + ↑ / ↓ でパネルを並べ替え');
-    head.addEventListener('keydown',event=>{
-      if(event.target!==head||event.isComposing||!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!['ArrowUp','ArrowDown'].includes(event.key)||compact.matches||drag)return;
-      event.preventDefault();event.stopPropagation();
-      const nodes=visiblePanels(),at=nodes.indexOf(panel),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];
-      if(!target)return;
-      flipMove(()=>band.insertBefore(panel,next<at?target:target.nextElementSibling));
-      persistOrder();refreshPositions();
-      head.focus({preventScroll:true});head.scrollIntoView({block:'nearest',inline:'nearest'});
-      announceMove(panel);
-    });
-    content.addEventListener('toggle',event=>{
-      if(!compact.matches)return;
-      head.setAttribute('aria-expanded',String(event.newState==='open'));
-      if(isDetails&&event.newState==='closed')panel.open=false;
-    });
-  };
-  // Assign legacy positional IDs before moving anything; collapsed keys remain valid.
-  for(const [i,panel] of panels.entries())panel.dataset.rosPanel=panel.id||'panel-'+i;
-  const fixed=panels.find(p=>p.classList.contains('band-view'));
-  const defaults=['band-format','band-cues','band-settings','column-popover','panel-0','panel-3','panel-4','band-output'];
-  let saved=[];try{const value=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(value))saved=value;}catch(_){}
-  const known=new Map(panels.filter(p=>p!==fixed).map(p=>[p.dataset.rosPanel,p]));
-  for(const id of new Set([...saved,...defaults,...known.keys()]))if(known.has(id))band.append(known.get(id));
-  if(fixed){band.prepend(fixed);fixed.classList.add('ros-display-band');}
-  // R-1: stage-sketch.js buildPanelHeads/startGrip/flipMove, scoped to this rail.
-  // Same 5px activation, pointer following, hole and 170ms FLIP; no HTML drag.
-  let drag=null,justDragged=false;
-  const movingPanels=()=>[...band.children].filter(n=>panels.includes(n)&&n!==fixed);
-  const animate=(node,from)=>{
-    const to=node.getBoundingClientRect(),dx=from.left-to.left,dy=from.top-to.top;
-    if(matchMedia('(prefers-reduced-motion: reduce)').matches||parent.document.getElementById('stage-anim-scenes')?.checked===false)return;
-    if(Math.abs(dx)<.5&&Math.abs(dy)<.5)return;
-    node.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],{duration:170,easing:'cubic-bezier(.2,.7,.3,1)'});
-  };
-  const flipMove=mutate=>{
-    const nodes=movingPanels().filter(n=>n!==drag?.panel),before=new Map(nodes.map(n=>[n,n.getBoundingClientRect()]));
-    for(const n of nodes)for(const animation of n.getAnimations())animation.cancel();
-    mutate();for(const n of nodes)animate(n,before.get(n));
-  };
-  const status=document.getElementById('panel-reorder-status');
-  const persistOrder=()=>store('gamma:ros:left-panels',JSON.stringify(movingPanels().map(n=>n.dataset.rosPanel)));
-  const visiblePanels=()=>movingPanels().filter(n=>n.getClientRects().length);
-  const panelTitle=panel=>panel.querySelector('[data-ros-text]')?.textContent||panel.querySelector('.ros-side-head')?.textContent.replace(/[⠿▾]/g,'').trim();
-  const positionText=panel=>format('{name}：{total}個中{position}番目。',{name:panelTitle(panel),total:visiblePanels().length,position:visiblePanels().indexOf(panel)+1});
-  const refreshPositions=()=>{for(const {describe} of disclosures)describe();};
-  const announceMove=panel=>{
-    status.lang=document.getElementById('panel-reorder-help').lang;
-    status.textContent=format('{panel}を{position}/{total}番目に移動しました。',{panel:panelTitle(panel),position:visiblePanels().indexOf(panel)+1,total:visiblePanels().length});
-  };
-  const startGrip=(event,panel)=>{
-    if(event.button!==undefined&&event.button!==0||drag)return;
-    const sx=event.clientX,sy=event.clientY,pointer=event.pointerId,capture=event.currentTarget;
-    const next=panel.nextElementSibling;
-    let active=false,frame=0,lastTime=0,point=null;
-    const finish=cancel=>{
-      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancelled);window.removeEventListener('keydown',key);window.removeEventListener('blur',cancelled);document.removeEventListener('visibilitychange',visibility);
-      cancelAnimationFrame(frame);if(capture.hasPointerCapture?.(pointer))capture.releasePointerCapture(pointer);
-      if(!active)return;
-      const {hole}=drag,from=panel.getBoundingClientRect();
-      if(cancel)band.insertBefore(panel,next);else band.insertBefore(panel,hole);
-      hole.remove();panel.classList.remove('is-dragging');
-      for(const k of ['position','left','top','width','zIndex','pointerEvents'])panel.style[k]='';
-      document.body.classList.remove('is-ros-panel-dragging');drag=null;animate(panel,from);
-      justDragged=true;setTimeout(()=>{justDragged=false;},60);
-      refreshPositions();
-      if(!cancel){persistOrder();announceMove(panel);}
-    };
-    const placeHole=()=>{
-      const box=band.getBoundingClientRect();if(!point||point.x<box.left-240||point.x>box.right+240)return;
-      const ref=movingPanels().find(n=>{if(n===panel||!n.getClientRects().length)return false;const r=(n.querySelector('.ros-side-head')||n).getBoundingClientRect();return point.y<r.top+r.height/2;})||null;
-      if(drag.hole.nextElementSibling!==ref)flipMove(()=>band.insertBefore(drag.hole,ref));
-    };
-    const scrollHost=band.closest('.paper-sticky');
-    const scrollEdge=time=>{
-      if(!active||!drag)return;
-      const dt=lastTime?Math.min(32,time-lastTime):0;lastTime=time;
-      const r=scrollHost?.getBoundingClientRect(),box=band.getBoundingClientRect();
-      if(r&&point&&point.x>=box.left&&point.x<=box.right&&point.y>=r.top&&point.y<=r.bottom){
-        const edge=Math.min(48,r.height/3),speed=point.y<r.top+edge?-(r.top+edge-point.y)/edge:point.y>r.bottom-edge?(point.y-r.bottom+edge)/edge:0;
-        if(speed){scrollHost.scrollTop+=speed*720*dt/1000;placeHole();}
-      }
-      frame=requestAnimationFrame(scrollEdge);
-    };
-    const move=ev=>{
-      if(ev.pointerId!==pointer)return;
-      if(!active){
-        if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
-        active=true;capture.setPointerCapture?.(pointer);
-        const rect=panel.getBoundingClientRect(),hole=document.createElement('div');hole.className='ros-panel-hole';hole.style.height=rect.height+'px';hole.style.width=rect.width+'px';band.insertBefore(hole,panel);
-        drag={panel,hole,dx:sx-rect.left,dy:sy-rect.top};
-        for(const animation of panel.getAnimations())animation.cancel();
-        panel.classList.add('is-dragging');Object.assign(panel.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',zIndex:'600',pointerEvents:'none'});
-        document.body.classList.add('is-ros-panel-dragging');frame=requestAnimationFrame(scrollEdge);
-      }
-      ev.preventDefault();panel.style.left=ev.clientX-drag.dx+'px';panel.style.top=ev.clientY-drag.dy+'px';
-      point={x:ev.clientX,y:ev.clientY};placeHole();
-    };
-    const visibility=()=>{if(document.hidden)finish(true);};
-    const up=ev=>{if(ev.pointerId===pointer)finish(false);},cancelled=()=>finish(true),key=ev=>{if(ev.key==='Escape'){ev.preventDefault();finish(true);}};
-    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancelled);window.addEventListener('keydown',key);window.addEventListener('blur',cancelled);document.addEventListener('visibilitychange',visibility);
-  };
-  for(const panel of panels){
-    const heading=panel.querySelector('.band-heading');if(!heading)continue;
-    if(panel===fixed){heading.dataset.rosText ||= heading.textContent;continue;}
-    const key='gamma:ros:left-collapsed:'+panel.dataset.rosPanel;
-    const grip=document.createElement('span');grip.className='ros-panel-grip';grip.textContent='⠿';grip.setAttribute('aria-hidden','true');
-    panel.draggable=false;grip.draggable=false;grip.addEventListener('pointerdown',event=>startGrip(event,panel));
-    const disclosure=document.createElement('span');disclosure.className='ros-side-disclosure';disclosure.textContent='▾';disclosure.setAttribute('aria-hidden','true');
-    if(heading.tagName==='SUMMARY'){
-      heading.addEventListener('click',event=>{if(justDragged){event.preventDefault();event.stopImmediatePropagation();}},true);
-      heading.classList.add('ros-side-head');heading.prepend(grip);heading.append(disclosure);
-      if(panel.id!=='column-popover')try{panel.open=localStorage.getItem(key)==='0';}catch(_){}
-      heading.setAttribute('aria-expanded',String(panel.open));
-      const content=document.createElement('div');content.className='ros-left-content';
-      for(const child of [...panel.childNodes])if(child!==heading)content.append(child);
-      panel.append(content);
-      setup(panel,heading,content,true,()=>{});
-      panel.addEventListener('toggle',()=>{
-        heading.setAttribute('aria-expanded',String(panel.open));
-        if(compact.matches){
-          if(panel.open){content.showPopover();place(content,heading);}else content.hidePopover();
-        }else if(panel.id!=='column-popover')store(key,panel.open?'0':'1');
-      });
-      continue; // Existing details keep their own persisted open state.
-    }
-    const button=document.createElement('button');button.type='button';button.className='ros-side-head';if(heading.id)button.id=heading.id;
-    const title=document.createElement('span');title.dataset.rosText=heading.textContent;title.textContent=heading.textContent;
-    const content=document.createElement('div');content.className='ros-left-content';content.id='ros-left-content-'+panel.dataset.rosPanel;
-    for(const child of [...panel.childNodes])if(child!==heading)content.append(child);
-    button.append(grip,title,disclosure);heading.replaceWith(button);panel.append(content);
-    let closed=false;try{closed=localStorage.getItem(key)==='1';}catch(_){}
-    const paint=()=>{content.hidden=closed;button.setAttribute('aria-expanded',String(!closed));};
-    button.setAttribute('aria-controls',content.id);paint();
-    setup(panel,button,content,false,paint);
-    button.addEventListener('click',event=>{
-      if(justDragged){event.preventDefault();return;}
-      if(compact.matches){content.togglePopover();if(content.matches(':popover-open'))place(content,button);}
-      else{closed=!closed;paint();store(key,closed?'1':'0');}
-    });
-  }
-  const configure=()=>{
-    for(const item of disclosures){
-      const {panel,head,content,isDetails,paint}=item;
-      if(compact.matches){
-        if(!content.hasAttribute('popover'))item.desktopOpen=panel.open;
-        content.setAttribute('popover','auto');content.hidden=false;
-        if(isDetails)panel.open=false;
-        head.setAttribute('aria-expanded','false');
-      }else{
-        if(content.hasAttribute('popover')){
-          content.hidePopover();content.removeAttribute('popover');
-          content.style.removeProperty('left');content.style.removeProperty('top');
-          if(isDetails){panel.open=item.desktopOpen;head.setAttribute('aria-expanded',String(panel.open));}
-        }
-        if(!isDetails)paint();
-      }
-    }
-  };
-  compact.addEventListener('change',()=>{configure();refreshPositions();});configure();refreshPositions();
-  return {refreshPositions};
-}};
 (() => {
   const $ = id => document.getElementById(id);
   let leftPanels,rowMenu=null;
@@ -879,6 +701,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   } catch(_) {}
   function updateStageFigures(){
     const shown=canRenderStage&&stagePanelOpen&&indexMode!=="closed";
+    $('ros-stage-panel').dataset.rosUnavailable=String(!canRenderStage);
     $('ros-stage-toggle').hidden=lite||!canRenderStage;
     $('ros-stage-toggle').setAttribute('aria-expanded',String(stagePanelOpen));
     $('stage-figures').hidden=!shown;
@@ -891,6 +714,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   $('ros-index-collapse').setAttribute('aria-expanded',String(!indexPanelCollapsed));$('ros-index-list').hidden=indexPanelCollapsed;
   $('ros-stage-toggle').addEventListener('click',()=>{
     if(lite||!canRenderStage)return;
+    if(leftPanels)return;
     stagePanelOpen=!stagePanelOpen;
     store(stagePanelKey,stagePanelOpen?'1':'0');
     if(stagePanelOpen&&indexMode==="closed")openIndex(true);
@@ -1296,9 +1120,9 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   // The control panel keeps the width of 2026-10-06b #14 for every paper: clamp(160px, grid − 8px gap − A4 landscape, 240px).
   const LEFT_WIDTH_KEY='gamma:ros:left-width',LEFT_OPEN_KEY='gamma:ros:left-open';
   let leftWidthPref=readNumber(LEFT_WIDTH_KEY),leftOpen=true;
-  try{leftOpen=localStorage.getItem(LEFT_OPEN_KEY)!=='0';}catch(_){}
+  // G-09: keep the retired saved key for rollback; the rail is always visible.
   const clampLeft=w=>Math.min(480,Math.max(160,Math.round(w)));
-  const panelWidth=()=>lite?0:leftOpen?Math.min(clampLeft(leftWidthPref??240),Math.max(160,innerWidth/2)):34;
+  const panelWidth=()=>lite?0:Math.min(clampLeft(leftWidthPref??240),Math.max(160,innerWidth/(leftPanels?.mode==='split'?3:2)));
 
   // Room available to a docked companion while an A4 page remains usable at
   // its minimum automatic scale.  Its final scale is measured from the
@@ -1317,6 +1141,12 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     });
   }
   function layoutIndex(){
+    if(leftPanels){
+      const preview=$('preview');indexMode='docked';preview.dataset.index='unified';preview.dataset.leftOpen='true';
+      preview.style.setProperty('--left-w',`${panelWidth()}px`);
+      preview.style.setProperty('--panel-w',`${panelWidth()}px`);
+      queueAutomaticPageScale();updateStageFigures();leftPanels.refreshHeights();return;
+    }
     // 1600px keeps the owner's default two-companion layout.  At 1200–1599px
     // it stays paper-first until either companion is explicitly opened.
     const aside=$("ros-index"),preview=$("preview"),space=indexSpace(),docked=canDockCompanions()&&indexPinned&&(wideLayout()||narrowCompanionsOpen)&&(paperFormat!=="free"||space>=layout.INDEX_WIDTH.min);
@@ -1368,6 +1198,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     if(indexMode==="overlay"){indexOverlay=false;layoutIndex();}
   }
   function openIndex(open){
+    if(leftPanels){leftPanels.reveal('ros-index',open);if(open)trackIndex();return;}
     if(open){
       if(canDockCompanions()){
         indexPinned=true;store(INDEX_OPEN_KEY,null);
@@ -1405,14 +1236,15 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   function syncCueReadOnly(){
     const readOnly=readOnlyPaper();
     document.body.classList.toggle("readonly-cue-shell",readOnly);
-    for(const node of document.querySelectorAll('#paper-band > :not(#band-cues),#band-selection,.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    for(const node of document.querySelectorAll('#paper-band > :not(.ros-panel-column),.ros-unified-panel:not(#band-cues),#band-selection,.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
     syncSelectionBar();
     return readOnly;
   }
   function syncCueChoices(){
     const readOnly=syncCueReadOnly();
     const available=!lite&&!runOnly&&Boolean(cueHost?.available?.());
-    $("band-cues").hidden=!available;
+    $("band-cues").dataset.rosUnavailable=String(!available);
+    $("band-cues").hidden=!available||Boolean(leftPanels?.isHidden('band-cues'));
     const selected=cueHost?.selection?.();
     $("ros-csv").hidden=cueView;
     $("cue-handover").hidden=!available||!cueView||!["performer","handover"].includes(selected?.kind);
@@ -1500,20 +1332,18 @@ window.ROSLeftPanels={install(band,{store,text,format}){
 
   $("cue-return").addEventListener("click",showRunOfShow);
   // Only run-of-show editing actions return to its retained document.
-  $('paper-band').addEventListener('click',event=>{if(cueView&&event.target.closest('.band-items,.band-row-mode,.band-view'))showRunOfShow();},true);
+  $('paper-band').addEventListener('click',event=>{if(cueView&&event.target.closest('.band-items,.band-row-mode'))showRunOfShow();},true);
   $('paper-band').addEventListener('change',()=>{if(cueView)cuePaper?.refresh();});
   new MutationObserver(()=>{syncCueSkin();syncCueChoices();if(cueView)cueHost.refresh();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:["lang","data-stage-skin"]});
   new MutationObserver(()=>{if(document.body.classList.contains("readonly-cue-shell")===readOnlyPaper())return;syncCueChoices();if(cueView)cueHost?.refresh?.(true);}).observe(parent.document.body,{attributes:true,attributeFilter:["class"]});
   syncCueChoices();
   document.querySelector('.band-view').append($('widths-reset').closest('.toolbar'));
   if(!lite){
-    leftPanels=window.ROSLeftPanels.install($('paper-band'),{store,text:uiText,format:uiFormat});
-    const toggle=el('button','','is-icon ros-left-toggle');toggle.id='ros-left-toggle';toggle.type='button';toggle.dataset.noI18n='';
-    toggle.innerHTML='<span data-ros-text="書式">書式</span><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 1h13v13H1zM5 1v13"/></svg>';
-    toggle.setAttribute('aria-controls','paper-panel');$('preview').prepend(toggle);
-    const syncToggle=()=>{const label=uiText('操作パネル')+' · '+uiText('書式');toggle.querySelector('span').textContent=uiText('書式');toggle.setAttribute('aria-label',label);toggle.title=label;toggle.setAttribute('aria-expanded',String(leftOpen));};
-    toggle.addEventListener('click',()=>{leftOpen=!leftOpen;store(LEFT_OPEN_KEY,leftOpen?'1':'0');syncToggle();applyPaperSize();});syncToggle();
-    new MutationObserver(syncToggle).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
+    leftPanels=window.ROSLeftPanels.install($('paper-band'),{
+      store,text:uiText,format:uiFormat,stageOpen:stagePanelOpen,indexCollapsed:indexPanelCollapsed,
+      onCollapse:(id,closed)=>{if(id==='ros-stage-panel')stagePanelOpen=!closed;if(id==='ros-index')indexPanelCollapsed=closed;},
+      onLayout:()=>{layoutIndex();queueTrack();},
+    });
     const handle=el('div','','ros-index-resize ros-left-resize');handle.id='ros-left-resize';handle.tabIndex=0;handle.dataset.noI18n='';
     handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');handle.setAttribute('aria-controls','paper-panel');
     const syncHandle=()=>{handle.setAttribute('aria-label',uiText('操作パネルの幅（ダブルクリックで既定に戻す）'));handle.setAttribute('aria-valuemin','160');handle.setAttribute('aria-valuemax','480');handle.setAttribute('aria-valuenow',String(panelWidth()));};

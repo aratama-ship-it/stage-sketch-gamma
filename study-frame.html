@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261101-v0398"><link rel="stylesheet" href="/stage-study.css?v=20261027-v0390"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261103-v040"><link rel="stylesheet" href="/stage-study.css?v=20261027-v0390"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=11"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.100</span>
+                <span class="stage-app-version">0.4.0</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -279,16 +279,14 @@
               </div>
               <p class="stage-version-note" id="stage-version-note"></p>
               <div class="stage-project-panel-actions" data-gamma-gate-keep>
-                <div class="stage-project-show-actions">
-                  <button type="button" id="stage-shows-open" class="stage-minor-action" aria-haspopup="dialog" aria-controls="stage-shows">ショー一覧</button>
-                  <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
-                </div>
-                <button type="button" id="stage-project-samples-open" class="stage-minor-action stage-tablet-samples-open" aria-haspopup="dialog" aria-controls="stage-project-library">サンプルライブラリ</button>
-                <div class="stage-project-transfer-actions">
+                <div class="stage-project-primary-actions">
+                  <button type="button" id="stage-shows-open" class="stage-minor-action" aria-haspopup="dialog" aria-controls="stage-shows">プロジェクトを開く…</button>
+                  <button type="button" id="stage-show-new" class="stage-minor-action" aria-label="新規プロジェクトを作る">新規プロジェクト</button>
+                  <button type="button" id="stage-project-samples-open" class="stage-minor-action stage-tablet-samples-open" aria-haspopup="dialog" aria-controls="stage-project-library">サンプルプロジェクト</button>
                   <button type="button" id="stage-export-json" class="stage-minor-action"
-                          aria-keyshortcuts="Meta+S Control+S">プロジェクトを書き出す（音源入り）</button>
-                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept=".stagesketch,.json,.stageproj,.stageproj.zip,.zip,application/json,application/zip" hidden></label>
+                          aria-label="プロジェクトを書き出す（音源入り）" aria-keyshortcuts="Meta+S Control+S">音源入りで書き出す</button>
                 </div>
+                <label class="stage-minor-action stage-import-label">プロジェクトを読み込む<input type="file" id="stage-import-json" accept=".stagesketch,.json,.stageproj,.stageproj.zip,.zip,application/json,application/zip" hidden></label>
                 <button type="button" id="stage-import-project-folder-open" class="stage-minor-action">プロジェクトのフォルダを読み込む</button><input type="file" id="stage-import-project-folder" webkitdirectory multiple hidden>
                 <p class="stage-version-note stage-project-import-note">β版で書き出したJSONも読み込めます。</p>
               </div>
@@ -342,6 +340,7 @@
           <section class="stage-panel" data-panel="sets" data-title="大道具">
             <div class="stage-panel-body">
               <p class="stage-cast-hint">舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。</p>
+              <p class="stage-profile-hint stage-help-note" id="stage-settings-guide"><span>スピーカーなどシーンで出す物はここで追加し、劇場の常設物は劇場設計で設定します。</span> <a class="stage-about-link" id="stage-settings-map-link" target="_blank" rel="noopener">設定場所の対応表</a></p>
               <div class="stage-roster-group" id="stage-group-sets" data-tablet-break-before>
                 <div class="stage-roster-accordion-body" id="stage-roster-sets-body">
                   <div class="stage-cast-list" id="stage-set-list"></div>
@@ -1947,68 +1946,33 @@
          各タブのボタンは既存の書き出し処理をそのまま呼ぶ（stage-sketch.js の initExportTabs）。 -->
     <div class="stage-export-tabs" role="tablist" aria-label="書き出す種類">
       <button type="button" role="tab" id="stage-export-tab-image" data-export-tab="image" aria-controls="stage-export-pane-image" aria-selected="true">画像・印刷</button>
-      <button type="button" role="tab" id="stage-export-tab-show" data-export-tab="show" aria-controls="stage-export-pane-show" aria-selected="false" tabindex="-1">ショーの保存</button>
+      <button type="button" role="tab" id="stage-export-tab-show" data-export-tab="show" aria-controls="stage-export-pane-show" aria-selected="false" tabindex="-1">プロジェクトの保存</button>
       <button type="button" role="tab" id="stage-export-tab-cuesheet" data-export-tab="cuesheet" aria-controls="stage-export-pane-cuesheet" aria-selected="false" tabindex="-1">Qシート</button>
       <button type="button" role="tab" id="stage-export-tab-venue" data-export-tab="venue" aria-controls="stage-export-pane-venue" aria-selected="false" tabindex="-1">劇場</button>
     </div>
     <div class="stage-export-pane" id="stage-export-pane-image" role="tabpanel" aria-labelledby="stage-export-tab-image">
-    <div id="stage-export-purpose-block">
-      <label class="stage-control-label">何のために</label>
-      <div class="stage-tool-grid" role="group" aria-label="何のために書き出すか">
-        <button type="button" data-export-purpose="draft" aria-pressed="true">作図として</button>
-        <button type="button" data-export-purpose="pitch" aria-pressed="false">ピッチ（売り込み用・説明文つき）として</button>
-      </div>
-    </div>
-
     <div id="stage-export-draft-fields">
-      <label class="stage-control-label">どの絵を</label>
-      <div class="stage-tool-grid" role="group" aria-label="どの絵を書き出すか">
-        <button type="button" data-export-view="front" aria-pressed="true">正面</button>
-        <button type="button" data-export-view="plan" aria-pressed="false">平面</button>
-        <button type="button" data-export-view="both" aria-pressed="false">両方</button>
-      </div>
-
-      <label class="stage-control-label">どのシーンを</label>
-      <div class="stage-export-scope" role="group" aria-label="どのシーンを書き出すか">
-        <button type="button" data-export-scope="current" aria-pressed="true">いまのシーン</button>
-        <button type="button" data-export-scope="section" aria-pressed="false">このセクションの中</button>
-        <button type="button" data-export-scope="all" aria-pressed="false">全部のシーン</button>
-      </div>
+      <label class="stage-control-label" for="stage-export-view">どの絵を</label>
+      <select id="stage-export-view" aria-label="どの絵を書き出すか">
+        <option value="front" selected>正面</option>
+        <option value="plan">平面</option>
+        <option value="both">両方</option>
+      </select>
+      <label class="stage-control-label" for="stage-export-scope">どのシーンを</label>
+      <select id="stage-export-scope" aria-label="どのシーンを書き出すか">
+        <option value="current" selected>いまのシーン</option>
+        <option value="section">このセクションの中</option>
+        <option value="all">全部のシーン</option>
+      </select>
     </div>
-
-    <div id="stage-export-pitch-fields" hidden>
-      <label class="stage-control-label">画風</label>
-      <div class="stage-tool-grid" role="group" aria-label="ピッチ画像の画風">
-        <button type="button" data-pitch-style="theatre" aria-pressed="true">暗い劇場の一瞬</button>
-        <button type="button" data-pitch-style="paper" aria-pressed="false">紙の上のスケッチ</button>
-        <button type="button" data-pitch-style="poster" aria-pressed="false">ポスター</button>
-        <button type="button" data-pitch-style="render" aria-pressed="false">生成AIで仕上げる</button>
-      </div>
-      <p class="stage-profile-hint" id="stage-pitch-style-note"></p>
-
-      <label class="stage-control-label">大きさ</label>
-      <div class="stage-tool-grid" role="group" aria-label="ピッチ画像の大きさ">
-        <button type="button" data-pitch-size="2" aria-pressed="true">1920×1080</button>
-        <button type="button" data-pitch-size="1" aria-pressed="false">1280×720</button>
-        <button type="button" data-pitch-size="3" aria-pressed="false">3840×2160</button>
-      </div>
-      <label class="stage-check stage-pitch-caption-check">
-        <input type="checkbox" id="stage-pitch-caption" checked>
-        <span>絵に文字を入れる（ショー名・シーン名・光の意図の一行）</span>
-      </label>
-
-      <label class="stage-control-label">生成条件の言語</label>
-      <div class="stage-tool-grid stage-pitch-langs" id="stage-pitch-langs"
-           role="group" aria-label="生成条件を出す言語"></div>
-    </div>
-
-    <p class="stage-profile-hint" id="stage-export-note"></p>
-    <button type="button" class="stage-minor-action" id="stage-export-run">書き出す</button>
-    <div class="stage-export-print">
+    <p class="stage-profile-hint" id="stage-export-note" role="status" aria-live="polite"></p>
+    <div class="stage-export-output-actions">
+      <button type="button" class="stage-minor-action" id="stage-export-run">PNG で書き出す</button>
+      <button type="button" class="stage-minor-action" id="stage-export-jpeg">JPEG で書き出す</button>
       <button type="button" class="stage-minor-action" id="stage-print-btn"
-              aria-describedby="stage-export-print-hint">印刷・PDF</button>
-      <p class="stage-profile-hint" id="stage-export-print-hint">全シーンを一枚ずつ並べた印刷用のページを開きます。ブラウザの印刷からPDFにできます</p>
+              aria-describedby="stage-export-print-hint">印刷／PDF</button>
     </div>
+    <p class="stage-profile-hint" id="stage-export-print-hint">選んだ図とシーンの印刷用ページを開きます。ブラウザの印刷からPDFにできます。</p>
     </div>
     <div class="stage-export-pane" id="stage-export-pane-show" role="tabpanel" aria-labelledby="stage-export-tab-show" hidden>
       <p class="stage-profile-hint">ショー全体（シーン・演者・照明・劇場など）を一つのファイルへ書き出して、控えを残します。別の端末へ持っていくときも、このファイルを読み込みます。</p>
@@ -2254,7 +2218,7 @@
     <button type="button" class="stage-modal-close" id="stage-shows-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
-    <p class="stage-profile-hint">この端末に保存したショーです。見本はサンプルライブラリから入手できます。</p>
+    <p class="stage-profile-hint">この端末に保存したショーです。見本はサンプルプロジェクトから入手できます。</p>
     <section class="stage-show-save-error" id="stage-show-save-error" role="alert" hidden>
       <p id="stage-show-save-error-text"></p>
       <p id="stage-show-save-error-help" hidden></p>
@@ -2263,7 +2227,7 @@
         <a id="stage-show-save-recovery" target="_blank" rel="noopener" hidden>保存容量を修復（別タブ）</a>
       </div>
     </section>
-    <button type="button" id="stage-shows-samples-open" class="stage-minor-action">サンプルライブラリ</button>
+    <button type="button" id="stage-shows-samples-open" class="stage-minor-action">サンプルプロジェクト</button>
     <div class="stage-show-list" id="stage-show-list"></div>
   </div>
 </div>
@@ -2821,15 +2785,18 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261102-v03100">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261103-v040">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v03100-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v03100-title">v0.3.100</h3><time datetime="2026-11-02">2026-11-02</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v040-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v040-title">v0.4.0</h3><time datetime="2026-11-03">2026-11-03</time></header>
       <ul>
-        <li>ブラウザ版と共有リンクを Mac 版と同じ内容にしました。v0.3.98・v0.3.99 で Mac 版だけに入っていた変更（標準26器具と新しい照明の種類、キューの札、音源入りの「プロジェクトを書き出す」、作業フォルダ、進行表の改善、かんたん照明の SS の左右の保持、かんたん照明で適用した直後の「LXキューを適用」の直し）が、ブラウザ版と共有リンクでも使えます。保存の形式は変わりません。</li>
-        <li>かんたん照明の正面プレビューを、客席から見る遠近図のまま、劇場設定の袖まで収める枠取りにしました。席や袖の広さによって、図の縮尺と人物・光の見え方が前の版と異なります。舞台タブの正面図・詳細照明・3D の描き方は変わりません。</li>
-        <li>照明の編集中に繰り返していた確認処理を減らしました。画面を離れるときに確認する条件は変わりません。</li>
+        <li>かんたん照明の図を、舞台タブと同じ正面図にしました。舞台袖・袖幕・一文字幕・紗幕・床の目地も同じ描き方で、光は舞台の中だけに表示します。SS の光の輪郭はやわらかくなりました。舞台タブの正面図・詳細照明・3D の描き方は変わりません。</li>
+        <li>かんたん照明の操作を広げました。詳細と同じシーンの列と LX キューのパネルを使え、レイヤーは見出しや「調整」で開閉できます。レイヤーごとに広がり方・客席から見た左右（全体／左だけ／右だけ）・点滅を調整でき、G キーで作業灯を切り替えられます。照明の種類にレーザー・ムービング・フォロー・ストロボ・UV を足し、機材配置の「標準セット」は 46 灯になりました。かんたん照明は標準セットのときだけ使え、他の型で保存した照明は詳細で編集できます。</li>
+        <li>ファイルを指す言葉を「プロジェクト」に揃え、ショーパネルの 4 つのボタンを同じ大きさで並べました。画像の書き出しは PNG と JPEG から選べ、印刷／PDF にも同じ図とシーンの選択が効きます。情報バーの最終保存は右端に固定しました。ショーの名前と保存済みの内容は引き継ぎます。</li>
+        <li>進行表のパネルを舞台タブと同じ操作にしました。1 列・2 列の切り替え、並べ替え、高さの調整、開閉、表示の出し入れができ、並びを覚えます。タイムラインを閉じたときの情報は横いっぱいの 1 行にまとめました。照明タブのパネル群も同じ仕組みで、取っ手をつかんで並べ替えと高さの調整ができます。</li>
+        <li>劇場設計の切り替えを照明タブと同じ大きさに揃え、切り替えで位置がずれないようにしました。ボタンの左枠だけ光らない問題を根元から直し、使えない操作は暗い背景と破線の枠で区別して、理由をカーソルで確認できます。</li>
+        <li>「劇場の常設物・シーンで出す物・照明の仕込みをどこで設定するか」の対応表を冊子に足し、劇場設計と素材の入口から案内を開けるようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3776,7 +3743,7 @@
     <span>全画面を終了</span><kbd data-no-i18n>Esc</kbd>
   </button>
 </div></div>
-<script src="/study-assets/stage-runtime.js?v=20261101-v0398"></script>
+<script src="/study-assets/stage-runtime.js?v=20261103-v040"></script>
 <script src="/study-assets/gamma-light-model.js?v=20261031-v0396"></script>
 <script src="/study-assets/stage-venues.js?v=20261007-v0326"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
@@ -3794,10 +3761,10 @@
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20261031-v0396"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261102-v03100"></script>
+<script src="/study-assets/gamma-ui.js?v=20261103-v040"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261103-v040"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261102-v03100"></script>
+<script src="/study-assets/stage-sketch.js?v=20261103-v040"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261031-v0396"></script>
 </body></html>

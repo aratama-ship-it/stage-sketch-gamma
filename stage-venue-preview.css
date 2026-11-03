@@ -81,12 +81,6 @@
   .stage-venue-back-screen-colors { grid-template-columns:1fr; }
 }
 
-/* Stacked menu choices need all four borders, including sibling buttons. */
-#gamma-venue-workspace .stage-venue-editor-menu .stage-tool-grid button + button { border-left: 1px solid var(--line-dark, #382f25); }
-#gamma-venue-workspace .stage-lighting-source-choices button { border-left-color: var(--line-dark, #382f25); }
-#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed=true] { border-left-color: var(--brass, #d3ac59); }
-#gamma-venue-workspace .stage-venue-editor-menu .stage-tool-grid button + button[aria-pressed=true] { border-left-color: var(--rust, #a84b26); }
-
 /* fix-a F-15: the preset picker defines the controls inside the left menu. */
 html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu :is(button:not(.stage-panel-help):not(.stage-hint-help):not(.stage-venue-step-head),.stage-import-label,select,input:not([type=checkbox]):not([type=range]):not([type=color]),.gamma-short-select-trigger) {
   font-family:var(--sans); font-size:var(--fs-4); font-weight:400; line-height:normal; letter-spacing:normal;

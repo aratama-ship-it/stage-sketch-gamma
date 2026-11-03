@@ -99,6 +99,23 @@ ${note("Viewpoints are no longer registered from 3D", "v0.2.12 removed registeri
 <li><strong>Legs</strong> appear with ${ui("With border")} in step 5, Wings. Several stand from front to back, and the wing space is painted darker than the legs.</li>
 <li><strong>The back screen</strong> is added in step 7 (${ui("Add a back screen")}) by drawing a horizontal line on the plan. It follows the ceiling height (v0.2.14).</li>
 </ul>`
+      },
+      {
+        id: "settings-map", title: "Where to set things up — theatre, stage objects and lighting rig", status: "sourced",
+        keywords: ["settings", "where", "map", "permanent", "objects", "equipment", "speaker", "PA", "curtains", "screen", "equipment placement", "Lite", "Studio", "Company"],
+        html: `
+<p>Use these entries for the permanent theatre, objects in each scene and the lighting rig.</p>
+${table(["What to set up", "Entry and action", "Editions"], [
+  ["Theatre space and audience", ui("Theatre design") + " → " + "<strong>Space, seating and curtains</strong>" + ". Use 1. Room outline / 2. Stage shape / 4. Audience, then " + ui("Apply this theatre") + " to use it in the show.", "Lite / Studio / Company"],
+  ["Theatre curtains and back screen", ui("Theatre design") + " → " + "<strong>Space, seating and curtains</strong>" + ". Use 3. Ceiling and front border / 5. Wings / 7. Back screen. Place the screen with " + ui("Add a back screen") + ".", "Lite / Studio / Company"],
+  ["Speakers, set pieces and props in a scene", ui("Stage") + " → " + ui("Set pieces") + " → " + ui("＋ Add set piece") + ". The existing Speaker shape represents a monitor or PA speaker. For props use " + ui("Props") + " → " + ui("＋ Add prop") + ". Switch registered objects on or off stage for each scene.", "Lite / Studio / Company"],
+  ["Register a front scrim and show or hide it per scene", ui("Theatre design") + " → " + "<strong>Space, seating and curtains</strong>" + " → 8. Stage machinery → " + ui("Place a front scrim (downstage edge, 30% sheer)") + ". Then use " + ui("Stage machinery") + " on the " + ui("Stage") + " tab to show or hide it per scene.", "Lite / Studio / Company"],
+  ["Lighting rig (fixtures, battens and masking)", ui("Theatre design") + " → " + ui("Equipment placement") + ". In " + ui("Add equipment") + " above the fixture list, choose " + ui("Presets") + " or place battens and fixtures. Select masking from " + ui("Other equipment") + " in the list to adjust it.", "Studio / Company"],
+  ["Scene lighting, colour, movement and LX cues", "Edit in " + ui("Light design") + ". To change rig positions, return to " + ui("Theatre design") + " → " + ui("Equipment placement") + ".", "Studio / Company"]
+])}
+<p>In Lite, use the entries marked for all editions. It has no Equipment placement or Light design editing entry.</p>
+<p>Theatre curtains and screens and lighting-rig masking have their own entries. The Speaker shape illustrates a position; it does not calculate sound pressure, directivity, projection distance or equipment interference.</p>
+<p>See ${ref("venue-steps", "the nine theatre steps")}, ${ref("sets", "set pieces")} and ${ref("placement", "equipment placement")} for details.</p>`
       }
     ]
   });

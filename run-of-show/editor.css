@@ -476,7 +476,7 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 #cell-format-target{flex:0 0 100%;max-width:none;margin:0;font-size:var(--fs-4);color:var(--milk)}
 #band-selection .cell-format-fields{flex:0 1 auto;display:flex;align-items:end;gap:var(--gamma-gap)}
 .cell-format-fields label{display:flex;flex-direction:column;gap:calc(var(--gamma-gap) / 2);min-width:0;font-size:var(--fs-4);color:var(--chrome-ink)}
-.cell-format-fields select,.cell-format-fields input{width:100%;min-width:0;height:var(--ctrl-md);min-height:var(--ctrl-md);background:var(--chrome-surface,var(--desk));border:var(--rule) solid var(--line-dark);color:var(--chrome-ink);padding:calc(var(--gamma-gap) / 2) var(--gamma-gap);border-radius:var(--radius)}
+.cell-format-fields select,.cell-format-fields input{width:100%;min-width:0;height:var(--ctrl-md);min-height:var(--ctrl-md);background-color:var(--chrome-surface,var(--desk));/* background-color, not the shorthand: the shared select arrow (gamma-select.css) must survive */border:var(--rule) solid var(--line-dark);color:var(--chrome-ink);padding:calc(var(--gamma-gap) / 2) var(--gamma-gap);border-radius:var(--radius)}
 #cell-font{width:calc(var(--ctrl-md) * 4)}
 #cell-size{width:calc(var(--ctrl-md) * 2)}
 #cell-border{width:calc(var(--ctrl-md) * 3)}
@@ -523,7 +523,7 @@ body.showing-cue-sheet .doc-frame,body.showing-cue-sheet #ros-index{display:none
 @media print{.band-cues,.cue-sheet-frame{display:none!important}}
 
 /* The pre-existing guest Q view remains readable; the run-of-show authoring UI does not gain permission. */
-body.readonly-cue-shell #paper-band>:not(#band-cues),body.readonly-cue-shell .doc-frame,body.readonly-cue-shell #authoring,body.readonly-cue-shell #ros-index,body.readonly-cue-shell #cue-return,body.readonly-cue-shell #band-status{display:none!important}
+body.readonly-cue-shell #paper-band>:not(#band-cues):not(.ros-panel-column),body.readonly-cue-shell .ros-unified-panel:not(#band-cues),body.readonly-cue-shell .doc-frame,body.readonly-cue-shell #authoring,body.readonly-cue-shell #ros-index,body.readonly-cue-shell #cue-return,body.readonly-cue-shell #band-status{display:none!important}
 
 /* Batch 7 G1: one fixed left rail, full centre, permanent paper controls. */
 @media screen and (min-width:900px){
@@ -812,3 +812,67 @@ body:not(.lite-paper) #paper-band .band-items .band-subgroup .action-tip-target 
 .ros-row-menu > button:disabled { color:var(--milk-dim); }
 @media (prefers-reduced-motion:reduce) { #paper-band .ros-side-disclosure { transition:none; } }
 @media print { .ros-row-menu { display:none!important; } }
+
+/* J3: every panel uses the Stage engine; both rails have the same width. */
+@media screen {
+  body.ros-unified-panels #preview,
+  body.ros-unified-panels.showing-cue-sheet #preview {
+    display:grid; height:100%; min-height:0; position:relative;
+    grid-template-areas:"panel note" "panel paper";
+    grid-template-columns:var(--left-w,240px) minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr); gap:var(--gamma-gap);
+  }
+  body.ros-unified-panels #preview[data-ros-panels=split] {
+    grid-template-areas:"panel note index" "panel paper index";
+    grid-template-columns:var(--left-w,240px) minmax(0,1fr) var(--left-w,240px);
+  }
+  body.ros-unified-panels #preview .paper-panel { padding-top:0; display:flex; visibility:visible; pointer-events:auto; min-height:0; height:100%; max-height:none; position:relative; }
+  body.ros-unified-panels #preview .paper-sticky { overflow:auto; min-height:0; max-height:none; flex:1 1 auto; position:static; }
+  body.ros-unified-panels #paper-band { display:flex; flex-direction:column; align-items:stretch; position:static; padding:0; gap:var(--gamma-gap); }
+  body.ros-unified-panels .ros-panel-column { display:flex; flex-direction:column; align-items:stretch; min-width:0; gap:var(--gamma-gap); }
+  body.ros-unified-panels #preview > .ros-panel-column { grid-area:index; overflow:auto; height:100%; min-height:0; scrollbar-gutter:stable; }
+  body.ros-unified-panels .ros-panel-column[hidden],body.ros-unified-panels .ros-unified-panel[hidden] { display:none!important; }
+  body.ros-unified-panels .ros-panel-column > .ros-unified-panel,
+  body.ros-unified-panels #paper-band .ros-panel-column > #band-settings {
+    box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; flex:0 0 auto; padding:0;
+    margin:0; border:0; border-top:1px solid var(--line-dark); border-radius:var(--radius-sm); position:static;
+    height:auto; max-height:none; overflow:visible; background:transparent;
+  }
+  body.ros-unified-panels #preview .ros-unified-panel > .ros-side-head,
+  body.ros-unified-panels #preview #paper-band .ros-side-head {
+    display:flex; align-items:center; width:100%; min-height:var(--ctrl-lg); padding:var(--gamma-panel-head-padding);
+    gap:calc(var(--gamma-gap) / 2); border:0; text-align:left; background:transparent; color:var(--milk); list-style:none;
+  }
+  body.ros-unified-panels .ros-side-head::-webkit-details-marker { display:none; }
+  body.ros-unified-panels .ros-side-title { flex:1 1 auto; min-width:0; font-size:var(--fs-3); letter-spacing:var(--gamma-panel-title-tracking); color:var(--brass); }
+  body.ros-unified-panels .ros-side-head .ros-panel-grip { display:flex; align-items:center; justify-content:center; flex:0 0 var(--ctrl-lg); width:var(--ctrl-lg); min-width:var(--ctrl-lg); height:var(--ctrl-lg); min-height:var(--ctrl-lg); touch-action:none; cursor:grab; }
+  body.ros-unified-panels .ros-side-head .ros-side-disclosure { flex:0 0 auto; width:0; height:0; font-size:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid var(--milk-dim); }
+  body.ros-unified-panels .ros-side-head[aria-expanded=false] .ros-side-disclosure { transform:rotate(-90deg); }
+  body.ros-unified-panels #preview .ros-unified-panel > .ros-left-content { display:flex; flex-wrap:wrap; align-items:center; gap:calc(var(--gamma-gap) / 2); box-sizing:border-box; width:100%; min-width:0; overflow:auto; padding:0; }
+  body.ros-unified-panels .ros-left-content[hidden],body.ros-unified-panels .ros-panel-height[hidden] { display:none!important; }
+  body.ros-unified-panels .ros-panel-height { height:var(--ctrl-lg); min-height:var(--ctrl-lg); display:flex; align-items:center; cursor:ns-resize; touch-action:none; }
+  body.ros-unified-panels .ros-panel-height::before { content:""; display:block; margin:auto; height:2px; width:var(--ctrl-md); background:var(--line-dark); }
+  body.ros-unified-panels .ros-panel-height:focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }
+  body.ros-unified-panels #ros-index-list { height:auto; max-height:none; margin:0; }
+  body.ros-unified-panels #stage-figures { width:100%; max-height:none; }
+  body.ros-unified-panels #paper-band .ros-display-band { display:flex; align-items:center; flex-wrap:wrap; gap:calc(var(--gamma-gap) / 2); }
+  body.ros-unified-panels .ros-display-band > .band-heading { display:block; border:0; padding:0; margin:0; }
+  body.ros-unified-panels .ros-panel-tools { display:flex; align-items:center; gap:calc(var(--gamma-gap) / 2); }
+  body.ros-unified-panels .ros-panel-tools .is-icon { width:var(--ctrl-lg); height:var(--ctrl-lg); min-width:var(--ctrl-lg); min-height:var(--ctrl-lg); padding:0; }
+  .ros-panels-menu { position:fixed; inset:auto; max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px); margin:0; padding:var(--gamma-gap); background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark); overflow:auto; }
+  .ros-panels-menu:popover-open { display:flex; flex-direction:column; gap:calc(var(--gamma-gap) / 2); }
+  .ros-panels-menu :is(button,label) { display:flex; align-items:center; gap:var(--gamma-gap); min-height:var(--ctrl-lg); }
+  .ros-panels-menu input { min-height:0; }
+  /* G-10: compact fields and equal icon boxes, aligned from the left. */
+  body.ros-unified-panels #preview #band-selection { position:static; z-index:auto; width:100%; min-width:0; max-width:none; max-height:none; overflow:visible; border:0; background:transparent; color:var(--milk); padding:0; display:flex; flex-direction:column; align-items:flex-start; gap:calc(var(--gamma-gap) / 2); }
+  body.ros-unified-panels #preview #band-selection .band-subgroup { display:flex; justify-content:flex-start; width:auto; gap:calc(var(--gamma-gap) / 2); }
+  body.ros-unified-panels #preview #band-selection .band-subgroup > :is(button,.action-tip-target) { flex:0 0 var(--ctrl-lg); width:var(--ctrl-lg); min-width:var(--ctrl-lg); max-width:var(--ctrl-lg); }
+  body.ros-unified-panels #preview #band-selection .cell-format-fields { display:flex; width:auto; max-width:100%; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-start; gap:calc(var(--gamma-gap) / 2); }
+  body.ros-unified-panels #preview #band-selection .cell-format-fields label { flex:0 1 auto; width:auto; max-width:100%; min-width:0; align-items:flex-start; }
+  body.ros-unified-panels #preview #band-selection .cell-format-fields :is(select,.gamma-short-select) { width:10rem; max-width:100%; }
+  body.ros-unified-panels #preview #band-selection .cell-format-size input { flex:0 1 5rem; width:5rem; max-width:100%; }
+  body.ros-unified-panels #preview #band-selection input[type=color] { width:var(--ctrl-lg); height:var(--ctrl-lg); min-height:var(--ctrl-lg); flex:none; }
+}
+@media print { .ros-panel-column,.ros-panels-menu { display:none!important; } }
+
+@media screen { body.ros-unified-panels:is(.showing-cue-sheet,.readonly-cue-shell) #preview #band-selection { display:none; } }

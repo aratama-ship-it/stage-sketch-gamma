@@ -9,6 +9,19 @@
   });
   /* 列は [en, ko, zh-Hans, zh-Hant]（2026-10-08 A-2: 以前は中国語が1列で、繁體でも簡体字が出ていた）。 */
   const extra = {
+    "ここでは灯体・バトン・幕類の仕込みを設定し、スピーカーなどシーンで出す物は舞台の大道具で追加します。": ["Set up fixtures, battens and masking here; add speakers and other scene objects under Set pieces on the Stage tab.", "여기서는 조명기·배튼·막의 설치를 설정하고, 스피커 등 씬에 놓을 물건은 무대의 무대 장치에서 추가합니다.", "在此设置灯具、吊杆和幕布的安装；扬声器等场景物品在舞台的布景装置中添加。", "在此設定燈具、吊桿和幕布的安裝；揚聲器等場景物品在舞台的佈景裝置中新增。"],
+    "設定場所の対応表": ["Where to set things up", "설정 위치 안내표", "设置位置对照表", "設定位置對照表"],
+
+    "左右": ["Sides", "좌우", "左右", "左右"],
+    "全体": ["All", "전체", "全部", "全部"],
+    "左だけ": ["Left only", "왼쪽만", "仅左侧", "僅左側"],
+    "右だけ": ["Right only", "오른쪽만", "仅右侧", "僅右側"],
+    "灯体の広がり方": ["Fixture beam spread", "조명기의 빔 각도", "灯具光束角", "燈具光束角"],
+    "速さ（Hz）": ["Rate (Hz)", "속도 (Hz)", "频率（Hz）", "頻率（Hz）"],
+    "点灯割合（%）": ["On time (%)", "점등 비율 (%)", "点亮比例（%）", "點亮比例（%）"],
+    "固定灯の広がり方は機材配置で調整してください": ["Adjust fixed-fixture beam spread in Equipment layout", "고정 조명기의 빔 각도는 기기 배치에서 조정하세요", "请在设备布置中调整固定灯具的光束角", "請在設備配置中調整固定燈具的光束角"],
+    "広がり方を機材の照射角の範囲に収めました": ["Beam spread was limited to the fixture range", "빔 각도를 조명기 범위 안으로 제한했습니다", "光束角已限制在灯具范围内", "光束角已限制在燈具範圍內"],
+    "照明タブでは照明を消すことはできません": ["Lighting cannot be hidden in the Lighting tab", "조명 탭에서는 조명을 숨길 수 없습니다", "照明选项卡中无法隐藏灯光", "照明分頁中無法隱藏燈光"],
     "カーブ": ["Curve", "커브", "曲线", "曲線"],
     "光の色": ["Light colour", "빛 색", "光的颜色", "光的顏色"],
     "狙い": ["Target surface", "대상 면", "目标表面", "目標表面"],
@@ -231,7 +244,12 @@
     for (const [pattern, make] of templates) { const match=key.match(pattern); if(match)return make(match); }
     if (/^[▾▸] /.test(key)) return key.slice(0,2)+lightingText(key.slice(2),language);
     if (/^(下手寄り|中央|上手寄り)・(奥|手前|中ほど)$/.test(key)) return key.split('・').map(text).join(' · ');
-    return venueRigText(key,language) || window.parent.SHOSAI_I18N_PACKS?.[language]?.text?.[key] || window.GAMMA_UI_TEXT(key,language);
+    return venueRigText(key,language) || extraText(key,language) || window.parent.SHOSAI_I18N_PACKS?.[language]?.text?.[key] || window.GAMMA_UI_TEXT(key,language);
+  }
+  /* The `extra` table also serves API lookups (GAMMA_LIGHT_UI_TEXT), not only the DOM translator (v0.4.0 J4 labels). */
+  function extraText(key, language) {
+    const index = language.startsWith("en") ? 0 : language.startsWith("ko") ? 1 : language === "zh-Hant" ? 3 : language.startsWith("zh") ? 2 : -1;
+    return index >= 0 && extra[key] ? extra[key][index] : null;
   }
   window.GAMMA_LIGHT_UI_TEXT = lightingText;
   function render() {
@@ -244,6 +262,8 @@
       if (!input.hasAttribute('data-lpignore')) input.setAttribute('data-lpignore','true');
     }
     const language=parentRoot.lang || 'ja';
+    const settingsMapLink=document.getElementById('settings-map-link');
+    if(settingsMapLink)settingsMapLink.href='../manual-gamma/index.html?lang='+(language==='ja'?'ja':'en')+'#settings-map';
     for (const button of document.querySelectorAll('[data-fixed-conflict-scenes]')) {
       button.textContent = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
     }

@@ -2469,6 +2469,10 @@
     });
     if (els.zoomIn) els.zoomIn.disabled = state.view.zoom >= VIEW_ZOOM_MAX;
     if (els.zoomOut) els.zoomOut.disabled = state.view.zoom <= VIEW_ZOOM_MIN;
+    // J1 G-25: explain the same overlap predicate without changing the action guard.
+    [els.extensionMerge, els.audienceMerge, els.wingMerge].forEach(button => {
+      if (button) button.dataset.unavailableReason = "合成できる未合成の重なりがありません。";
+    });
     if (els.extensionMerge) els.extensionMerge.disabled = mergeableStageExtensions().length === 0;
     if (els.audienceMerge) els.audienceMerge.disabled = mergeableAreas("audience").length === 0;
     if (els.wingMerge) els.wingMerge.disabled = mergeableAreas("wing").length === 0;

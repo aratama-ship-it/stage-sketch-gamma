@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="../stage-runtime.js?v=20261101-v0398"></script>
+<script src="../stage-runtime.js?v=20261103-v040"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>試作: 照明デザインモード — 舞台スケッチ（判断用・製品ではない）</title>
@@ -781,6 +781,10 @@
   .dialog .dialog-close{position:absolute;right:8px;top:4px;width:44px;height:44px;padding:0;font-size:24px;z-index:1;background:var(--desk-2)}
   .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:8px;margin:8px 0}
   .pcard{display:flex;flex-direction:column;gap:4px;text-align:left;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);padding:10px 12px;cursor:pointer;font:inherit}
+  /* J5: the simple-lighting rig owns one full row; other presets keep the existing grid. */
+  .pcard-standard{grid-column:1 / -1;min-height:112px;padding:16px;gap:8px;border-color:var(--brass)}
+  .pcard-standard .pname{font-size:18px}
+  .pcard-standard .plead{font-size:14px;line-height:1.6}
   .pcard:hover{border-color:var(--brass);background:rgba(156,130,63,.14)}
   .pname{color:var(--milk);font-size:14.5px;font-family:var(--serif);letter-spacing:.06em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   .pname em{color:var(--brass);font-style:normal;font-size:12.5px;white-space:nowrap}
@@ -836,9 +840,9 @@
   html.front-display-controls-active #front-display-controls .showtoggles{justify-content:flex-start}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261101-v0398">
-<link rel="stylesheet" href="embed.css?v=20261031-v0397">
-<link rel="stylesheet" href="simple-lighting.css?v=20261101-v0398">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261103-v040">
+<link rel="stylesheet" href="embed.css?v=20261103-v040">
+<link rel="stylesheet" href="simple-lighting.css?v=20261103-v040">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -934,6 +938,7 @@
               <!-- ホリゾントライトは置き場所が決まっているので、床／上の2択にする。 -->
               <div class="seg col" id="cyc-tools"></div>
               <p class="note" id="place-note"></p>
+              <p class="hint"><span>ここでは灯体・バトン・幕類の仕込みを設定し、スピーカーなどシーンで出す物は舞台の大道具で追加します。</span> <a class="btn small quiet" id="settings-map-link" href="../manual-gamma/index.html?lang=ja#settings-map" target="_blank" rel="noopener">設定場所の対応表</a></p>
             </div>
             <p class="ptitle" id="fixture-list-title">灯体一覧</p>
             <input type="search" id="search" class="search" placeholder="番号・名前で探す" aria-label="灯体を探す">
@@ -1091,7 +1096,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261031-v0396"></script>
+<script src="../gamma-ui.js?v=20261103-v040"></script>
 <link rel="stylesheet" href="position-names.css?v=20261101-v0398">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261011-v0347"></script>
@@ -1109,7 +1114,7 @@
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-scrim.js?v=20261009-v0335"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261102-v03100"></script>
+<script src="app.js?v=20261103-v040"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1117,16 +1122,16 @@
 <script src="selected-light-presets-ui.js?v=20261101-v0398"></script>
 <script src="../gamma-light-model.js?v=20261031-v0396"></script>
 <script src="simple-lighting-model.js?v=20261030-v0395"></script>
-<script src="part-lighting-model.js?v=20261101-v0398"></script>
+<script src="part-lighting-model.js?v=20261103-v040"></script>
 <script src="part-lighting-flow.js"></script>
 <script src="embed.js?v=20261102-v03100"></script>
-<script src="simple-lighting-ui.js?v=20261102-v0399"></script>
+<script src="simple-lighting-ui.js?v=20261103-v040"></script>
 <script src="assist.js?v=20261031-v0397"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261001-release71"></script>
 <script src="../gamma-ui-i18n.js?v=20261030-v0395"></script>
 <script src="../gamma-ui-i18n.ko.js?v=20261022-v0383"></script>
-<script src="ui-i18n.js?v=20261031-v0396"></script>
+<script src="ui-i18n.js?v=20261103-v040"></script>
 <script src="../gamma-appearance.js?v=20261031-v0396"></script>
 </body>
 </html>

@@ -324,3 +324,13 @@ html[data-gamma-light-mode=move][data-light-panel-style=single] #light-right-res
 html[data-gamma-light-mode=move][data-light-panel-style=single] .leftcol>#panel-insp{grid-column:auto;grid-row:auto;align-self:stretch}
 html[data-gamma-light-mode=move] .light-layout-collapsed>.light-detail-fold::before{content:'▸ ';color:var(--brass)}
 html[data-gamma-light-mode=move] .panel:not(.light-layout-collapsed)>.light-detail-fold::before{content:'▾ ';color:var(--brass)}
+
+/* Host geometry only; all panel controls come from the shared stack tokens. */
+html[data-gamma-light-mode=move] .leftcol > .gamma-stack-panel {
+  width:100%!important; flex:0 0 auto!important; min-height:0; height:auto; max-height:none; overflow:visible;
+}
+html[data-gamma-light-mode=move] .leftcol { overflow:auto; }
+.gamma-stack-panel > .gamma-stack-body { display:flex; flex-direction:column; gap:var(--gamma-gap); }
+.gamma-stack-panel > .gamma-stack-body > :is(.inspbody,.lxbody,.list) { flex:0 0 auto; overflow:visible; max-height:none; }
+html[data-gamma-light-mode=place] .gamma-stack-panel > :is(.gamma-stack-head,.gamma-stack-height) { display:none; }
+html[data-gamma-light-mode=move] .gamma-stack-panel > .gamma-stack-body > #fixture-list-title { display:none; }

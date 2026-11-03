@@ -181,7 +181,7 @@
   }
   function showError(text){errorBox.replaceChildren(element('p','',text));const close=element('button','stage-minor-action',tx('閉じる'));close.type='button';close.onclick=()=>{errorBox.hidden=true;};errorBox.append(close);errorBox.hidden=false;}
   function render(){
-    dialog.querySelector('h2').textContent=tx(mode==='samples'?'サンプルライブラリ':'以前のショー');
+    dialog.querySelector('h2').textContent=tx(mode==='samples'?'サンプルプロジェクト':'以前のプロジェクト');
     status.textContent=tx(mode==='samples'?'見本を選び、入手して開きます。':'元のショーと音源は端末に残ります。');
     count.hidden=mode!=='legacy';count.textContent=tx('残り {count} 件').replace('{count}',entries.filter(e=>!saved.has(e.id)).length);
     list.replaceChildren();

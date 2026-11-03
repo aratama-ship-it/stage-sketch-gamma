@@ -2318,7 +2318,7 @@ html[data-stage-layout="one"][data-stage-layout-side="right"] .stage-toolbox { d
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.stage-tool-grid button + button { border-left: 0; }
+/* J1 G-08: each control owns all four edges, including adjacent controls. */
 
 .stage-tool-grid button[aria-pressed="true"] {
   position: relative;
@@ -4066,7 +4066,7 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
   margin-top: 12px;
 }
 
-.stage-layer-actions button + button { border-left: 0; }
+/* J1 G-08: layers also keep four complete edges. */
 
 .stage-delete {
   width: 100%;
@@ -10610,9 +10610,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:not(.is-de
   padding: 0;
 }
 
-.stage-history-actions .stage-undo-redo button + button {
-  border-left: 1px solid var(--line-dark);
-}
 
 .stage-history-actions .stage-history-icon svg {
   display: block;
@@ -11662,7 +11659,7 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
   white-space: nowrap;
   cursor: pointer;
 }
-.stage-export-tabs [role="tab"] + [role="tab"] { border-left: 0; }
+.stage-export-tabs [role="tab"] + [role="tab"] { margin-left: -1px; }
 .stage-export-tabs [role="tab"]:hover { color: var(--milk); }
 .stage-export-tabs [role="tab"][aria-selected="true"] {
   position: relative;

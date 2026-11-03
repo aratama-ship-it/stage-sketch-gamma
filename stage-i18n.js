@@ -32,6 +32,18 @@
 
   const TEXT = {
 
+    "かんたん照明の図を、舞台タブと同じ正面図にしました。舞台袖・袖幕・一文字幕・紗幕・床の目地も同じ描き方で、光は舞台の中だけに表示します。SS の光の輪郭はやわらかくなりました。舞台タブの正面図・詳細照明・3D の描き方は変わりません。": "The Easy lighting figure is now the same front view as the Stage tab: wings, wing legs, borders, scrims and the floor joints are drawn the same way, and light is shown only on the stage. SS beam edges are softer. The Stage tab front view, Detailed lighting and 3D are drawn as before.",
+
+    "かんたん照明の操作を広げました。詳細と同じシーンの列と LX キューのパネルを使え、レイヤーは見出しや「調整」で開閉できます。レイヤーごとに広がり方・客席から見た左右（全体／左だけ／右だけ）・点滅を調整でき、G キーで作業灯を切り替えられます。照明の種類にレーザー・ムービング・フォロー・ストロボ・UV を足し、機材配置の「標準セット」は 46 灯になりました。かんたん照明は標準セットのときだけ使え、他の型で保存した照明は詳細で編集できます。": "Easy lighting can do more. It uses the same scene row and LX cue panel as Detailed, and layers open and close from their heading or “Adjust”. Each layer can set its spread, the side as seen from the audience (All / Left only / Right only) and strobe, and the G key toggles work lights. Laser, Moving, Follow, Strobe and UV were added to the lighting types, and the “Standard set” rig now has 46 fixtures. Easy lighting is available only with the Standard set; lighting saved with other rigs can be edited in Detailed.",
+
+    "ファイルを指す言葉を「プロジェクト」に揃え、ショーパネルの 4 つのボタンを同じ大きさで並べました。画像の書き出しは PNG と JPEG から選べ、印刷／PDF にも同じ図とシーンの選択が効きます。情報バーの最終保存は右端に固定しました。ショーの名前と保存済みの内容は引き継ぎます。": "Files are now called “projects” throughout, and the four buttons of the Show panel share one size. Images can be exported as PNG or JPEG, and Print / PDF uses the same figure and scene selection. The last-saved time is pinned to the right end of the information bar. Show names and saved content are kept.",
+
+    "進行表のパネルを舞台タブと同じ操作にしました。1 列・2 列の切り替え、並べ替え、高さの調整、開閉、表示の出し入れができ、並びを覚えます。タイムラインを閉じたときの情報は横いっぱいの 1 行にまとめました。照明タブのパネル群も同じ仕組みで、取っ手をつかんで並べ替えと高さの調整ができます。": "Run of show panels now work like the Stage tab: one or two columns, reordering, height adjustment, collapsing and showing/hiding, with the arrangement remembered. The information shown when the timeline is closed is one full-width line. Lighting tab panels use the same mechanism, so you can reorder them and adjust their height by their grips.",
+
+    "劇場設計の切り替えを照明タブと同じ大きさに揃え、切り替えで位置がずれないようにしました。ボタンの左枠だけ光らない問題を根元から直し、使えない操作は暗い背景と破線の枠で区別して、理由をカーソルで確認できます。": "The Theatre design switch is now the same size as the Lighting tab switch and no longer moves when toggled. The root cause of the left border not highlighting on button groups was fixed, and unavailable controls are shown with a dark background and a dashed border, with the reason shown on hover.",
+
+    "「劇場の常設物・シーンで出す物・照明の仕込みをどこで設定するか」の対応表を冊子に足し、劇場設計と素材の入口から案内を開けるようにしました。": "A table of where to set theatre fixtures, scene items and lighting rigging was added to the booklet, with guidance available from the Theatre design and Materials entries.",
+
     "ブラウザ版と共有リンクを Mac 版と同じ内容にしました。v0.3.98・v0.3.99 で Mac 版だけに入っていた変更（標準26器具と新しい照明の種類、キューの札、音源入りの「プロジェクトを書き出す」、作業フォルダ、進行表の改善、かんたん照明の SS の左右の保持、かんたん照明で適用した直後の「LXキューを適用」の直し）が、ブラウザ版と共有リンクでも使えます。保存の形式は変わりません。": "The browser version and shared links now match the Mac version. Changes that were previously only in the Mac version (v0.3.98 and v0.3.99) are now available in the browser and in shared links: the Standard 26 rig and the new lighting types, cue badges, the audio-inclusive “Export project”, the work folder, the Run of show improvements, keeping each side's own lighting for SS in Easy lighting, and the fix for “Apply LX cue” after applying in Easy lighting. The saved format is unchanged.",
 
     "かんたん照明の正面プレビューを、客席から見る遠近図のまま、劇場設定の袖まで収める枠取りにしました。席や袖の広さによって、図の縮尺と人物・光の見え方が前の版と異なります。舞台タブの正面図・詳細照明・3D の描き方は変わりません。": "The Easy lighting front preview keeps the audience perspective and now frames the view out to the wings of the selected theatre. Depending on the seat and the wing width, the scale of the figure and how performers and light appear differ from the previous version. The Stage tab front view, Detailed lighting and 3D are drawn as before.",
@@ -6262,7 +6274,6 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{
   "劇場設計": "Theatre design",
   "空間・客席・幕": "Space, seating and curtains",
-  "シーンの明かりを組み合わせる": "Compose scene lighting",
   "位置ごとの明かり": "Lighting by position",
   "背景付き22器具": "22 fixtures with cyclorama",
   "背景・転がし付き24器具": "24 fixtures with cyclorama and floor lights",
@@ -6776,3 +6787,84 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"work.opened": "Open here"})
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"作業フォルダには保存しました。ブラウザ内の控えは容量不足で保存できませんでした。保存容量を確認してください。": "Saved to the work folder. The browser copy could not be saved because browser storage is full. Check storage capacity."});
 
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"work.currentFile": "Saving to: {file}", "work.selectedFolder": "Selected folder: {folder}"});
+
+// J1 G-25: explicit reasons for unavailable controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "処理が終わるまでお待ちください。": "Wait for the current operation to finish.",
+  "読み取り専用のため変更できません。": "Changes are unavailable in read-only mode.",
+  "この舞台寸法では選んだ配置を使えません。": "The selected layout is unavailable for these stage dimensions.",
+  "この位置は使用中です。レイヤーの一覧から選んで編集してください。": "This position is in use. Select it in the layer list to edit it.",
+  "適用する変更がありません。": "There are no changes to apply.",
+  "取り消す下書きの変更がありません。": "There are no draft changes to discard.",
+  "詳細で調整済みのため、詳細画面で編集してください。": "This was adjusted in Detail. Edit it in the Detail screen.",
+  "先に照明の種類と使う位置を選んでください。": "Select a lighting type and position first.",
+  "別の画面の操作中、または読み取り専用のため使えません。": "Unavailable while another screen is active or in read-only mode.",
+  "元に戻す操作がありません。": "There is no action to undo.",
+  "やり直す操作がありません。": "There is no action to redo."
+});
+
+// J1 G-25: explicit reasons for unavailable controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "合成できる未合成の重なりがありません。": "There are no unmerged overlapping shapes to combine."
+});
+
+/* J2: project file actions and diagram export. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "新規プロジェクトを作る": "Create a new project",
+  "サンプルプロジェクト": "Sample projects",
+  "以前のプロジェクト": "Previous projects",
+  "プロジェクトを読み込む": "Import project",
+  "プロジェクトの保存": "Save project",
+  "音源入りで書き出す": "Export with audio",
+  "PNG で書き出す": "Export PNG",
+  "JPEG で書き出す": "Export JPEG",
+  "印刷／PDF": "Print / PDF",
+  "選んだ図とシーンの印刷用ページを開きます。ブラウザの印刷からPDFにできます。": "Open a print page for the selected diagrams and scenes. Use browser printing to save as PDF.",
+  "印刷用ページを準備しています…": "Preparing print page…",
+  "新しいプロジェクトを作ります。いま開いているプロジェクトは一覧に残ります。": "Create a new project. The current project stays in the list.",
+  "新しいプロジェクトを作りました。": "Created a new project."
+});
+
+// K3: existing setup entries; booklet remains ja/en.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "スピーカーなどシーンで出す物はここで追加し、劇場の常設物は劇場設計で設定します。": "Add speakers and other scene objects here; set permanent theatre elements in Theatre design.",
+  "設定場所の対応表": "Where to set things up"
+});
+
+// v0.4.0 integration: mirror of the English supplemental pack (stage-i18n.en.js) for the J3/J5/K2 strings — the page loads only this file for English (precedent: N4/W1-A blocks).
+/* J3 shared panel controls. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"パネルの並びを変更しました。": "Panel order changed.", "{name}の高さ": "Height of {name}"});
+// J5: standard rig and additional simple-lighting types.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "標準セット": "Standard set",
+  "かんたん照明は標準セットだけで使えます。": "Simple lighting is available only with the standard set.",
+  "かんたん照明は標準セットだけで使えます。保存済みの照明は詳細で編集できます。": "Simple lighting requires the standard set. Saved lighting can be edited in Detail.",
+  "フォロー": "Follow spot",
+  "ストロボ": "Strobe",
+  "UV": "UV (blacklight)",
+  "レーザーの広がり（度）": "Laser spread (degrees)",
+  "動きの1往復（秒）": "Movement round trip (seconds)",
+  "発光回数（毎秒）": "Flashes per second",
+  "レーザー 1": "Laser 1",
+  "レーザー 2": "Laser 2",
+  "ムービング 1": "Moving light 1",
+  "ムービング 2": "Moving light 2",
+  "フォロー 1": "Follow spot 1",
+  "フォロー 2": "Follow spot 2",
+  "ストロボ 1": "Strobe 1",
+  "ストロボ 2": "Strobe 2",
+  "UV 1": "UV (blacklight) 1",
+  "UV 2": "UV (blacklight) 2",
+  "UV 3": "UV (blacklight) 3",
+  "UV 4": "UV (blacklight) 4",
+  "転がし 手前 1": "Floor downstage 1",
+  "転がし 手前 2": "Floor downstage 2",
+  "転がし 手前 3": "Floor downstage 3",
+  "転がし 手前 4": "Floor downstage 4",
+  "転がし 奥 1": "Floor upstage 1",
+  "転がし 奥 2": "Floor upstage 2",
+  "転がし 奥 3": "Floor upstage 3",
+  "転がし 奥 4": "Floor upstage 4"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"ドラッグでパネルを並べ替え": "Drag to reorder panels", "ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。": "Drag to resize height. Use Up/Down to adjust; Enter or double-click for automatic height.", "パネルの設定を保存できませんでした。": "Panel settings could not be saved."});

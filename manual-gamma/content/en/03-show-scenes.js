@@ -17,20 +17,21 @@
 ${table(["Item", "What it does"], [
   [ui("Show name"), "The title of the work. It appears in All shows, the export file and the print sheet"],
   [ui("Version") + " / ＋", "Versions start at v1. ＋ saves and moves to the next version; earlier versions stay in All shows"],
-  [ui("All shows"), "Shows on this device plus the bundled samples. Click to open, ✕ to remove. " + ui("Create from a structure template") + " is here too"],
-  [ui("Create a new show"), "A blank show. It starts in Theatre settings (" + ref("venue-gate", "3-2") + ")"],
+  [ui("Open project…"), "Projects on this device. Click to open, ✕ to remove. " + ui("Create from a structure template") + " is here too"],
+  [ui("New project"), "A blank show. It starts in Theatre settings (" + ref("venue-gate", "3-2") + ")"],
+  [ui("Sample projects"), "Choose a bundled example and open it as a new project."],
   [ui("Export project (with audio)"), "Save the show and connected audio as .stageproj.zip. You are asked whether to include the theatre (" + ref("export-json", "Part 11, 11-3") + ")"],
-  [ui("Import show"), "Open a show from a file. The " + ui("Compare before importing") + " window lets you choose " + ui("Open as a separate show") + " or " + ui("Replace the current show")],
+  [ui("Import project"), "Open a show from a file. The " + ui("Compare before importing") + " window lets you choose " + ui("Open as a separate show") + " or " + ui("Replace the current show")],
   [ui("Return to previous show"), "Right after making a new show, a band offers to leave it and go back to the show you had open"]
 ])}
 ${fig("03-show-list", "All shows — name, version, number of scenes and date. The open show and bundled samples are marked.", "All shows")}
-<p>${ui("Create a new show from a structure template")} starts a show from a skeleton of acts and chapters.</p>`
+<p>${ui("New project from a structure template")} starts a show from a skeleton of acts and chapters.</p>`
       },
       {
         id: "venue-gate", title: "A new show starts with the theatre", status: "sourced",
         keywords: ["theatre settings", "gate", "band", "cannot press", "greyed out", "dimmed", "blocked", "choose theatre first", "new show", "tabs won't open"],
         html: `
-<p>Press ${ui("Create a new show")} and a “choose the theatre first” band appears while ${ui("Theatre design")} opens. Until then, on the ${ui("Stage")} tab only the ${ui("Show")} panel (All shows, new, import, export) works and everything else is dimmed. ${ui("Equipment placement")}, ${ui("Light design")} and ${ui("3D")} stay closed.</p>
+<p>Press ${ui("New project")} and a “choose the theatre first” band appears while ${ui("Theatre design")} opens. Until then, on the ${ui("Stage")} tab only the ${ui("Show")} panel (All shows, new, import, export) works and everything else is dimmed. ${ui("Equipment placement")}, ${ui("Light design")} and ${ui("3D")} stay closed.</p>
 ${steps([
   "In " + ui("Theatre design") + ", choose a preset or build a shape (" + ref("venue-presets", "Part 5, 5-2") + ").",
   "Press " + ui("Apply this theatre") + ".",
@@ -129,7 +130,7 @@ ${table(["Button", "What it does"], [
         keywords: ["delete", "remove", "deleted by mistake", "undo", "history", "confirm", "restore"],
         html: `
 <p>The ✕ on a scene row opens a confirmation window. Tick ${ui("I confirm that I want to delete it")}, then press ${ui("Delete")}. For a section row it is ${ui("Delete this section")} (the scenes inside go too).</p>
-<p>Right after deleting, ${kbd("⌘Z")} (${ui("Undo")}) brings it back. Edits to scene notes (descriptions) can be undone too (v0.2.16). The undo history has a size limit, so very many large operations push the oldest steps out. If a whole show is gone, import your exported copy with ${ui("Import show")}.</p>`
+<p>Right after deleting, ${kbd("⌘Z")} (${ui("Undo")}) brings it back. Edits to scene notes (descriptions) can be undone too (v0.2.16). The undo history has a size limit, so very many large operations push the oldest steps out. If a whole show is gone, import your exported copy with ${ui("Import project")}.</p>`
       }
     ]
   });

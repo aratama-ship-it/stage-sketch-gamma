@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.100";
+  const GAMMA_APP_VERSION = "v0.4.0";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -1000,13 +1000,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function defaultProjectExportBasename(project) {
     const source = project && typeof project === "object" ? project : {};
-    const title = (source.title || tx("ショー"))
+    const title = (source.title || tx("プロジェクト"))
       .replace(/[\\/:*?"<>|\s]+/g, "_")
-      .slice(0, 40) || tx("ショー");
+      .slice(0, 40) || tx("プロジェクト");
     const version = (source.versionLabel || "v1")
       .replace(/[\\/:*?"<>|\s]+/g, "_")
       .slice(0, 24) || "v1";
-    return projectExportFilename({ title, versionLabel: version }, tx("ショー"), "").replace(/\.stagesketch$/i, "");
+    return projectExportFilename({ title, versionLabel: version }, tx("プロジェクト"), "").replace(/\.stagesketch$/i, "");
   }
 
   function projectExportDate(value = new Date()) {
@@ -1019,7 +1019,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       .replace(/[\u0000-\u001f\u007f/\\:*?"<>|\s]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .slice(0, limit) || fallback;
-    const title = safePart(project && project.title, tx("ショー"));
+    const title = safePart(project && project.title, tx("プロジェクト"));
     const rawVersion = safePart(project && project.versionLabel, "v1", 24).replace(/^v+/i, "");
     const type = safePart(kind, "書き出し", 48);
     const suffix = extension ? `.${String(extension).replace(/^\.+/, "")}` : ".stagesketch";
@@ -2828,7 +2828,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-02`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-03`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -5850,10 +5850,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // 保存値（prefs.lightIntent）があっても無視する。カード・比較欄・図の重ねは
     // すべてこの一箇所（lightIntentOverlayOn等）から連鎖してOFFになる。
     // 2026-10-09: panelStageSet（舞台機構パネル）はこの常時OFFの列挙から外した（前紗幕の出し入れの入口＝既定ON・設定で消せる）
-    if (["lightIntent", "busyness", "crossing", "highwarn", "houseDepth"].includes(key)) return false;
-    // Gammaでは、舞台の転換に必要な三項目を常時有効にする。
-    // 定義と保存値は残し、旧ショーの設定を読み込んでもデータは失わない。
-    if (["presentation", "lineup", "pitchExport", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
+    if (["pitchExport", "lightIntent", "busyness", "crossing", "highwarn", "houseDepth"].includes(key)) return false;
+    // 常時有効な機能。引退した pitchExport の定義・保存値は維持し、上で無効にする。
+    if (["presentation", "lineup", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
     /* 2026-10-06 本人指示: 待機範囲の破線・平面図の灯体の白い枠・小道具の香盤表（印刷）は常にON、
        バミリ図（印刷）は機能ごと非表示。どれも環境設定から項目を外す。以前OFF/ONにした保存値は読まない（消しもしない）。
        待機範囲は上の版の判定（Liteでは使えない）が先に効く。 */
@@ -9218,7 +9217,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261101-v0398&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261103-v040&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11880,6 +11879,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     window.GammaUndoOwner?.invalidate();
     const drawing = window.GAMMA_FIELD_RUNS?.historyState();
     const blocked = historyEditBlocked();
+    const historyReason = blocked ? "別の画面の操作中、または読み取り専用のため使えません。" : "";
+    els.undo.dataset.unavailableReason = historyReason || "元に戻す操作がありません。";
+    els.redo.dataset.unavailableReason = historyReason || "やり直す操作がありません。";
     els.undo.disabled = blocked || !(drawing ? drawing.canUndo : history.length);
     els.redo.disabled = blocked || !(drawing ? drawing.canRedo : future.length);
   }
@@ -11910,11 +11912,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const n = state.editsSinceExport || 0;
     if (!state.lastExportAt) {
       els.backupNote.textContent = tx("まだ書き出したファイルがありません。");
-      const add = document.createElement("button");
-      add.type = "button"; add.className = "stage-minor-action";
-      add.textContent = tx("＋ プロジェクトを書き出す（音源入り）");
-      add.addEventListener("click", () => els.exportJson?.click());
-      els.backupNote.append(" ", add);
     } else {
       const at = new Date(state.lastExportAt);
       const stamp = isNaN(at) ? "?" : `${at.getMonth() + 1}/${at.getDate()} ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`;
@@ -21218,7 +21215,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           draw(target);
         } finally { target.restore(); }
       };
+      let lightingClip = null; // lazy, shared by this frame's lighting groups
       return {
+        // render()/renderSpinFrame advance this for venue/custom geometry,
+        // scene/background/photo-load/pen/text, scenery, theme and language.
+        // Layout and backing resolution are also keyed by the borrowing renderer.
+        // The frozen adapter identity prevents reuse across different hosts.
+        cacheOwner: window.SHOSAI_STAGE_VIEW,
+        cacheKey: JSON.stringify([stageVisualRevision,W,H,width,height,L.size.width,L.size.depth,
+          L.size.height,L.seat,L.pxPerM,L.floorY,L.bottomY,L.centerX,L.shift,
+          state.showFrontFloorGrid,pitchStyle,document.documentElement.dataset.stageSkin,document.fonts?.status]),
         project(point) {
           const u = point.x / L.size.width + .5, v = point.y / L.size.depth;
           const p = stagePoint(u, v, point.z, L), ground = place(u, v, L);
@@ -21231,7 +21237,66 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           // Photos/pen belong to the selected scene. Build their normal layer
           // without painting performers, weather, cues or editor annotations.
           buildPaintLayer(L);
-          paint(target, ctx => drawFrontVenue(ctx, L, { grid: false, legs }));
+          paint(target, ctx => drawFrontVenue(ctx, L, { legs }));
+        },
+        // F1B: only the borrowed simple view clips its lighting. The stage
+        // painters stay unchanged. Use the same floor polygons as drawFrontVenue;
+        // extrude them to the ceiling so cones keep their existing shape in air.
+        clipLighting(target) {
+          if (!lightingClip) {
+            const v = L.venue, lib = window.SHOSAI_FRONT_SHAPE;
+            const outline = venueOutlineOf(v, L.size), round = v.audience === "round";
+            const shaped = lib && Array.isArray(outline) && (v.custom || v.shapedVenue || (v.realVenue && !round));
+            const shape = shaped ? lib.build([outline].concat((v.custom || v.shapedVenue)
+              ? (venueStageExtensionsOf(v, L.size) || []).map(item => item?.polygon || null) : []),
+              v.realVenue && !v.custom && !v.shapedVenue ? { minPoints: 4 } : {}) : null;
+            const ring = round && !shape ? ringEllipse(L) : null;
+            const polygons = shape ? shape.polygons.map(poly => poly.map(p => [shape.uOf(p[0]),shape.vOf(p[1])]))
+              : [[[0,0],[1,0],[1,1],[0,1]]];
+            const paths = [];
+            const add = points => {
+              // Same winding makes overlapping faces a union under nonzero clip.
+              const area = points.reduce((sum,p,i) => { const q=points[(i+1)%points.length]; return sum+p.x*q.y-q.x*p.y; },0);
+              // Do not reorder floor/roof vertices: the side faces pair them
+              // by index, and the roof can have the opposite projected winding.
+              const ordered = area < 0 ? points.slice().reverse() : points;
+              paths.push(ordered.map(p => ({x:p.x*scale+x,y:p.y*scale+y})));
+            };
+            if (ring) {
+              const X=ring.x*scale+x,Y=ring.y*scale+y,rx=ring.rx*scale,ry=ring.ry*scale;
+              const top=Math.min(...[0,1].map(u => stagePoint(u,0,L.size.height,L).y))*scale+y;
+              lightingClip={ring:{X,Y,rx,ry,top}};
+            } else {
+              for (const poly of polygons) {
+                const floor=poly.map(([u,v]) => stagePoint(u,v,0,L));
+                const roof=poly.map(([u,v]) => stagePoint(u,v,L.size.height,L));
+                add(floor); add(roof);
+                floor.forEach((p,i) => { const j=(i+1)%floor.length; add([p,floor[j],roof[j],roof[i]]); });
+              }
+              lightingClip={paths};
+            }
+          }
+          target.beginPath();
+          if (lightingClip.ring) {
+            const {X,Y,rx,ry,top}=lightingClip.ring;
+            target.ellipse(X,Y,rx,ry,0,0,Math.PI*2);
+            target.rect(X-rx,top,rx*2,Math.max(0,Y-top));
+          } else for (const points of lightingClip.paths) {
+            points.forEach((p,i) => i ? target.lineTo(p.x,p.y) : target.moveTo(p.x,p.y));
+            target.closePath();
+          }
+          target.clip();
+        },
+        // Use the stage's canonical curtain painter and retirement rules.
+        // In D-4 only the scrims are visible; the retired front/traveler cloth
+        // must not turn the borrowed view into an opaque brown sheet.
+        paintCurtain(target, id) {
+          const piece = sc().pieces.find(p => p.id === id && p.type === "curtain");
+          if (!piece || !isScrimPiece(piece)) return;
+          paint(target, ctx => drawStagePiece(ctx, piece, L, pos => {
+            const tilt = L.seat?.tilt || 0;
+            return tilt * ((pos.x - L.centerX) / (W / 2));
+          }));
         },
         paintBorder(target, { visible = true, curtains } = {}) {
           paint(target, ctx => drawFrontBorderCurtain(ctx, L, { visible,
@@ -23019,31 +23084,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     PANELS.forEach((id) => {
       const el = panelEl(id);
       if (!el || el.querySelector(".stage-panel-head")) return;
-      const head = document.createElement("button");
-      head.type = "button";
-      head.className = "stage-panel-head";
-      head.dataset.panelHead = id;
-      head.setAttribute("aria-expanded", "true");
-
-      const grip = document.createElement("span");
-      grip.className = "stage-panel-grip";
-      grip.textContent = "⠿";
-      grip.setAttribute("aria-hidden", "true");
-
-      const title = document.createElement("span");
-      title.className = "stage-panel-title";
-      title.textContent = el.dataset.title || id;
-
-      const mark = document.createElement("span");
-      mark.className = "stage-panel-mark";
-      mark.setAttribute("aria-hidden", "true");
-
-      head.append(grip, title, mark);
-      head.addEventListener("click", (e) => {
-        // 掴んで動かした直後は、指を離した勢いで畳まないようにする
-        if (justDragged) { e.preventDefault(); return; }
-        togglePanel(id);
+      const { button: head, grip } = window.GAMMA_PANELS.head(document, {
+        title: el.dataset.title || id,
+        onToggle: (e) => {
+          if (panelReorder.justDragged) { e.preventDefault(); return; }
+          togglePanel(id);
+        },
+        onGrip: (e) => startGrip(e, id, el),
       });
+      head.dataset.panelHead = id;
       el.prepend(head);
       // パネルの説明は既定どおり隠す。見出しには説明用の「?」を置かない。
       const hints = id === "inspector"
@@ -23054,7 +23103,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // HTML5のドラッグはタッチで動かないので、ポインタイベントで自前に持つ。
       el.draggable = false;
       grip.draggable = false;
-      grip.addEventListener("pointerdown", (e) => startGrip(e, id, el));
+
     });
   }
 
@@ -23066,177 +23115,36 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      「元の位置へ戻す transform」を当ててから外すと、差分だけが滑って見える。 */
 
   let drag = null;
-  let justDragged = false;
-
-  function flipMove(mutate, skip) {
-    const items = [...document.querySelectorAll("[data-panel], .stage-panel-hole")]
-      .filter((el) => el !== skip);
-    const before = new Map(items.map((el) => [el, el.getBoundingClientRect()]));
-    mutate();
-    items.forEach((el) => {
-      const b = before.get(el);
-      const a = el.getBoundingClientRect();
-      const dx = b.left - a.left;
-      const dy = b.top - a.top;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-      el.style.transition = "none";
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-      requestAnimationFrame(() => {
-        el.style.transition = "transform 170ms cubic-bezier(0.2, 0.7, 0.3, 1)";
-        el.style.transform = "";
-      });
-    });
-  }
-
-  function clearFlip(el) {
-    const done = (e) => {
-      if (e.propertyName !== "transform") return;
-      el.style.transition = "";
-      el.style.transform = "";
-      el.removeEventListener("transitionend", done);
-    };
-    el.addEventListener("transitionend", done);
-  }
-
-  function startGrip(e, id, el) {
-    if (e.button !== undefined && e.button > 0) return;
-    const sx = e.clientX;
-    const sy = e.clientY;
-    let active = false;
-    const move = (ev) => {
-      if (!active) {
-        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
-        active = true;
-        beginDrag(id, el, ev);
-      }
-      ev.preventDefault();
-      moveDrag(ev);
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
-      if (active) endDrag();
-    };
-    window.addEventListener("pointermove", move, { passive: false });
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
-  }
-
-  function beginDrag(id, el, ev) {
-    const rect = el.getBoundingClientRect();
-    const hole = document.createElement("div");
-    hole.className = "stage-panel-hole";
-    hole.style.height = `${rect.height}px`;
-    if (el.classList.contains("gamma-selection-floating")) hole.style.display = "none";
-    el.parentElement.insertBefore(hole, el);
-
-    drag = { id, el, hole, dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
-    el.classList.add("is-dragging");
-    el.style.transition = "";
-    el.style.transform = "";
-    el.style.width = `${rect.width}px`;
-    el.style.position = "fixed";
-    el.style.left = `${rect.left}px`;
-    el.style.top = `${rect.top}px`;
-    el.style.zIndex = "600";
-    el.style.pointerEvents = "none";
-    document.body.classList.add("is-panel-dragging");
-  }
-
-  // 指の位置がどちらの列にあるか。列から離れすぎていたら動かさない
-  function columnAt(x, y) {
-    let best = null;
-    let near = Infinity;
-    panelColumnsForCurrentMode().forEach((col) => {
-      const host = colEls[col];
-      if (!host) return;
-      const r = host.getBoundingClientRect();
-      const dx = x < r.left ? r.left - x : (x > r.right ? x - r.right : 0);
-      const dy = panelBottomActive() ? (y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0) : 0;
-      const d = Math.hypot(dx, dy);
-      if (d < near) { near = d; best = col; }
-    });
-    return near > 240 ? null : best;
-  }
-
-  // その列で、いまの高さならどのパネルの前へ入るか
-  function insertionRef(host, y) {
-    const kids = [...host.children].filter((el) =>
-      el.dataset && el.dataset.panel && el !== drag.el);
-    for (let i = 0; i < kids.length; i += 1) {
-      const r = kids[i].getBoundingClientRect();
-      if (y < r.top + r.height / 2) return kids[i];
-    }
-    return null;
-  }
-
-  function moveDrag(ev) {
-    if (!drag) return;
-    drag.el.style.left = `${ev.clientX - drag.dx}px`;
-    drag.el.style.top = `${ev.clientY - drag.dy}px`;
-    if (drag.el.classList.contains("gamma-selection-floating")) return;
-    const col = columnAt(ev.clientX, ev.clientY);
-    if (!col || !colEls[col]) return;
-    const host = colEls[col];
-    const ref = insertionRef(host, ev.clientY);
-    if (drag.hole.parentElement === host && drag.hole.nextElementSibling === ref) return;
-    flipMove(() => host.insertBefore(drag.hole, ref), drag.el);
-  }
-
-  function endDrag() {
-    if (!drag) return;
-    const { el, hole, id } = drag;
-    const from = el.getBoundingClientRect();
-    const gammaFloating = el.classList.contains("gamma-selection-floating");
-    hole.parentElement.insertBefore(el, hole);
-    hole.remove();
-
-    el.classList.remove("is-dragging");
-    if (gammaFloating) {
-      // 浮動インスペクタは離した位置をそのまま次のクリックまで保持する。
+  const panelReorder = window.GAMMA_PANELS.reorder({
+    doc: document,
+    columns: () => panelColumnsForCurrentMode().map(col => colEls[col]).filter(Boolean),
+    items: () => [...document.querySelectorAll("[data-panel], .stage-panel-hole")],
+    motion: () => els.animScenes?.checked !== false,
+    bottom: panelBottomActive,
+    floating: el => el.classList.contains("gamma-selection-floating"),
+    onDrag: value => { drag = value; },
+    onFloating: (el, from, cancelled) => {
       const { left, top } = clampGammaFloatingPanelPosition(from.left, from.top, from.width, from.height);
       el.style.position = "absolute";
       setGammaFloatingPanelViewportPosition(el, left, top);
       el.style.width = `${from.width}px`;
       el.style.zIndex = "20";
       el.style.pointerEvents = "auto";
-      el.dataset.gammaUserMoved = "true";
-    } else {
-      ["position", "left", "top", "width", "zIndex", "pointerEvents"].forEach((k) => {
-        el.style[k] = "";
-      });
-    }
-    document.body.classList.remove("is-panel-dragging");
-
-    if (gammaFloating) {
-      drag = null;
-      justDragged = true;
-      setTimeout(() => { justDragged = false; }, 60);
-      return;
-    }
-
-    // 指を離した場所から、収まる場所へ滑らせる
-    const to = el.getBoundingClientRect();
-    el.style.transition = "none";
-    el.style.transform = `translate(${from.left - to.left}px, ${from.top - to.top}px)`;
-    requestAnimationFrame(() => {
-      el.style.transition = "transform 170ms cubic-bezier(0.2, 0.7, 0.3, 1)";
-      el.style.transform = "";
-    });
-    clearFlip(el);
-
-    const col = el.parentElement === colEls.right2 ? "right2"
-      : el.parentElement === colEls.right ? "right" : "left";
-    drag = null;
-    justDragged = true;
-    setTimeout(() => { justDragged = false; }, 60);
-    commitLayoutFromDom();
-    announce(panelBottomActive() ? `${el.dataset.title || id}の下部パネルの並びを変えました。`
-      : effectivePanelLayoutMode() === "single"
-      ? `${el.dataset.title || id}の並び順を変えました。`
-      : `${el.dataset.title || id}を${col === "left" ? "左" : col === "right2" ? "右の2列目" : "右"}の列へ移しました。`);
-  }
+      if (!cancelled) el.dataset.gammaUserMoved = "true";
+    },
+    onCommit: (id, el) => {
+      const col = el.parentElement === colEls.right2 ? "right2"
+        : el.parentElement === colEls.right ? "right" : "left";
+      commitLayoutFromDom();
+      announce(panelBottomActive() ? `${el.dataset.title || id}の下部パネルの並びを変えました。`
+        : effectivePanelLayoutMode() === "single"
+        ? `${el.dataset.title || id}の並び順を変えました。`
+        : `${el.dataset.title || id}を${col === "left" ? "左" : col === "right2" ? "右の2列目" : "右"}の列へ移しました。`);
+    },
+  });
+  function flipMove(mutate, skip) { panelReorder.flipMove(mutate, skip); }
+  function startGrip(e, id, el) { panelReorder.startGrip(e, id, el); }
+  function endDrag() { panelReorder.cancel(); }
 
   // 並びの正本は画面。動かし終えたら、そのまま状態へ書き戻す
   function commitLayoutFromDom() {
@@ -23573,20 +23481,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!els.panelsMenu) return;
     els.panelsMenu.replaceChildren();
     PANEL_FEATURES.filter((f) => !f.retired && !editionHidesPanel(f.panel) && panelEl(f.panel)).forEach((f) => {
-      const item = document.createElement("label");
-      item.className = "stage-panel-visibility-item";
-      item.dataset.panel = f.panel;   // 「機能をさがす」が OFF のパネルを開くときに引く（gamma-feature-search.js）
-      item.title = tx(f.hint);
-      const box = document.createElement("input");
-      box.type = "checkbox";
-      box.checked = featureOn(f.key);
-      box.addEventListener("change", () => {
-        setFeaturePreference(f.key, box.checked);
+      const item = window.GAMMA_PANELS.visibilityItem(document, {
+        id: f.panel, label: tx(f.label), hint: tx(f.hint), checked: featureOn(f.key),
+        onChange: checked => {
+        setFeaturePreference(f.key, checked);
         applyFeatureFlags();
         renderScenes();
         render();
-        announce(box.checked ? `設定「${tx(f.label)}」をONにしました。` : `設定「${tx(f.label)}」をOFFにしました。`);
-        if (box.checked) {
+        announce(checked ? `設定「${tx(f.label)}」をONにしました。` : `設定「${tx(f.label)}」をOFFにしました。`);
+        if (checked) {
           // Reveal the saved location; do not overwrite the user's panel layout.
           state.layout.collapsed[f.panel] = false;
           applyLayout();
@@ -23600,10 +23503,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             setTimeout(() => panel.classList.remove("gamma-feature-search-hit"), 1800);
           });
         }
+        },
       });
-      const name = document.createElement("span");
-      name.textContent = tx(f.label);
-      item.append(box, name);
       els.panelsMenu.append(item);
     });
   }
@@ -23629,24 +23530,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     group.setAttribute("role", "group");
     group.setAttribute("aria-label", tx("パネルの表示スタイル"));
     const now = panelLayoutChoiceValue("normal");
-    [...PANEL_LAYOUT_OPTIONS, ["ipad", "iPad表示モード"]].forEach(([value, label]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.dataset.panelLayout = value;
-      const mark = document.createElement("span");
-      mark.className = "stage-panel-layout-mark";
-      mark.setAttribute("aria-hidden", "true");
-      mark.textContent = now === value ? "✓" : "";
-      const name = document.createElement("span");
-      name.textContent = tx(label);
-      button.append(mark, name);
-      button.setAttribute("aria-pressed", String(now === value));
-      button.addEventListener("click", () => {
+    window.GAMMA_PANELS.choices(group, {
+      options: [...PANEL_LAYOUT_OPTIONS, ["ipad", "iPad表示モード"]], current: now, text: tx,
+      onSelect: (value, label) => {
         applyPanelLayoutChoice("normal", value);
         closePanelLayoutMenu(true);
         announce(`パネルの表示スタイルを「${tx(label)}」にしました。`);
-      });
-      group.append(button);
+      },
     });
     els.panelLayoutMenu.append(head, group);
   }
@@ -26003,12 +25893,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   async function newShow() {
     if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestNew"); return; }
     const basis=state.project.id;
-    if (!await surfaceConfirm("新しいショーを作ります。いま開いているショーは一覧に残ります。", (dialog, ok) => { ok.textContent = tx("作る"); }) || state.project.id !== basis) return;
+    if (!await surfaceConfirm("新しいプロジェクトを作ります。いま開いているプロジェクトは一覧に残ります。", (dialog, ok) => { ok.textContent = tx("作る"); }) || state.project.id !== basis) return;
     const previousId = state.project.id;
     const fresh = markVenueSetupPending(baseState(false));
     fresh.project.title = untitledShow();
     fresh.layout = state.layout;                 // 道具の並びは持ち越す
-    if (!await applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
+    if (!await applyLoadedState(normalizeState(fresh), "新しいプロジェクトを作りました。")) return;
     rememberNewShowReturn(previousId);
     closeShows();
     renderShows();
@@ -34741,39 +34631,91 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   /* ---------- 印刷用ページ ----------
-     全シーンの正面と平面を一枚ずつ並べた、印刷のためのページを別タブに開く。
+     選んだシーンと図を並べた、印刷のためのページを別タブに開く。
      ブラウザの「印刷」からPDFにして、稽古場へ紙で持っていける。
      絵は本物の描画（drawStage）をシーンごとに退避・切替して撮る。 */
-  function openPrintPage() {
-    const keepProject = state.project;
-    const keepFront = { ...zoomState.front };
-    const keepPlan = { ...zoomState.plan };
-    const keepPaper = printPaperSurface;
+  let printPreparing = false;
+  async function openPrintPage() {
+    if (printPreparing) return;
+    // Open during the gesture so browsers and the native shell can accept the tab.
+    const win = window.open("", "_blank");
+    if (!win) { announce("印刷用ページを開けませんでした。ポップアップの許可を確認してください。"); return; }
+    const progress = win.document.createElement("p");
+    progress.setAttribute("role", "status");
+    win.document.title = tx("印刷／PDF");
+    progress.textContent = tx("印刷用ページを準備しています…");
+    win.document.body.append(progress);
+    printPreparing = true;
+    const snapshot = JSON.parse(JSON.stringify(state.project));
+    const iterator = buildPrintPage(win, { view: exportView, scope: exportScope });
+    // A print popup can background its opener. Do not wait for the opener's
+    // animation frames, which WebKit may suspend while the popup has focus.
+    const yieldPrintTask = () => new Promise(resolve => {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => { channel.port1.close(); channel.port2.close(); resolve(); };
+      channel.port2.postMessage(null);
+    });
     try {
-      state.project = JSON.parse(JSON.stringify(keepProject));
-      buildPrintPage();
+      await yieldPrintTask();
+      let result;
+      do {
+        if (win.closed) { iterator.return(); break; }
+        // Rendering resolves support positions. Never expose the print snapshot to
+        // autosave, input handlers or the editor across an asynchronous boundary.
+        const keepProject = state.project, keepFront = zoomState.front, keepPlan = zoomState.plan;
+        const keepPaper = printPaperSurface;
+        try {
+          state.project = snapshot;
+          zoomState.front = { z: 1, ox: 0, oy: 0 };
+          zoomState.plan = { z: 1, ox: 0, oy: 0 };
+          result = iterator.next();
+        } finally {
+          state.project = keepProject; zoomState.front = keepFront; zoomState.plan = keepPlan;
+          printPaperSurface = keepPaper;
+        }
+        if (!result.done) {
+          progress.textContent = tx("印刷用ページを準備しています…") + ` ${result.value.done} / ${result.value.total}`;
+          await yieldPrintTask();
+        }
+      } while (!result.done);
     } catch (error) {
+      if (!win.closed) win.close();
       console.error("stage print: 印刷用ページを作れませんでした", error);
       exportFailureNotice("印刷用ページを作れませんでした。もう一度お試しください。");
     } finally {
-      state.project = keepProject;
-      zoomState.front = keepFront;
-      zoomState.plan = keepPlan;
-      printPaperSurface = keepPaper;
+      printPreparing = false;
       render();
     }
   }
 
-  function buildPrintPage() {
-    const rows = state.project.scenes.filter((row) => row.kind === "scene");
-    if (!rows.length) { announce("印刷するシーンがありません。"); return; }
+  function* buildPrintPage(win, options = { view: exportView, scope: exportScope }) {
+    const keepView = exportView, keepScope = exportScope;
+    let rows;
+    try {
+      exportView = options.view; exportScope = options.scope;
+      rows = exportTargets();
+    } finally { exportView = keepView; exportScope = keepScope; }
+    const views = options.view === "both" ? ["front", "plan"] : [options.view];
+    const selectedIds = new Set(rows.map(row => row.id));
+    const allRows = state.project.scenes;
+    const allScenes = allRows.filter(row => row.kind === "scene");
+    const printRows = allRows.filter((row, index) => {
+      if (row.kind !== "section") return selectedIds.has(row.id);
+      for (let k = index + 1; k < allRows.length && allRows[k].depth > row.depth; k++) {
+        if (selectedIds.has(allRows[k].id)) return true;
+      }
+      return false;
+    });
+    if (!rows.length) { win.close(); announce("印刷するシーンがありません。"); return; }
     const keepScene = state.project.activeSceneId;
     const keepFront = Object.assign({}, zoomState.front);
     const keepPlan = Object.assign({}, zoomState.plan);
     zoomState.front = { z: 1, ox: 0, oy: 0 };
     zoomState.plan = { z: 1, ox: 0, oy: 0 };
-    const fc = document.createElement("canvas"); fc.width = W * 2; fc.height = H * 2;
-    const pc = document.createElement("canvas"); pc.width = W * 2; pc.height = H * 2;
+    const canvases = Object.fromEntries(views.map(view => {
+      const canvas = document.createElement("canvas"); canvas.width = W * 2; canvas.height = H * 2;
+      return [view, canvas];
+    }));
     // Bind native methods to the original context. Only the paper rendition
     // darkens diagram strokes/text; costume and object fill colors are retained.
     const printContext = canvas => {
@@ -34792,25 +34734,32 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         }
       });
     };
-    const fctx = printContext(fc), pctx = printContext(pc);
+    const contexts = Object.fromEntries(views.map(view => [view, printContext(canvases[view])]));
     const en = languageValue(() => true, () => false);
     const parts = [];
     // セクション見出しも順番どおりに差し込む
     let sceneN = 0;
     let previousScene = null;
-    (state.project.scenes || []).forEach((row) => {
+    let completed = 0;
+    try {
+    for (const row of printRows) {
       if (row.kind === "section") {
         parts.push(`<h2 class="section">${escapeHtml(row.title || "")}</h2>`);
-        return;
+        continue;
       }
-      sceneN += 1;
+      sceneN = allScenes.findIndex(scene => scene.id === row.id) + 1;
+      previousScene = allScenes[sceneN - 2] || null;
       state.project.activeSceneId = row.id;
-      printPaperSurface = false;
-      drawStage(fctx, false, "front"); drawStage(pctx, false, "plan");
-      const darkFront = fc.toDataURL("image/jpeg", 0.92), darkPlan = pc.toDataURL("image/jpeg", 0.92);
-      printPaperSurface = true;
-      drawStage(fctx, false, "front"); drawStage(pctx, false, "plan");
-      const paperFront = fc.toDataURL("image/jpeg", 0.92), paperPlan = pc.toDataURL("image/jpeg", 0.92);
+      const images = {};
+      // Keep the renderer, canvas resolution, paper proxy and JPEG quality intact.
+      // Only skip diagrams outside the selected view/scope; reuse canvases per row.
+      for (const paper of [false, true]) {
+        printPaperSurface = paper;
+        for (const view of views) {
+          drawStage(contexts[view], false, view);
+          (images[view] ||= {})[paper ? "paper" : "dark"] = canvases[view].toDataURL("image/jpeg", 0.92);
+        }
+      }
       printPaperSurface = false;
       const cast = (row.pieces || []).filter((q) => q.type === "performer")
         .map((q) => pieceLabel(q)).filter(Boolean);
@@ -34827,8 +34776,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     <span class="times">${escapeHtml(times.join(" / "))}</span></header>
   ${row.note ? `<p class="desc"><span class="desc-label">${en ? "Scene description" : "シーンの説明"}</span>${escapeHtml(row.note)}</p>` : ""}
   <div class="pics">
-    <img class="front" src="${paperFront}" data-paper="${paperFront}" data-dark="${darkFront}" alt="${tx("正面図")}">
-    <img class="plan" src="${paperPlan}" data-paper="${paperPlan}" data-dark="${darkPlan}" alt="${tx("平面図")}">
+    ${views.map(view => `<img class="${view}" src="${images[view].paper}" data-dark="${images[view].dark}" alt="${tx(view === "front" ? "正面図" : "平面図")}">`).join("\n")}
   </div>
   <div class="meta">
     ${cast.length ? `<p class="cast">${en ? "On stage" : "舞台上"}: ${escapeHtml(cast.join(" / "))}</p>` : ""}
@@ -34837,8 +34785,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     ${bamiriTable(row)}
   </div>
 </section>`);
-      previousScene = row;
-    });
+      completed += 1;
+      yield { done: completed, total: rows.length };
+    }
+    } finally {
+      // Also release buffers when the preparation window closes or drawing fails.
+      for (const canvas of Object.values(canvases)) { canvas.width = 0; canvas.height = 0; }
+    }
     /* バミリ図: 立ち位置の実寸表。床にテープを貼る作業へそのまま持っていける */
     function bamiriTable(row) {
       if (!featureOn("bamiri")) return "";
@@ -34851,14 +34804,15 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       return `<table class="bamiri"><thead><tr><th>${en ? "Who" : "誰"}</th><th>${en ? "Across" : "左右"}</th><th>${en ? "From DS edge" : "ツラから"}</th></tr></thead><tbody>${cells}</tbody></table>`;
     }
 
-    const printSceneRows = state.project.scenes.filter((r2) => r2.kind === "scene");
+    const printSceneRows = rows;
 
     /* 明かりのキューシート: シーンごとの点き・消え・強さの変化 */
     let cuesheetHtml = "";
     if (featureOn("cuesheet")) {
       const lines = [];
       printSceneRows.forEach((row, i2) => {
-        const prev = i2 > 0 ? printSceneRows[i2 - 1] : { pieces: [] };
+        const originalIndex = allScenes.findIndex(scene => scene.id === row.id);
+        const prev = allScenes[originalIndex - 1] || { pieces: [] };
         const { on, off, changed } = lightCueChanges(prev, row);
         if (!on.length && !off.length && !changed.length) return;
         lines.push(`<tr><td>${i2 + 1} ${escapeHtml(row.title || "")}</td><td>${escapeHtml(on.join(" / "))}</td><td>${escapeHtml(off.join(" / "))}</td><td>${escapeHtml(changed.join(" / "))}</td></tr>`);
@@ -34887,11 +34841,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         return { name: escapeHtml(prop.name || ""), cells };
       });
       const plots = [];
+      // Columns carry the original scene numbers (as the scene sections do), also when the print is scoped (v0.4.0 G-30/31).
+      const sceneNumberOf = (row) => allScenes.findIndex((scene) => scene.id === row.id) + 1;
       for (let start = 0; start < printSceneRows.length; start += 12) {
         const rows = printSceneRows.slice(start, start + 12);
-        const head = rows.map((row, index) => `<th title="${escapeHtml(row.title || "")}">${start + index + 1}</th>`).join("");
+        const head = rows.map((row) => `<th title="${escapeHtml(row.title || "")}">${sceneNumberOf(row)}</th>`).join("");
         const body = plotRows.map((row) => `<tr><th>${row.name}</th>${row.cells.slice(start, start + 12).join("")}</tr>`).join("");
-        plots.push(`<section class="scene props-plot"><header><h3>${en ? "Props plot" : "小道具の香盤表"} (${start + 1}–${start + rows.length})</h3></header>
+        plots.push(`<section class="scene props-plot"><header><h3>${en ? "Props plot" : "小道具の香盤表"} (${sceneNumberOf(rows[0])}–${sceneNumberOf(rows[rows.length - 1])})</h3></header>
 <table class="cues props-plot-table"><thead><tr><th>${en ? "Prop" : "小道具名"}</th>${head}</tr></thead><tbody>${body}</tbody></table></section>`);
       }
       propsPlotHtml = plots.join("\n");
@@ -34919,6 +34875,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   .pics img { display: block; border: 1px solid #ccc; }
   .pics .front { width: 58%; height: auto; }
   .pics .plan { width: 40%; height: auto; }
+  .pics img:only-child { width: 100%; height: auto; }
   body.two-up .pics .front { width: 44%; }
   body.two-up .pics .plan { width: 30%; }
   .meta { margin-top: 6px; }
@@ -34960,6 +34917,7 @@ ${cuesheetHtml}
 ${propsPlotHtml}
 <script>
 (function () {
+  document.querySelectorAll('.pics img').forEach(function (img) { img.dataset.paper = img.src; });
   document.getElementById('print-paper').addEventListener('change', function (event) {
     document.querySelectorAll('.pics img').forEach(function (img) { img.src = event.target.checked ? img.dataset.paper : img.dataset.dark; });
   });
@@ -34984,11 +34942,8 @@ ${propsPlotHtml}
 </script>
 </body></html>`;
     const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    const win = window.open(url, "_blank");
-    if (!win) {
-      announce("印刷用ページを開けませんでした。ポップアップの許可を確認してください。");
-      return;
-    }
+    win.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
+    win.location.replace(url);
     announce("印刷用ページを開きました。ブラウザの印刷からPDFにできます。");
   }
 
@@ -36487,7 +36442,7 @@ ${propsPlotHtml}
   }
   document.getElementById("stage-export-project-file")?.addEventListener("click", () => {
     closeExport();
-    openVenueExportConfirmOrWrite(projectExportFilename(state.project, tx("ショー"), "stageproj.zip"), {projectPackage:true});
+    openVenueExportConfirmOrWrite(projectExportFilename(state.project, tx("プロジェクト"), "stageproj.zip"), {projectPackage:true});
   });
   document.getElementById("stage-import-project-folder-open")?.addEventListener("click", () => nativeProject ? nativeProject.request("requestOpen") : document.getElementById("stage-import-project-folder")?.click());
   document.getElementById("stage-import-project-folder")?.addEventListener("change", event => {
@@ -38478,7 +38433,7 @@ ${propsPlotHtml}
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261101-v0398';
+        script.src = 'light-design/part-lighting-model.js?v=20261103-v040';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -38564,7 +38519,7 @@ ${propsPlotHtml}
      シーンごとの明かり・LXキュー・グループ・保存済みの照明プラン（plans・activePlanRef）はそのまま使える。 */
   function venueApplyRebuiltCommonDesign(design, plan) {
     const next = projectIoClone(design);
-    next.rig = plan.presetId ? window.GAMMA_PART_LIGHTING.createRig(plan.stage, plan.venueType,plan.presetId) : window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(plan.stage, plan.venueType);
+    next.rig = plan.presetId ? window.GAMMA_PART_LIGHTING.rebuildRig(design.rig, plan.stage, plan.venueType) : window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(plan.stage, plan.venueType);
     next.stage = { ...plan.stage };
     return window.GAMMA_LIGHT_MODEL.validate(next);
   }
@@ -38602,7 +38557,7 @@ ${propsPlotHtml}
         ? "この劇場には合いません（プロセニアムの劇場用の型です）"
         : `この劇場には合いません（間口4〜24m・奥行3〜16m・高さ3〜14mの舞台用です。いまの舞台は${metres(target.stage)}）`;
     }
-    for(const preset of window.GAMMA_PART_LIGHTING.presetChoices)rows.push({key:'parts-'+preset.id,group:'venue',name:preset.name,count:preset.count,lead:'位置ごとの明かりを組み合わせる対応プリセット。',detail:'元のショーを残し、新しい版で照明を組み直します。',why:'同じ機材数で劇場寸法に合わせて配置します。',available:!simpleReason,reason:simpleReason});
+    for(const preset of window.GAMMA_PART_LIGHTING.presetChoices)rows.push({key:'parts-'+preset.id,group:'venue',name:preset.name,count:preset.count,lead:'かんたん照明は標準セットだけで使えます。',detail:'元のショーを残し、新しい版で照明を組み直します。',why:'同じ機材数で劇場寸法に合わせて配置します。',available:!simpleReason,reason:simpleReason});
     let catalog = null, catalogError = "";
     try { catalog = await loadLightingCatalog(); }
     catch (_) { catalogError = "劇場カタログを読み込めませんでした。通信を確かめて、もう一度開いてください。"; }
@@ -45153,6 +45108,8 @@ document.addEventListener("keydown", function (event) {
     syncSaveStamps();
     translateReleaseModal();
     syncManualEdition();
+    const settingsMapLink = document.getElementById("stage-settings-map-link");
+    if (settingsMapLink) settingsMapLink.href = manualBookletUrl("settings-map");
     syncNativeGuideUrl();
     syncBrowserTitle();
     renderNativeSaveWarning();
@@ -45857,6 +45814,8 @@ document.addEventListener("keydown", function (event) {
     const p = state.project;
     const i = p.scenes.findIndex((x) => x.id === p.activeSceneId);
     if (exportScope === "all") return p.scenes.filter((x) => x.kind === "scene");
+    if (i < 0) return [];
+    if (p.scenes[i].kind === "section") return sceneChildren(i).filter(x => x.kind === "scene");
     if (exportScope === "section") {
       // いまのシーンが入っているいちばん内側のセクションと、その中身
       for (let k = i - 1; k >= 0; k -= 1) {
@@ -45917,47 +45876,19 @@ document.addEventListener("keydown", function (event) {
   }
 
   function updateExportPurposeUi() {
-    const pitchEnabled = featureOn("pitchExport") && Boolean(promptI18n());
-    if (!pitchEnabled) exportPurpose = "draft";
-    if (els.exportPurposeBlock) els.exportPurposeBlock.hidden = !pitchEnabled;
-    if (els.exportDraftFields) els.exportDraftFields.hidden = exportPurpose === "pitch";
-    if (els.exportPitchFields) els.exportPitchFields.hidden = exportPurpose !== "pitch";
-    if (els.exportTitle) {
-      els.exportTitle.textContent = tx("書き出し・保存・印刷");
-    }
-    document.querySelectorAll("[data-export-purpose]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.exportPurpose === exportPurpose));
-    });
-    document.querySelectorAll("[data-pitch-style]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.pitchStyle === selectedPitchStyle));
-    });
-    document.querySelectorAll("[data-pitch-size]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.pitchSize === selectedPitchSize));
-    });
-    if (selectedPitchLangs !== null) {
-      document.querySelectorAll("[data-pitch-lang]").forEach((button) => {
-        button.setAttribute("aria-pressed", String(selectedPitchLangs.has(button.dataset.pitchLang)));
-      });
-    }
-    if (els.pitchStyleNote) els.pitchStyleNote.textContent = tx(PITCH_STYLE_NOTES[selectedPitchStyle]);
-    if (els.pitchCaption) {
-      els.pitchCaption.checked = prefs.pitchCaption === undefined ? true : Boolean(prefs.pitchCaption);
-    }
+    // v0.4: legacy pitch preferences are retained, but every image export is a drawing.
+    exportPurpose = "draft";
+    if (els.exportDraftFields) els.exportDraftFields.hidden = false;
+    if (els.exportTitle) els.exportTitle.textContent = tx("書き出し・保存・印刷");
   }
 
   function updateExportNote() {
     updateExportPurposeUi();
-    document.querySelectorAll("[data-export-view]").forEach((b) => {
-      b.setAttribute("aria-pressed", String(b.dataset.exportView === exportView));
-    });
-    document.querySelectorAll("[data-export-scope]").forEach((b) => {
-      b.setAttribute("aria-pressed", String(b.dataset.exportScope === exportScope));
-    });
+    const view = document.getElementById("stage-export-view");
+    const scope = document.getElementById("stage-export-scope");
+    if (view) view.value = exportView;
+    if (scope) scope.value = exportScope;
     if (!els.exportNote) return;
-    if (exportPurpose === "pitch") {
-      els.exportNote.textContent = "";
-      return;
-    }
     const scenes = exportTargets().length;
     const views = exportViews().length;
     const total = scenes * views;
@@ -46077,7 +46008,10 @@ document.addEventListener("keydown", function (event) {
     return new TextEncoder().encode(decodeURIComponent(payload));
   }
 
-  async function runDraftExport() {
+  async function runDraftExport(format = "png") {
+    const jpeg = format === "jpeg";
+    const extension = jpeg ? "jpg" : "png";
+    const mime = jpeg ? "image/jpeg" : "image/png";
     const scenes = exportTargets();
     const views = exportViews();
     if (!scenes.length) { announce("書き出すシーンがありません。"); return; }
@@ -46107,18 +46041,26 @@ document.addEventListener("keydown", function (event) {
         const keep = { z: zs.z, ox: zs.ox, oy: zs.oy };
         zs.z = 1; zs.ox = 0; zs.oy = 0;
         try {
-          drawStage(output.getContext("2d", { alpha: false }), false, job.view);
+          const context = output.getContext("2d", { alpha: jpeg });
+          drawStage(context, false, job.view);
+          if (jpeg) {
+            context.save();
+            context.globalCompositeOperation = "destination-over";
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, output.width, output.height);
+            context.restore();
+          }
           const no = String(job.index + 1).padStart(2, "0");
           const viewLabel = job.view === "front" ? VENUES.seatById(state.seat).short : "平面";
           const sceneDir = `${no}_${safeName(job.scene.title)}`;
           entries.push({
             // 単体で落とすときは、Downloadsに紛れないよう作品名と日時まで入れた長い名前
-            name: projectExportFilename(state.project, `作図-${sceneDir}-${viewLabel}`, "png"),
+            name: projectExportFilename(state.project, `作図-${sceneDir}-${viewLabel}`, extension),
             // ZIPの中は作品名も日時も要らない。正面と平面が揃うときだけシーンごとの階層にする
             zipName: views.length > 1
-              ? `${sceneDir}/${viewLabel}.png`
-              : `${sceneDir}-${viewLabel}.png`,
-            bytes: dataUrlToBytes(output.toDataURL("image/png")),
+              ? `${sceneDir}/${viewLabel}.${extension}`
+              : `${sceneDir}-${viewLabel}.${extension}`,
+            bytes: dataUrlToBytes(output.toDataURL(mime, jpeg ? 0.9 : undefined)),
           });
         } finally {
           Object.assign(zs, keep);
@@ -46144,7 +46086,7 @@ document.addEventListener("keydown", function (event) {
     try {
       if (entries.length === 1) {
         const didChooseDestination = await downloadBlob(
-          new Blob([entries[0].bytes], { type: "image/png" }),
+          new Blob([entries[0].bytes], { type: mime }),
           entries[0].name,
         );
         if (!didChooseDestination) {
@@ -46297,8 +46239,7 @@ document.addEventListener("keydown", function (event) {
   }
 
   function runExport() {
-    if (exportPurpose === "pitch" && featureOn("pitchExport")) runPitchExport();
-    else runDraftExport();
+    return runDraftExport("png");
   }
 
   let cueSheetReturnFocus = null;
@@ -46780,9 +46721,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
 
   function openExport() {
     if (!els.exportModal) return;
-    if (!state.showFront && exportView !== "plan") exportView = "plan";
-    if (!state.showPlan && exportView === "plan") exportView = "front";
-    buildPitchLanguageButtons();
+    // Export views are independent from the editor's visible diagrams.
+    // Defaults are front/current; subsequent choices last for this session.
     updateExportNote();
     syncExportTabs();
     selectExportTab("image");
@@ -46904,39 +46844,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   if (els.exportClose) els.exportClose.addEventListener("click", closeExport);
   if (els.exportBackdrop) els.exportBackdrop.addEventListener("click", closeExport);
   if (els.exportRun) els.exportRun.addEventListener("click", runExport);
-  document.querySelectorAll("[data-export-purpose]").forEach((b) => {
-    b.addEventListener("click", () => {
-      exportPurpose = b.dataset.exportPurpose === "pitch" ? "pitch" : "draft";
-      updateExportNote();
-    });
+  document.getElementById("stage-export-jpeg")?.addEventListener("click", () => runDraftExport("jpeg"));
+  document.getElementById("stage-export-view")?.addEventListener("change", event => {
+    exportView = ["front", "plan", "both"].includes(event.target.value) ? event.target.value : "front";
+    updateExportNote();
   });
-  document.querySelectorAll("[data-pitch-style]").forEach((b) => {
-    b.addEventListener("click", () => {
-      selectedPitchStyle = PITCH_STYLE_PARAMS[b.dataset.pitchStyle] ? b.dataset.pitchStyle : "theatre";
-      prefs.pitchStyle = selectedPitchStyle;
-      savePrefs();
-      updateExportNote();
-    });
-  });
-  document.querySelectorAll("[data-pitch-size]").forEach((b) => {
-    b.addEventListener("click", () => {
-      selectedPitchSize = PITCH_SIZE_SCALE[b.dataset.pitchSize] ? b.dataset.pitchSize : "2";
-      prefs.pitchSize = selectedPitchSize;
-      savePrefs();
-      updateExportNote();
-    });
-  });
-  if (els.pitchCaption) {
-    els.pitchCaption.addEventListener("change", () => {
-      prefs.pitchCaption = els.pitchCaption.checked;
-      savePrefs();
-    });
-  }
-  document.querySelectorAll("[data-export-view]").forEach((b) => {
-    b.addEventListener("click", () => { exportView = b.dataset.exportView; updateExportNote(); });
-  });
-  document.querySelectorAll("[data-export-scope]").forEach((b) => {
-    b.addEventListener("click", () => { exportScope = b.dataset.exportScope; updateExportNote(); });
+  document.getElementById("stage-export-scope")?.addEventListener("change", event => {
+    exportScope = ["current", "section", "all"].includes(event.target.value) ? event.target.value : "current";
+    updateExportNote();
   });
 
   /* 初めて開いた人には、こちらから声をかける。
@@ -49777,7 +49692,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
   if (!restoreSceneLocation(initialSceneLocation) && !initialSceneLocation.sceneId) syncSceneLocation();
   setupGuestViewHints();
-  const driveText=key=>window.SHOSAI_I18N_PACKS?.[loadedStageLanguage(lang)]?.text?.[key] || window.SHOSAI_I18N_PACKS?.en?.text?.[key] || key;
+  const driveText=key=>key === "drive.title" ? tx("フォルダにバックアップ（Google Drive・Dropbox など）") : window.SHOSAI_I18N_PACKS?.[loadedStageLanguage(lang)]?.text?.[key] || window.SHOSAI_I18N_PACKS?.en?.text?.[key] || key;
   async function captureWorkFolderProject(){
     const project=state.project,generation=loadedStateGeneration;
     const text=JSON.stringify(makeProjectExportDocument(project,true,state.projectFileEnvelope));
@@ -49959,7 +49874,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
       if(!window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title'])await new Promise((resolve,reject)=>{
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261101-v0398';script.onload=resolve;script.onerror=reject;document.head.append(script);
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261103-v040';script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await loadFileAutosaveUi();
       for(const name of ['stage-drive-backup-browser.js','stage-drive-backup-store.js','stage-drive-backup-scheduler.js','stage-drive-backup-snapshot.js','stage-drive-backup-controller.js','stage-drive-backup-ui.js']){

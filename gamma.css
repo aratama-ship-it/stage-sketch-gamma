@@ -1586,9 +1586,6 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
  * 帯の末尾にはヘッダーから移した「パネルの表示スタイル」「パネルのオン/オフ」を同じ四角で並べる。 */
 html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid { gap: 4px; }
 html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-split { display: none; }
-html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button { border-left: 1px solid var(--line-dark); }
-html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button:hover { border-left-color: var(--brass); }
-html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button[aria-pressed="true"] { border-left-color: var(--rust); }
 .stage-center-bar .stage-panel-tools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-panel-visibility-btn) {
   box-sizing: border-box;
@@ -1904,7 +1901,8 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 .stage-work-area.is-docked > #stage-guest-view-hints { grid-column: 2; }
 
 #gamma-theatre-tabs{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line-dark,#51463a)}
-#gamma-theatre-tabs[hidden]{display:none}#gamma-theatre-tabs button{min-height:44px;padding:8px 16px;background:var(--desk-2,#201b16);color:var(--milk,#efe7d6);border:1px solid var(--line-dark,#908574);font:inherit}#gamma-theatre-tabs button[aria-pressed=true]{border-color:var(--brass,#dec584)}
+#gamma-theatre-tabs[hidden]{display:none}
+/* J1: button geometry and states live in the shared mode-switch contract. */
 
 /* 3-C: transport review speed and cue placement feedback. */
 #stage-timeline-playback-rate { width:74px; min-width:74px; min-height:44px; font-size:13px; }
@@ -2070,3 +2068,18 @@ html.stage-pwa-tablet .stage-project-panel-actions > .stage-tablet-samples-open 
 #stage-work-folder { --drive-gap:8px; font-size:var(--fs-5,13px); line-height:1.5; }
 #stage-work-folder summary,#stage-work-folder .stage-drive-body button { min-height:var(--ctrl-lg,44px); }
 #stage-work-folder summary { cursor:pointer; align-content:center; }
+
+/* G-34: the collapsed transport occupies one full-width row without reflow. */
+.stage-playback-dock.is-active {
+  left:14px; right:14px; width:auto; max-width:none; height:46px; box-sizing:border-box;
+  gap:var(--gamma-gap); --playback-name-width:none;
+}
+.stage-playback-dock.is-active > .stage-timeline-resize-handle { height:44px; min-height:44px; flex-direction:row; justify-content:flex-start; gap:var(--gamma-gap); padding-inline:var(--gamma-gap); }
+.stage-playback-dock.is-active #stage-playback-summary:not([hidden]) { display:flex; flex:1 1 auto; align-items:center; gap:var(--gamma-gap); max-width:none; overflow:hidden; }
+.stage-playback-dock.is-active .stage-playback-scene { flex:1 1 auto; min-width:0; text-align:left; }
+.stage-playback-dock.is-active .stage-playback-position { flex:0 0 auto; white-space:nowrap; }
+@media (max-width:680px) {
+  .stage-playback-dock.is-active { left:4px; right:4px; gap:4px; }
+  .stage-playback-dock.is-active :is(.stage-timeline-grip-label,.stage-timeline-shortcut) { display:none; }
+  .stage-playback-dock.is-active .stage-playback-position { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; }
+}

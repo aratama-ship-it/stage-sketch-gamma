@@ -502,3 +502,40 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "パネルを下へ": "Move panel down"
 });
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Wash", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
+
+/* J3 shared panel controls. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"パネルの並びを変更しました。": "Panel order changed.", "{name}の高さ": "Height of {name}"});
+// J5: standard rig and additional simple-lighting types.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "標準セット": "Standard set",
+  "かんたん照明は標準セットだけで使えます。": "Simple lighting is available only with the standard set.",
+  "かんたん照明は標準セットだけで使えます。保存済みの照明は詳細で編集できます。": "Simple lighting requires the standard set. Saved lighting can be edited in Detail.",
+  "フォロー": "Follow spot",
+  "ストロボ": "Strobe",
+  "UV": "UV (blacklight)",
+  "レーザーの広がり（度）": "Laser spread (degrees)",
+  "動きの1往復（秒）": "Movement round trip (seconds)",
+  "発光回数（毎秒）": "Flashes per second",
+  "レーザー 1": "Laser 1",
+  "レーザー 2": "Laser 2",
+  "ムービング 1": "Moving light 1",
+  "ムービング 2": "Moving light 2",
+  "フォロー 1": "Follow spot 1",
+  "フォロー 2": "Follow spot 2",
+  "ストロボ 1": "Strobe 1",
+  "ストロボ 2": "Strobe 2",
+  "UV 1": "UV (blacklight) 1",
+  "UV 2": "UV (blacklight) 2",
+  "UV 3": "UV (blacklight) 3",
+  "UV 4": "UV (blacklight) 4",
+  "転がし 手前 1": "Floor downstage 1",
+  "転がし 手前 2": "Floor downstage 2",
+  "転がし 手前 3": "Floor downstage 3",
+  "転がし 手前 4": "Floor downstage 4",
+  "転がし 奥 1": "Floor upstage 1",
+  "転がし 奥 2": "Floor upstage 2",
+  "転がし 奥 3": "Floor upstage 3",
+  "転がし 奥 4": "Floor upstage 4"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"ドラッグでパネルを並べ替え": "Drag to reorder panels", "ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。": "Drag to resize height. Use Up/Down to adjust; Enter or double-click for automatic height.", "パネルの設定を保存できませんでした。": "Panel settings could not be saved."});

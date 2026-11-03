@@ -24,7 +24,7 @@ ${note("Do not use a private window", "Your work is saved inside the browser, so
         id: "first-screen", title: "First screen and sample library", status: "verified",
         keywords: ["first", "first time", "sample", "example", "romeo and juliet", "eight circus", "garden of seams", "bundled", "all shows", "what is open"],
         html: `
-<p>In a fresh browser, start a show from the theatre setup. Existing saved shows stay available. Choose ${ui("Sample library")} → ${ui("Get and open")} to open a sample. In the Mac project edition, choose New, Open or Sample library from the first window.</p>
+<p>In a fresh browser, start a show from the theatre setup. Existing saved shows stay available. Choose ${ui("Sample projects")} → ${ui("Get and open")} to open a sample. In the Mac project edition, choose New, Open or Sample projects from the first window.</p>
 ${fig("01-first-open", "The first screen (computer, 1440 px). Logo and version at the top left, seven tabs at the top right, and below them the elapsed-time display (now TC), volume and tool icons.", "Stage Sketch Gamma first screen")}
 <p>The library contains the eight-person circus, the seam garden and two Romeo and Juliet shows: four samples in total. Samples are acquired individually. The browser keeps acquired shows in All shows; the Mac edition opens a project file.</p>
 ${table(["Sample", "What it contains", "Use it to"], [
@@ -33,8 +33,8 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release0100-sample-library", "Get the examples you need from the sample library.", "Sample library")}
-${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
+${fig("release400-sample-library", "Get the examples you need from the sample library.", "Sample projects")}
+${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample projects when needed.")}`
       },
       {
         id: "tour", title: "The first-time tour (nine hands-on steps)", status: "sourced",
