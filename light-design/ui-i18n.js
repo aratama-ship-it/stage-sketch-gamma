@@ -16,7 +16,6 @@
     "全体": ["All", "전체", "全部", "全部"],
     "左だけ": ["Left only", "왼쪽만", "仅左侧", "僅左側"],
     "右だけ": ["Right only", "오른쪽만", "仅右侧", "僅右側"],
-    "灯体の広がり方": ["Fixture beam spread", "조명기의 빔 각도", "灯具光束角", "燈具光束角"],
     "速さ（Hz）": ["Rate (Hz)", "속도 (Hz)", "频率（Hz）", "頻率（Hz）"],
     "点灯割合（%）": ["On time (%)", "점등 비율 (%)", "点亮比例（%）", "點亮比例（%）"],
     "固定灯の広がり方は機材配置で調整してください": ["Adjust fixed-fixture beam spread in Equipment layout", "고정 조명기의 빔 각도는 기기 배치에서 조정하세요", "请在设备布置中调整固定灯具的光束角", "請在設備配置中調整固定燈具的光束角"],
@@ -270,6 +269,7 @@
     if(document.documentElement.lang!==language) {
       document.documentElement.lang=language;
       window.GAMMA_SIMPLE_LIGHT_UI?.render();
+      window.__RIG?.hooks.renderTransport?.();
     }
     const runtime=document.getElementById('runtime-status');
     if(runtime?.title)runtime.title=lightingText('このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。',language);

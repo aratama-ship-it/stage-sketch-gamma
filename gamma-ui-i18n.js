@@ -68,9 +68,9 @@
     "備份 / 匯出"
   ],
   "LXキューを適用": [
-    "Apply LX cues",
-    "应用 LX 提示",
-    "套用 LX 提示"
+    "Save LX cues",
+    "保存 LX 提示",
+    "儲存 LX 提示"
   ],
   "LXキュー": [
     "LX cue",
@@ -492,10 +492,10 @@
     "。请选择一个场景统一设置。",
     "。請選擇一個場景統一設定。"
   ],
-  "ショーの照明を表示中。編集後は「LXキューを適用」でショーへ適用します。": [
-    "Showing the saved lighting. After editing, choose “Apply LX cues” to update the show.",
-    "正在显示已保存的灯光。编辑后选择“应用 LX 提示”更新演出。",
-    "正在顯示已儲存的燈光。編輯後選擇「套用 LX 提示」更新演出。"
+  "ショーの照明を表示中。編集後は「LX キューを保存」でショーへ適用します。": [
+    "Showing the saved lighting. After editing, choose “Save LX cues” to update the show.",
+    "正在显示已保存的灯光。编辑后选择“保存 LX 提示”更新演出。",
+    "正在顯示已儲存的燈光。編輯後選擇「儲存 LX 提示」更新演出。"
   ],
   "このブラウザに控え保存済み": [
     "Draft backed up in this browser",
@@ -522,10 +522,10 @@
     "尚未应用",
     "尚未套用"
   ],
-  "。「照明デザイン」の「LXキューを適用」でショーへ適用します。": [
-    ". Choose “Apply LX cues” in Lighting to update the show.",
-    "。在灯光设计中选择“应用 LX 提示”更新演出。",
-    "。在燈光設計中選擇「套用 LX 提示」更新演出。"
+  "。「照明デザイン」の「LX キューを保存」でショーへ適用します。": [
+    ". Choose “Save LX cues” in Lighting to update the show.",
+    "。在灯光设计中选择“保存 LX 提示”更新演出。",
+    "。在燈光設計中選擇「儲存 LX 提示」更新演出。"
   ],
   "選択した灯体": [
     "Selected fixtures",
@@ -727,7 +727,7 @@
     if (fallback && fallback !== key) return fallback;
     const count = key.match(/^(固定灯)?(\d+)(灯|件)(\sまとめて選ぶ|\s列を選ぶ)?$/);
     if (count) return [ `${count[2]} ${(count[1]?'fixed fixture':count[3]==='灯'?'fixture':'item')+(Number(count[2])===1?'':'s')}${count[4]?' · Select group':''}`, `${count[2]}${count[3]==='灯'?'灯':'项'}${count[4]?' · 选择组':''}`, `${count[2]}${count[3]==='灯'?'燈':'項'}${count[4]?' · 選取群組':''}` ][index];
-    const suffix='。「照明デザイン」の「LXキューを適用」でショーへ適用します。';
+    const suffix='。「照明デザイン」の「LX キューを保存」でショーへ適用します。';
     if(key.startsWith('未適用 · ') && key.endsWith(suffix)) return text('未適用',language)+' · '+text(key.slice(6,-suffix.length),language)+text(suffix,language);
     const cleanup=' 編集控えの整理は次回行います。';
     if(key.endsWith(cleanup)) return text(key.slice(0,-cleanup.length),language)+' '+text(cleanup.trim(),language);

@@ -478,7 +478,7 @@
     const backupRows=rows.filter(row=>BACKUP_KINDS.some(kind=>kind.test(row.key)));
     if(!backupRows.length) {
       const none=document.createElement('p');
-      none.textContent='自動で作られた控えは残っていません。照明を「LXキューを適用」で確定するか、使わないショーを減らすと空きます。';
+      none.textContent='自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。';
       details.append(none);
       return;
     }
@@ -1120,7 +1120,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261103-v040'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261103-v041'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
@@ -1457,7 +1457,7 @@
   ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
   ops.onload = ops.onerror = () => {
     const script = document.createElement('script');
-    script.src = 'gamma-assist.js?v=20261103-v040';
+    script.src = 'gamma-assist.js?v=20261103-v041';
     document.body.append(script);
   };
   const extension = document.createElement('script');

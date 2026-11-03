@@ -7,6 +7,8 @@
   --edge: var(--line-dark);
   --gamma-venue-control-height: 38px;
   --gamma-panel-head-padding: 10px 2px 8px;
+  --gamma-panel-padding: 0 0 14px;
+  --gamma-panel-column-min: 240px;
   --gamma-control-tracking: .04em;
   --gamma-panel-title-tracking: .06em;
   --gamma-hit: 36px;
@@ -1134,34 +1136,62 @@ html[data-stage-skin] :is(button,input,select,textarea,[role="button"],[role="co
   text-align: center;
   white-space: nowrap;
 }
+/* H-14/15: reuse the stage dialog tokens for every output tab. */
+#stage-export-modal .stage-export-pane:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gamma-gap);
+}
+#stage-export-modal .stage-export-pane > .stage-profile-hint { margin: 0; }
 .stage-export-output-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gamma-gap, 8px);
+  gap: var(--gamma-gap);
 }
-.stage-export-output-actions .stage-minor-action,
-.stage-export-output-actions #stage-export-run {
+.stage-export-output-actions.stage-export-table-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#stage-export-modal .stage-export-pane .stage-minor-action {
   min-width: 0;
-  margin: 0; /* the legacy #stage-export-run top margin (single-button layout) must not offset the first grid cell */
-  min-height: var(--ctrl-lg, 44px);
-  height: var(--ctrl-lg, 44px);
+  margin: 0;
+  min-height: var(--ctrl-lg);
+  height: auto;
   padding: 5px 6px;
-  font: inherit;
+  font-family: inherit;
+  font-size: var(--fs-4);
+  font-weight: 600;
+  line-height: 1.5;
   text-align: center;
 }
-#stage-export-draft-fields > select {
-  width: 100%;
-  min-height: var(--ctrl-lg, 44px);
+#stage-export-draft-fields {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  align-items: end;
+  gap: var(--gamma-gap);
+  max-width: 100%;
+}
+.stage-export-field { display: flex; flex-direction: column; gap: var(--gamma-gap); min-width: 0; }
+#stage-export-draft-fields .stage-control-label { margin: 0; }
+#stage-export-draft-fields select {
+  width: auto;
+  max-width: 100%;
+  min-height: var(--ctrl-lg);
+  padding-inline-start: var(--gamma-gap);
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm);
+  color: var(--milk);
+  background-color: var(--desk-2);
+  font-family: inherit;
+  font-size: var(--fs-4);
 }
 
 /* Shared panel stack: J3 tokens and gestures, usable in any content document. */
 .gamma-stack-panel { box-sizing:border-box; min-width:0; flex:0 0 auto; }
 .gamma-stack-panel > button.gamma-stack-head {
-  display:flex; align-items:center; width:100%; min-height:var(--ctrl-lg); padding:var(--gamma-panel-head-padding);
-  gap:calc(var(--gamma-gap) / 2); border:0; text-align:left; background:transparent; color:var(--milk); font-family:var(--sans);
+  position:relative; box-sizing:border-box; display:grid; grid-template-columns:var(--ctrl-lg) 1fr auto; align-items:center; width:100%; min-height:var(--ctrl-lg); padding:var(--gamma-panel-head-padding);
+  gap:var(--gamma-gap); border:0; text-align:left; background:transparent; color:var(--milk); font:600 var(--fs-5)/1.5 var(--sans); letter-spacing:.04em;
 }
-.gamma-stack-head .gamma-stack-title { margin:0; flex:1 1 auto; min-width:0; font-size:var(--fs-3); letter-spacing:var(--gamma-panel-title-tracking); color:var(--brass); }
-.gamma-stack-head .gamma-stack-grip { display:flex; align-items:center; justify-content:center; flex:0 0 var(--ctrl-lg); width:var(--ctrl-lg); height:var(--ctrl-lg); touch-action:none; cursor:grab; }
+.gamma-stack-head .gamma-stack-title { grid-column:2; margin:0; flex:1 1 auto; min-width:0; font-size:var(--gamma-small-text,var(--fs-3)); letter-spacing:var(--gamma-panel-title-tracking); color:var(--brass); }
+.gamma-stack-head .gamma-stack-grip { position:absolute; left:2px; top:50%; transform:translateY(-50%); box-sizing:border-box; display:flex; align-items:center; justify-content:center; width:var(--ctrl-lg); height:var(--ctrl-lg); padding:3px 2px; font-size:var(--fs-4); line-height:1; touch-action:none; cursor:grab; color:rgba(240,231,214,.53); }
+.gamma-stack-head .gamma-stack-mark { grid-column:3; }
 .gamma-stack-head .gamma-stack-mark::before { content:'▾'; color:var(--milk-dim); }
 .gamma-stack-head[aria-expanded=false] .gamma-stack-mark { transform:rotate(-90deg); }
 .gamma-stack-body { box-sizing:border-box; width:100%; min-width:0; overflow:auto; }
@@ -1176,3 +1206,8 @@ html[data-stage-skin] :is(button,input,select,textarea,[role="button"],[role="co
 .gamma-stack-menu:popover-open { display:flex; flex-direction:column; gap:calc(var(--gamma-gap) / 2); }
 .gamma-stack-menu label { display:flex; align-items:center; gap:var(--gamma-gap); min-height:var(--ctrl-lg); }
 .gamma-stack-menu input { min-height:0; }
+.gamma-stack-columns[data-stack-layout=split] { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:var(--gamma-gap); }
+.gamma-stack-column { display:flex; flex-direction:column; min-width:0; gap:var(--gamma-gap); }
+.gamma-stack-column[data-stack-column=wide] { grid-column:1/-1; }
+.gamma-stack-column[hidden] { display:none!important; }
+.gamma-stack-menu button { display:flex; align-items:center; gap:var(--gamma-gap); min-height:var(--ctrl-lg); padding:4px 8px; background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark); font:inherit; }

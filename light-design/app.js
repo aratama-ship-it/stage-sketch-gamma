@@ -19,8 +19,8 @@
     }
     return out;
   }
-  function columns(width,height,requested={},single=false,solo=''){
-    const leftMin=single?280:320,rightMin=single?0:280;
+  function columns(width,height,requested={},single=false,solo='',panelMinimum=0){
+    const leftMin=single?Math.max(280,Math.min(width-248,panelMinimum)):320,rightMin=single?0:280;
     const left=solo&&solo!=='plan'?0:clamp(requested.leftWidth||320,leftMin,Math.max(leftMin,width-rightMin-240-16));
     const gaps=left?(single?8:16):8;
     const right=single?0:clamp(requested.rightWidth||(compact(width,height)?320:360),280,Math.max(280,width-left-240-gaps));
@@ -929,7 +929,8 @@
     if (state.mode === "move" && state.soloFigure !== "side") {
       const solo = state.soloFigure;
       const single=document.documentElement.dataset.lightPanelStyle==='single';
-      const {left,right,mid,leftMin}=window.GAMMA_LIGHT_LAYOUT_MODEL.columns(r.width,document.documentElement.hasAttribute('data-gamma-embedded')?parent.innerHeight:innerHeight,panelLayout,single,solo);
+      const panelMinimum=g.querySelector('.leftcol')?.dataset.stackLayout==='split'?2*(parseFloat(getComputedStyle(g).getPropertyValue('--gamma-panel-column-min'))||240)+PAD.gap:0;
+      const {left,right,mid,leftMin}=window.GAMMA_LIGHT_LAYOUT_MODEL.columns(r.width,document.documentElement.hasAttribute('data-gamma-embedded')?parent.innerHeight:innerHeight,panelLayout,single,solo,panelMinimum);
       const heights = FIGURE_VIEW.split(r.height, figureSplit);
       const height = solo ? Math.max(160, r.height) : heights.available + PAD.gap;
       // The row frames depend only on viewport height. Each canvas contains its drawing.
@@ -952,7 +953,10 @@
       sectionScale = sideScale;
       const sideH = Math.round(sideMetres * sideScale) + PAD.secT + PAD.secB;
       secL.style.height = sideH + 'px'; secL.parentElement.style.width = left + 'px';
-      g.style.setProperty('--side-reserved', (sideH + PAD.headSec + PAD.gap) + 'px');
+      const sideHead = Math.max(PAD.headSec, secL.parentElement.querySelector('.sechead').getBoundingClientRect().height);
+      const sideReserved = sideH + sideHead + PAD.gap;
+      g.style.setProperty('--side-reserved', sideReserved + 'px');
+      g.style.setProperty('--detail-panels-height', Math.max(0, height - sideReserved) + 'px');
       const lc = document.querySelector('.leftcol'); lc.style.width = left + 'px';
       const share = E.clamp(panelLayout.fixtureShare, .15, .85);
       for (const [id, width] of [['panel-fixtures',single?left:left * share],['panel-lxq',single?left:left * (1-share)],['panel-insp',single?left:right]]) {
@@ -1156,7 +1160,7 @@
     redraw:()=>draw(), changed:()=>window.dispatchEvent(new Event("gamma-light-figure-view")),
     canvases:[plan,secF], enabled:()=>state.mode==='move', editing:()=>!!state.drag,
     aimWheel:(canvas,event)=>{if(canvas!==plan)return false;const h=hitHandle(canvasPoint(plan,event),houseProjPlan(planProj(),planBox()),['floor','air','house']);return !!h&&h.handle!=='r';},
-    hit:(canvas,event)=>{const pt=canvasPoint(canvas,event);return fixtureLabelAt(canvas,pt) || (canvas===plan ? hitFixturePlan(pt) || hitHandle(pt,houseProjPlan(planProj(),planBox()),['floor','air','house']) : hitFixtureSec(secOf('front'),pt) || hitHandle(pt,secProj(secOf('front')),['back','air','house'],secHandleProj(secProj(secOf('front')),'front')));},
+    hit:(canvas,event)=>{const pt=canvasPoint(canvas,event);return fixtureLabelPointerAt(canvas,pt) || (canvas===plan ? hitFixturePlan(pt) || hitHandle(pt,houseProjPlan(planProj(),planBox()),['floor','air','house']) : hitFixtureSec(secOf('front'),pt) || hitHandle(pt,secProj(secOf('front')),['back','air','house'],secHandleProj(secProj(secOf('front')),'front')));},
     text:key=>{const host=window.parent!==window?window.parent:window;return host.SHOSAI_STAGE_I18N_MODEL?.text(host.document.documentElement.lang||'ja',key)||key;},
   });
   // 表示（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
@@ -1754,6 +1758,7 @@
     state.play.t = 0;
     state.play.last = 0;
     spatialQuick = false;
+    window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.(true);
     renderTransport();
     draw();
     renderRuntimeStatus(true);
@@ -1767,7 +1772,7 @@
     else { renderTransport(); draw(); renderRuntimeStatus(true); }
   }
   function home() { stop(); resetPlaybackRuntime(); }
-  function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); cancelPendingDraw(); draw(); state.play.raf = requestAnimationFrame(tick); }
+  function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); cancelPendingDraw(); draw(); window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.(); state.play.raf = requestAnimationFrame(tick); }
   function togglePlay() { state.play.on ? stop(null, true) : play(); }
   // The embedded workspace shares the stage timeline; standalone lighting keeps its own player.
   let timelineTransportBridge = null;
@@ -1793,6 +1798,13 @@
     b.setAttribute("aria-pressed", String(playing));
     b.setAttribute("aria-keyshortcuts", "Space");
     b.classList.toggle("playing", playing);
+    const program=$("light-program-play");
+    if(program){
+      const programLabel=window.GAMMA_LIGHT_UI_TEXT?.(state.play.on?"照明の停止":"照明の再生")||(state.play.on?"照明の停止":"照明の再生");
+      const lampIcon='<svg class="light-program-lamp" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 2h6M8 2v3M5 5h6l1 5H4l1-5ZM5 12l-2 2m5-2v3m3-3 2 2"/></svg>';
+      program.innerHTML=lampIcon+(state.play.on?'<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>':'<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>');
+      program.title=programLabel;program.setAttribute('aria-label',programLabel);program.setAttribute('aria-pressed',String(state.play.on));program.setAttribute('aria-keyshortcuts','Shift+Space');program.classList.toggle('playing',state.play.on);
+    }
     renderXfer();
   }
 
@@ -3464,10 +3476,11 @@
       placed.push({...row,...box});
     }
     if (placed.some((r,i)=>!free(r,placed.filter((_,j)=>i!==j)))) {
-      // Repack fragmented free rectangles, keeping large name plates first.
-      // If a tiny diagram cannot fit symbols and every number, numbers win;
-      // the last pass reduces only the gap, never the text or fixture count.
-      for(const obstacles of symbols.length?[symbols,[]]:[[]])for(const packingGap of [gap,2]){
+      // Repack only when the nearby placement cannot fit. Keep actual symbol
+      // centres free even if the full marks must share space with number plates:
+      // covering an anchor made the old symbol-free fallback lose its leader.
+      const anchors=rows.map(r=>({x:Math.max(0,Math.min(width,r.anchorX))-4,y:Math.max(0,Math.min(height,r.anchorY))-4,w:8,h:8}));
+      for(const scale of [1,.9,.8,.7])for(const obstacles of symbols.length?[symbols,anchors]:[anchors])for(const packingGap of [gap,2])for(const strategy of ['near','short','area','top']){
         const packed=[];let spaces=[{x:margin,y:margin,w:width-margin*2,h:height-margin*2}];
         const cut=(box)=>{
           const next=[];
@@ -3481,15 +3494,35 @@
           spaces=next.filter((r,i)=>r.w>0&&r.h>0&&!next.some((q,j)=>j!==i&&q.x<=r.x&&q.y<=r.y&&q.x+q.w>=r.x+r.w&&q.y+q.h>=r.y+r.h&&(j<i||q.x<r.x||q.y<r.y||q.w>r.w||q.h>r.h)));
         };
         for(const p of obstacles)cut({x:p.x-2,y:p.y-2,w:p.w+4,h:p.h+4});
+        const distance=(box,row)=>Math.hypot(Math.max(box.x-row.anchorX,0,row.anchorX-box.x-box.w),Math.max(box.y-row.anchorY,0,row.anchorY-box.y-box.h));
         for(const row of [...ordered].sort((a,b)=>b.h-a.h||b.w-a.w)){
-          const w=Math.min(row.w,width-margin*2),h=Math.min(row.h,height-margin*2);
-          const candidates=spaces.filter(r=>r.w>=w&&r.h>=h).map(r=>({x:r.x,y:r.y,w,h,short:Math.min(r.w-w,r.h-h),area:r.w*r.h}));
-          candidates.sort((a,b)=>a.short-b.short||a.area-b.area||a.y-b.y||a.x-b.x);
+          const w=Math.min(row.w*scale,width-margin*2),h=Math.min(row.h*scale,height-margin*2);
+          const candidates=spaces.filter(r=>r.w>=w&&r.h>=h).flatMap(r=>{
+            const xs=[r.x,r.x+r.w-w,Math.max(r.x,Math.min(r.x+r.w-w,row.anchorX-w/2))];
+            const ys=[r.y,r.y+r.h-h,Math.max(r.y,Math.min(r.y+r.h-h,row.anchorY+24))];
+            return xs.flatMap(x=>ys.map(y=>({x,y,w,h,short:Math.min(r.w-w,r.h-h),area:r.w*r.h})));
+          });
+          candidates.sort((a,b)=>(strategy==='near'?distance(a,row)-distance(b,row):strategy==='top'?0:strategy==='area'?a.area-b.area||a.short-b.short:a.short-b.short||a.area-b.area)||a.y-b.y||a.x-b.x);
           if(!candidates.length)break;
-          const {x,y}=candidates[0];packed.push({...row,x,y,w,h,compact:packingGap<gap});
+          const {x,y}=candidates[0];packed.push({...row,x,y,w,h,scale,compact:packingGap<gap});
           cut({x:x-packingGap,y:y-packingGap,w:w+packingGap*2,h:h+packingGap*2});
         }
-        if(packed.length===rows.length)return packed;
+        if(packed.length===rows.length){
+          // Same-size plates can exchange slots without changing any clearance.
+          // Match slots back to nearby symbols after the size-first packing.
+          for(let pass=0;pass<packed.length;pass++){
+            let changed=false;
+            for(let i=0;i<packed.length;i++)for(let j=0;j<i;j++){
+              const a=packed[i],b=packed[j];
+              if(a.w!==b.w||a.h!==b.h)continue;
+              if(distance(b,a)+distance(a,b)+1e-6<distance(a,a)+distance(b,b)){
+                [a.x,b.x]=[b.x,a.x];[a.y,b.y]=[b.y,a.y];changed=true;
+              }
+            }
+            if(!changed)break;
+          }
+          return packed;
+        }
       }
     }
     return placed;
@@ -3554,17 +3587,29 @@
   function fixtureLabelAt(canvas,pt) {
     return (fixtureLabelViews.get(canvas)||[]).find(r=>pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h)||null;
   }
+  function fixtureLabelPointerAt(canvas,pt) {
+    // Hover can expand a name and repack every plate between pointermove and
+    // pointerdown. Keep that one stationary pointer gesture on the plate it
+    // entered; all other points use the currently painted snapshot rectangles.
+    const hover=fixtureLabelHover,point=hover?.point,hit=hover?.hit;
+    const pending=hover?.canvas===canvas&&point?.X===pt.X&&point?.Y===pt.Y&&hit&&
+      pt.X>=hit.x&&pt.X<=hit.x+hit.w&&pt.Y>=hit.y&&pt.Y<=hit.y+hit.h;
+    return (pending&&(fixtureLabelViews.get(canvas)||[]).find(r=>r.id===hover.id))||fixtureLabelAt(canvas,pt);
+  }
   function hoverFixtureLabel(canvas,pt,body) {
     const old=fixtureLabelHover, r=old?.canvas===canvas&&old.hit;
-    const retained=r&&pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h;
+    const retained=r&&old.point?.X===pt.X&&old.point?.Y===pt.Y&&
+      pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h;
     const hit=fixtureLabelAt(canvas,pt),f=retained?fixtureById(old.id):hit?fixtureById(hit.id):body();
-    fixtureLabelHover=f?{id:f.id,canvas,hit:retained?r:hit?{x:hit.x,y:hit.y,w:hit.w,h:hit.h}:null}:null;
+    fixtureLabelHover=f?{id:f.id,canvas,point:{X:pt.X,Y:pt.Y},hit:retained?r:hit?{x:hit.x,y:hit.y,w:hit.w,h:hit.h}:null}:null;
     canvas.title=f?`${label(f.id)} ${f.name||""}`:"";
     return old?.id !== fixtureLabelHover?.id;
   }
   function selectFixtureLabel(canvas,pt,event) {
     if(state.tool)return false;
-    const row=fixtureLabelAt(canvas,pt);if(!row)return false;
+    const row=fixtureLabelPointerAt(canvas,pt);
+    if(!row)return false;
+    fixtureLabelHover=null;
     if(event.shiftKey)state.sel.has(row.id)?state.sel.delete(row.id):state.sel.add(row.id);
     else state.sel=new Set([row.id]);
     state.selEquipment=null;state.aimMirror=null;
@@ -3607,7 +3652,8 @@
         ctx.fillStyle=r.selected?"#d3ac59":"#0d0c0b";ctx.fillRect(r.x,r.y,r.w,r.h);
         ctx.strokeStyle=r.selected||r.hovered?"#d3ac59":"rgba(239,231,214,.35)";ctx.lineWidth=r.selected||r.hovered?2:1;ctx.strokeRect(r.x,r.y,r.w,r.h);
         ctx.fillStyle=r.selected?"#1a1409":"#efe7d6";ctx.textAlign="center";ctx.textBaseline="middle";
-        r.lines.forEach((text,i)=>ctx.fillText(text,r.x+r.w/2,r.y+16+i*24));
+        const scale=r.scale||1;ctx.font=`600 ${20*scale}px sans-serif`;
+        r.lines.forEach((text,i)=>ctx.fillText(text,r.x+r.w/2,r.y+(16+i*24)*scale));
       }
       ctx.restore();
     }
@@ -4867,7 +4913,7 @@
     if (ev.key === " " && !timelineTransportBridge && !ev.defaultPrevented && !ev.isComposing && ev.keyCode !== 229
         && !ev.repeat && !ev.metaKey && !ev.ctrlKey && !ev.altKey && $("dialog").hidden) {
       // The simple work-light view button must retain Space's native click too.
-      if (document.activeElement !== $("t-play") && !ev.target?.closest?.('#simple-work-light')) { ev.preventDefault(); togglePlay(); }
+      if (document.activeElement !== $("t-play") && !ev.target?.closest?.('#simple-work-light,#light-program-play')) { ev.preventDefault(); togglePlay(); }
     }
     /* 設定のコピー＆ペースト（2026-09-14 本人指定で ⌘C / ⌘P。⌘V も慣れで押すので受ける）。
        ⌘P はブラウザの印刷なので preventDefault が要る。
@@ -7670,6 +7716,7 @@
   $("t-copy").onclick = (ev) => { copySettings(); if (ev.detail > 0) ev.currentTarget.blur(); };
   $("t-paste").onclick = (ev) => { pasteSettings(); if (ev.detail > 0) ev.currentTarget.blur(); };
   $("undo").onclick = undo; $("redo").onclick = redo;
+  $("light-program-play").onclick = () => window.GAMMA_LIGHT_EDITOR?.toggleProgram ? window.GAMMA_LIGHT_EDITOR.toggleProgram() : togglePlay();
   $("mirror-placement").onclick = () => { state.mirrorPlacement = !state.mirrorPlacement; renderAll(); };
   $("mirror").onclick = mirrorSelected;
   document.querySelectorAll("#filters button").forEach((b) => { b.onclick = () => { state.filter = b.dataset.filter; renderAll(); }; });
@@ -7953,7 +8000,7 @@
   }
 
   /* ★#16（2026-10-07 実測）: 仕込みを丸ごと置き換えると、各シーンの明かり・動きの組（cue.groups）・灯体グループが
-     無くなった灯体を指したままになり、〈LXキューを適用〉が「灯体グループが参照する灯体がありません」で通らなかった
+     無くなった灯体を指したままになり、〈LX キューを保存〉が「灯体グループが参照する灯体がありません」で通らなかった
      （照明のあるショーでは用途別の型も同じ。v0.3.21 の試験場で実測）。置き換えた後に、無くなった灯体への参照だけを外す。
      LXキュー・残る灯体の設定・名前の付いた灯体グループ（中身が空でも）は消さない。⌘Z で置き換え前に戻る。 */
   function dropMissingFixtureRefs() {
@@ -8076,7 +8123,7 @@
   }
 
   // 一撃で置く。確認ダイアログは出さない（取り消せる操作に確認を挟まない。2026-09-11 本人要望）
-  $("apply").onclick = () => { markApplied(); state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
+  $("apply").onclick = () => { markApplied(); state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LX キューを保存しました"; setTimeout(() => renderAll(), 2500); toast("LX キューを保存しました（試作なので画面は残ります）"); };
   $("close").onclick = () => { if (state.dirty) dialog("<p>変更がまだ適用されていません。</p>", [["編集に戻る", null, "quiet"], ["破棄する", () => toast("破棄しました（試作なので画面は残ります）"), "quiet"], ["適用して閉じる", () => $("apply").onclick(), "primary"]]); else toast("閉じました（試作なので画面は残ります）"); };
 
   /* ---------- 照明デザインの保存（名前を付けて残す） ----------
@@ -8235,7 +8282,7 @@
       </div>
       <input type="file" id="dspick" accept=".json,application/json" hidden>
       <p class="hint">${stored===null?'保存一覧を読めないため、ブラウザへの上書きを止めています。':''}保存先はこのブラウザです。これまで保存したデザインも同じ一覧から呼び出せます。別の環境へ渡すときはファイルにします。
-      LXキューの設定を保存します。ショー全体へ適用するには「LXキューを適用」を押してください。
+      </p><p class="hint">LXキューの設定を保存します。ショー全体へ適用するには「LX キューを保存」を押してください。</p><p class="hint">
       演者・セットは含めず、読み込み先にある配置を残します。</p>
       <p class="prefname">保存したデザイン</p>
       <div class="dslist">${rows}</div>`, [["閉じる", null, "primary"]]);

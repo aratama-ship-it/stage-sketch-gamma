@@ -539,3 +539,19 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 });
 
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"ドラッグでパネルを並べ替え": "Drag to reorder panels", "ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。": "Drag to resize height. Use Up/Down to adjust; Enter or double-click for automatic height.", "パネルの設定を保存できませんでした。": "Panel settings could not be saved."});
+
+// L1: shared lighting toolbar.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "LX キューを保存": "Save LX cues",
+  "照明の再生": "Play lighting",
+  "照明の停止": "Stop lighting",
+  "LX キューを保存しました": "LX cues saved",
+  "LX キューを保存しました（試作なので画面は残ります）": "LX cues saved (the prototype stays open)",
+  "LXキューの設定を保存します。ショー全体へ適用するには「LX キューを保存」を押してください。": "This saves the LX cue settings. To update the show, press “Save LX cues”."
+});
+
+// L1: existing backup and position-manager guidance follows the save label.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。": "No automatic backups remain. Save lighting with “Save LX cues” or remove unused shows to free space.",
+  "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。": "Changes update the lighting design being edited. Use “Save LX cues” in the Lighting tab to save them to the show."
+});

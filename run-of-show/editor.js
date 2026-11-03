@@ -170,7 +170,6 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
       .find(node=>node.getClientRects().length)?.focus({preventScroll:true});
   }
   $('band-selection-clear').addEventListener('click',()=>{selection={kind:'none'};applySelectionClasses();});
-  $('widths-reset').addEventListener('click',()=>changeLayout(p=>{p.widths=null;},'幅を既定へ戻しました'));
   const figureSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="380" height="170" viewBox="0 0 380 170"><rect width="380" height="170" fill="#ffffff"/><rect x="22" y="18" width="336" height="116" rx="0" fill="#edf3ee" stroke="#25352f" stroke-width="2"/><path d="M22 76h336M190 18v116" stroke="#79877e" stroke-dasharray="4 4"/><circle cx="102" cy="90" r="15" fill="#ffffff" stroke="#245540" stroke-width="3"/><circle cx="278" cy="90" r="15" fill="#ffffff" stroke="#245540" stroke-width="3"/><text x="102" y="96" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#25352f">A</text><text x="278" y="96" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#25352f">B</text><path d="M124 90h116m-10-7 10 7-10 7" fill="none" stroke="#842e3b" stroke-width="3"/><text x="190" y="156" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#25352f">AUDIENCE</text></svg>`;
   const figureUrl="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(figureSvg);
   const el=(tag,text="",cls="")=>{const x=document.createElement(tag);x.textContent=text;if(cls)x.className=cls;return x;};
@@ -865,10 +864,10 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   $("redo-edit").addEventListener("click",()=>{paperEditor.cancel();bridge.redo();refresh();});
   // G1 #1: a device setting. The show's saved `language` is not rewritten (v0.3.21 accepts only bilingual/ja/en there).
   $("heading-language").addEventListener("change",e=>{languageMode=layout.languageMode(e.target.value);store(LANGUAGE_KEY,languageMode==="auto"?null:languageMode);renderDocumentInfo();renderFlow();renderPaper();});$("print-sample").addEventListener("click",()=>printCurrent().catch(showError));
-  async function printCurrent(){
+  async function printCurrent(reservedWindow=null){
     if(cueView){if(cueHost.selection()?.kind==='handover'){cueFrame.contentDocument.getElementById('stage-cue-sheet-view-print').click();return true;}return cuePaper?.print();}
     if(!paperEditor.finish()||!infoValid())return false;
-    const printWindow=window.open('','_blank');if(!printWindow)throw Error(uiText('印刷画面を開けませんでした。'));
+    const printWindow=reservedWindow||window.open('','_blank');if(!printWindow)throw Error(uiText('印刷画面を開けませんでした。'));
     const format=paperFormat,temporary=format==='free',key=lastA4+':'+kindOfLayout(),previous=layouts[key];
     if(temporary){layouts[key]=files.clone(layoutFor());paperFormat=lastA4;renderPaper();}
     try{
@@ -1337,7 +1336,6 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   new MutationObserver(()=>{syncCueSkin();syncCueChoices();if(cueView)cueHost.refresh();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:["lang","data-stage-skin"]});
   new MutationObserver(()=>{if(document.body.classList.contains("readonly-cue-shell")===readOnlyPaper())return;syncCueChoices();if(cueView)cueHost?.refresh?.(true);}).observe(parent.document.body,{attributes:true,attributeFilter:["class"]});
   syncCueChoices();
-  document.querySelector('.band-view').append($('widths-reset').closest('.toolbar'));
   if(!lite){
     leftPanels=window.ROSLeftPanels.install($('paper-band'),{
       store,text:uiText,format:uiFormat,stageOpen:stagePanelOpen,indexCollapsed:indexPanelCollapsed,
@@ -1404,6 +1402,13 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
 
   window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>{closeRowMenu();return paperEditor.finish();},hasDraft:()=>paperEditor?.hasDraft,
     showCueSheet,showRunOfShow,printCurrent,
+    async printRunOfShow(win){
+      if(win.closed)return false;
+      showRunOfShow();
+      const done=await printCurrent(win);
+      if(!done&&!win.closed)win.close();
+      return done;
+    },
     selectScene(id){const found=items.find(i=>i.sceneId===id);if(found){selected=found.id;render();}},
     getDocument:()=>files.clone(packDocument())};
   storageReady=true;setBusy(false);

@@ -20,13 +20,15 @@
   }
   const editor=()=>frame?.contentWindow?.GAMMA_RUN_OF_SHOW_EDITOR;
   const workspace=frame?.parentElement,loadingText=workspace?.querySelector('.gamma-ros-loading');
-  let loadingObserver=null,pendingCueSheet=null;
+  let loadingObserver=null,pendingCueSheet=null,pendingPrint=null;
   function openPendingCueSheet(){if(pendingCueSheet && editor()?.showCueSheet){const request=pendingCueSheet;pendingCueSheet=null;editor().showCueSheet(request.kind,request.key);}}
   function syncLoading(){
     const doc=frame.contentDocument,paperState=doc?.getElementById('pagination-status')?.dataset.state;
     // Continuous entry never paginates, so it reports state "free" instead of the pages-ready class.
     const ready=Boolean(editor()&&(doc?.body?.classList.contains('pages-ready')||paperState==='free'||paperState==='error'));
-    if(ready){workspace.dataset.loading='false';loadingObserver?.disconnect();loadingObserver=null;openPendingCueSheet();}
+    if(ready){workspace.dataset.loading='false';loadingObserver?.disconnect();loadingObserver=null;openPendingCueSheet();
+      if(pendingPrint){const job=pendingPrint;pendingPrint=null;Promise.resolve().then(()=>editor().printRunOfShow(job.win)).then(job.resolve,job.reject);}
+    }
     if(loadingText)loadingText.textContent=text('進行表を用意しています…');
   }
   frame?.addEventListener('load',()=>{
@@ -38,7 +40,11 @@
     }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261103-v040';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261103-v041';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
+    printRunOfShow(win){
+      if(pendingPrint)return Promise.reject(Error(text('印刷用ページを準備しています…')));
+      return new Promise((resolve,reject)=>{pendingCueSheet=null;pendingPrint={win,resolve,reject};this.open();syncLoading();});
+    },
     finish(){return !editor()||editor().finish();},
     showCueSheet(kind,key){pendingCueSheet={kind,key};openPendingCueSheet();},
     showRunOfShow(){pendingCueSheet=null;return editor()?.showRunOfShow?.();},

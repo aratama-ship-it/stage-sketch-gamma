@@ -3,7 +3,7 @@
 'use strict';
 const M=root.GAMMA_SIMPLE_LIGHT_MODEL,E=root.RIG_ENGINE,clone=M.clone;
 const DEFAULT_PRESET_ID='standard26';
-const presets=Object.freeze([{id:DEFAULT_PRESET_ID,name:'標準セット',count:46},{id:'common24',name:'共通24灯',count:24},{id:'balanced22',name:'背景付き22器具',count:22},{id:'balanced24',name:'背景・転がし付き24器具',count:24}]);
+const presets=Object.freeze([{id:DEFAULT_PRESET_ID,name:'標準セット',count:44},{id:'common24',name:'共通24灯',count:24},{id:'balanced22',name:'背景付き22器具',count:22},{id:'balanced24',name:'背景・転がし付き24器具',count:24}]);
 // Public choices are distinct from legacy saved roles (off / rim / custom).
 const presetChoices=Object.freeze(presets.filter(p=>p.id===DEFAULT_PRESET_ID));
 const patterns=Object.freeze([
@@ -11,20 +11,19 @@ const patterns=Object.freeze([
  ['backlight','逆光'],['side','横から'],['foot','足もと'],['silhouette','シルエット'],
  ['gobo','模様'],['mirrorball','ミラーボール'],
  ['laser','レーザー'],['moving','ムービング'],['follow','フォロー'],['flash','ストロボ'],['uv','UV']
-].map(([id,name])=>Object.freeze({id,name,defaults:Object.freeze({patternId:id,level:70,color:id==='uv'?'#8f5bff':id==='laser'?'#38e04a':'white',target:'place:center',sizeM:id==='gobo'?3:1.6,...(id==='laser'?{laserSpanDeg:40}:{}),...(id==='moving'?{periodSec:6}:{}),...(id==='flash'?{flashHz:6}:{})})})));
+].map(([id,name])=>Object.freeze({id,name,defaults:Object.freeze({patternId:id,level:70,color:id==='uv'?'#8f5bff':id==='laser'?'#38e04a':'white',target:'place:center',sizeM:id==='gobo'?3:1.6,lampCount:id==='spot'?2:6,...(id==='laser'?{laserSpanDeg:40}:{}),...(id==='moving'?{periodSec:6}:{}),...(id==='flash'?{flashHz:6}:{})})})));
 
 const color=x=>M.colors[x]||(/^#[0-9a-f]{6}$/i.test(x||'')?x.toLowerCase():null);
-function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
- if(!presets.some(p=>p.id===presetId))throw Error('対応する機材配置を選んでください');
- // Add a new family without changing a byte of the three legacy generators.
- if(presetId===DEFAULT_PRESET_ID){
+// Generate the shipped layout first so retained IDs, numbers and optics stay exact.
+// Legacy variants are used only for compatibility checks and explicit resizing.
+function standardRig(dims,venueType,count=44){
   const rig=createRig(dims,venueType,'balanced24');
   rig.fixtures.push({id:'parts-mirrorball',no:25,name:'ミラーボール',kind:'mirrorball',
    mount:{type:'truss',trussId:'simple-truss-back',u:.5},mirrorBall:{diameterM:.3,rpm:1},simpleRole:'mirrorball'});
   rig.fixtures.push({id:'parts-mirrorball-pin',no:26,name:'ミラーボール用ピン',kind:'moving',
    fixtureType:'moving-profile',opticalType:'spot',beamDeg:7,colorMode:'mix',
    mount:{type:'truss',trussId:'simple-truss-front',u:.5},simpleRole:'mirrorball'});
-  // J5: append only. The original 26 fixtures, their numbers and positions stay exact.
+  // Keep numbering based on the shipped 46 fixtures; filter only after assembly.
   const add=(id,name,kind,fixtureType,opticalType,mount,role,extra={})=>rig.fixtures.push({
    id:'parts-'+id,no:rig.fixtures.length+1,name,kind,...(fixtureType?{fixtureType}:{}),...(opticalType?{opticalType}:{}),mount,
    simpleRole:role,beamDeg:opticalType==='spot'?16:50,colorMode:'mix',...extra});
@@ -40,9 +39,14 @@ function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
   }
   for(const [i,u]of [.15,.38,.62,.85].entries())add('uv-'+i,'UV '+(i+1),'fixed','led-par','wash',
    {type:'floor',u,v:.65},'uv',{cueColor:true,fixedSetup:{surface:'air',path:{kind:'still',a:{u,v:.45,hM:1}}}});
-  rig.simpleLighting.presetId=presetId;
+  rig.simpleLighting.presetId=DEFAULT_PRESET_ID;
+  if(count===26)rig.fixtures=rig.fixtures.slice(0,26);
+  else if(count===44)rig.fixtures=rig.fixtures.filter(f=>!['parts-floor-shimote','parts-floor-kamite'].includes(f.id));
   return rig;
- }
+}
+function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
+ if(!presets.some(p=>p.id===presetId))throw Error('対応する機材配置を選んでください');
+ if(presetId===DEFAULT_PRESET_ID)return standardRig(dims,venueType);
  const rig=M.createRig(dims,venueType);if(presetId==='common24')return rig;
  const counts={};rig.fixtures=rig.fixtures.filter(f=>{const key=f.simpleRole==='side'?f.mount.side:f.simpleRole;counts[key]=(counts[key]||0)+1;return key==='front-light'?counts[key]<=4:['shimote','kamite'].includes(key)?counts[key]<=2:true;});
  for(const f of rig.fixtures)if(['front-light','side'].includes(f.simpleRole)){
@@ -61,14 +65,21 @@ function assessStage(dims,venueType,presetId=DEFAULT_PRESET_ID){
  return {status:conditional?'conditional':'supported',message:conditional?'条件付き：照射範囲と吊り高さを詳細で確認してください':'配置可能：機材数を保って舞台寸法に合わせます'};
 }
 function signature(rig){return JSON.stringify({trusses:rig.trusses,fixtures:rig.fixtures.map(f=>({id:f.id,kind:f.kind,fixtureType:f.fixtureType,opticalType:f.opticalType,mount:f.mount,cueColor:f.cueColor}))});}
-function compatible(rig,dims,venueType){try{if(['W','D','H'].some(k=>rig?.simpleLighting?.stage?.[k]!==dims[k]))return false;if(rig?.simpleLighting?.version===1)return M.isCommon(rig,dims,venueType);if(rig?.simpleLighting?.version!==2)return false;const expected=createRig(dims,venueType,rig.simpleLighting.presetId);
- // The shipped 26-light standard remains usable without an implicit rig migration.
- if(rig.simpleLighting.presetId===DEFAULT_PRESET_ID&&rig.fixtures.length===26)expected.fixtures=expected.fixtures.slice(0,26);
- return signature(rig)===signature(expected);}catch{return false;}}
+function compatible(rig,dims,venueType){try{
+ if(['W','D','H'].some(k=>rig?.simpleLighting?.stage?.[k]!==dims[k]))return false;
+ if(rig?.simpleLighting?.version===1)return M.isCommon(rig,dims,venueType);
+ if(rig?.simpleLighting?.version!==2)return false;
+ const count=rig.fixtures.length,presetId=rig.simpleLighting.presetId;
+ const expected=presetId===DEFAULT_PRESET_ID&&[26,46].includes(count)
+  ?standardRig(dims,venueType,count):createRig(dims,venueType,presetId);
+ return signature(rig)===signature(expected);
+ }catch{return false;}}
 // UI entry policy is separate from reading/composing legacy cues.
 function canUseSimple(rig,dims,venueType){return rig?.simpleLighting?.presetId===DEFAULT_PRESET_ID&&compatible(rig,dims,venueType);}
 function rebuildRig(rig,dims,venueType){
- const next=createRig(dims,venueType,rig.simpleLighting?.presetId||'common24');
+ const presetId=rig.simpleLighting?.presetId||'common24',count=rig.fixtures.length;
+ const next=presetId===DEFAULT_PRESET_ID&&[26,46].includes(count)
+  ?standardRig(dims,venueType,count):createRig(dims,venueType,presetId);
  const ids=new Set(rig.fixtures.map(f=>f.id));next.fixtures=next.fixtures.filter(f=>ids.has(f.id));return next;
 }
 function parts(rig){const list=[];for(const f of rig.fixtures||[]){const m=f.mount||{};const special=['laser','moving-effect','follow','flash','uv'].includes(f.simpleRole);const id=special?'effect:'+f.id:f.simpleRole==='mirrorball'?'mirrorball:parts-mirrorball':m.type==='truss'?'truss:'+m.trussId:m.type==='side'?'side:'+m.side:m.type==='floor'?'floor:'+f.id:m.type==='cyc'?'cyc:'+m.rung:m.type;
@@ -124,17 +135,53 @@ function sideIds(fixtures,rig,dims,side){
  const low=ordered[Math.floor((n-1)/2)].x,high=ordered[Math.ceil((n-1)/2)].x;
  return new Set(ordered.filter(f=>side==='left'?f.x<=low+1e-8:f.x>=high-1e-8).map(f=>f.id));
 }
-function compose(base,rig,dims,pieces,partId,raw){
+// Explicit counts use the position's moving fixtures, retaining their actual
+// optical type / beam range. A missing count uses the shipped family filter.
+function eligibleFixtures(rig,part,o){
+ const spot=['spot','gobo','follow','moving','mirrorball'].includes(o.patternId);
+ return (part?.fixtureIds||[]).map(id=>rig.fixtures.find(f=>f.id===id)).filter(f=>f&&o.patternId!=='off'&&!E.isMirrorBall(f)&&(o.patternId==='laser'?E.isLaser(f):!E.isLaser(f)&&(f.mount.type==='cyc'||f.opticalType===(spot?'spot':'wash')||(o.lampCount!=null&&f.kind==='moving'&&o.patternId!=='mirrorball'))));
+}
+function countedFixtures(candidates,rig,dims,o){
+ if(o.lampCount==null||candidates.length<=o.lampCount)return candidates;
+ const ordered=candidates.slice().sort((a,b)=>E.fixtureWorld(a,rig,dims).x-E.fixtureWorld(b,rig,dims).x);
+ // The usual pin pair remains the same when selecting 2 on a mixed batten.
+ const native=ordered.filter(f=>f.opticalType===(['spot','gobo','follow','moving'].includes(o.patternId)?'spot':'wash'));
+ if(o.lampCount===2&&native.length===2)return native;
+ return Array.from({length:o.lampCount},(_,i)=>ordered[Math.round(i*(ordered.length-1)/(o.lampCount-1))]);
+}
+function displayedCount(cue,rig,id){
+ const meta=cue?.simpleComposition?.parts?.[id];if(meta?.lampCount!=null)return meta.lampCount;
+ const part=parts(rig).find(p=>p.id===id);
+ // Infer only for display; do not write a migration or regenerate old lights.
+ const count=eligibleFixtures(rig,part,meta||defaults()).length;
+ return count;
+}
+function displayedSpread(cue,rig,dims,id){
+ const meta=cue?.simpleComposition?.parts?.[id]||{},part=parts(rig).find(p=>p.id===id);
+ if(meta.spreadDeg!=null)return meta.spreadDeg;
+ const fixtures=eligibleFixtures(rig,part,meta).filter(f=>f.kind==='moving');
+ const f=fixtures.find(f=>cue?.lights?.[f.id]?.on)||fixtures[0];if(!f)return 50;
+ const light=cue?.lights?.[f.id];if(Number.isFinite(light?.beamDeg))return light.beamDeg;
+ if(['spot','gobo','follow'].includes(meta.patternId)&&meta.targetPoint&&Number.isFinite(meta.sizeM)){
+  const a=E.fixtureWorld(f,rig,dims),b=E.pointWorld(meta.targetPoint,dims),length=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+  const range=E.BEAM_RANGES?.[f.fixtureType]||{min:7,max:50};
+  return Math.max(range.min,Math.min(range.max,2*Math.atan(meta.sizeM/2/length)*180/Math.PI));
+ }
+ return f.beamDeg||50;
+}
+function compose(base,rig,dims,pieces,partId,raw,fixtureMask=null){
  if(!compatible(rig,dims,rig.simpleLighting?.venueType))throw Error('対応する機材配置を確認してください');
  if(base?.simpleComposition&&base.simpleComposition.version!==1)throw Error('新しい形式の明かりです。詳細で確認してください');
  base=migrateLegacy(base,rig);
  const legacy=raw?.patternId==='strobe';
  const p=parts(rig).find(p=>p.id===partId),o=Object.fromEntries(Object.entries(defaults(legacy?'wash':raw?.patternId)).map(([key,value])=>[key,raw?.[key]??value]));
  if(legacy)o.patternId='wash';
- for(const key of ['side','spreadDeg','strobe'])if(Object.hasOwn(raw||{},key))o[key]=clone(raw[key]);
+ delete o.lampCount; // Missing counts retain the legacy optical-family selection.
+ for(const key of ['side','spreadDeg','strobe','lampCount'])if(Object.hasOwn(raw||{},key))o[key]=clone(raw[key]);
  if(legacy&&!o.strobe)o.strobe={on:true,kind:'sharp',hz:2,duty:50,depth:0,phaseNorm:0};
  if(!p||!p.patterns.includes(o.patternId))throw Error('この位置ではその明かりを作れません');
  if(!Number.isFinite(o.level)||o.level<0||o.level>100||!color(o.color)||!Number.isFinite(o.sizeM)||o.sizeM<.5||o.sizeM>4)throw Error('調整値を確認してください');
+ if(o.lampCount!=null&&![2,6].includes(o.lampCount))throw Error('調整値を確認してください');
  if(o.side&&!['both','left','right'].includes(o.side))throw Error('調整値を確認してください');
  if(o.spreadDeg!=null&&(!Number.isFinite(o.spreadDeg)||o.spreadDeg<1||o.spreadDeg>120))throw Error('調整値を確認してください');
  if(o.strobe&&(!Number.isFinite(o.strobe.hz)||o.strobe.hz<.1||o.strobe.hz>20||!Number.isFinite(o.strobe.duty)||o.strobe.duty<5||o.strobe.duty>95||typeof o.strobe.on!=='boolean'))throw Error('調整値を確認してください');
@@ -146,8 +193,9 @@ function compose(base,rig,dims,pieces,partId,raw){
  const point=focused?target(o.target,pieces):ball?E.mirrorBallAimPoint(ball,rig,dims):null;
  if(o.patternId==='silhouette'&&Object.entries(cue.lights).some(([id,l])=>!p.fixtureIds.includes(id)&&rig.fixtures.find(f=>f.id===id)?.mount.type!=='cyc'&&E.isLit(l)))warnings.push('シルエットにするには、人物を照らす他のレイヤーをOFFにしてください');
 
- const candidates=p.fixtureIds.map(id=>rig.fixtures.find(f=>f.id===id)).filter(f=>o.patternId!=='off'&&!E.isMirrorBall(f)&&(o.patternId==='laser'?E.isLaser(f):!E.isLaser(f)&&(f.mount.type==='cyc'||f.opticalType===((focused||ball||o.patternId==='moving')?'spot':'wash'))));
- const selected=sideIds(candidates,rig,dims,o.side);
+ const candidates=eligibleFixtures(rig,p,o);
+ const selected=sideIds(countedFixtures(candidates,rig,dims,o),rig,dims,o.side);
+ if(fixtureMask)for(const id of selected)if(!fixtureMask.has(id))selected.delete(id);
  for(const id of p.fixtureIds){const f=rig.fixtures.find(f=>f.id===id),cyc=f.mount.type==='cyc';const eligible=selected.has(id);let aim=point||{u:f.mount.u??(f.mount.side==='shimote'?.65:.35),v:f.mount.v??.6,hM:['rim','backlight','side','foot'].includes(o.patternId)?1.2:0},deg=f.beamDeg||50;
  if(backdrop){aim={u:f.mount.u??.5,v:0,hM:Math.min(dims.H*.55,5)};deg=60;if(!pieces.some(x=>x.kind==='curtain'&&x.curtainKind==='cyc'))warnings.push('背景幕がありません。仮想背景面での試し表示です');}
  if(f.kind==='fixed')aim=clone(f.fixedSetup?.path?.a||aim);
@@ -188,7 +236,7 @@ function adjust(base,rig,id,changes){
  for(const fid of p.fixtureIds){
   const f=rig.fixtures.find(f=>f.id===fid),light=cue.lights?.[fid];if(!light||E.isMirrorBall(f))continue;
   // Skip the unused optical family in mixed spot/wash positions.
-  if(meta.patternId!=='custom'&&f.mount.type!=='cyc'&&(meta.patternId==='laser'?!E.isLaser(f):E.isLaser(f)||f.opticalType!==(['spot','gobo','mirrorball','moving','follow'].includes(meta.patternId)?'spot':'wash')))continue;
+  if(meta.patternId!=='custom'&&!countedFixtures(eligibleFixtures(rig,p,meta),rig,rig.simpleLighting.stage,meta).some(candidate=>candidate.id===fid))continue;
   // A muted layer's ON snapshot must receive the same edits, or ON would
   // either reject the layer or silently restore the old spread/strobe values.
   for(const target of [light,meta.gainBase?.[fid]].filter(Boolean)){
@@ -249,5 +297,5 @@ function targetStatus(cue,pieces){const warnings=[];for(const value of Object.va
 function withRig(design,dims,venueType,id){const next=clone(design);next.rig=createRig(dims,venueType,id);next.fixtureGroups=[];delete next.plans;delete next.activePlanRef;
  for(const row of [...next.scenes,...(next.archivedScenes||[])]){const reset=cue=>{const value={...clone(cue||{}),lights:{},groups:[],migrationState:'needs-reset',simpleComposition:{version:1,parts:{}}};delete value.simplePreset;return value;};row.cue=reset(row.cue);for(const q of row.lxq||[])q.cue=reset(q.cue);}
  return next;}
-root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage});
+root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,eligibleFixtures,countedFixtures,displayedCount,displayedSpread,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage});
 })(typeof window==='undefined'?globalThis:window);

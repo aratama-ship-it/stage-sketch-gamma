@@ -19,6 +19,16 @@
   --gm-current-bg: rgba(168, 75, 38, 0.28);
 }
 
+/* K: the viewer shells already hide the timeline panel in style.css. Its
+ * detached grip and compact transport must follow that same visibility rule,
+ * otherwise the 44px grip intercepts the bottom Info button. */
+html.stage-pwa-tablet .stage-timeline-resize-handle,
+html.stage-pwa-tablet .stage-playback-dock,
+html.stage-phone-viewer .stage-timeline-resize-handle,
+html.stage-phone-viewer .stage-playback-dock,
+html[data-study-renderer] .stage-timeline-resize-handle,
+html[data-study-renderer] .stage-playback-dock { display: none !important; }
+
 /* ---------- 共通部品 ---------- */
 
 /* 指で払ったときに図やチップが「文字選択」で青く塗られないようにする（WebKit実測: マウス相当の

@@ -319,6 +319,8 @@ html[data-gamma-light-mode=move] .light-layout-collapsed{flex:0 0 auto!important
 html[data-gamma-light-mode=move] .light-layout-sized:not(.light-layout-collapsed){max-height:min(var(--light-panel-height),100%);overflow:auto}
 html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns>.leftcol{flex-direction:column;overflow:auto;gap:var(--light-layout-gap)}
 html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns>.leftcol>.panel{width:100%!important;flex:0 0 auto!important;min-width:0;min-height:120px;max-height:var(--light-panel-height)}
+/* v0.4.1 integration: a collapsed shared-stack panel is only its head; the 120px floor above is for open panels (it left ~80px blank under closed LXQ / selected heads and moved the drop midpoint). */
+html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns>.leftcol>.panel.gamma-stack-panel.is-stack-collapsed{min-height:0}
 html[data-gamma-light-mode=move][data-light-panel-style=single] .figgrid.detail-columns{grid-template-columns:var(--detail-left-width) minmax(0,var(--detail-mid-width));column-gap:var(--light-layout-gap)}
 html[data-gamma-light-mode=move][data-light-panel-style=single] #light-right-resize{display:none}
 html[data-gamma-light-mode=move][data-light-panel-style=single] .leftcol>#panel-insp{grid-column:auto;grid-row:auto;align-self:stretch}
@@ -334,3 +336,20 @@ html[data-gamma-light-mode=move] .leftcol { overflow:auto; }
 .gamma-stack-panel > .gamma-stack-body > :is(.inspbody,.lxbody,.list) { flex:0 0 auto; overflow:visible; max-height:none; }
 html[data-gamma-light-mode=place] .gamma-stack-panel > :is(.gamma-stack-head,.gamma-stack-height) { display:none; }
 html[data-gamma-light-mode=move] .gamma-stack-panel > .gamma-stack-body > #fixture-list-title { display:none; }
+/* L1: optional shared columns; LXQ spans both columns at their foot. */
+html[data-gamma-light-mode=move] .leftcol.gamma-stack-columns[data-stack-layout=split] { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; }
+html[data-gamma-light-mode=move] .gamma-stack-column > .gamma-stack-panel { box-sizing:border-box; width:100%!important; max-width:100%; min-width:0; height:auto; min-height:0; max-height:none; flex:0 0 auto; overflow:visible; }
+html[data-gamma-embedded][data-gamma-light-mode=move] .gamma-light-actions #light-program-play { display:inline-flex; }
+html[data-gamma-embedded] .gamma-light-actions :is(#apply,#simple-adopt) { min-height:var(--ctrl-md); padding:4px 10px; font:400 var(--fs-4)/1.5 var(--sans); }
+html[data-gamma-embedded] #panel-lxq.gamma-stack-panel :is(button,input:not([type=checkbox]),select) { min-height:var(--ctrl-md)!important; min-width:var(--ctrl-md); }
+html[data-gamma-embedded] #panel-lxq.gamma-stack-panel button { min-width:var(--ctrl-md)!important; }
+html[data-gamma-embedded] #panel-lxq.gamma-stack-panel label:has(input[type=checkbox]) { display:inline-flex; align-items:center; min-height:var(--ctrl-md); }
+
+/* L1G: bound the scrolling panels above the separately anchored wing figure. */
+.figgrid.detail-columns:not([data-solo]) > .leftcol {
+  box-sizing:border-box; height:var(--detail-panels-height); max-height:var(--detail-panels-height);
+}
+.transport .btn.small#light-program-play {
+  display:inline-flex; align-items:center; justify-content:center; width:auto; gap:4px; padding:0 6px;
+}
+.transport #light-program-play .light-program-lamp { fill:none; stroke:currentColor; stroke-width:1.3; }

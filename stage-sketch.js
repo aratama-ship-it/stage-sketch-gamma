@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.0";
+  const GAMMA_APP_VERSION = "v0.4.1";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -11831,7 +11831,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     render();
     historyPerformance("render");
     refreshOpenCueSheetView();
-    persistSoon();
+    // History can be followed immediately by reload/close from either editor.
+    persistSoon({immediate:true});
     historyPerformance("persist-request");
   }
 
@@ -12220,7 +12221,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             fileAutosaveUi?.persisted(fileReceipt);
       if(typeof notifyDriveBackup === "function")notifyDriveBackup(serializedState);
           }
-          if (state !== savingState) break;
+          if (state !== savingState) {
+            // Undo/Redo replaces state while an older save may still be pending.
+            // Drain that same show's restoration; show switches own their save.
+            if (autosaveRequested && !showSaveTransitionsPending && state.project.id === savingState.project.id) continue;
+            break;
+          }
           // A newer edit or show switch still needs its own durable save.
           if (autosaveRequested || showSaveTransitionsPending) continue;
           autosaveFailed = false;
@@ -12281,11 +12287,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     clearTimeout(saveTimer);
     autosaveRequested = true;
     if (!nativeProject) setSaveStatus(tx("変更を保存しています…") || "Saving…", "saving");
-    saveTimer = setTimeout(flushAutosave, 250);
+    saveTimer = options.immediate ? null : setTimeout(flushAutosave, 250);
     if (nativeProject && saveMaxTimer === null) saveMaxTimer = setTimeout(() => {
       saveMaxTimer = null;
       if (autosaveRequested) flushAutosave();
     }, 2000);
+    if (options.immediate) void flushAutosave();
   }
 
   let actionStatusTimer = null;
@@ -34756,6 +34763,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       for (const paper of [false, true]) {
         printPaperSurface = paper;
         for (const view of views) {
+          // F-01: a reused canvas retains its current path (save/restore and
+          // clearRect do not clear it), clips and drawing state. Start every
+          // rendition as a fresh single-scene canvas, keeping its size/quality.
+          canvases[view].width = W * 2;
           drawStage(contexts[view], false, view);
           (images[view] ||= {})[paper ? "paper" : "dark"] = canvases[view].toDataURL("image/jpeg", 0.92);
         }
@@ -38433,7 +38444,7 @@ ${propsPlotHtml}
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261103-v040';
+        script.src = 'light-design/part-lighting-model.js?v=20261103-v041';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -46784,6 +46795,23 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   document.getElementById("stage-export-show-file")?.addEventListener("click", () => { closeExport(); exportProject(); });
   document.getElementById("stage-export-rehearsal")?.addEventListener("click", () => { closeExport(); openRehearsalExport(); });
   document.getElementById("stage-export-open-cuesheet")?.addEventListener("click", () => { closeExport(); openCueSheet(); });
+  document.getElementById("stage-export-run-of-show-pdf")?.addEventListener("click", async () => {
+    // Reserve the popup in the gesture, before loading the lazy paper editor.
+    const win = window.open("", "_blank");
+    if (!win) { announce(tx("印刷画面を開けませんでした。")); return; }
+    win.document.title = tx("PDF で書き出す");
+    win.document.body.textContent = tx("印刷用ページを準備しています…");
+    try {
+      closeExport();
+      await window.GAMMA_WORKSPACE?.select("run-of-show");
+      if (window.GAMMA_WORKSPACE?.mode() !== "run-of-show") { win.close(); return; }
+      await window.GAMMA_RUN_OF_SHOW_PANE.printRunOfShow(win);
+    } catch (error) {
+      if (!win.closed) win.close();
+      console.error(error);
+      exportFailureNotice(tx("印刷用ページを作れませんでした。もう一度お試しください。"));
+    }
+  });
   document.getElementById("stage-export-venue-library")?.addEventListener("click", () => {
     const source = document.getElementById("stage-venue-library-export");
     if (!source) return;
@@ -49874,7 +49902,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
       if(!window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title'])await new Promise((resolve,reject)=>{
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261103-v040';script.onload=resolve;script.onerror=reject;document.head.append(script);
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261103-v041';script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await loadFileAutosaveUi();
       for(const name of ['stage-drive-backup-browser.js','stage-drive-backup-store.js','stage-drive-backup-scheduler.js','stage-drive-backup-snapshot.js','stage-drive-backup-controller.js','stage-drive-backup-ui.js']){

@@ -41,8 +41,10 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
     if(id==='ros-index')h.name.id='ros-index-heading';
     h.button.id=old.id||'ros-panel-head-'+id;h.name.dataset.rosText=label;h.grip.className='ros-panel-grip';h.mark.className='ros-side-disclosure';h.mark.textContent='▾';
     const body=doc.createElement('div');body.className='ros-left-content';body.id='ros-panel-body-'+id;h.button.setAttribute('aria-controls',body.id);h.button.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight');
+    // The shared body owns collapse now. Release the legacy list's hidden flag
+    // before measuring it, including an initially collapsed saved list.
     // Keep stage figures and the list nodes/listeners; the old list resize is unused.
-    if(id==='ros-index'){body.append($('ros-index-list'));old.parentElement.replaceWith(h.button);$('ros-index-resize').hidden=true;}
+    if(id==='ros-index'){const list=$('ros-index-list');list.hidden=false;body.append(list);old.parentElement.replaceWith(h.button);$('ros-index-resize').hidden=true;}
     else{old.replaceWith(h.button);for(const child of [...node.childNodes])if(child!==h.button)body.append(child);}
     node.append(body);node.classList.add('band-group','ros-unified-panel');node.removeAttribute('role');
     const handle=doc.createElement('div');handle.className='ros-panel-height';handle.setAttribute('aria-controls',body.id);node.append(handle);

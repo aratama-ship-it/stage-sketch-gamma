@@ -7,16 +7,17 @@
     lead: "Ways to take your drawings into the rehearsal room or a meeting.",
     sections: [
       {
-        id: "export", title: "Export, save and print (images, projects, Q sheets, theatre)", status: "sourced",
+        id: "export", title: "Export, save and print (images, projects, Q sheets and run of show, theatre)", status: "sourced",
         keywords: ["image", "export", "PNG", "JPEG", "PDF", "project", "print", "front", "plan", "section"],
         html: `
-<p>Open ${ui("Export, save and print")} with the paper icon. Choose ${ui("Images and print")}, ${ui("Save project")}, ${ui("Q sheet")} or ${ui("Theatre")}. Use Save project for the audio-inclusive file and Images and print to share diagrams.</p>
-<p>Choose the view and scenes from the two dropdowns. Defaults are Front and Current scene. There is no purpose or pitch selector; images retain the drawing.</p>
+<p>Open ${ui("Export, save and print")} with the paper icon. Choose ${ui("Images and print")}, ${ui("Save project")}, ${ui("Q sheets and run of show")} or ${ui("Theatre")}. Use Save project for the audio-inclusive file and Images and print to share diagrams.</p>
+<p>Choose the view and scenes from the two side-by-side dropdowns. Defaults are Front and Current scene. There is no purpose or pitch selector; images retain the drawing.</p>
 ${table(["Action", "Result"], [
  [ui("Export PNG"), "Export the selected diagrams and scenes as PNG."],
  [ui("Export JPEG"), "Export the same diagrams as opaque JPEG at quality 0.9."],
  [ui("Print / PDF"), "Open a print page for the same selection. A scene count shows preparation progress."]
 ])}
+<p>In ${ui("Q sheets and run of show")}, ${ui("Export CSV")} opens the Q sheet picker; choose a table and use its existing CSV button (UTF-8 with BOM, comma-separated, without formatting). ${ui("Export PDF")} opens the run-of-show print page, keeping text and background colours, borders, alignment, bold, italic and underline. Select PDF in the print dialog to save it.</p>
 <p>One image downloads directly. Multiple images are bundled in a ZIP in the selected format. Export and print leave the original show unchanged. See ${ref("print", "11-2")} for print controls.</p>`
       },
       {
@@ -49,9 +50,9 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release400-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
-${fig("release400-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release400-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
+${fig("release401-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
+${fig("release401-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release401-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
 `
       },
       {

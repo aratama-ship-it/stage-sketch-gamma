@@ -32,6 +32,20 @@
 
   const TEXT = {
 
+    "かんたん照明のレイヤーは「調整」を押すと行の直下に調整欄が開きます。灯体の広がり方を角度で調整でき、灯数は 2 灯と 6 灯から選べます。レーザーは 2 灯をまとめて扱い、左右を選べます。": "In Easy lighting, “Adjust” opens the controls directly beneath the layer. You can adjust beam spread as an angle and choose two or six fixtures. The two lasers are handled together, with a choice of sides.",
+
+    "照明のかんたん・詳細の上部バーを揃えました。かんたん照明でも照明の再生と「LX キューを保存」が使えます。パネルの並びと余白も整えました。": "The top bars in Easy and Detailed lighting now share the same layout. Easy lighting also has “Play lighting” and “Save LX cues”. Panel spacing and arrangement have been adjusted.",
+
+    "新しく作る機材配置の「標準セット」は 44 器具になりました。転がしは奥と手前に各 4 灯です。トラスの基本 6 灯すべてで模様を使えます。": "New “Standard set” rigs have 44 fixtures. There are four floor lights upstage and four downstage. All six basic truss fixtures can use patterns (gobos).",
+
+    "進行表のツールバーを整え、「表示」と「幅を既定へ」を取り除きました。書式パネルの操作を並べ直し、狭い幅でも使えるようにしました。": "The Run of show toolbar has been updated, removing “Display” and “Reset width”. The formatting controls have been rearranged to work in narrow panels.",
+
+    "書き出し・保存・印刷の窓のボタンや選択欄を揃えました。「Qシート・進行表」から CSV と PDF を選べ、PDF には進行表の書式が反映されます。": "The buttons and selectors in the export, save and print window have been aligned. The Q sheet and Run of show tab offers CSV and PDF; PDF includes the Run of show formatting.",
+
+    "全シーン印刷が単一シーンの印刷と同じ図になるよう揃えました。印刷の図を作る際の状態の持ち越しを防ぎます。": "All-scene printing has been aligned with single-scene printing. The drawing state is reset between printed figures.",
+
+    "両袖を含む機材配置図で、狭い表示の番号札の並びを詰め直しました。スマホなどの閲覧表示で「情報」を覆っていたタイムラインの取っ手も隠れるようにしました。": "Fixture number labels in equipment plots that include both wings are packed more tightly in narrow views. In phone and other viewing layouts, the timeline grip no longer covers the Info panel.",
+
     "かんたん照明の図を、舞台タブと同じ正面図にしました。舞台袖・袖幕・一文字幕・紗幕・床の目地も同じ描き方で、光は舞台の中だけに表示します。SS の光の輪郭はやわらかくなりました。舞台タブの正面図・詳細照明・3D の描き方は変わりません。": "The Easy lighting figure is now the same front view as the Stage tab: wings, wing legs, borders, scrims and the floor joints are drawn the same way, and light is shown only on the stage. SS beam edges are softer. The Stage tab front view, Detailed lighting and 3D are drawn as before.",
 
     "かんたん照明の操作を広げました。詳細と同じシーンの列と LX キューのパネルを使え、レイヤーは見出しや「調整」で開閉できます。レイヤーごとに広がり方・客席から見た左右（全体／左だけ／右だけ）・点滅を調整でき、G キーで作業灯を切り替えられます。照明の種類にレーザー・ムービング・フォロー・ストロボ・UV を足し、機材配置の「標準セット」は 46 灯になりました。かんたん照明は標準セットのときだけ使え、他の型で保存した照明は詳細で編集できます。": "Easy lighting can do more. It uses the same scene row and LX cue panel as Detailed, and layers open and close from their heading or “Adjust”. Each layer can set its spread, the side as seen from the audience (All / Left only / Right only) and strobe, and the G key toggles work lights. Laser, Moving, Follow, Strobe and UV were added to the lighting types, and the “Standard set” rig now has 46 fixtures. Easy lighting is available only with the Standard set; lighting saved with other rigs can be edited in Detailed.",
@@ -863,7 +877,6 @@
     "シーンと転換の追加は舞台側で行い、タイムラインの追加ボタンは表示しません。読み込み比較のボタンを揃え、閉じる×の説明は表示しません。": "Create scenes and transitions in Stage; their timeline add buttons are hidden. Aligned import comparison buttons and removed redundant close-glyph tooltips.",
     "行ごとの切り替えを既定に戻す": "Reset row-specific view choices",
     "書式を元に戻す": "Reset formatting",
-    "幅を既定へ": "Reset width",
     "照明デザインの正面図が、タイムライン再生とシーン送りの転換で、舞台タブと同じように動くようにしました。": "The Light design front view now follows timeline playback and scene transitions in the same way as the Stage tab.",
     "タイムラインにLXキューを追加すると照明キューへ登録し、後ろのキュー番号をずらすようにしました。": "Adding an LX cue to the timeline now registers the lighting cue and shifts subsequent cue numbers.",
     "進行表の列の一覧を左側に常時表示し、行の表示切り替えと紙面の設定を分けました。正面図と平面図は縦に並びます。": "The run of show's column list stays on the left. Row views and paper settings have separate controls, and the front and plan views are stacked vertically.",
@@ -1886,6 +1899,10 @@
     "キューシートを開きます。表ごとに「印刷」「CSV」で書き出せます。": "Open the Q sheet. Each table can be exported with Print or CSV.",
     "Qシートを開き、表ごとに「印刷」「CSV」で書き出します。": "Open the Q sheet and export each table with Print or CSV.",
     "キューシートを開く": "Open the Q sheet",
+    "Qシート・進行表": "Q sheets and run of show",
+    "CSV で書き出す": "Export CSV",
+    "PDF で書き出す": "Export PDF",
+    "CSVはQシートで表を選んで書き出します。PDFは進行表の書式を保って印刷画面を開きます。": "For CSV, choose a table in Q sheets. PDF opens the run-of-show print page with its formatting.",
     "Qシートを書き出す": "Export the Q sheet",
     "この端末の劇場ライブラリ（作った劇場・取り込んだ劇場）を一つのファイルへ書き出します。別の端末では劇場設定の「劇場を読み込む」から取り込めます。": "Export this device's theatre library (theatres you made or imported) to a single file. On another device, bring it in with Import theatre in the theatre settings.",
     "劇場ライブラリを書き出す": "Export theatre library",
@@ -6718,17 +6735,16 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "下手から": "From stage right",
   "上手から": "From stage left",
   "左右で違う": "Different on each side",
-  "試しをやめる": "Discard preview",
   "＋ 新規": "＋ New",
   "まだレイヤーはありません。照明の種類から選んでください。": "Choose a lighting type to add a layer.",
   "レイヤーの点灯: {position}": "Layer power: {position}",
   "レイヤーの一覧から選んで編集してください": "Choose a layer in the list to edit it.",
   "削除: {position}": "Delete: {position}",
   "この種類を使える空き位置がありません": "No free position supports this type.",
-  "適用するか、試しをやめてから詳細へ進んでください": "Apply or discard the preview before opening Detail.",
-  "適用するか、試しをやめてからシーンを切り替えてください": "Apply or discard the preview before switching scenes.",
-  "適用するか、試しをやめてからキューを切り替えてください": "Apply or discard the preview before switching cues.",
-  "適用するか、試しをやめてからキューを追加してください": "Apply or discard the preview before adding a cue."
+  "保存するか、取り消しで試し表示を戻してから詳細へ進んでください": "Save, or use Undo to restore the preview before opening Detail.",
+  "保存するか、取り消しで試し表示を戻してからシーンを切り替えてください": "Save, or use Undo to restore the preview before switching scenes.",
+  "保存するか、取り消しで試し表示を戻してからキューを切り替えてください": "Save, or use Undo to restore the preview before switching cues.",
+  "保存するか、取り消しで試し表示を戻してからキューを追加してください": "Save, or use Undo to restore the preview before adding a cue."
 });
 // v0.3.98 B3: lighting types and the new equipment family.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
@@ -6795,7 +6811,6 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "この舞台寸法では選んだ配置を使えません。": "The selected layout is unavailable for these stage dimensions.",
   "この位置は使用中です。レイヤーの一覧から選んで編集してください。": "This position is in use. Select it in the layer list to edit it.",
   "適用する変更がありません。": "There are no changes to apply.",
-  "取り消す下書きの変更がありません。": "There are no draft changes to discard.",
   "詳細で調整済みのため、詳細画面で編集してください。": "This was adjusted in Detail. Edit it in the Detail screen.",
   "先に照明の種類と使う位置を選んでください。": "Select a lighting type and position first.",
   "別の画面の操作中、または読み取り専用のため使えません。": "Unavailable while another screen is active or in read-only mode.",
@@ -6868,3 +6883,25 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 });
 
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"ドラッグでパネルを並べ替え": "Drag to reorder panels", "ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。": "Drag to resize height. Use Up/Down to adjust; Enter or double-click for automatic height.", "パネルの設定を保存できませんでした。": "Panel settings could not be saved."});
+
+// L2: common layer adjustment controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"灯数": "Fixture count", "2灯": "2 lights", "6灯": "6 lights"});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"灯体の広がり方": "Fixture beam spread"});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"保存済み（{count}灯）": "Saved ({count} lights)"});
+
+// L1F: mirror the L1 English supplement into the page-loaded pack.
+// L1: shared lighting toolbar.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "LX キューを保存": "Save LX cues",
+  "照明の再生": "Play lighting",
+  "照明の停止": "Stop lighting",
+  "LX キューを保存しました": "LX cues saved",
+  "LX キューを保存しました（試作なので画面は残ります）": "LX cues saved (the prototype stays open)",
+  "LXキューの設定を保存します。ショー全体へ適用するには「LX キューを保存」を押してください。": "This saves the LX cue settings. To update the show, press “Save LX cues”."
+});
+
+// L1: existing backup and position-manager guidance follows the save label.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。": "No automatic backups remain. Save lighting with “Save LX cues” or remove unused shows to free space.",
+  "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。": "Changes update the lighting design being edited. Use “Save LX cues” in the Lighting tab to save them to the show."
+});

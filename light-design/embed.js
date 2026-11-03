@@ -288,7 +288,7 @@
     if(applying) text='ショーへ適用中…';
     else if(changedElsewhere) {text='ショーが別のタブで更新されています。照明を控え・書き出しから残し、読み直してください。';level='warn';}
     else if(applyError) {text='適用できませんでした: '+applyError+' · '+draftText;level='warn';}
-    else if(hasDraft()) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
+    else if(hasDraft()) {text='未適用 · '+draftText+'。「照明デザイン」の「LX キューを保存」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
     else if(appliedNotice) {text=appliedNotice;level=appliedNotice.includes('できません')||appliedNotice.includes('整理')?'warn':'info';}
     const recoveryWarning=context?.nativeDocument && context.draftRecoveryUnavailable
       ? '照明の控えの記録を読めません。記録の中身は書き換えていません。' : '';
@@ -839,7 +839,7 @@
     if(!transportAvailable() || event.defaultPrevented || event.isComposing || event.keyCode===229) return;
     if(target?.isContentEditable || target?.closest?.('input,textarea,select,[role="combobox"],[role="listbox"],[role="option"]')) return;
     // Space on this view toggle belongs to the native button click, not playback.
-    if(target?.closest?.('#simple-work-light')) return;
+    if(target?.closest?.('#simple-work-light,#light-program-play')) return;
     if(event.code!=='Space' && event.key!==' ') return;
     if(event.metaKey || event.ctrlKey || event.altKey) return;
     const shortcuts=parent.SHOSAI_STAGE_SHORTCUTS;
@@ -945,11 +945,11 @@
   // Frequent status readers must not compare this visit’s full lighting content.
   // Only explicit leave checks call hasVisitEdits().
   function status() {
-    return {baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:hasDraft(),draftRedo:draftRedo&&!!state.future.length,active,changedElsewhere,applying,applyError,draftState,
+    return {baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:hasDraft(),draftRedo:(draftRedo&&!!state.future.length)||!!window.GAMMA_SIMPLE_LIGHT_UI?.history?.(),active,changedElsewhere,applying,applyError,draftState,
       draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
       hasUnappliedDrafts:hasDraft() || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
       loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
-      canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)};
+      canUndo:!playbackPreview&&(window.GAMMA_SIMPLE_LIGHT_UI?.history?.()?.canUndo??Boolean(state.history.length)),canRedo:!playbackPreview&&(window.GAMMA_SIMPLE_LIGHT_UI?.history?.()?.canRedo??Boolean(state.future.length))};
   }
   window.GAMMA_LIGHT_EDITOR=Object.freeze({stageDraft,closeRecoveryRecords,draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
 
@@ -973,8 +973,8 @@
       else hooks.draw();
       return true;
     },
-    undo(event){const done=hooks.undo(event);if(done)draftRedo=!!state.future.length;parent.GammaUndoOwner?.invalidate();return done;},
-    redo(event){const done=hooks.redo(event);if(done)draftRedo=!!state.future.length;parent.GammaUndoOwner?.invalidate();return done;},
+    undo(event){if(!window.GAMMA_LIGHT_HISTORY_ALLOWED(event)||context?.readOnly)return false;const ui=window.GAMMA_SIMPLE_LIGHT_UI,done=ui?.history?.()?ui.undo():hooks.undo(event);if(done)draftRedo=!!state.future.length||!!ui?.history?.()?.canRedo;parent.GammaUndoOwner?.invalidate();return done;},
+    redo(event){if(!window.GAMMA_LIGHT_HISTORY_ALLOWED(event)||context?.readOnly)return false;const ui=window.GAMMA_SIMPLE_LIGHT_UI,done=ui?.history?.()?ui.redo():hooks.redo(event);if(done)draftRedo=!!state.future.length||!!ui?.history?.()?.canRedo;parent.GammaUndoOwner?.invalidate();return done;},
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},

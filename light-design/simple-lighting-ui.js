@@ -20,11 +20,15 @@ const bar=el('div');bar.className='simple-mode-choice';bar.innerHTML='<button id
 const toolbar=document.querySelector('.figbar');toolbar.classList.add('simple-light-toolbar');toolbar.querySelector('.fb').prepend(bar);
 const panel=el('section');panel.id='simple-lighting';panel.className='simple-mode-panel';panel.innerHTML=`
 <div id="simple-unavailable"><p>かんたん照明は標準セットだけで使えます。保存済みの照明は詳細で編集できます。</p><label>機材配置 <select id="simple-rig-preset"></select></label><button type="button" id="simple-configure">プリセット配置に整える</button><button type="button" id="simple-unavailable-detail">詳細で編集</button></div>
-<div class="simple-workbench"><div class="simple-preview"><div class="simple-context-tools"><label>シーン <select id="simple-scene"></select></label><div class="simple-cue-tools"><label>対象キュー <select id="simple-cue"></select></label><button type="button" id="simple-new-cue">＋ 新規</button></div></div><div class="simple-preview-tools"><label>視点 <select id="simple-seat"></select></label><button type="button" id="simple-work-light" aria-pressed="true"><span>作業灯を消す</span></button></div><div class="simple-preview-figure"><canvas id="simple-front" width="1000" height="560" aria-label="組み合わせた明かりの正面図"></canvas><p id="simple-location-hint" hidden role="status"></p></div></div><div class="simple-operations"><div class="simple-actions"><button type="button" id="simple-adopt">適用する</button><button type="button" id="simple-return" hidden>試しをやめる</button><button type="button" id="simple-detail">詳細で調整</button></div><p id="simple-warning" role="status"></p><p id="simple-rig-info"></p><h3 id="simple-layers-heading">レイヤー</h3><div id="simple-layers" role="group" aria-labelledby="simple-layers-heading"></div><p id="simple-layers-empty">まだレイヤーはありません。照明の種類から選んでください。</p><h3 id="simple-functions-heading">照明の種類</h3><div id="simple-patterns" class="part-light-patterns" role="group" aria-labelledby="simple-functions-heading"></div><h3 id="simple-positions-heading">使う位置</h3><div id="simple-parts" class="part-light-list" role="group" aria-labelledby="simple-positions-heading"></div><details id="simple-adjust" hidden><summary id="simple-adjust-heading"><span id="simple-part-title">調整</span></summary><p id="simple-role-change" role="status"></p><div class="simple-controls"><label>色 <select id="simple-color"><option value="white">白</option><option value="warm">暖色</option><option value="blue">青</option><option value="red">赤</option></select></label><div class="simple-level-control"><label for="simple-level">強さ</label><span class="part-light-number"><input id="simple-level-range" type="range" min="0" max="100" step="1" aria-label="強さ"><input id="simple-level" type="number" min="0" max="100" step="1"><span>%</span></span></div><label id="simple-target-label">当て先 <select id="simple-target"></select></label><div id="simple-size-label"><label for="simple-size">直径</label><span class="part-light-number"><input id="simple-size-range" type="range" min=".5" max="4" step=".1" aria-label="直径"><input id="simple-size" type="number" min=".5" max="4" step=".1"><span>m</span></span></div><label id="simple-laser-span-label">レーザーの広がり（度） <input id="simple-laser-span" type="number" min="0" max="120" step="1"></label><label id="simple-moving-period-label">動きの1往復（秒） <input id="simple-moving-period" type="number" min=".2" max="120" step=".1"></label><label id="simple-flash-hz-label">発光回数（毎秒） <input id="simple-flash-hz" type="number" min=".5" max="20" step=".5"></label><label id="simple-side-label">左右 <select id="simple-side"><option value="both">全体</option><option value="left">左だけ</option><option value="right">右だけ</option></select></label><p id="simple-side-mixed" hidden>左右で違う</p><div id="simple-spread-label"><label for="simple-spread">灯体の広がり方</label><span class="part-light-number"><input id="simple-spread-range" type="range" min="1" max="120" step="1" aria-label="灯体の広がり方"><input id="simple-spread" type="number" min="1" max="120" step="1"><span>°</span></span></div><div class="simple-strobe-control"><label><input id="simple-strobe-on" type="checkbox"> 点滅</label><div id="simple-strobe-settings" hidden><label>速さ（Hz） <input id="simple-strobe-hz" type="number" min=".1" max="20" step=".1"></label><label>点灯割合（%） <input id="simple-strobe-duty" type="number" min="5" max="95" step="1"></label></div></div><label id="simple-fade-label">移る時間 <select id="simple-fade"><option value="0">すぐ</option><option value="1">1秒</option><option value="3">3秒</option><option value="5">5秒</option><option value="10">10秒</option></select></label></div>
+<div class="simple-workbench"><div class="simple-preview"><div class="simple-context-tools"><label>シーン <select id="simple-scene"></select></label><div class="simple-cue-tools"><label>対象キュー <select id="simple-cue"></select></label><button type="button" id="simple-new-cue">＋ 新規</button></div></div><div class="simple-preview-tools"><label>視点 <select id="simple-seat"></select></label><button type="button" id="simple-work-light" aria-pressed="true"><span>作業灯を消す</span></button></div><div class="simple-preview-figure"><canvas id="simple-front" width="1000" height="560" aria-label="組み合わせた明かりの正面図"></canvas><p id="simple-location-hint" hidden role="status"></p></div></div><div class="simple-operations"><div class="simple-actions"><button type="button" id="simple-adopt">LX キューを保存</button><button type="button" id="simple-detail">詳細で調整</button></div><p id="simple-warning" role="status"></p><p id="simple-rig-info"></p><h3 id="simple-layers-heading">レイヤー</h3><div id="simple-layers" role="group" aria-labelledby="simple-layers-heading"></div><p id="simple-layers-empty">まだレイヤーはありません。照明の種類から選んでください。</p><h3 id="simple-functions-heading">照明の種類</h3><div id="simple-patterns" class="part-light-patterns" role="group" aria-labelledby="simple-functions-heading"></div><h3 id="simple-positions-heading">使う位置</h3><div id="simple-parts" class="part-light-list" role="group" aria-labelledby="simple-positions-heading"></div><details id="simple-adjust" hidden><summary id="simple-adjust-heading"><span id="simple-part-title">調整</span></summary><p id="simple-role-change" role="status"></p><div class="simple-controls"><label>色 <select id="simple-color"><option value="white">白</option><option value="warm">暖色</option><option value="blue">青</option><option value="red">赤</option></select></label><div class="simple-level-control"><label for="simple-level">強さ</label><span class="part-light-number"><input id="simple-level-range" type="range" min="0" max="100" step="1" aria-label="強さ"><input id="simple-level" type="number" min="0" max="100" step="1"><span>%</span></span></div><label id="simple-target-label">当て先 <select id="simple-target"></select></label><div id="simple-size-label"><label for="simple-size">直径</label><span class="part-light-number"><input id="simple-size-range" type="range" min=".5" max="4" step=".1" aria-label="直径"><input id="simple-size" type="number" min=".5" max="4" step=".1"><span>m</span></span></div><label id="simple-laser-span-label">レーザーの広がり（度） <input id="simple-laser-span" type="number" min="0" max="120" step="1"></label><label id="simple-moving-period-label">動きの1往復（秒） <input id="simple-moving-period" type="number" min=".2" max="120" step=".1"></label><label id="simple-flash-hz-label">発光回数（毎秒） <input id="simple-flash-hz" type="number" min=".5" max="20" step=".5"></label><label id="simple-count-label">灯数 <select id="simple-count"><option value="2">2灯</option><option value="6">6灯</option></select></label><label id="simple-side-label">左右 <select id="simple-side"><option value="both">全体</option><option value="left">左だけ</option><option value="right">右だけ</option></select></label><p id="simple-side-mixed" hidden>左右で違う</p><div id="simple-spread-label"><label for="simple-spread">灯体の広がり方</label><span class="part-light-number"><input id="simple-spread-range" type="range" min="1" max="120" step="1" aria-label="灯体の広がり方"><input id="simple-spread" type="number" min="1" max="120" step="1"><span>°</span></span></div><div class="simple-strobe-control"><label><input id="simple-strobe-on" type="checkbox"> 点滅</label><div id="simple-strobe-settings" hidden><label>速さ（Hz） <input id="simple-strobe-hz" type="number" min=".1" max="20" step=".1"></label><label>点灯割合（%） <input id="simple-strobe-duty" type="number" min="5" max="95" step="1"></label></div></div><label id="simple-fade-label">移る時間 <select id="simple-fade"><option value="0">すぐ</option><option value="1">1秒</option><option value="3">3秒</option><option value="5">5秒</option><option value="10">10秒</option></select></label></div>
 </details><p id="simple-status" role="status" aria-live="polite"></p></div></div>`;
 document.querySelector('.body').prepend(toolbar,panel);
 panel.querySelector('.simple-context-tools').hidden=true;
 const operations=panel.querySelector('.simple-operations'),previewPane=panel.querySelector('.simple-preview');
+// The same action strip stays visible in both modes. Preserve button identity,
+// draft receipts and the detailed editor's save handler.
+const commonActions=document.querySelector('.gamma-light-actions');
+if(commonActions){$('simple-adopt').className='btn primary';$('simple-adopt').textContent='LX キューを保存';commonActions.insertBefore($('simple-adopt'),$('apply'));}
 let adjustPanel=$('simple-adjust');
 // Match the existing number controls: direct entry plus repeatable +/- actions.
 for(const id of ['simple-laser-span','simple-moving-period','simple-flash-hz']){
@@ -44,17 +48,20 @@ for(const [id,key]of [['simple-laser-span','laserSpanDeg'],['simple-moving-perio
   const layoutKey='gamma:simple-lighting-panel-layout-v1';
   let previewShare=7/11;
   try{const saved=JSON.parse(localStorage.getItem(layoutKey)||'null');if(Number.isFinite(saved?.previewShare))previewShare=Math.max(.1,Math.min(.9,saved.previewShare));}catch(_){}
+  const operationsMin=total=>workbench.querySelector('.light-layout-sections')?.dataset.stackLayout==='split'
+    ?Math.min(total-160,2*(parseFloat(getComputedStyle(workbench).getPropertyValue('--gamma-panel-column-min'))||240)+(parseFloat(getComputedStyle(workbench).columnGap)||8)):280;
   const applyWidth=()=>{
     if(innerWidth<=600)return;
     const total=workbench.clientWidth-(parseFloat(getComputedStyle(workbench).columnGap)||0)*2-divider.getBoundingClientRect().width;
     if(total<=0)return;
-    const width=Math.max(160,Math.min(total-280,total*previewShare));
+    const minimum=operationsMin(total),width=Math.max(160,Math.min(total-minimum,total*previewShare));
+    workbench.style.setProperty('--simple-operations-min',minimum+'px');
     workbench.style.setProperty('--simple-preview-width',width+'px');divider.setAttribute('aria-valuenow',String(Math.round(width)));
-    divider.setAttribute('aria-valuemin','160');divider.setAttribute('aria-valuemax',String(Math.round(Math.max(160,total-280))));
+    divider.setAttribute('aria-valuemin','160');divider.setAttribute('aria-valuemax',String(Math.round(Math.max(160,total-minimum))));
   };
   const saveWidth=()=>{try{localStorage.setItem(layoutKey,JSON.stringify({previewShare}));}catch(_){}applyWidth();};
   window.GAMMA_LIGHT_PANEL_RESIZE(divider,{read:()=>previewPane.getBoundingClientRect().width,
-    change:width=>{const total=previewPane.getBoundingClientRect().width+operations.getBoundingClientRect().width;previewShare=Math.max(160,Math.min(total-280,width))/total;saveWidth();},
+    change:width=>{const total=previewPane.getBoundingClientRect().width+operations.getBoundingClientRect().width;previewShare=Math.max(160,Math.min(total-operationsMin(total),width))/total;saveWidth();},
     reset:()=>{previewShare=7/11;saveWidth();}});
   new ResizeObserver(applyWidth).observe(workbench);
 
@@ -84,6 +91,7 @@ let undoDrafts=[],redoDrafts=[];
 const draftSnapshot=()=>clone({draft,edited,timeEdited,fade,partId,functionId,editingPartId,provisional});
 function restoreDraftSnapshot(x){({draft,edited,timeEdited,fade,partId='',functionId='',editingPartId='',provisional=null}=clone(x));error='';render();GAMMA_LIGHT_EDITOR.saveDraft();}
 function undoDraft(){if(!undoDrafts.length)return false;redoDrafts.push(draftSnapshot());restoreDraftSnapshot(undoDrafts.pop());return true;}
+function redoDraft(){if(!redoDrafts.length)return false;undoDrafts.push(draftSnapshot());restoreDraftSnapshot(redoDrafts.pop());return true;}
 const selectedPart=()=>viewParts().find(p=>p.id===partId);
 const viewParts=()=>F.parts(state.rig);
 const storedMeta=id=>F.meta(draft,state.rig,id);
@@ -124,13 +132,14 @@ async function choosePosition(id){
 }
 function activateLayer(id){
  const next=layerEditors.get(id);if(!next)return;
+ for(const [key,form] of layerEditors){if(key!==id)form.open=false;}
  for(const [key,form] of layerEditors)for(const node of [form,...form.querySelectorAll('[data-control-base]')]){
   const base=node.dataset.controlBase;if(base)node.id=key===id?base:base+'--'+key.replace(/[^a-z0-9-]/gi,'-');
  }
  for(const [key,form] of layerEditors)for(const label of form.querySelectorAll('label[data-control-for]'))label.htmlFor=key===id?label.dataset.controlFor:label.dataset.controlFor+'--'+key.replace(/[^a-z0-9-]/gi,'-');
  adjustPanel=next;partId=id;editingPartId=id;functionId=storedMeta(id).patternId;
 }
-function chooseLayer(id){if(busy)return;clearLocationHint();finishLevelGesture();const form=layerEditors.get(id),open=form?.open||false;activateLayer(id);if(form)form.open=!open;if(!open)sharedPanels?.setCollapsed('adjust',false);render();}
+function chooseLayer(id){if(busy)return;clearLocationHint();finishLevelGesture();const form=layerEditors.get(id),open=form?.open||false;activateLayer(id);if(form)form.open=!open;render();}
 function layerEditor(id){
  if(layerEditors.has(id))return layerEditors.get(id);
  const form=adjustmentTemplate.cloneNode(true),suffix='--'+id.replace(/[^a-z0-9-]/gi,'-');
@@ -146,7 +155,7 @@ function layerEditor(id){
   };
  }
  form.addEventListener('focusin',()=>{if(editingPartId!==id&&!busy){finishLevelGesture();activateLayer(id);render();}});
- form.addEventListener('toggle',()=>syncLayerHeaders());
+ form.addEventListener('toggle',()=>{if(form.open&&editingPartId!==id){finishLevelGesture();activateLayer(id);render();}syncLayerHeaders();});
  layerEditors.set(id,form);return form;
 }
 function syncLayerHeaders(){
@@ -170,10 +179,10 @@ function renderLayers(parts){
    const level=el('span');level.className='simple-layer-level';level.dataset.noI18n='';
    const toggle=el('button');toggle.type='button';toggle.className='simple-layer-toggle';toggle.onclick=()=>toggleLayer(part.id);
    const select=el('button','調整');select.type='button';select.className='simple-layer-select';select.onclick=()=>chooseLayer(part.id);
-   const remove=el('button','削除');remove.type='button';remove.className='simple-layer-remove';remove.onclick=()=>removeLayer(part.id);row.append(name,level,toggle,select,remove);list.append(row);
+   const remove=el('button','削除');remove.type='button';remove.className='simple-layer-remove';remove.onclick=()=>removeLayer(part.id);const header=el('div');header.className='simple-layer-header';header.append(name,level,toggle,select,remove);row.append(header);list.append(row);
   }
   const value=storedMeta(part.id),enabled=layerEnabled(part);row.classList.toggle('is-selected',editingPartId===part.id);
-  const editor=layerEditor(part.id),editorTitle=editor.querySelector('[data-control-base="simple-part-title"]');if(editorTitle)editorTitle.textContent=T(functionName(value.patternId))+' · '+T(part.name);const adjustBody=sectionNodes.adjust.querySelector('.light-layout-content');if(editor.parentElement!==adjustBody)adjustBody.append(editor);
+  const editor=layerEditor(part.id),editorTitle=editor.querySelector('[data-control-base="simple-part-title"]');if(editorTitle)editorTitle.textContent=T(functionName(value.patternId))+' · '+T(part.name);if(editor.parentElement!==row)row.append(editor);
   const expanded=editor.open,name=row.querySelector('.simple-layer-name');name.firstChild.textContent=expanded?'▼':'▶';name.setAttribute('aria-expanded',String(expanded));name.setAttribute('aria-controls','simple-adjust');
   row.querySelector('b').textContent=T(functionName(value.patternId));row.querySelector('small').textContent=T(part.name);row.querySelector('.simple-layer-name').title=T(functionName(value.patternId))+' · '+T(part.name);
   row.querySelector('.simple-layer-level').textContent=F.mixed(draft,state.rig,part.id)?T('左右で違う'):value.level+'%';
@@ -181,13 +190,14 @@ function renderLayers(parts){
   const toggle=row.querySelector('.simple-layer-toggle');toggle.textContent=enabled?'ON':'OFF';toggle.setAttribute('aria-pressed',String(enabled));toggle.setAttribute('aria-label',T('レイヤーの点灯: {position}',{position:T(part.name)}));toggle.disabled=busy||context.readOnly;
   const select=row.querySelector('.simple-layer-select');select.textContent=T('調整');select.setAttribute('aria-label',T('調整: {position}',{position:T(part.name)}));select.disabled=busy;select.setAttribute('aria-expanded',String(expanded));select.setAttribute('aria-controls','simple-adjust');select.setAttribute('aria-pressed',String(expanded));
  }
- // Every layer keeps its own open state and control nodes. Only the active
+ // Every layer keeps its control nodes; at most one editor is expanded. Only the active
  // form receives the canonical IDs, so existing shortcuts and integrations keep working.
  for(const node of [...list.children])if(!ids.has(node.id)){layerEditors.get(node.dataset.partId)?.remove();layerEditors.delete(node.dataset.partId);node.remove();}
- if(layerEditors.has(editingPartId))activateLayer(editingPartId);
+ if(layerEditors.has(pendingOpenPartId)){activateLayer(pendingOpenPartId);layerEditors.get(pendingOpenPartId).open=true;}
+ else if(layerEditors.has(editingPartId))activateLayer(editingPartId);
  else if(layerEditors.size){activateLayer(layerEditors.keys().next().value);}else adjustPanel=adjustmentTemplate;
- if(pendingOpenPartId)sharedPanels?.setCollapsed('adjust',false);pendingOpenPartId='';syncLayerHeaders();
- $('simple-layers-empty').hidden=true;sectionNodes.layers.hidden=ids.size===0;sectionNodes.adjust.hidden=ids.size===0;
+ pendingOpenPartId='';syncLayerHeaders();
+ $('simple-layers-empty').hidden=true;sectionNodes.layers.hidden=ids.size===0;
 }
 
 function toggleLayer(id){
@@ -220,7 +230,7 @@ function refreshPending(){
  if(timeEdited)timeEdited=(!!q()&&!q().timing)||fade!==savedFade();
  return edited||timeEdited;
 }
-function mode(value){if(value&&!P.canUseSimple(state.rig,state.dims,context?.venueType)){wanted=false;render();return;}if(!value&&refreshPending()){error='適用するか、試しをやめてから詳細へ進んでください';render();return;}clearLocationHint();wanted=value;hooks.stop();document.documentElement.classList.toggle('simple-light-active',active());render();hooks.renderAll();}
+function mode(value){if(value&&!P.canUseSimple(state.rig,state.dims,context?.venueType)){wanted=false;render();return;}if(!value&&refreshPending()){error='保存するか、取り消しで試し表示を戻してから詳細へ進んでください';render();return;}clearLocationHint();wanted=value;hooks.stop();document.documentElement.classList.toggle('simple-light-active',active());render();hooks.renderAll();}
 function clearLocationHint(){hoverPartId='';focusPartId='';pointerFocusPartId='';}
 function showLocationHint(id,kind){if(kind==='hover')hoverPartId=id;else focusPartId=id;paint();}
 function paint(){
@@ -232,7 +242,7 @@ function paint(){
  hint.hidden=!hinted;
  if(hinted){hint.textContent=T('機材配置')+' · '+T(hinted.name);canvas.setAttribute('aria-describedby',hint.id);}
  else canvas.removeAttribute('aria-describedby');
- if(!active()||!supported())return;const old={show:state.show,sel:state.sel,solo:state.solo,dim:state.dim,t:state.play.t};try{state.show={...state.show,blackout:previewBlackout,beam:true,performers:true,floor:true,fixtures:false,names:true,path:false,no:false,grid:false};state.sel=new Set();state.solo=false;state.dim=100;state.play.t=0;const cv=$('simple-front'),source=hooks.drawSimpleFront({pixelWidth:Math.max(1000,cv.clientWidth)*(window.GAMMA_RENDER_RESOLUTION?.factor()||1),cue:draft||saved(),live:!edited,seat:state.frontSeats?.[previewSeat]||previewSeat,fixtureHintIds:hinted?.fixtureIds||[]});cv.width=source.width;cv.height=source.height;cv.getContext('2d').drawImage(source,0,0);}finally{state.show=old.show;state.sel=old.sel;state.solo=old.solo;state.dim=old.dim;state.play.t=old.t;}}
+ if(!active()||!supported()||document.hidden)return;const old={show:state.show,sel:state.sel,solo:state.solo,dim:state.dim,t:state.play.t};try{state.show={...state.show,blackout:previewBlackout,beam:true,performers:true,floor:true,fixtures:false,names:true,path:false,no:false,grid:false};state.sel=new Set();state.solo=false;state.dim=100;state.play.t=state.play.on?old.t:0;const cv=$('simple-front'),source=hooks.drawSimpleFront({pixelWidth:Math.max(1000,cv.clientWidth)*(window.GAMMA_RENDER_RESOLUTION?.factor()||1),cue:draft||saved(),live:!edited,seat:state.frontSeats?.[previewSeat]||previewSeat,fixtureHintIds:hinted?.fixtureIds||[]});cv.width=source.width;cv.height=source.height;cv.getContext('2d').drawImage(source,0,0);}finally{state.show=old.show;state.sel=old.sel;state.solo=old.solo;state.dim=old.dim;state.play.t=old.t;}}
 function render(){if(!context)return;refreshPending();
  const entry=$('simple-mode-on'),blocked=!P.canUseSimple(state.rig,state.dims,context.venueType);
  entry.setAttribute('aria-disabled',String(blocked));
@@ -268,12 +278,18 @@ function render(){if(!context)return;refreshPending();
  button.onblur=()=>{if(focusPartId===p.id)showLocationHint('','focus');};
  partNodes.append(button);}button.hidden=!eligible(p);button.disabled=busy||context.readOnly||(occupied(p.id)&&p.id!==partId);button.setAttribute('aria-pressed',String(partId===p.id));const kept=storedMeta(p.id),title=T(p.name),summary=occupied(p.id)?T('使用中: {function}',{function:T(functionName(kept.patternId))}):T('未使用');button.title=occupied(p.id)?T('使用中: {function}',{function:T(functionName(kept.patternId))})+' · '+T('レイヤーの一覧から選んで編集してください'):T(title);if(button.firstChild.textContent!==title)button.firstChild.textContent=title;if(button.lastChild.textContent!==summary)button.lastChild.textContent=summary;}for(const node of [...partNodes.children])if(!wantedIds.has(node.id))node.remove();
  const p=selectedPart(),o=p?meta():P.defaults(),adjusted=p&&F.detailAdjusted(draft,state.rig,p.id);if(p){$('simple-part-title').textContent=p?T('調整: {position}',{position:T(p.name)})+(adjusted?' · '+T('詳細で調整済み'):''):T('調整');$('simple-role-change').textContent='';
- if(![...$('simple-color').options].some(x=>x.value===o.color))$('simple-color').add(new Option(o.color,o.color));$('simple-color').value=o.color;if(document.activeElement!==$('simple-level'))$('simple-level').value=o.level;$('simple-level-range').value=o.level;if(document.activeElement!==$('simple-size'))$('simple-size').value=o.sizeM;$('simple-size-range').value=o.sizeM;$('simple-side-label').hidden=!p||p.mountType==='mirrorball'||p.mountType==='cyc'||p.fixtureIds.length<2||o.patternId==='custom';$('simple-side').value=partId===F.SS?({shimote:'left',kamite:'right'}[F.direction(draft,state.rig)]||'both'):(o.side||'both');$('simple-side-mixed').hidden=partId!==F.SS||!F.mixed(draft,state.rig);
+ if(![...$('simple-color').options].some(x=>x.value===o.color))$('simple-color').add(new Option(o.color,o.color));$('simple-color').value=o.color;if(document.activeElement!==$('simple-level'))$('simple-level').value=o.level;$('simple-level-range').value=o.level;if(document.activeElement!==$('simple-size'))$('simple-size').value=o.sizeM;$('simple-size-range').value=o.sizeM;$('simple-side-label').hidden=!p||p.mountType==='mirrorball'||p.mountType==='cyc'||p.fixtureIds.length<2||o.patternId==='custom';$('simple-side').value=partId===F.LASERS?F.laserSide(draft,state.rig):partId===F.SS?({shimote:'left',kamite:'right'}[F.direction(draft,state.rig)]||'both'):(o.side||'both');$('simple-side-mixed').hidden=partId!==F.SS||!F.mixed(draft,state.rig);
  for(const [label,input,key,type]of [['simple-laser-span-label','simple-laser-span','laserSpanDeg','laser'],['simple-moving-period-label','simple-moving-period','periodSec','moving'],['simple-flash-hz-label','simple-flash-hz','flashHz','flash']]){const show=o.patternId===type;$(label).hidden=!show;if(show&&document.activeElement!==$(input))$(input).value=o[key];}
- const targets=[...(sc().pieces||[]).filter(x=>x.kind==='performer').map(x=>['person:'+x.id,x.name||'人物']),['place:center','中央'],['place:left','客席から見て左'],['place:right','客席から見て右'],['place:back','奥'],['place:front','手前']];if(o.target&&!targets.some(x=>x[0]===o.target))targets.push([o.target,'対象の人物が不在']);selectRows($('simple-target'),targets,o.target);$('simple-target-label').hidden=!['spot','gobo','follow'].includes(o.patternId);$('simple-size-label').hidden=!['spot','gobo','follow'].includes(o.patternId);
- const movable=p?.fixtureIds.map(id=>state.rig.fixtures.find(f=>f.id===id)).filter(f=>f&&f.kind==='moving'&&!RIG_ENGINE.isMirrorBall(f)&&f.opticalType===(['spot','gobo','follow','moving','mirrorball'].includes(o.patternId)?'spot':'wash'))||[];
+ const targets=[...(sc().pieces||[]).filter(x=>x.kind==='performer').map(x=>['person:'+x.id,x.name||'人物']),['place:center','中央'],['place:left','客席から見て左'],['place:right','客席から見て右'],['place:back','奥'],['place:front','手前']];if(o.target&&!targets.some(x=>x[0]===o.target))targets.push([o.target,'対象の人物が不在']);selectRows($('simple-target'),targets,o.target);$('simple-target-label').hidden=!['spot','gobo','follow'].includes(o.patternId);$('simple-size-label').hidden=true; // Retain the legacy size controls/data, never display a second spread control.
+ const countId=F.ids(state.rig,partId).find(id=>draft?.simpleComposition?.parts?.[id]?.patternId!=='off')||F.ids(state.rig,partId)[0];
+ $('simple-count-label').hidden=p.fixtureIds.length<2||['laser','mirrorball','custom'].includes(o.patternId);
+ const savedCount=o.lampCount??F.ids(state.rig,partId).filter(id=>draft?.simpleComposition?.parts?.[id]?.patternId!=='off').reduce((n,id)=>n+P.displayedCount(draft,state.rig,id),0);
+ let oldCount=$('simple-count').querySelector('option[value=legacy]');
+ if(![2,6].includes(savedCount)){if(!oldCount){oldCount=new Option('','legacy');oldCount.disabled=true;$('simple-count').add(oldCount,0);}oldCount.textContent=T('保存済み（{count}灯）',{count:savedCount});$('simple-count').value='legacy';}
+ else{oldCount?.remove();$('simple-count').value=String(savedCount);}
+ const movable=p?.fixtureIds.map(id=>state.rig.fixtures.find(f=>f.id===id)).filter(f=>f&&f.kind==='moving'&&!RIG_ENGINE.isMirrorBall(f)&&(o.lampCount!=null||f.opticalType===(['spot','gobo','follow','moving','mirrorball'].includes(o.patternId)?'spot':'wash')))||[];
  $('simple-spread-label').hidden=!movable.length;
- const spread=o.spreadDeg??draft?.lights?.[movable.find(f=>draft?.lights?.[f.id]?.on)?.id]?.beamDeg??movable[0]?.beamDeg??50;
+ const spread=Math.round(P.displayedSpread(draft,state.rig,state.dims,countId));
  for(const id of ['simple-spread','simple-spread-range'])if(document.activeElement!==$(id))$(id).value=spread;
  const strobe=o.strobe||{on:false,kind:'sharp',hz:2,duty:50,depth:0,phaseNorm:0};
  $('simple-strobe-on').checked=!!strobe.on;$('simple-strobe-settings').hidden=!strobe.on;
@@ -282,8 +298,8 @@ function render(){if(!context)return;refreshPending();
  renderFade();
  $('simple-warning').textContent=error||(meta().warnings||[]).join(' ／ ')||P.targetStatus(draft,sc().pieces||[]).join(' ／ ')||(draft?.migrationState?'このキューの明かりは要再設定です。':'')|| (adjusted?'この位置の型を選び直すと、詳細の調整を置き換えます。':'');$('simple-status').textContent=busy?'適用しています…':edited||timeEdited?'試し表示中 · 適用すると現在の対象キューに保存します。':draft?.simplePreset?'旧かんたん照明を表示中。操作した位置だけを変更します。':'適用済みの明かりを表示中';
  for(const control of panel.querySelectorAll('.simple-controls input,.simple-controls select,.simple-controls button')){const layer=control.closest('.simple-layer-adjust')?.dataset.layerPart,role=layer?storedMeta(layer).patternId:functionId;control.disabled=busy||context.readOnly||(layer&&!occupied(layer))||(role==='custom'&&control.id!=='simple-fade'&&!control.closest('.part-light-number,.simple-strobe-control'));}
- $('simple-adopt').disabled=busy||context.readOnly||(!edited&&!timeEdited&&!state.dirty&&!(mayAdjust()&&roleChange())&&!needsReaim());$('simple-return').disabled=busy||(!edited&&!timeEdited);$('simple-return').hidden=!edited&&!timeEdited;$('simple-new-cue').disabled=busy||context.readOnly;$('simple-fade').disabled=busy||context.readOnly;$('simple-scene').disabled=busy;$('simple-cue').disabled=busy;sharedPanels?.refresh();paint();}
-async function change(patch,gesture=null){if(busy||context.readOnly||!supported()||!mayAdjust())return false;if(!roleChange()&&!('patternId' in patch)&&Object.keys(patch).every(key=>(key==='side'&&partId===F.SS?F.direction(draft,state.rig):meta()[key])===patch[key]))return false;const identity=owner(context),id=partId,chosenFunction=functionId,gainOnly='level' in patch&&!roleChange()&&F.detailAdjusted(draft,state.rig,id);if(!gainOnly&&!Object.keys(patch).every(key=>['spreadDeg','strobe'].includes(key))&&F.detailAdjusted(draft,state.rig,id)&&!await parent.GAMMA_SURFACE_DIALOG.confirm(T('この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？')))return false;if(identity!==owner(parent.GAMMA_LIGHT_HOST.context())||id!==partId||chosenFunction!==functionId)return false;try{const result=gainOnly?F.gain(draft,state.rig,id,patch.level):F.patch(draft,state.rig,state.dims,sc().pieces||[],id,patch);if(!gesture||!gesture.recorded){undoDrafts.push(draftSnapshot());redoDrafts=[];if(gesture)gesture.recorded=true;}draft=result.cue;provisional=null;editingPartId=id;edited=true;error=result.warnings.join(' ／ ');}catch(e){error=e.message;render();return false;}render();GAMMA_LIGHT_EDITOR.saveDraft();return true;}
+ $('simple-adopt').disabled=busy||context.readOnly||(!edited&&!timeEdited&&!state.dirty&&!(mayAdjust()&&roleChange())&&!needsReaim());$('simple-new-cue').disabled=busy||context.readOnly;$('simple-fade').disabled=busy||context.readOnly;$('simple-scene').disabled=busy;$('simple-cue').disabled=busy;sharedPanels?.refresh();paint();}
+async function change(patch,gesture=null){if(busy||context.readOnly||!supported()||!mayAdjust())return false;if(!roleChange()&&!('patternId' in patch)&&Object.keys(patch).every(key=>(key==='side'&&partId===F.SS?F.direction(draft,state.rig):key==='side'&&partId===F.LASERS?F.laserSide(draft,state.rig):meta()[key])===patch[key]))return false;const identity=owner(context),id=partId,chosenFunction=functionId,gainOnly='level' in patch&&!roleChange()&&F.detailAdjusted(draft,state.rig,id);if(!gainOnly&&!Object.keys(patch).every(key=>['spreadDeg','strobe'].includes(key))&&F.detailAdjusted(draft,state.rig,id)&&!await parent.GAMMA_SURFACE_DIALOG.confirm(T('この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？')))return false;if(identity!==owner(parent.GAMMA_LIGHT_HOST.context())||id!==partId||chosenFunction!==functionId)return false;try{const result=gainOnly?F.gain(draft,state.rig,id,patch.level):F.patch(draft,state.rig,state.dims,sc().pieces||[],id,patch);if(!gesture||!gesture.recorded){undoDrafts.push(draftSnapshot());redoDrafts=[];if(gesture)gesture.recorded=true;}draft=result.cue;provisional=null;editingPartId=id;edited=true;error=result.warnings.join(' ／ ');}catch(e){error=e.message;render();return false;}render();GAMMA_LIGHT_EDITOR.saveDraft();return true;}
 function track(fn){if(busy||task)return task||Promise.resolve();const next=fn();task=next;next.finally(()=>{if(task===next)task=null;});return next;}
 function adopt(toDetail=false){return track(async()=>{finishLevelGesture();refreshPending();
  // A time-only edit of an existing Q must not turn the browsing selection into
@@ -297,7 +313,7 @@ function adopt(toDetail=false){return track(async()=>{finishLevelGesture();refre
 $('simple-configure').onclick=(requested,options={})=>track(async()=>{const token={context:{...context},kind:'conversion'},preset=typeof requested==='string'?requested:$('simple-rig-preset').value;operation=token;busy=true;error='';render();try{const design=P.withRig(GAMMA_LIGHT_EDITOR.build(),state.dims,context.venueType,preset),count=[...design.scenes,...(design.archivedScenes||[])].reduce((n,s)=>n+(s.lxq||[]).length,0)+(context.fixtureAlternatives||[]).reduce((n,x)=>n+(x.native?.lxq||[]).length,0),alternatives=(context.fixtureAlternatives||[]).length;if(!await parent.GAMMA_SURFACE_DIALOG.confirm(T("元のショーを残して、新しい版に「{preset}」を配置します。全シーンの機材配置が変わり、{count}件の照明キューと{alternatives}件の照明の別案は、時刻と名前を保って明かりを要再設定にします。続けますか？",{preset:T(P.presets.find(x=>x.id===preset).name),count,alternatives})))return;if(!owned(token))return;const next=await parent.GAMMA_LIGHT_HOST.beginSimpleCopy(design,context.basis,{owner:token.context});if(owner(next)!==owner(parent.GAMMA_LIGHT_HOST.context()))return;const destination=options.stayInPlacement?'light-placement':'light-design';if(!options.stayInPlacement)await parent.GAMMA_WORKSPACE.select(destination);GAMMA_LIGHT_EDITOR.open(next,destination);wanted=true;context=next;targetId=null;sceneId='';reset();}catch(e){if(owned(token))error=e.message;}finally{if(operation===token){busy=false;operation=null;render();if(error)$('simple-rig-info').textContent=error;}}});
 $('simple-new-cue').onclick=()=>{
  if(busy||context.readOnly||!supported())return;
- if(refreshPending()||state.dirty){error='適用するか、試しをやめてからキューを追加してください';render();return;}
+ if(refreshPending()||state.dirty){error='保存するか、取り消しで試し表示を戻してからキューを追加してください';render();return;}
  return track(async()=>{const token={context:{...context}};operation=token;busy=true;render();try{
   const design=GAMMA_LIGHT_EDITOR.build(),row=design.scenes.find(x=>x.id===sc().id);
   const no=RIG_ENGINE.cueNumberNext(design.scenes.flatMap(s=>(s.lxq||[]).map(q=>q.no)));
@@ -308,7 +324,7 @@ $('simple-new-cue').onclick=()=>{
  }catch(e){if(owned(token))error=e.message;}finally{if(owned(token)){busy=false;operation=null;render();}}});
 };
 $('simple-rig-preset').onchange=render;
-$('simple-mode-on').onclick=()=>mode(true);$('simple-mode-off').onclick=()=>mode(false);$('simple-unavailable-detail').onclick=()=>mode(false);$('simple-playback-open').onclick=()=>parent.GAMMA_WORKSPACE?.beginPlaybackPreview?.();$('simple-adopt').onclick=()=>adopt();$('simple-detail').onclick=()=>mode(false);$('simple-return').onclick=()=>{partId='';functionId='';editingPartId='';reset();render();GAMMA_LIGHT_EDITOR.saveDraft();};
+$('simple-mode-on').onclick=()=>mode(true);$('simple-mode-off').onclick=()=>mode(false);$('simple-unavailable-detail').onclick=()=>mode(false);$('simple-playback-open').onclick=()=>parent.GAMMA_WORKSPACE?.beginPlaybackPreview?.();$('simple-adopt').onclick=()=>adopt();$('simple-detail').onclick=()=>mode(false);
 function finishLevelGesture(){levelGesture=null;sizeGesture=null;}
 function levelInput(e){
  const node=e.target;if(node.value===''||!node.validity.valid)return;
@@ -336,11 +352,12 @@ function sizeInput(e){
  (async()=>{try{while(gesture.pending!==null){if(gesture.identity!==owner(context)||gesture.part!==partId)break;const value=gesture.pending;gesture.pending=null;if(!await change({sizeM:value,spreadDeg:null},gesture)){if(gesture.identity===owner(context)&&gesture.part===partId){$('simple-size').value=meta().sizeM;$('simple-size-range').value=meta().sizeM;render();}break;}}}catch(e){if(gesture.identity===owner(context)){error=e.message;render();}}finally{gesture.pending=null;gesture.running=false;}})();
 }
 for(const id of ['simple-size','simple-size-range']){const node=$(id);node.oninput=sizeInput;node.onchange=e=>{sizeInput(e);finishLevelGesture();};node.onblur=finishLevelGesture;}
-$('simple-side').onchange=e=>{finishLevelGesture();change({side:partId===F.SS?({left:'shimote',right:'kamite'}[e.target.value]||'both'):e.target.value});};$('simple-target').onchange=e=>change({target:e.target.value});$('simple-fade').onchange=e=>{undoDrafts.push(draftSnapshot());redoDrafts=[];fade=Number(e.target.value);timeEdited=true;render();GAMMA_LIGHT_EDITOR.saveDraft();};$('simple-scene').onchange=e=>{if(edited||timeEdited){error='適用するか、試しをやめてからシーンを切り替えてください';render();return;}parent.GAMMA_LIGHT_HOST.openScene(e.target.value);};$('simple-cue').onchange=e=>{if(edited||timeEdited){error='適用するか、試しをやめてからキューを切り替えてください';render();return;}targetId=e.target.value;if(targetId)hooks.lxEnterCue(state.sceneIndex,targetId);reset();render();};
-window.addEventListener('keydown',e=>{if(!active()||busy||e.isComposing||!(e.metaKey||e.ctrlKey)||e.key.toLowerCase()!=='z'||e.target.closest?.('input,textarea,select,[contenteditable=true]'))return;if(e.shiftKey&&redoDrafts.length){e.preventDefault();e.stopImmediatePropagation();undoDrafts.push(draftSnapshot());restoreDraftSnapshot(redoDrafts.pop());}else if(!e.shiftKey&&undoDrafts.length){e.preventDefault();e.stopImmediatePropagation();undoDraft();}},true);
+$('simple-count').onchange=e=>{finishLevelGesture();change({lampCount:Number(e.target.value)});};
+$('simple-side').onchange=e=>{finishLevelGesture();change({side:partId===F.SS?({left:'shimote',right:'kamite'}[e.target.value]||'both'):e.target.value});};$('simple-target').onchange=e=>change({target:e.target.value});$('simple-fade').onchange=e=>{undoDrafts.push(draftSnapshot());redoDrafts=[];fade=Number(e.target.value);timeEdited=true;render();GAMMA_LIGHT_EDITOR.saveDraft();};$('simple-scene').onchange=e=>{if(edited||timeEdited){error='保存するか、取り消しで試し表示を戻してからシーンを切り替えてください';render();return;}parent.GAMMA_LIGHT_HOST.openScene(e.target.value);};$('simple-cue').onchange=e=>{if(edited||timeEdited){error='保存するか、取り消しで試し表示を戻してからキューを切り替えてください';render();return;}targetId=e.target.value;if(targetId)hooks.lxEnterCue(state.sceneIndex,targetId);reset();render();};
+window.addEventListener('keydown',e=>{if(!active()||busy||context?.readOnly||window.GAMMA_LIGHT_HISTORY_ALLOWED?.(e)===false||e.isComposing||!(e.metaKey||e.ctrlKey)||e.key.toLowerCase()!=='z'||e.target.closest?.('input,textarea,select,[contenteditable=true]'))return;if(e.shiftKey&&redoDrafts.length){e.preventDefault();e.stopImmediatePropagation();undoDrafts.push(draftSnapshot());restoreDraftSnapshot(redoDrafts.pop());}else if(!e.shiftKey&&undoDrafts.length){e.preventDefault();e.stopImmediatePropagation();undoDraft();}},true);
 let keyNoticeTimer=0;
 const keyNotice=el('div');keyNotice.id='light-key-notice';keyNotice.className='toast';keyNotice.hidden=true;keyNotice.setAttribute('role','status');document.body.append(keyNotice);
-function pendingNavigation(e){if(!active()||(!refreshPending()&&!busy))return;const target=e.target?.closest?.('#scenerow,#panel-lxq');if(!target)return;e.preventDefault();e.stopImmediatePropagation();error='適用するか、試しをやめてからキューを切り替えてください';render();}
+function pendingNavigation(e){if(!active()||(!refreshPending()&&!busy))return;const target=e.target?.closest?.('#scenerow,#panel-lxq');if(!target)return;e.preventDefault();e.stopImmediatePropagation();error='保存するか、取り消しで試し表示を戻してからキューを切り替えてください';render();}
 document.addEventListener('click',pendingNavigation,true);
 function lightingKey(e){
  if(state.mode!=='move'||e.defaultPrevented||e.isComposing||e.keyCode===229||e.repeat||e.metaKey||e.ctrlKey||e.altKey||!$('dialog').hidden||e.target?.isContentEditable||e.target?.closest?.('input,textarea,select,[contenteditable=true],[role=combobox],[role=listbox],[role=option],.gamma-short-select'))return;
@@ -348,7 +365,7 @@ function lightingKey(e){
  if(key===' '&&e.target?.closest?.('.simple-layer-name,.simple-layer-select,#simple-adjust-heading')){e.stopImmediatePropagation();return;}
  if(key==='g'){e.preventDefault();e.stopImmediatePropagation();if(active())$('simple-work-light').click();else $('lighttoggles').querySelector('[data-show=blackout]').click();}
  if(key==='c'){e.preventDefault();e.stopImmediatePropagation();clearTimeout(keyNoticeTimer);keyNotice.textContent=T('照明タブでは照明を消すことはできません');keyNotice.hidden=false;keyNoticeTimer=setTimeout(()=>{keyNotice.hidden=true;},3000);}
- if(active()&&(refreshPending()||busy)&&['arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();e.stopImmediatePropagation();error='適用するか、試しをやめてからキューを切り替えてください';render();}
+ if(active()&&(refreshPending()||busy)&&['arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();e.stopImmediatePropagation();error='保存するか、取り消しで試し表示を戻してからキューを切り替えてください';render();}
 }
 window.addEventListener('keydown',lightingKey,true);
 const parentLightingKey=e=>{
@@ -361,7 +378,15 @@ parent.addEventListener('keydown',parentLightingKey,true);
 window.addEventListener('pagehide',()=>parent.removeEventListener('keydown',parentLightingKey,true));
 window.addEventListener('pageshow',e=>{if(e.persisted)parent.addEventListener('keydown',parentLightingKey,true);});
 window.addEventListener('gamma-light-edit',()=>{if(context&&!busy)queueMicrotask(()=>{if(!edited&&!timeEdited)reset();render();});});
-for(const id of ['simple-spread','simple-spread-range'])$(id).onchange=e=>{if(e.target.value!==''&&e.target.validity.valid){finishLevelGesture();change({spreadDeg:Number(e.target.value)});}};
+function spreadInput(e){
+ const node=e.target;if(node.value===''||!node.validity.valid)return;
+ const value=Number(node.value);if(!Number.isFinite(value))return;
+ const gesture=sizeGesture||(sizeGesture={recorded:false,pending:null,running:false,identity:owner(context),part:partId});
+ gesture.pending=value;$('simple-spread').value=value;$('simple-spread-range').value=value;
+ if(gesture.running)return;gesture.running=true;
+ (async()=>{try{while(gesture.pending!==null){if(gesture.identity!==owner(context)||gesture.part!==partId)break;const next=gesture.pending;gesture.pending=null;await change({spreadDeg:next},gesture);}}finally{gesture.pending=null;gesture.running=false;}})();
+}
+for(const id of ['simple-spread','simple-spread-range']){const node=$(id);node.oninput=spreadInput;node.onchange=e=>{spreadInput(e);finishLevelGesture();};node.onblur=finishLevelGesture;}
 function changeStrobe(){const old=meta().strobe||{kind:'sharp',depth:0,phaseNorm:0};if(!$('simple-strobe-hz').validity.valid||!$('simple-strobe-duty').validity.valid)return;finishLevelGesture();change({strobe:{...old,on:$('simple-strobe-on').checked,hz:Number($('simple-strobe-hz').value),duty:Number($('simple-strobe-duty').value)}});}
 for(const id of ['simple-strobe-on','simple-strobe-hz','simple-strobe-duty'])$(id).onchange=changeStrobe;
 
@@ -372,21 +397,24 @@ window.addEventListener('pointercancel',()=>{clearLocationHint();paint();});
 const stopResolution=window.GAMMA_RENDER_RESOLUTION?.subscribe(paint);window.addEventListener('pagehide',event=>{if(!event.persisted)stopResolution?.();});
 let resize=0;new ResizeObserver(()=>{if(active()&&!resize)resize=requestAnimationFrame(()=>{resize=0;paint();});}).observe($('simple-front'));
 // J1 G-25: presentation only. Read the exact disabling conditions; never change them.
-window.GAMMA_DISABLED_UI?.registerReason(panel, node => {
+function simpleDisabledReason(node) {
  if(busy)return '処理が終わるまでお待ちください。';
  if(context?.readOnly)return '読み取り専用のため変更できません。';
  if(node.id==='simple-configure')return state.dirty?'詳細の未適用編集を先に適用してください。':'この舞台寸法では選んだ配置を使えません。';
  if(node.id.startsWith('simple-pattern-'))return 'この種類を使える空き位置がありません';
  if(node.id.startsWith('simple-part-'))return 'この位置は使用中です。レイヤーの一覧から選んで編集してください。';
  if(node.id==='simple-adopt')return '適用する変更がありません。';
- if(node.id==='simple-return')return '取り消す下書きの変更がありません。';
  if(node.closest('.simple-controls'))return functionId==='custom'?'詳細で調整済みのため、詳細画面で編集してください。':'先に照明の種類と使う位置を選んでください。';
  return '';
-});
+}
+window.GAMMA_DISABLED_UI?.registerReason(panel,simpleDisabledReason);
+window.GAMMA_DISABLED_UI?.registerReason($('simple-adopt'),simpleDisabledReason);
 window.GAMMA_SIMPLE_LIGHT_UI=Object.freeze({status:()=>({busy,error,preview:refreshPending(),undoDepth:undoDrafts.length,redoDepth:redoDrafts.length,context:context&&{...context}}),hasPending:()=>refreshPending(),
+ history:()=>active()&&(undoDrafts.length||redoDrafts.length)?{canUndo:!!undoDrafts.length,canRedo:!!redoDrafts.length}:null,
+ undo:()=>!busy&&!context?.readOnly&&active()&&undoDraft(),redo:()=>!busy&&!context?.readOnly&&active()&&redoDraft(),
  decorateDesign(design){if(!refreshPending())return design;const row=design.scenes.find(x=>x.id===sc().id);if(!row)return design;let lx=row.lxq.find(x=>x.id===(targetId||pendingId));if(!lx){pendingId=pendingId||hooks.uid('lx');lx={id:pendingId,seq:row.lxq.length+1,no:String(row.lxq.length+1),name:'パートの明かり',trigger:'',follow:{mode:'go'},cue:clone(draft),timing:{fadeInSec:fade,fadeOutSec:fade,curve:'linear'}};row.lxq.push(lx);}if(edited){row.cue=clone(draft);lx.cue=clone(draft);}if(timeEdited||!lx.timing)lx.timing={...(lx.timing||{curve:'linear'}),fadeInSec:fade,fadeOutSec:fade};row.lxEditing=lx.id;return design;},
  configurePreset(id,options={}){if(busy||context?.readOnly||state.dirty||edited||timeEdited){error='未適用の編集を先に適用してください';render();return;}if(!P.presets.some(p=>p.id===id))return;return $('simple-configure').onclick(id,options);},
- accepted(next){context=next;targetId=pendingId||targetId;reset();render();},active,available:()=>!!context&&P.canUseSimple(state.rig,state.dims,context.venueType),render,sync:render,refreshPlayback:()=>{if(!edited)paint();},defaultMode:()=>mode(true),detailForAssist:()=>mode(false),waitForApply:request=>{const ownConversion=request?.purpose==='venueVersion'&&operation?.kind==='conversion'&&['documentSessionId','pageGeneration','deliveryGeneration'].every(key=>request[key]===context?.[key])&&owned(operation);return ownConversion?Promise.resolve():task||Promise.resolve();},
+ accepted(next){context=next;targetId=pendingId||targetId;reset();render();},active,available:()=>!!context&&P.canUseSimple(state.rig,state.dims,context.venueType),render,sync:render,refreshPlayback:(force=false)=>{if(force||!edited||state.play.on)paint();},defaultMode:()=>mode(true),detailForAssist:()=>mode(false),waitForApply:request=>{const ownConversion=request?.purpose==='venueVersion'&&operation?.kind==='conversion'&&['documentSessionId','pageGeneration','deliveryGeneration'].every(key=>request[key]===context?.[key])&&owned(operation);return ownConversion?Promise.resolve():task||Promise.resolve();},
  onContext(next){const different=!same(context,next);if(!different&&context?.basis!==next.basis&&(edited||timeEdited)&&!busy){error='ショーが更新されています。下書きを確認してから適用してください';render();return;}context=next;if(different){clearLocationHint();functionId='';editingPartId='';busy=false;operation=null;task=null;wanted=true;targetId=null;draft=null;sceneId='';edited=false;timeEdited=false;}if(!busy&&!edited&&!timeEdited){targetId=hooks.lxEditingQ(sc())?.id||'';reset();}render();},clearDocumentContext(){levelGesture=null;clearLocationHint();$('simple-location-hint').hidden=true;context=null;operation=null;busy=false;task=null;draft=null;},captureRuntime:()=>clone({context,wanted,draft,partId,functionId,editingPartId,targetId,edited,timeEdited,fade,sceneId,error,pendingId,undoDrafts,redoDrafts,provisional}),restoreRuntime(x){if(!x)return;({context,wanted,draft,partId,functionId='',editingPartId='',targetId,edited,timeEdited,fade,sceneId,error,pendingId,undoDrafts=[],redoDrafts=[],provisional=null}=clone(x));clearLocationHint();busy=false;operation=null;render();},
  selectionForAssist:()=>({active:active(),cueId:q()?.id||null}),
  previewLayerForAssist(id,cue,cueId){
@@ -414,11 +442,13 @@ function legacyLayout(){
   let raw=null;try{raw=JSON.parse(localStorage.getItem(L.KEY)||'null');}catch(_){}
   // Only explicit legacy order/collapse/height are inputs. The retired style is never read.
   layoutPrefs=L.normalize(Object.fromEntries(Object.keys(L.KEYS).map(mode=>[mode,{order:raw?.[mode]?.order,closed:raw?.[mode]?.closed,heights:raw?.[mode]?.heights}])));
-  for(const mode of Object.keys(L.KEYS))if(!Array.isArray(raw?.[mode]?.order))layoutPrefs[mode].order=mode==='simple'?['functions','positions','layers','adjust']:L.KEYS.detail.slice();
+  for(const mode of Object.keys(L.KEYS))if(!Array.isArray(raw?.[mode]?.order))layoutPrefs[mode].order=mode==='simple'?['functions','positions','layers']:L.KEYS.detail.slice();
  }
  return layoutPrefs;
 }
 const groups=el('div');groups.className='light-layout-sections';operations.insertBefore(groups,$('simple-layers-heading'));
+// Status is a separate normal-flow row, never a sibling painted over cue cards.
+groups.before($('simple-status'));
 const sectionNodes={};
 for(const [key,ids] of [
  ['layers',['simple-layers-heading','simple-layers','simple-layers-empty']],
@@ -433,16 +463,15 @@ for(const [key,ids] of [
  groups.append(box);sectionNodes[key]=box;toggle.setAttribute('aria-controls',content.id);toggle.dataset.noI18n='';
  toggle.onclick=()=>{layoutPrefs.simple.closed[key]=!layoutPrefs.simple.closed[key];saveLayout();};
 }
-const adjustment=el('section'),adjustHeading=el('button'),adjustBody=el('div');adjustment.className='light-layout-section';adjustment.dataset.layoutPanel='adjust';adjustHeading.type='button';adjustHeading.className='light-layout-fold';adjustHeading.append(el('h3','調整'));adjustBody.className='light-layout-content';adjustment.append(adjustHeading,adjustBody);groups.append(adjustment);sectionNodes.adjust=adjustment;
 const detailNodes={fixtures:$('panel-fixtures'),lxq:$('panel-lxq'),selected:$('panel-insp')};
 const grid=document.querySelector('.figgrid'),leftColumn=grid.querySelector('.leftcol');
 const labels={layers:'レイヤー',functions:'照明の種類',positions:'使う位置',adjust:'調整',fixtures:'灯体一覧',lxq:'LXキュー',selected:'選んだもの'};
 const currentMode=()=>active()?'simple':'detail';
 function applyLayout(){
- if(sharedPanels){document.documentElement.dataset.lightPanelStyle=state.mode==='move'&&!state.soloFigure?'single':'split';sharedPanels.setMode(active()?'simple':'detail');sharedPanels.refresh();window.GAMMA_LIGHT_LAYOUT.refresh();return;}
+ if(sharedPanels){document.documentElement.dataset.lightPanelStyle=state.mode==='move'&&!state.soloFigure?'single':'split';sharedPanels.setMode(active()?'simple':'detail');sharedPanels.refresh();applyWidth();window.GAMMA_LIGHT_LAYOUT.refresh();return;}
  legacyLayout();const simple=layoutPrefs.simple,detail={...(state.mode==='move'&&!state.soloFigure?layoutPrefs.detail:L.normalize(null).detail),style:'split'};
  groups.dataset.style='single';
- for(const key of ['functions','positions','layers','adjust']){
+ for(const key of ['functions','positions','layers']){
   const node=sectionNodes[key];groups.append(node);node.classList.toggle('is-collapsed',simple.closed[key]);
   const toggle=node.querySelector('.light-layout-fold');toggle.querySelector('h3').textContent=LT(labels[key]);toggle.setAttribute('aria-expanded',String(!simple.closed[key]));
   node.querySelector('.light-layout-content').hidden=simple.closed[key];
@@ -474,18 +503,18 @@ function connectSharedPanels(){
 }
 function panelDescriptor(){return {document,namespace:'lighting',mode:active()?'simple':'detail',
  groups:{simple:groups,detail:leftColumn},
- order:{simple:['functions','positions','layers','adjust','lxq'],detail:['fixtures','lxq','selected']},
- panels:{...sectionNodes,...detailNodes},labels,legacy:legacyLayout,toolbar:bar,
+ order:{simple:['functions','positions','layers','lxq'],detail:['fixtures','lxq','selected']},
+ panels:{...sectionNodes,...detailNodes},labels,legacy:legacyLayout,toolbar:bar,columns:{wide:['lxq'],enabled:()=>!state.soloFigure},
  titles:Object.fromEntries(Object.entries(sectionNodes).map(([id,node])=>[id,node.querySelector('h3')])),
  headings:Object.fromEntries(Object.entries(sectionNodes).map(([id,node])=>[id,node.querySelector('.light-layout-fold')])),
  bodies:Object.fromEntries(Object.entries(sectionNodes).map(([id,node])=>[id,node.querySelector('.light-layout-content')])),
  text:key=>{const value=parent.SHOSAI_STAGE_I18N_MODEL?.text(parent.document.documentElement.lang,key);return value&&value!==key?value:T(key);},
- unavailable:id=>id==='lxq'&&state.mode!=='move'||id==='positions'&&(!functionId||functionId==='custom')||['layers','adjust'].includes(id)&&layerEditors.size===0,
+ unavailable:id=>id==='lxq'&&state.mode!=='move'||id==='positions'&&(!functionId||functionId==='custom')||id==='layers'&&layerEditors.size===0,
  destination:(id,group)=>id==='selected'&&(state.mode!=='move'||state.soloFigure)?grid:group==='simple'?groups:leftColumn,
  enabled:()=>state.mode==='move',motion:()=>parent.document.getElementById('stage-anim-scenes')?.checked!==false,
- scrollHost:host=>host===groups?operations:host,
+ scrollHost:host=>groups.contains(host)?operations:leftColumn.contains(host)?leftColumn:host,
  onStorageError:()=>{clearTimeout(keyNoticeTimer);keyNotice.textContent=parent.SHOSAI_STAGE_I18N_MODEL.text(parent.document.documentElement.lang,'パネルの設定を保存できませんでした。');keyNotice.hidden=false;},
- onChange:()=>window.GAMMA_LIGHT_LAYOUT.refresh()};}
+ onChange:()=>{applyWidth();window.GAMMA_LIGHT_LAYOUT.refresh();}};}
 window.addEventListener('gamma-panel-stack-ready',connectSharedPanels);
 window.GAMMA_LIGHT_PANEL_BRIDGE=Object.freeze({connect:connectSharedPanels,status:()=>({connected:!!sharedPanels}),descriptor:panelDescriptor});
 new MutationObserver(()=>{applyLayout();connectSharedPanels();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-gamma-light-mode','class']});
