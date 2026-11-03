@@ -102,6 +102,6 @@ function gain(base,rig,id,level){let cue=base;for(const key of ids(rig,id).filte
  }return {cue,warnings:[]};}
 function remove(base,rig,dims,pieces,id){return compose(base,rig,dims,pieces,id,{...P.defaults(),patternId:'off'},'both');}
 // The catalog belongs to the composition model; B3 can extend it without a second UI list.
-function functions(){return P.patterns.filter(p=>p.id!=='off'&&p.id!=='custom'&&p.id!=='strobe').map(p=>({...p,name:p.displayName||p.name}));}
+function functions(){return P.patterns.filter(p=>!p.hidden).map(p=>({...p,name:p.displayName||p.name}));}
 root.GAMMA_PART_LIGHTING_FLOW=Object.freeze({SS,LASERS,laserSide,parts,ids,meta,occupied,enabled,direction,mixed,detailAdjusted,compose,patch,setEnabled,gain,remove,functions});
 })(typeof window==='undefined'?globalThis:window);

@@ -1418,6 +1418,7 @@
   }
 
   function furnitureHeightM(item) {
+    if (item.heightM != null && Number.isFinite(Number(item.heightM))) return Number(item.heightM);
     return item.heightLevel === "ceiling"
       ? state.ceiling.heightM
       : (FURNITURE_HEIGHTS[item.heightLevel] || 1);
@@ -3791,9 +3792,10 @@
     state.walls = rawFixtures
       .filter((item) => item && item.type === "wall" && !item.frame && Array.isArray(item.polygon))
       .map((item, index) => ({
+        ...clone(item),
         id: typeof item.id === "string" ? item.id : `wall-area-${index + 1}`,
         shape: ["rectangle", "circle", "custom"].includes(item.shape) ? item.shape : "custom",
-        label: regionLabel("wall"),
+        label: item.label ?? regionLabel("wall"),
         polygon: clone(item.polygon),
         heightM: Number.isFinite(Number(item.heightM)) ? Number(item.heightM) : null,
       }));
@@ -5735,10 +5737,11 @@
     return state.audience
       .slice()
       .map((band, index) => ({
-        id: `a${index + 1}`,
-        polygon: audiencePolygon(band),
-        mode: "audience",
-        eyeM: 1.2,
+        ...clone(band),
+        id: band.id ?? `a${index + 1}`,
+        polygon: clone(audiencePolygon(band)),
+        mode: band.mode ?? "audience",
+        eyeM: band.eyeM ?? 1.2,
         ...(band.elevation ? { elevation: { ...band.elevation } } : {}),
         /* ★客席の向き（全周／三方／両側／正面）を引き継ぐ（2026-09-19 本人承認）。
            捨てると、ビッグトップを下敷きにした劇場が「正面」に落ち、
@@ -5750,8 +5753,10 @@
   }
 
   function stageWingOutput() {
-    return stageWingAreas().map((area) =>
-      window.GAMMA_VENUE_CURTAINS.stageWingOutput(area, geometryPoint));
+    return stageWingAreas().map((area) => ({
+      ...clone(area),
+      ...window.GAMMA_VENUE_CURTAINS.stageWingOutput(area, geometryPoint),
+    }));
   }
 
   function fixtureOutput() {
@@ -5760,11 +5765,12 @@
     const walls = state.walls
       .filter((area) => Array.isArray(area.polygon) && area.polygon.length >= 3)
       .map((area) => ({
+        ...clone(area),
         type: "wall",
-        polygon: area.polygon.map(geometryPoint),
+        polygon: clone(area.polygon),
         heightM: Number.isFinite(Number(area.heightM)) ? Number(area.heightM) : state.ceiling.heightM,
-        label: "壁",
-        movable: false,
+        label: area.label ?? "壁",
+        movable: area.movable ?? false,
         ...(area.shape ? { shape: area.shape } : {}),
       }));
     return walls.concat(state.fixtures.map((item) => {
@@ -5772,19 +5778,21 @@
       if (item.type === "wall") return clone(item);
       if (item.type === "column") {
         return {
+          ...clone(item),
           type: "column",
-          at: item.at.map(roundM),
-          radiusM: roundM(item.radiusM),
-          heightM: state.ceiling.heightM,
-          label: "柱",
+          at: clone(item.at),
+          radiusM: item.radiusM,
+          heightM: item.heightM ?? state.ceiling.heightM,
+          label: item.label ?? "柱",
           movable: Boolean(item.movable),
         };
       }
       return {
+        ...clone(item),
         type: "furniture",
-        polygon: item.polygon.map((point) => point.map(roundM)),
+        polygon: clone(item.polygon),
         heightM: furnitureHeightM(item),
-        label: "什器",
+        label: item.label ?? "什器",
         movable: Boolean(item.movable),
       };
     }));
@@ -5792,10 +5800,11 @@
 
   function accessOutput() {
     return state.access.map((item) => ({
+      ...clone(item),
       type: item.type,
       at: accessAt(item),
       widthM: roundM(item.widthM),
-      label: item.type === "load-in" ? "搬入口" : "扉",
+      label: item.label ?? (item.type === "load-in" ? "搬入口" : "扉"),
     }));
   }
 
@@ -5812,7 +5821,7 @@
       label,
       basis: "custom",
       stageFormat: state.stageFormat,
-      scale: { gridM: 1, confidence: "approx" },
+      scale: { gridM: 1, confidence: "approx", ...clone(templateVenue?.scale || {}) },
       ...(state.room ? { room: clone(state.room) } : {}),
       ...(state.viewpoints.length ? { viewpoints: clone(state.viewpoints) } : {}),
       ...(state.viewPositions !== null ? { viewPositions: clone(state.viewPositions) } : {}),
@@ -5820,6 +5829,7 @@
         ...(templateVenue?.basis === "custom" ? clone(templateVenue.floor) : {}),
         outline: state.points.map(geometryPoint),
         extensions: state.stageExtensions.map((item) => ({
+          ...clone(item),
           id: item.id,
           shape: item.shape,
           polygon: item.polygon.map(geometryPoint),
@@ -6216,6 +6226,8 @@
     const fixture = selectedFixture();
     if (fixture && fixture.type === "furniture") {
       fixture.heightLevel = level;
+      // A height button is an explicit edit; otherwise keep the imported metres.
+      delete fixture.heightM;
       setStatus(`什器の高さを${level === "ceiling" ? "天井まで" : `${FURNITURE_HEIGHTS[level]}m`}にしました。`);
     } else {
       setStatus(`次に置く什器の高さは${level === "ceiling" ? "天井まで" : `${FURNITURE_HEIGHTS[level]}m`}です。`);

@@ -6,7 +6,7 @@
  *   ui("書き出す")   → 「書き出す」        画面の文言（アプリの表記にそろえる）
  *   kbd("F")         → <kbd>F</kbd>        キー
  *   ref("id","題")   → 節へのリンク
- *   fig("file","説明","代替文") → スクリーンショット（img/file.jpg。無ければ「未採取」枠）
+ *   fig("file","説明","代替文") → スクリーンショット（img/file.webp。無ければ「未採取」枠）
  *   vid("file","説明") → 動画（video/file.mp4。無ければ「未収録」枠）
  *   steps([...])     → 番号付きの手順
  *   note("題","本文", warn?) → 注記の箱
@@ -16,7 +16,7 @@
  */
 window.MANUAL = {
   updated: "2026-10-21",
-  appVersion: "v0.4.1",
+  appVersion: "v0.4.2",
   lang: window.MANUAL_LANG === "en" ? "en" : "ja",
   sub: window.MANUAL_LANG === "en"
     ? "For everyone using Stage Sketch Gamma (the free test version). There is no need to read it front to back. When you are stuck, type a word into the box below — symptoms work too. The contents on the left jump as well."
@@ -26,7 +26,7 @@ window.MANUAL = {
 window.H = (function () {
   const EN = window.MANUAL.lang === "en";
   /* 英語版は img/en/ の英語画面を使う（無ければ日本語の画面）。寸法表は IMG_SIZES（ja）と IMG_SIZES_EN（en）。 */
-  const pick = (file) => (EN && (window.IMG_SIZES_EN || {})[file]) ? { src: "img/en/" + file + ".jpg", size: window.IMG_SIZES_EN[file] } : { src: "img/" + file + ".jpg", size: (window.IMG_SIZES || {})[file] };
+  const pick = (file) => (EN && (window.IMG_SIZES_EN || {})[file]) ? { src: "img/en/" + file + ".webp", size: window.IMG_SIZES_EN[file] } : { src: "img/" + file + ".webp", size: (window.IMG_SIZES || {})[file] };
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const ui = (t, gloss) => '<span class="ui">「' + esc(t) + "」</span>" + (gloss ? ' <span class="gloss">(“' + esc(gloss) + '”)</span>' : "");
   const kbd = (k) => "<kbd>" + esc(k) + "</kbd>";

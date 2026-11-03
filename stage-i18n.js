@@ -32,6 +32,18 @@
 
   const TEXT = {
 
+    "かんたん照明の種類の上に、用途で絞り込むボタン（すべて・人に当てる・舞台を染める・輪郭・影・効果）を付けました。新しい種類「奥だけ染める」「手前だけ染める」を加え、灯数は 2 灯か 4 灯から選べます。": "Easy lighting now has buttons above the lighting types to filter them by purpose: All, Light people, Colour the stage, Outline & shadow and Effects. Two new types, “Upstage wash” and “Downstage wash”, can use two or four fixtures.",
+
+    "照明の機材配置で、囲み選択の途中で操作が中断されても、エラーにならず選択が元に戻るようにしました。照明の編集履歴を軽くし、長く作業しても重くなりにくくしました。戻せる回数（100 回）は変わりません。": "In lighting equipment placement, an interrupted box selection no longer causes an error; the selection returns to how it was. The lighting edit history is lighter, so long sessions slow down less. You can still undo up to 100 steps.",
+
+    "劇場を保存し直すと、柱の高さ・名前・ID・客席の目の高さ、この版が知らない項目が変わってしまう不具合を直しました。": "Fixed a bug where saving a theatre again changed pillar heights, names, IDs, the audience eye height and fields this version does not know.",
+
+    "リハーサルの記録図を素早く切り替えたときに、表示・選択・保存先がずれてペンの書き込みを取りこぼす不具合を直しました。": "Fixed a bug where switching rehearsal record drawings quickly could misalign the view, selection and save target, and lose pen strokes.",
+
+    "説明書の画面写真を WebP 形式にして、見た目と寸法はそのままに容量を減らしました。作成・検査だけに使うファイルを配布物から外し、Mac 版も小さくなりました。": "User guide screenshots are now WebP files, with the same appearance and dimensions but smaller sizes. Files used only for building and testing have been removed from the distribution, and the Mac version is smaller.",
+
+    "説明書の画像は v0.4.1 時点の画面です。": "The manual images show the screens as of v0.4.1.",
+
     "かんたん照明のレイヤーは「調整」を押すと行の直下に調整欄が開きます。灯体の広がり方を角度で調整でき、灯数は 2 灯と 6 灯から選べます。レーザーは 2 灯をまとめて扱い、左右を選べます。": "In Easy lighting, “Adjust” opens the controls directly beneath the layer. You can adjust beam spread as an angle and choose two or six fixtures. The two lasers are handled together, with a choice of sides.",
 
     "照明のかんたん・詳細の上部バーを揃えました。かんたん照明でも照明の再生と「LX キューを保存」が使えます。パネルの並びと余白も整えました。": "The top bars in Easy and Detailed lighting now share the same layout. Easy lighting also has “Play lighting” and “Save LX cues”. Panel spacing and arrangement have been adjusted.",
@@ -6905,3 +6917,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。": "No automatic backups remain. Save lighting with “Save LX cues” or remove unused shows to free space.",
   "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。": "Changes update the lighting design being edited. Use “Save LX cues” in the Lighting tab to save them to the show."
 });
+
+// T1: simple lighting purpose filters and batten washes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "すべて": "All",
+  "人に当てる": "Light people",
+  "舞台を染める": "Colour the stage",
+  "輪郭・影": "Outline & shadow",
+  "効果": "Effects",
+  "奥だけ染める": "Upstage wash",
+  "手前だけ染める": "Downstage wash"
+});
+
+// T1F: English is loaded eagerly from this pack.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"{count}灯": "{count} lights"});

@@ -555,3 +555,6 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。": "No automatic backups remain. Save lighting with “Save LX cues” or remove unused shows to free space.",
   "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。": "Changes update the lighting design being edited. Use “Save LX cues” in the Lighting tab to save them to the show."
 });
+
+// T1F: actual wash count in the shared lamp selector.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"{count}灯": "{count} lights"});

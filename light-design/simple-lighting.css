@@ -277,3 +277,7 @@ html:not(.simple-light-active) #simple-adopt,.simple-light-active .gamma-light-a
 .simple-operations :is(.part-light-patterns,.part-light-list) small { flex:0 0 auto; }
 .simple-operations > * { flex:0 0 auto; }
 .simple-operations #simple-status { position:static; margin:var(--simple-gap) 0; padding:0; border:0; }
+
+/* T1: reuse the existing pressed button, common spacing and smaller label type. */
+#simple-pattern-tags{display:flex;flex-wrap:wrap;gap:var(--simple-gap);margin-bottom:var(--simple-gap)}
+.simple-mode-panel #simple-pattern-tags button{min-height:var(--simple-tap);padding:4px 8px;font-size:var(--simple-body);line-height:1.5;white-space:nowrap}

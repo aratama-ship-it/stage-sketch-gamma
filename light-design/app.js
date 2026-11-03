@@ -660,7 +660,25 @@
 
   /* ---------- 履歴（モーダル内Undo） ---------- */
   /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
-  const snapshot = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureAlternatives: state.fixtureAlternatives, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey, positionLayoutRollbackKey: state.positionLayoutRollbackKey });
+  // H-22: immutable, private history parts. Reuse unchanged strings rather than
+  // retaining the full (often multi-MB) scenes JSON in each of the 100 entries.
+  const snapshot = (previous = baseline) => {
+    const values = { dims: state.dims, motion: state.motion, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureAlternatives: state.fixtureAlternatives, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey, positionLayoutRollbackKey: state.positionLayoutRollbackKey };
+    const parts = {};
+    for (const [key, value] of Object.entries(values)) {
+      const json = JSON.stringify(value);
+      // Match JSON.stringify(object): undefined properties are omitted.
+      if (json !== undefined) parts[key] = json === previous?.[key] ? previous[key] : json;
+    }
+    return sameSnapshot(parts, previous) ? previous : Object.freeze(parts);
+  };
+  function sameSnapshot(a, b) {
+    return a === b || Boolean(a && b && Object.keys(a).length === Object.keys(b).length
+      && Object.keys(a).every(key => a[key] === b[key]));
+  }
+  function readSnapshot(entry) {
+    return Object.fromEntries(Object.entries(entry).map(([key, json]) => [key, JSON.parse(json)]));
+  }
   // Compare only lighting content. Scene names and stage pieces are supplied by the host
   // and may change without an LX edit; undoing the last edit must also clear the prompt.
   const applyFingerprint = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig,
@@ -692,17 +710,20 @@
      その時点から変更前を作り直せない。そこで直前の状態をここに1つ持っておく。
      2026-09-13 修正: これが無く「変更<b>後</b>」を積んでいたため、1回目の「元に戻す」が
      いまと同じ状態の復元になり、以降もずっと1手ぶんずれていた（色を変えて押しても戻らない）。 */
-  let baseline = snapshot();
+  let baseline = snapshot(null);
+  function pushHistory(entry) {
+    state.history.push(entry);
+    if (state.history.length > 100) state.history.shift();
+  }
   function commit(label) {
-    if (snapshot() === baseline) { renderAll(); return; }
+    if (sameSnapshot(snapshot(), baseline)) { renderAll(); return; }
     window.dispatchEvent(new Event("gamma-light-draft-edit"));
     if (lxFade) lxFadeStop();
     lxFollowCancel();
     syncFixedSetupEdits();
     syncMirrorBallTargets();           // 球を狙うピンの代表点を球の中心へ（2026-10-03）
     lxSyncEditing();                   // 編集中のキューへ書き戻してから記録する（2026-09-13）
-    state.history.push(baseline);      // 変更前を記録する
-    if (state.history.length > 100) state.history.shift();
+    pushHistory(baseline);             // 変更前を記録する
     baseline = snapshot();             // ここからが次の「変更前」
     state.future.length = 0;
     state.dirty = true;
@@ -710,7 +731,7 @@
     renderAll();
   }
   function syncFixedSetupEdits() {
-    const before = JSON.parse(baseline);
+    const before = readSnapshot(baseline);
     const previous = before.scenes.find(sc => sc.id === scene().id);
     const current = cue();
     const previousCue = (previous?.lxq || []).find(q => q.id === viewedCueIds.get(scene().id))?.cue || previous?.cue;
@@ -733,8 +754,8 @@
   // The host owns scene numbering, membership and stage pieces. History owns LX edits.
   let restoreSceneContext = null;
   function setSceneContextRestorer(restoreContext) { restoreSceneContext = restoreContext; }
-  function restore(json) {
-    const o = JSON.parse(json);
+  function restore(entry) {
+    const o = readSnapshot(entry);
     state.fixtureAlternatives = o.fixtureAlternatives || [];
     state.motion = o.motion;
     if (o.dims) state.dims = o.dims; state.rig = o.rig; state.scenes = o.scenes; if (o.palette) state.palette = cleanPalette(o.palette);
@@ -766,7 +787,7 @@
     return window.GAMMA_LIGHT_HISTORY_ALLOWED ? window.GAMMA_LIGHT_HISTORY_ALLOWED(event) : true;
   }
   function undo(event) { if (!historyAllowed(event) || !state.history.length) return false; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.future.push(baseline); const json = state.history.pop(); restore(json); baseline = snapshot(); return true; }
-  function redo(event) { if (!historyAllowed(event) || !state.future.length) return false; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.history.push(baseline); const json = state.future.pop(); restore(json); baseline = snapshot(); return true; }
+  function redo(event) { if (!historyAllowed(event) || !state.future.length) return false; window.dispatchEvent(new Event("gamma-light-draft-edit")); pushHistory(baseline); const json = state.future.pop(); restore(json); baseline = snapshot(); return true; }
 
   /* ---------- 常設の表示欄 / dialog ---------- */
   /* R-01（2026-09-17 本人要望）: 画面下に浮くポップアップをやめ、
@@ -4377,7 +4398,7 @@
     return { X: isFront(f) ? frontX : p.X, Y: p.Y };
   }
   function startSectionMarquee(ev, pt, sec) {
-    state.drag = { kind: "marquee", sec, x0: pt.X, y0: pt.Y, x1: pt.X, y1: pt.Y, base: ev.shiftKey ? new Set(state.sel) : new Set(), moved: false };
+    state.drag = { kind: "marquee", sec, x0: pt.X, y0: pt.Y, x1: pt.X, y1: pt.Y, base: new Set(state.sel), additive: ev.shiftKey, moved: false };
     if (!ev.shiftKey) state.sel.clear();
     state.aimMirror = null;
     renderAll();
@@ -4610,12 +4631,21 @@
     }
     if (dg) requestDraw({ inspector: dg.kind !== "handle" }); else requestDraw();
   });
+  function cancelDrag() {
+    const dg = state.drag; if (!dg) return;
+    state.drag = null;
+    cancelPendingDraw();
+    // Selection is view state: a marquee has no content snapshot or undo entry.
+    if (dg.kind === "marquee") { state.sel = new Set(dg.base); renderAll(); }
+    else if (dg.before && typeof dg.before === "object") { restore(dg.before); refreshApplyState(); }
+    else renderAll();
+  }
   const endDrag = (event) => {
+    if (event?.type === "pointercancel") { cancelDrag(); return; }
     const dg = state.drag; if (!dg) return; state.drag = null;
-    if (event?.type === "pointercancel") { cancelPendingDraw(); restore(dg.before); refreshApplyState(); return; }
     cancelPendingDraw();                 // このあと renderAll が最新の姿で描き直す
     if (dg.kind === "marquee") { renderAll(); return; }   // 範囲選択は元に戻す対象にしない（選択はundo外）
-    if (dg.moved && snapshot() !== dg.before) { syncFixedSetupEdits(); lxSyncEditing(); state.history.push(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
+    if (dg.moved && !sameSnapshot(snapshot(), dg.before)) { syncFixedSetupEdits(); lxSyncEditing(); pushHistory(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
   };
   plan.addEventListener("pointerup", endDrag); plan.addEventListener("pointercancel", endDrag);
   plan.addEventListener("pointerleave", () => { state.hover = null; fixtureLabelHover = null; plan.title=""; draw(); });
@@ -4789,7 +4819,7 @@
         if (dg.moved) {
           const P = secProj(sec), loX = Math.min(dg.x0, dg.x1), hiX = Math.max(dg.x0, dg.x1), loY = Math.min(dg.y0, dg.y1), hiY = Math.max(dg.y0, dg.y1);
           const inside = state.rig.fixtures.filter((f) => { const xy = fixtureSectionXY(f, sec, P, B); return xy && xy.X >= loX && xy.X <= hiX && xy.Y >= loY && xy.Y <= hiY; });
-          state.sel = new Set([...dg.base, ...inside.map((f) => f.id)]);
+          state.sel = new Set([...(dg.additive ? dg.base : []), ...inside.map((f) => f.id)]);
         }
         if (dg.moved) state.aimMirror = null;
         requestDraw({ inspector: true }); return;
@@ -4885,7 +4915,7 @@
       || !!document.activeElement?.closest?.(".gamma-short-select"); // review R1: the custom select counts as typing
     if (ev.key === "Escape" && !$("dialog").hidden) { $("dialog").hidden = true; return; }
     if (ev.key === "Escape" && state.soloFigure) { ev.preventDefault(); setSoloFigure(state.soloFigure); return; }   // R-14: 広げた図を戻す
-    if (ev.key === "Escape") { if (state.drag) { const dg = state.drag; state.drag = null; restore(dg.before); refreshApplyState(); } else if (state.tool) { state.tool = null; renderAll(); } else if (state.sel.size || state.selEquipment) { state.sel.clear(); state.selEquipment = null; renderAll(); } return; }
+    if (ev.key === "Escape") { if (state.drag) { cancelDrag(); } else if (state.tool) { state.tool = null; renderAll(); } else if (state.sel.size || state.selEquipment) { state.sel.clear(); state.selEquipment = null; renderAll(); } return; }
     if (typing) return;
     if ((ev.key === "g" || ev.key === "G") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); $("lighttoggles").querySelector('[data-show="blackout"]').click(); return; }
     if ((ev.key === "s" || ev.key === "S") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); toggleSolo(); return; }
@@ -6368,7 +6398,7 @@
   const lxEditingQ = (sc) => { const id = lxEditingOf(sc); return id ? lxList(sc).find((q) => q.id === id) : null; };
   /* 閲覧中のQは直接編集。旧データのシーンcueは実際に変えた場合だけQへ書き戻す。 */
   function lxSyncEditing() {
-    const previous = JSON.parse(baseline).scenes;
+    const previous = readSnapshot(baseline).scenes;
     state.scenes.forEach(sc => {
       const q = lxEditingQ(sc), before = previous.find(row => row.id === sc.id);
       if(q && !viewedCue(sc) && cueJson(before?.cue) !== cueJson(sc.cue)) q.cue = JSON.parse(cueJson(sc.cue));
@@ -8451,15 +8481,21 @@
 
   // Candidate delivery rollback retains the private Undo baseline and viewed
   // Qs. Reimporting a built design would normalize data and lose this history.
+  function cloneEditorState(source) {
+    // History entries are frozen and safe to share. structuredClone would copy
+    // their strings again when switching drafts or retaining a rollback bank.
+    return { ...structuredClone({ ...source, history: [], future: [] }),
+      history: source.history.slice(), future: source.future.slice() };
+  }
   function captureDocumentState() {
-    return {state:structuredClone(state),baseline,appliedFingerprint,cueSyncPending,
+    return {state:cloneEditorState(state),baseline,appliedFingerprint,cueSyncPending,
       viewedCueIds:[...viewedCueIds],migrationRecords:structuredClone([...migrationRecords]),migrationRecordSequence,
       sceneTimingContext:structuredClone([...sceneTimingContext]),readSceneStepPrevious};
   }
   function restoreDocumentState(saved) {
     stop();lxFadeStop();lxFollowCancel();
     for(const name of Object.keys(state)) if(!Object.hasOwn(saved.state,name)) delete state[name];
-    Object.assign(state,structuredClone(saved.state));
+    Object.assign(state,cloneEditorState(saved.state));
     // Animation handles belong to the old runtime, never to its copy.
     const resume=state.play.on;state.play.on=false;state.play.raf=0;
     baseline=saved.baseline;appliedFingerprint=saved.appliedFingerprint;cueSyncPending=saved.cueSyncPending;

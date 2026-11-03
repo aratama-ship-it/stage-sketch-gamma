@@ -554,8 +554,11 @@
    "basis": "custom",
    "stageFormat": "theatre",
    "scale": {
-    "gridM": 1,
-    "confidence": "approx"
+    "gridM": 0.5,
+    "confidence": "measured",
+    "roundtripExtra": {
+     "source": "V1"
+    }
    },
    "floor": {
     "outline": [
@@ -576,7 +579,34 @@
       8
      ]
     ],
-    "extensions": [],
+    "extensions": [
+     {
+      "id": "ft-extension-roundtrip",
+      "shape": "rectangle",
+      "polygon": [
+       [
+        0,
+        8
+       ],
+       [
+        1,
+        8
+       ],
+       [
+        1,
+        9
+       ],
+       [
+        0,
+        9
+       ]
+      ],
+      "label": "追加床",
+      "roundtripExtra": {
+       "source": "V1"
+      }
+     }
+    ],
     "levels": [
      {
       "polygon": [
@@ -612,7 +642,45 @@
      "openingHeightM": 4.5
     }
    },
-   "audience": [],
+   "audience": [
+    {
+     "id": "ft-audience-eye",
+     "label": "目の高さ1.65mの客席",
+     "polygon": [
+      [
+       2,
+       9
+      ],
+      [
+       10,
+       9
+      ],
+      [
+       10,
+       11
+      ],
+      [
+       2,
+       11
+      ]
+     ],
+     "mode": "audience",
+     "eyeM": 1.65,
+     "elevation": {
+      "frontM": 0.2,
+      "rearM": 0.8,
+      "roundtripExtra": "V1"
+     },
+     "roundtripExtra": {
+      "source": "V1",
+      "values": [
+       0,
+       false,
+       null
+      ]
+     }
+    }
+   ],
    "stageWings": [],
    "fixtures": [
     {
@@ -638,7 +706,16 @@
      "heightM": 2.5,
      "label": "舞台の中の壁",
      "movable": false,
-     "shape": "rectangle"
+     "shape": "rectangle",
+     "id": "ft-obstacle-1",
+     "roundtripExtra": {
+      "source": "V1",
+      "values": [
+       0,
+       false,
+       null
+      ]
+     }
     },
     {
      "type": "column",
@@ -648,8 +725,17 @@
      ],
      "radiusM": 0.35,
      "heightM": 5,
-     "label": "柱",
-     "movable": false
+     "label": "試験場の柱（5m）",
+     "movable": false,
+     "id": "ft-obstacle-2",
+     "roundtripExtra": {
+      "source": "V1",
+      "values": [
+       1,
+       false,
+       null
+      ]
+     }
     },
     {
      "type": "furniture",
@@ -672,8 +758,17 @@
       ]
      ],
      "heightM": 1.2,
-     "label": "什器",
-     "movable": true
+     "label": "試験場の什器（1.2m）",
+     "movable": true,
+     "id": "ft-obstacle-3",
+     "roundtripExtra": {
+      "source": "V1",
+      "values": [
+       2,
+       false,
+       null
+      ]
+     }
     }
    ],
    "access": [],

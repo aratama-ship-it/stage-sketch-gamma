@@ -843,3 +843,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。": "自動で作られた控えは残っていません。照明を「LX キューを保存」で確定するか、使わないショーを減らすと空きます。",
   "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。": "変更は編集中の照明デザインへ反映。ショーへの保存は照明デザインタブの「LX キューを保存」から行います。"
 });
+
+// T1: simple lighting purpose filters and batten washes.
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "すべて": "すべて",
+  "人に当てる": "人に当てる",
+  "舞台を染める": "舞台を染める",
+  "輪郭・影": "輪郭・影",
+  "効果": "効果",
+  "奥だけ染める": "奥だけ染める",
+  "手前だけ染める": "手前だけ染める"
+});
+
+// T1F: actual wash count in the shared lamp selector.
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"{count}灯": "{count}灯"});

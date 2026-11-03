@@ -1827,6 +1827,7 @@
         .filter((item) => item && Array.isArray(item.polygon) &&
           item.polygon.length >= 3 && item.polygon.every(validPoint))
         .map((item, index) => ({
+          ...clone(item),
           id: typeof item.id === "string" && item.id.trim()
             ? item.id.trim().slice(0, 100) : `stage-extension-${index + 1}`,
           shape: ["rectangle", "circle", "custom"].includes(item.shape) ? item.shape : "rectangle",
@@ -1872,7 +1873,7 @@
       if (!level || typeof level !== "object" ||
           !["frontM", "rearM"].every(key => typeof level[key] === "number" &&
             Number.isFinite(level[key]) && level[key] >= -10 && level[key] <= 60)) return null;
-      area.elevation = { frontM: Math.round(level.frontM * 100) / 100,
+      area.elevation = { ...level, frontM: Math.round(level.frontM * 100) / 100,
         rearM: Math.round(level.rearM * 100) / 100 };
     }
     if (Array.isArray(venue.stageWings)) {
