@@ -11,7 +11,7 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
   const legacy=json('gamma:ros:left-panels'),defaults=['band-format','band-cues','band-settings','column-popover','panel-0','panel-3','panel-4','band-output'];
   const collapsed={};for(const node of panels){const id=node.dataset.rosPanel;collapsed[id]=id==='ros-stage-panel'?!stageOpen:id==='ros-index'?indexCollapsed:id==='column-popover'?read('gamma:ros:columns-open')!=='1':node.tagName==='DETAILS'?read('gamma:ros:left-collapsed:'+id)!=='0':read('gamma:ros:left-collapsed:'+id)==='1';}
   stage.dataset.rosUnavailable=String(stage.querySelector('.ros-side-head').hidden);
-  const state=P.migrate(ids,json(KEY),[...(Array.isArray(legacy)?legacy:[]),...defaults],{right:[stage.id,index.id],collapsed});
+  const state=P.migrate(ids,json(KEY),[...(Array.isArray(legacy)?legacy:[]),...defaults],{right:[stage.id,index.id],collapsed,mode:'split'});
   // Old hidden companion means a closed disclosure, not lost content.
   if(!json(KEY)&&read('gamma:ros:index-open')==='0')state.collapsed[index.id]=true;
   const persist=()=>store(KEY,JSON.stringify(state));
@@ -24,8 +24,10 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
   const titleOf=n=>entries.get(n.dataset.rosPanel)?.name.textContent||n.dataset.rosPanel;
   function positions(){for(const n of panels){const e=entries.get(n.dataset.rosPanel);if(e)e.button.setAttribute('aria-description',format('{name}：{total}個中{position}番目。',{name:titleOf(n),total:visible().length,position:visible().indexOf(n)+1}));}}
   function changed(){persist();positions();onLayout?.();}
-  function commit(){if(state.mode==='single')state.single=[...cols.left.children].map(n=>n.dataset.rosPanel).filter(Boolean);else for(const k of ['left','right'])state.split[k]=[...cols[k].children].map(n=>n.dataset.rosPanel).filter(Boolean);changed();}
-  const reorder=P.reorder({doc,columns:()=>state.mode==='single'?[cols.left]:[cols.left,cols.right],items:()=>[...panels,...doc.querySelectorAll('.ros-panel-hole')],key:n=>n.dataset.rosPanel,scrollHost:host=>host.closest('.paper-sticky')||host,holeClass:'ros-panel-hole',dragClass:'is-ros-panel-dragging',motion:()=>parent.document.getElementById('stage-anim-scenes')?.checked!==false,onCommit:()=>{commit();$('panel-reorder-status').textContent=text('パネルの並びを変更しました。');}});
+  const arrangement=()=>P.layout({width:doc.defaultView.parent?.innerWidth??doc.defaultView.innerWidth,mode:state.mode,side:state.side});
+  const splitActive=()=>arrangement().mode==='split';
+  function commit(){if(!splitActive())state.single=[...cols.left.children].map(n=>n.dataset.rosPanel).filter(Boolean);else for(const k of ['left','right'])state.split[k]=[...cols[k].children].map(n=>n.dataset.rosPanel).filter(Boolean);changed();}
+  const reorder=P.reorder({doc,columns:()=>!splitActive()?[cols.left]:[cols.left,cols.right],items:()=>[...panels,...doc.querySelectorAll('.ros-panel-hole')],key:n=>n.dataset.rosPanel,scrollHost:host=>host.closest('.paper-sticky')||host,holeClass:'ros-panel-hole',dragClass:'is-ros-panel-dragging',motion:()=>parent.document.getElementById('stage-anim-scenes')?.checked!==false,onCommit:()=>{commit();$('panel-reorder-status').textContent=text('パネルの並びを変更しました。');}});
   function height(node,body,handle){let preview=null;
     const max=()=>{const h=body.style.height;body.style.height='';const v=body.scrollHeight;body.style.height=h;return v;};
     const paint=()=>{const wanted=preview??state.heights[node.dataset.rosPanel],full=max();body.style.height=Number.isFinite(wanted)?Math.max(Math.min(80,full),Math.min(full,wanted))+'px':'';};
@@ -49,7 +51,7 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
     node.append(body);node.classList.add('band-group','ros-unified-panel');node.removeAttribute('role');
     const handle=doc.createElement('div');handle.className='ros-panel-height';handle.setAttribute('aria-controls',body.id);node.append(handle);
     entries.set(id,{...h,body,handle,height:height(node,body,handle)});
-    h.button.addEventListener('keydown',event=>{if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();event.stopPropagation();const host=node.parentElement;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(state.mode==='split')reorder.flipMove(()=>cols[event.key==='ArrowLeft'?'left':'right'].append(node));}else{const nodes=[...host.children].filter(n=>n.dataset.rosPanel&&!n.hidden),at=nodes.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];if(target)reorder.flipMove(()=>host.insertBefore(node,next<at?target:target.nextSibling));}commit();h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
+    h.button.addEventListener('keydown',event=>{if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();event.stopPropagation();const host=node.parentElement;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(splitActive())reorder.flipMove(()=>cols[event.key==='ArrowLeft'?'left':'right'].append(node));}else{const nodes=[...host.children].filter(n=>n.dataset.rosPanel&&!n.hidden),at=nodes.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];if(target)reorder.flipMove(()=>host.insertBefore(node,next<at?target:target.nextSibling));}commit();h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
     // Native details changes (including the pre-existing column accordion) use one state.
     if(isDetails)node.addEventListener('toggle',()=>{if(applying||Boolean(state.collapsed[id])===!node.open)return;state.collapsed[id]=!node.open;paintPanel(id);changed();});
   }
@@ -60,13 +62,14 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
   function control(kind,label){const button=doc.createElement('button'),menu=doc.createElement('div');button.type='button';button.className='is-icon';button.innerHTML=P.ICONS[kind];button.setAttribute('aria-haspopup','true');button.setAttribute('aria-expanded','false');button.id='ros-panels-'+kind;menu.id=button.id+'-menu';menu.className='ros-panels-menu';menu.setAttribute('popover','auto');button.setAttribute('aria-controls',menu.id);tools.append(button);doc.body.append(menu);
     button.addEventListener('click',()=>{refresh();menu.togglePopover();if(menu.matches(':popover-open')){const r=button.getBoundingClientRect(),box=menu.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(r.left,innerWidth-box.width-8))+'px';menu.style.top=Math.max(8,Math.min(r.bottom+8,innerHeight-box.height-8))+'px';}});menu.addEventListener('toggle',()=>button.setAttribute('aria-expanded',String(menu.matches(':popover-open'))));controls.push({kind,label,button,menu});return menu;}
   const layoutMenu=control('layout','パネルの表示スタイル'),visibilityMenu=control('visibility','パネルのオン/オフ');
-  function apply(){applying=true;$('preview').dataset.rosPanels=state.mode;band.dataset.columns=state.mode;
-    const order=state.mode==='single'?{left:state.single,right:[]}:state.split;for(const k of ['left','right'])for(const id of order[k])cols[k].append(byId.get(id));cols.right.hidden=state.mode==='single';
+  function apply(){applying=true;const effective=arrangement();$('preview').dataset.rosPanels=effective.mode;$('preview').dataset.rosSide=effective.side;band.dataset.columns=effective.mode;
+    const order=!splitActive()?{left:state.single,right:[]}:state.split;for(const k of ['left','right'])for(const id of order[k])cols[k].append(byId.get(id));cols.right.hidden=!splitActive();
     for(const id of ids)paintPanel(id);applying=false;positions();}
   function refresh(){for(const {label,button} of controls){button.setAttribute('aria-label',text(label));button.title=text(label);}
     for(const {name,height} of entries.values()){name.textContent=text(name.dataset.rosText);height();}
-    P.choices(layoutMenu,{options:[['single','1列表示'],['split','2列表示']],current:state.mode,text,onSelect:value=>{state.mode=value;apply();changed();layoutMenu.hidePopover();$('ros-panels-layout').focus();}});
+    P.choices(layoutMenu,{options:P.LAYOUT_OPTIONS,current:state.mode==='split'?'split':'single-'+state.side,text,onSelect:value=>{state.mode=value==='split'?'split':'single';if(value!=='split')state.side=value==='single-right'?'right':'left';apply();changed();layoutMenu.hidePopover();$('ros-panels-layout').focus();}});
     visibilityMenu.replaceChildren();for(const [id,node] of byId){if(node.dataset.rosUnavailable==='true')continue;visibilityMenu.append(P.visibilityItem(doc,{id,label:titleOf(node),checked:!state.hidden.includes(id),onChange:checked=>{state.hidden=state.hidden.filter(x=>x!==id);if(!checked)state.hidden.push(id);else state.collapsed[id]=false;paintPanel(id);changed();}}));}positions();}
+  let resizeFrame=0;doc.defaultView.addEventListener('resize',()=>{if(resizeFrame)return;resizeFrame=doc.defaultView.requestAnimationFrame(()=>{resizeFrame=0;reorder.cancel();apply();refresh();onLayout?.();});});
   apply();refresh(); // Persist only after an explicit operation; unavailable storage never resets old keys.
   return {refreshPositions:refresh,refreshHeights:()=>{for(const e of entries.values())e.height();},isHidden:id=>state.hidden.includes(id),get mode(){return state.mode;},reveal(id,show=true){state.hidden=state.hidden.filter(x=>x!==id);if(!show)state.hidden.push(id);if(show)state.collapsed[id]=false;paintPanel(id);changed();},sync:apply};
 }};

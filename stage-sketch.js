@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.3";
+  const GAMMA_APP_VERSION = "v0.4.4";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -49250,7 +49250,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261104-v042', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261104-v044', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

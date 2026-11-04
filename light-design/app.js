@@ -1,3 +1,16 @@
+/* Shared fixture/layer power control. Callers own the operation and permission gates. */
+(function(root){
+  'use strict';
+  const icon = `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle class="fixture-power-halo" cx="8" cy="8" r="5.1"/><circle class="fixture-power-lens" cx="8" cy="8" r="2.35"/><path class="fixture-power-rays" d="M8 1v1.25M8 14.75V15M1 8h1.25M13.75 8H15M3.05 3.05l.9.9M12.05 12.05l.9.9M12.95 3.05l-.9.9M3.95 12.05l-.9.9"/><path class="fixture-power-slash" d="m1.8 1.8 12.4 12.4"/></svg>`;
+  function render(button,{on,moving=false,label}){
+    button.type='button';button.classList.add('st','fixture-power');
+    for(const name of ['on','off','move'])button.classList.toggle(name,name===(on?(moving?'move':'on'):'off'));
+    if(!button.querySelector('svg'))button.innerHTML=icon;
+    button.setAttribute('aria-label',label);button.setAttribute('aria-pressed',String(on));button.title=label;
+  }
+  root.GAMMA_LIGHT_POWER=Object.freeze({render});
+})(typeof window==='object'?window:globalThis);
+/* END SHARED LIGHT POWER */
 /* N4 LAYOUT MODEL: device preferences, never a show document. */
 (function(root){
   'use strict';
@@ -19,11 +32,12 @@
     }
     return out;
   }
-  function columns(width,height,requested={},single=false,solo='',panelMinimum=0){
+  function columns(width,height,requested={},single=false,solo='',panelMinimum=0,side='left'){
     const leftMin=single?Math.max(280,Math.min(width-248,panelMinimum)):320,rightMin=single?0:280;
     const left=solo&&solo!=='plan'?0:clamp(requested.leftWidth||320,leftMin,Math.max(leftMin,width-rightMin-240-16));
     const gaps=left?(single?8:16):8;
     const right=single?0:clamp(requested.rightWidth||(compact(width,height)?320:360),280,Math.max(280,width-left-240-gaps));
+    if(single&&side==='right'&&!solo)return {left:0,right:left,mid:Math.max(240,width-left-8),leftMin,rightMin:280};
     return {left,right,mid:Math.max(240,width-left-right-gaps),leftMin,rightMin};
   }
   function move(list,key,delta){const out=list.slice(),i=out.indexOf(key),j=i+delta;if(i>=0&&j>=0&&j<out.length)[out[i],out[j]]=[out[j],out[i]];return out;}
@@ -950,8 +964,8 @@
     if (state.mode === "move" && state.soloFigure !== "side") {
       const solo = state.soloFigure;
       const single=document.documentElement.dataset.lightPanelStyle==='single';
-      const panelMinimum=g.querySelector('.leftcol')?.dataset.stackLayout==='split'?2*(parseFloat(getComputedStyle(g).getPropertyValue('--gamma-panel-column-min'))||240)+PAD.gap:0;
-      const {left,right,mid,leftMin}=window.GAMMA_LIGHT_LAYOUT_MODEL.columns(r.width,document.documentElement.hasAttribute('data-gamma-embedded')?parent.innerHeight:innerHeight,panelLayout,single,solo,panelMinimum);
+      const side=document.documentElement.dataset.lightPanelSide;
+      const {left,right,mid,leftMin}=window.GAMMA_LIGHT_LAYOUT_MODEL.columns(r.width,document.documentElement.hasAttribute('data-gamma-embedded')?parent.innerHeight:innerHeight,panelLayout,single,solo,0,side);
       const heights = FIGURE_VIEW.split(r.height, figureSplit);
       const height = solo ? Math.max(160, r.height) : heights.available + PAD.gap;
       // The row frames depend only on viewport height. Each canvas contains its drawing.
@@ -970,15 +984,16 @@
         canvas.style.height = Math.max(1, frameHeight - head - 2) + 'px';
       }
       const sideMetres = sideCropped() ? Math.min(d.H,SIDE_VISIBLE_METRES) : d.H;
-      const sideScale = Math.max(1, Math.min((left - PAD.secX * 2) / d.D, (height - PANEL_MIN_WIDTH - PAD.headSec - PAD.gap - PAD.secT - PAD.secB) / sideMetres));
+      const rail=left||right;
+      const sideScale = Math.max(1, Math.min((rail - PAD.secX * 2) / d.D, (height - PANEL_MIN_WIDTH - PAD.headSec - PAD.gap - PAD.secT - PAD.secB) / sideMetres));
       sectionScale = sideScale;
       const sideH = Math.round(sideMetres * sideScale) + PAD.secT + PAD.secB;
-      secL.style.height = sideH + 'px'; secL.parentElement.style.width = left + 'px';
+      secL.style.height = sideH + 'px'; secL.parentElement.style.width = rail + 'px';
       const sideHead = Math.max(PAD.headSec, secL.parentElement.querySelector('.sechead').getBoundingClientRect().height);
       const sideReserved = sideH + sideHead + PAD.gap;
       g.style.setProperty('--side-reserved', sideReserved + 'px');
       g.style.setProperty('--detail-panels-height', Math.max(0, height - sideReserved) + 'px');
-      const lc = document.querySelector('.leftcol'); lc.style.width = left + 'px';
+      const lc = document.querySelector('.leftcol'); lc.style.width = rail + 'px';
       const share = E.clamp(panelLayout.fixtureShare, .15, .85);
       for (const [id, width] of [['panel-fixtures',single?left:left * share],['panel-lxq',single?left:left * (1-share)],['panel-insp',single?left:right]]) {
         const panel=$(id);panel.style.width = width + 'px'; if(id !== 'panel-insp')panel.style.flexBasis=width+'px';
@@ -1126,17 +1141,17 @@
   window.GAMMA_LIGHT_PANEL_RESIZE = (handle,{read,change,reset,direction=1}) => {
     let drag=null;
     handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();drag={x:e.clientX,width:read(),id:e.pointerId};handle.setPointerCapture(e.pointerId);});
-    handle.addEventListener("pointermove",e=>{if(drag&&e.pointerId===drag.id)change(drag.width+(e.clientX-drag.x)*direction);});
+    handle.addEventListener("pointermove",e=>{if(drag&&e.pointerId===drag.id)change(drag.width+(e.clientX-drag.x)*(typeof direction==='function'?direction():direction));});
     const end=()=>{drag=null;};handle.addEventListener("pointerup",end);handle.addEventListener("pointercancel",end);handle.addEventListener("lostpointercapture",end);
     handle.addEventListener("dblclick",reset);
-    handle.addEventListener("keydown",e=>{if(e.key==="Home"){e.preventDefault();e.stopPropagation();reset();}else if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();e.stopPropagation();change(read()+(e.key==="ArrowRight"?16:-16)*direction);}});
+    handle.addEventListener("keydown",e=>{if(e.key==="Home"){e.preventDefault();e.stopPropagation();reset();}else if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();e.stopPropagation();change(read()+(e.key==="ArrowRight"?16:-16)*(typeof direction==='function'?direction():direction));}});
   };
   for(const [side,label] of [["left","左列の幅"],["right","右列の幅"]]) {
     const handle=document.createElement("div");handle.id=`light-${side}-resize`;handle.className="light-column-resize";
     handle.tabIndex=0;handle.setAttribute("role","separator");handle.setAttribute("aria-orientation","vertical");handle.setAttribute("aria-label",label);handle.setAttribute("aria-valuemin",side==="left"?"320":"280");
     document.querySelector(".figgrid").append(handle);
     const read=()=>document.querySelector(side==="left"?".leftcol":"#panel-insp").getBoundingClientRect().width;
-    window.GAMMA_LIGHT_PANEL_RESIZE(handle,{read,direction:side==="left"?1:-1,
+    window.GAMMA_LIGHT_PANEL_RESIZE(handle,{read,direction:()=>side==="left"?(document.documentElement.dataset.lightPanelStyle==='single'&&document.documentElement.dataset.lightPanelSide==='right'?-1:1):-1,
       change:width=>{const g=document.querySelector(".figgrid").getBoundingClientRect(),other=side==="left"&&document.documentElement.dataset.lightPanelStyle==='single'?0:document.querySelector(side==="left"?"#panel-insp":".leftcol").getBoundingClientRect().width;
         const min=side==='left'&&document.documentElement.dataset.lightPanelStyle==='single'?280:side==='left'?320:280;
         panelLayout[side+"Width"]=E.clamp(width,min,Math.max(min,g.width-other-240-PAD.gap*2));refreshPanelLayout();savePanelLayout();},
@@ -5091,14 +5106,9 @@
          （2026-09-13 本人要望）。見出しが言っている「吊り・奥から1列目」等は繰り返さない。 */
       if (state.mode === "place") { stCell.textContent = E.mountSpot(f); stCell.title = E.describeNamedMount(f, state.rig); }
       if (state.mode === "move") {
-        stCell.type = "button";
-        stCell.classList.add("fixture-power");
         const powerLabel = (lit ? "いまオン。押すとオフ" : "いまオフ。押すとオン")
           + (soloMuted(f.id) ? "（ソロ表示中はこの灯体を非表示）" : "");
-        stCell.setAttribute("aria-label", powerLabel);
-        stCell.setAttribute("aria-pressed", String(lit));
-        stCell.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle class="fixture-power-halo" cx="8" cy="8" r="5.1"/><circle class="fixture-power-lens" cx="8" cy="8" r="2.35"/><path class="fixture-power-rays" d="M8 1v1.25M8 14.75V15M1 8h1.25M13.75 8H15M3.05 3.05l.9.9M12.05 12.05l.9.9M12.95 3.05l-.9.9M3.95 12.05l-.9.9"/><path class="fixture-power-slash" d="m1.8 1.8 12.4 12.4"/></svg>`;
-        stCell.title = powerLabel;
+        window.GAMMA_LIGHT_POWER.render(stCell,{on:lit,moving:st==='move',label:powerLabel});
         stCell.onclick = (ev) => { ev.stopPropagation(); const l = lightOf(f.id); if (isLit(l)) setLight(f.id, { on: false }); else turnOn(f.id); commit(); };
       }
       r.append(stCell);
@@ -7542,11 +7552,11 @@
     $("side-height").textContent=panelLayout.sideFull ? "抑えた表示（2m）" : "フル表示";
     $("side-height").setAttribute("aria-pressed",String(panelLayout.sideFull));
     /* 図の上の中央のシーン送り（修正バッチ 2026-10-07 #6・D8＝A）。番号は LXキューの見出しと同じ「セクション-シーン」、
-       名前はホバーで出す。シーンはセクションをまたいで順に送り、端では止まる（舞台タブの前後のシーンと同じ）。 */
+       名前は番号の後へ出し、狭い幅では先に省略する。シーンはセクションをまたいで順に送り、端では止まる（舞台タブの前後のシーンと同じ）。 */
     { const x0 = lxOf(scene()), name = scene().name || "名称なしのシーン";
       const nav = $("scenenav"), sep = $("qsep"), sn = $("scene-name");
       if (nav) nav.hidden = !inMove; if (sep) sep.hidden = !inMove;
-      if (sn) { sn.innerHTML = `<span class="sno-word">シーン</span><b>${sceneNumberOf(scene())}</b>`;
+      if (sn) { sn.innerHTML = `<span class="sno-word">シーン</span><b data-no-i18n>${sceneNumberOf(scene())}</b><span class="sno-name" data-no-i18n title="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
         sn.title = `シーン ${sceneNumberOf(scene())}「${name}」／押すとシーンの一覧（↑↓でシーンを送る）`; }
       const step = (id, j, word, key) => { const b = $(id); if (!b) return; const row = state.scenes[j];
         b.disabled = !row; const xr = row ? lxOf(row) : null;
@@ -7636,7 +7646,7 @@
      中身（キュー名・シーン番号・言語）か幅が変わったときだけ測り直す。訳（ui-i18n.js）は次のフレームで入るので、その後に測る。 */
   // The front drawing owns its display controls now; keep them all reachable by horizontal scroll.
   // Only the separate scene strip collapses: playback, cue name, then navigation arrows.
-  const FIGBAR_FITS = ["center", "right", "norun", "noname", "nums", "wrap"];
+  const FIGBAR_FITS = ["center", "sceneclip", "right", "norun", "noname", "nums", "wrap"];
   let figbarFitKey = "", figbarFitRaf = 0;
   function scheduleFigbarFit() {
     if (figbarFitRaf) return;
@@ -7664,7 +7674,7 @@
       if (bb.top >= lb.bottom - 1) return false;                       // 2段目へ落ちている
       if (bb.left < lb.left + left.scrollWidth - 1 || (ab && ab.width && bb.right > ab.left + 1)) return false;   // 隣と重なる
       if (box.scrollWidth > box.clientWidth + 1) return false;          // 中身がはみ出す
-      if ((level === "center" || level === "right" || level === "norun") && em && em.textContent && em.getBoundingClientRect().width < 64) return false;   // キュー名が読めないほど細い
+      if ((["center", "sceneclip", "right", "norun"].includes(level)) && em && em.textContent && em.getBoundingClientRect().width < 64) return false;   // キュー名が読めないほど細い
       return true;
     };
     for (const level of FIGBAR_FITS) { bar.dataset.fit = level; if (fits(level)) break; }

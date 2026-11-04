@@ -1234,10 +1234,6 @@
     return timelineLeftInset + clamp(seconds, 0, timeline ? timeline.duration : 0)
       / Math.max(0.001, timeline ? timeline.duration : 1) * timeWidth;
   }
-  function secondsPerPixel() {
-    return (timeline ? timeline.duration : 0) / Math.max(1, timelineWidth - timelineLeftInset);
-  }
-
   function zoomBy(factor, clientX = null) {
     if (!timeline || ui.collapsed) return;
     const rect = els.viewport.getBoundingClientRect();
@@ -2686,10 +2682,10 @@
     });
   }
 
-  /* 横に何px動いたかを秒へ直す。時間の帯の左端がどこかに依存しないので、
-     行ラベル列（既定156px）のぶんずれる心配がない。 */
+  /* 横に何px動いたかを秒へ直す。pxFor と同じく入場区間の左余白を除く。
+     絶対位置ではなく差分を換算するので、行ラベル列の幅には依存しない。 */
   function secondsPerPixel() {
-    return (timeline ? timeline.duration : 0) / Math.max(1, timelineWidth);
+    return (timeline ? timeline.duration : 0) / Math.max(1, timelineWidth - timelineLeftInset);
   }
 
   /* 掴んだ位置から動いたぶんだけ動かす（2026-09-17 修正）。

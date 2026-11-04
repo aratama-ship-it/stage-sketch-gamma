@@ -149,3 +149,17 @@ html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu .gamma-sho
   html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-setting { grid-template-columns:minmax(0,1fr); }
 }
 #gamma-venue-workspace .venue-live-layout .stage-venue-editor-zoom { grid-template-columns:var(--gamma-icon-box); }
+
+/* U1: the existing accordion/settings nodes flank the plan; no model migration. */
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels] { column-gap:var(--gamma-gap); }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels=split] { grid-template-columns:minmax(220px,min(var(--venue-menu-width),28%)) minmax(0,1fr) minmax(220px,min(var(--venue-menu-width),28%)); }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels] > .stage-venue-editor-left { grid-column:1; grid-row:1; }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels] > .stage-venue-editor-panel { grid-column:2; grid-row:1; }
+#gamma-venue-workspace .venue-panel-right { grid-column:3; grid-row:1; width:100%; min-width:0; height:100%; overflow:auto; border:0; }
+#gamma-venue-workspace .venue-panel-right[hidden] { display:none; }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels=single][data-venue-side=right] { grid-template-columns:minmax(0,1fr) var(--venue-menu-width,320px); }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels=single][data-venue-side=right] > .stage-venue-editor-left { grid-column:2; }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels=single][data-venue-side=right] > .stage-venue-editor-panel { grid-column:1; }
+#gamma-venue-workspace .venue-panel-tools { display:flex; flex:0 0 auto; gap:var(--gamma-gap); }
+#gamma-venue-workspace .stage-venue-editor-workspace[data-venue-side=right][data-venue-panels=single] > #venue-menu-width-handle { left:auto; right:var(--venue-menu-width); }
+@media(max-width:900px) { #gamma-venue-workspace .stage-venue-editor-workspace[data-venue-panels] { grid-template-columns:minmax(220px,35%) minmax(0,1fr); } }

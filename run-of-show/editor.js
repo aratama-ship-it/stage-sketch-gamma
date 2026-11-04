@@ -1267,14 +1267,20 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     if(!available)return;
     const selection=cueHost.selection(),choices=cueHost.choices();
     const performers=choices.filter(c=>c.kind==='performer');
-    const picker=$('cue-performer');picker.setAttribute('data-no-i18n','');picker.setAttribute('aria-label',uiText('演者'));picker.replaceChildren(new Option('—',''),...performers.map(c=>new Option(c.label,c.key)));
+    const performerLabel=choice=>uiFormat('{name}（Q シート）',{name:choice.label});
+    const picker=$('cue-performer');picker.setAttribute('data-no-i18n','');picker.setAttribute('aria-label',uiText('演者'));picker.replaceChildren(new Option('—',''),...performers.map(c=>new Option(performerLabel(c),c.key)));
     picker.value=cueView&&['performer','handover'].includes(selection?.kind)?selection.key:'';
     $('cue-performer-field').hidden=performers.length<=10;
     for(const [id,kind] of [['cue-performer-list','performer'],['cue-department-list','department']]){
       const list=$(id);list.hidden=kind==='performer'&&performers.length>10;list.replaceChildren();
       if(list.hidden)continue;
       for(const choice of choices.filter(c=>c.kind===kind)){
-        const button=el('button',kind==='department'?uiText(choice.label):choice.label);button.type='button';button.title=button.textContent;if(kind==='performer')button.setAttribute('data-no-i18n',''); // review R2b: performer names are show content
+        const label=kind==='performer'?performerLabel(choice):uiText(choice.label);
+        const button=el('button');button.type='button';button.title=label;
+        if(kind==='performer'){
+          button.setAttribute('data-no-i18n',''); // Names remain show content; only the Q-sheet suffix is translated.
+          button.append(el('span',label,'cue-performer-label'));
+        }else button.textContent=label;
         button.dataset.cueKind=kind;button.dataset.cueKey=choice.key;
         button.setAttribute('aria-pressed',String(cueView&&selection?.kind===kind&&selection?.key===choice.key));
         button.addEventListener('click',()=>showCueSheet(kind,choice.key));list.append(button);

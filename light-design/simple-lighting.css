@@ -38,14 +38,14 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 @media(max-width:600px){.simple-mode-panel{padding:12px}.simple-heading label{display:block;width:100%}.simple-heading select{max-width:100%;width:100%}.simple-heading>div{width:100%}.simple-controls{display:block}.simple-preset-grid{grid-template-columns:1fr;gap:12px}.simple-actions #simple-adopt{width:100%}.simple-actions button{flex:1}.simple-browser strong{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.simple-mode-panel *{animation:none!important;transition:none!important}}
 
-/* 機材配置がプリセットでないときの「かんたん」（2026-10-06）。押せないが、カーソルを合わせるとすぐ理由を出す */
+/* 機材配置がプリセットでないときの「かんたん」（2026-10-06）。グレー表示で理由を示し、押すと標準セットへの変更を確認する */
 /* ひとことが下の行のボタンの下に隠れないよう、「照明の操作」の塊ごと手前に出す */
 .simple-mode-choice{position:relative;z-index:60}
 #simple-mode-on{position:relative}
 /* ★opacity は使わない（ひとことまで薄くなって、下のボタンが透ける）。薄さは文字色と枠で出す。
    2026-10-06: 見た目の土台は同じ帯の「表示」の切替（.showtoggles）と同じ。そのうえで、押せないことは
    文字を一段薄く・枠を破線・カーソルを禁止にして、ふつうの「選んでいない」ボタンと見分ける */
-#simple-mode-on.is-unavailable{color:rgba(240,231,214,.4);border-style:dashed;border-color:#5a5043;background:transparent;cursor:not-allowed}
+#simple-mode-on.is-unavailable{color:rgba(240,231,214,.4);border-style:dashed;border-color:#5a5043;background:transparent;cursor:pointer}
 #simple-mode-on[data-hint]:hover::after,#simple-mode-on[data-hint]:focus-visible::after{content:attr(data-hint);position:absolute;top:calc(100% + 6px);left:0;z-index:40;padding:6px 10px;border:1px solid var(--simple-border);border-radius:var(--radius-sm);background:var(--desk);color:var(--simple-text);font:400 13px/1.5 var(--sans);letter-spacing:.02em;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);pointer-events:none}
 
 /* Preset images use the full-width gallery below the preview. */
@@ -281,3 +281,26 @@ html:not(.simple-light-active) #simple-adopt,.simple-light-active .gamma-light-a
 /* T1: reuse the existing pressed button, common spacing and smaller label type. */
 #simple-pattern-tags{display:flex;flex-wrap:wrap;gap:var(--simple-gap);margin-bottom:var(--simple-gap)}
 .simple-mode-panel #simple-pattern-tags button{min-height:var(--simple-tap);padding:4px 8px;font-size:var(--simple-body);line-height:1.5;white-space:nowrap}
+
+/* U1: two rails around the preview, using the same shared stack as Detail. */
+.simple-workbench[data-panel-layout=split] { grid-template-columns:var(--simple-rail-width) minmax(0,1fr) 8px var(--simple-rail-width); }
+.simple-workbench[data-panel-layout=split] > .simple-panel-left { grid-column:1; grid-row:1; }
+.simple-workbench[data-panel-layout=split] > .simple-preview { grid-column:2; grid-row:1; }
+.simple-workbench[data-panel-layout=split] > .simple-column-resize { grid-column:3; grid-row:1; }
+.simple-workbench[data-panel-layout=split] > .simple-operations:not(.simple-panel-left) { grid-column:4; grid-row:1; }
+.simple-workbench[data-panel-layout=single][data-panel-side=left] { grid-template-columns:minmax(var(--simple-operations-min),1fr) 8px minmax(0,var(--simple-preview-width)); }
+.simple-workbench[data-panel-layout=single][data-panel-side=left] > .simple-operations:not(.simple-panel-left) { grid-column:1; grid-row:1; }
+.simple-workbench[data-panel-layout=single][data-panel-side=left] > .simple-column-resize { grid-column:2; grid-row:1; }
+.simple-workbench[data-panel-layout=single][data-panel-side=left] > .simple-preview { grid-column:3; grid-row:1; }
+.simple-panel-left[hidden] { display:none!important; }
+/* Split describes the outer rails. Inside either rail there is only one stack.
+   Reset the shared split rule's align-items:start too: with inline-size
+   containment an auto-width column can otherwise shrink to zero (F-1). */
+.light-layout-sections.gamma-stack-columns[data-stack-external=true] { display:flex; flex-direction:column; align-items:stretch; grid-template-columns:none; gap:var(--gamma-gap); }
+.simple-operations > .gamma-stack-column { box-sizing:border-box; flex:0 0 auto; width:100%; min-width:0; }
+@media(max-width:600px) { .simple-workbench[data-panel-layout] { display:flex; flex-direction:column; } }
+/* N-08: removed descriptions leave no empty operation/status strips. */
+.simple-actions:empty,#simple-status:empty {display:none}
+
+/* N-02 opens a dialog even while direct Simple entry is unavailable. */
+html[data-stage-skin] #simple-mode-on.is-unavailable {cursor:pointer!important}

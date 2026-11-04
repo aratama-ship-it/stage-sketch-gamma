@@ -537,7 +537,8 @@ body.readonly-cue-shell #paper-band>:not(#band-cues):not(.ros-panel-column),body
 #band-settings .band-size-value{display:flex;align-items:center;gap:var(--s1)}
 #band-settings select,#paper-size-range{width:100%;min-width:0}
 .cue-choice-list{display:flex;flex-direction:column;gap:var(--s1);width:100%}
-#band-cues>button,.cue-choice-list button{width:100%;min-width:0;text-align:left;justify-content:flex-start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cue-performer-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#band-cues :is(#cue-return,#cue-master),.cue-choice-list button{width:100%;min-width:0;text-align:left;justify-content:flex-start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #q-column-list{width:100%;display:flex;flex-direction:column;gap:var(--s1)}
 #q-column-list label{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-table)}
 #q-column-list input{min-height:0}
@@ -924,3 +925,11 @@ body:not(.lite-paper) #paper-band .band-items .band-subgroup .action-tip-target 
 @media print { .ros-panel-column,.ros-panels-menu { display:none!important; } }
 
 @media screen { body.ros-unified-panels:is(.showing-cue-sheet,.readonly-cue-shell) #preview #band-selection { display:none; } }
+
+/* U1: one-column side selection shares Stage terminology and stored preference. */
+@media screen {
+  body.ros-unified-panels #preview[data-ros-panels=single][data-ros-side=right] {
+    grid-template-areas:"note panel" "paper panel";
+    grid-template-columns:minmax(0,1fr) var(--left-w,240px);
+  }
+}

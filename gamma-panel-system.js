@@ -52,15 +52,19 @@ function createGammaPanels(){
     return {startGrip,flipMove,cancel:()=>finishGesture?.(true),get justDragged(){return justDragged;}};
   }
   // Fill only known IDs, deduplicate and append new panels. Old keys stay intact.
-  function migrate(ids,saved,legacy,{right=[],collapsed={}}={}){
+  function layout({width,mode='split',side='left',minimum=1520}){
+    return {mode:mode==='split'&&Number(width)>=minimum?'split':'single',side:side==='right'?'right':'left'};
+  }
+  const LAYOUT_OPTIONS=Object.freeze([['split','2列表示'],['single-left','1列・左'],['single-right','1列・右']].map(Object.freeze));
+  function migrate(ids,saved,legacy,{right=[],collapsed={},mode='single',side='left'}={}){
     const unique=list=>[...new Set((Array.isArray(list)?list:[]).filter(id=>ids.includes(id)))];
     const order=list=>unique([...(Array.isArray(list)?list:[]),...ids]);
     const valid=saved&&saved.version===1;
     const single=order(valid?saved.single:legacy),split=valid&&saved.split?{left:unique(saved.split.left),right:unique(saved.split.right)}:{left:single.filter(id=>!right.includes(id)),right:unique(right)};
     split.right=split.right.filter(id=>!split.left.includes(id));for(const id of ids)if(!split.left.includes(id)&&!split.right.includes(id))split.left.push(id);
-    return {version:1,mode:valid&&saved.mode==='split'?'split':'single',single,split,collapsed:{...collapsed,...(valid?saved.collapsed:{})},hidden:unique(valid?saved.hidden:[]),heights:valid&&saved.heights&&typeof saved.heights==='object'?{...saved.heights}:{}};
+    return {version:1,mode:valid?(saved.mode==='split'?'split':'single'):mode,side:valid&&['left','right'].includes(saved.side)?saved.side:side,single,split,collapsed:{...collapsed,...(valid?saved.collapsed:{})},hidden:unique(valid?saved.hidden:[]),heights:valid&&saved.heights&&typeof saved.heights==='object'?{...saved.heights}:{}};
   }
-  return Object.freeze({ICONS,head,choices,visibilityItem,reorder,migrate});
+  return Object.freeze({ICONS,LAYOUT_OPTIONS,layout,head,choices,visibilityItem,reorder,migrate});
 }
 
 /* High-level host adapter. Hosts own content, translation and storage errors;
@@ -68,11 +72,17 @@ function createGammaPanels(){
 function createGammaPanelStack(P){
   'use strict';
   const mounted=new WeakMap();
-  function preferences(groups,saved,legacy){
+  // Repeated refreshes must not become new input for content/translation observers.
+  const attr=(node,key,value)=>{value=String(value);if(node.getAttribute(key)!==value)node.setAttribute(key,value);};
+  const content=(node,value)=>{if(node.textContent!==value)node.textContent=value;};
+  const hidden=(node,value)=>{if(node.hidden!==value)node.hidden=value;};
+  const flag=(node,key,value)=>{if(node.classList.contains(key)!==value)node.classList.toggle(key,value);};
+  const height=(node,value)=>{if((node.style.height||'')!==value)node.style.height=value;};
+  function preferences(groups,saved,legacy,defaults={}){
     const valid=saved?.version===1,old=valid?{}:(typeof legacy==='function'?legacy():legacy)||{};
     const result={version:1,groups:{}};
     for(const [name,ids] of Object.entries(groups)){
-      const previous=old[name]||{},state=P.migrate(ids,valid?saved.groups?.[name]:null,previous.order||ids,{collapsed:previous.closed||{}});
+      const previous=old[name]||{},state=P.migrate(ids,valid?saved.groups?.[name]:null,previous.order||ids,{...defaults[name],collapsed:previous.closed||{}});
       if(!valid)for(const id of ids){const value=previous.heights?.[id];if(Number.isFinite(value)&&value>0)state.heights[id]=value;}
       for(const id of ids)if(!Number.isFinite(state.heights[id])||state.heights[id]<=0)delete state.heights[id];
       result.groups[name]=state;
@@ -88,65 +98,85 @@ function createGammaPanelStack(P){
     const idsByGroup=d.order||Object.fromEntries(Object.entries(groups).map(([name,host])=>[name,Object.keys(panels).filter(id=>host.contains(panels[id]))]));
     const ids=Object.keys(panels);for(const list of Object.values(idsByGroup))for(const id of list)if(!panels[id])throw Error('Unknown panel: '+id);
     const read=()=>{try{return JSON.parse(win.localStorage.getItem(key));}catch(_){return null;}};
-    const stored=read(),state=preferences(idsByGroup,stored,d.legacy),entries=new Map();let mode=d.mode||Object.keys(groups)[0],applying=false,dragging=false;
+    const stored=read(),state=preferences(idsByGroup,stored,d.legacy,d.defaults),entries=new Map();let mode=d.mode||Object.keys(groups)[0],applying=false,dragging=false;
     const text=(value,params={})=>(d.text?.(value)||value).replace(/\{(\w+)\}/g,(all,k)=>params[k]??all);
     const title=id=>text(d.labels?.[id]||id),current=()=>state.groups[mode];
     const enabled=()=>d.enabled?.()!==false;
     const columnHosts={};
     const wide=id=>d.columns?.wide?.includes(id);
     const columned=()=>d.columns&&enabled()&&d.columns.enabled?.()!==false;
+    const arrangement=()=>P.layout({width:d.columns?.width?.()??win.innerWidth??Infinity,mode:current().mode,side:current().side,minimum:d.columns?.minimum??0});
+    const splitActive=()=>columned()&&arrangement().mode==='split';
     if(d.columns)for(const [name,host]of Object.entries(groups)){
       host.classList.add('gamma-stack-columns');const s=state.groups[name];
-      if(!stored?.groups?.[name]?.columnsReady){const normal=s.single.filter(id=>!wide(id)),half=Math.ceil(normal.length/2);s.split={left:normal.slice(0,half),right:normal.slice(half)};}
+      if(stored?.groups?.[name]&&!['left','right'].includes(stored.groups[name].side)&&d.columns.legacySides?.[name])s.side=d.columns.legacySides[name];
+      if(!stored?.groups?.[name]?.columnsReady&&!stored?.groups?.[name]?.split){const normal=s.single.filter(id=>!wide(id)),half=Math.ceil(normal.length/2),right=d.defaults?.[name]?.right;s.split=right?{left:normal.filter(id=>!right.includes(id)),right:normal.filter(id=>right.includes(id))}:{left:normal.slice(0,half),right:normal.slice(half)};}
       for(const side of ['left','right'])s.split[side]=s.split[side].filter(id=>!wide(id));
       s.columnsReady=true;
-      columnHosts[name]=Object.fromEntries(['left','right','wide'].map(side=>{const col=doc.createElement('div');col.className='gamma-stack-column';col.dataset.stackColumn=side;host.append(col);return [side,col];}));
+      if(d.columns.hosts)host.dataset.stackExternal='true';
+      columnHosts[name]=Object.fromEntries(['left','right','wide'].map(side=>{const col=doc.createElement('div');col.className='gamma-stack-column';col.dataset.stackColumn=side;(d.columns.hosts?.[name]?.[side]||host).append(col);return [side,col];}));
     }
-    const hosts=()=>columned()&&current().mode==='split'?Object.values(columnHosts[mode]):[...new Set(idsByGroup[mode].map(id=>d.destination?.(id,mode)||groups[mode]))];
+    const hosts=()=>splitActive()?Object.values(columnHosts[mode]):[...new Set(idsByGroup[mode].map(id=>d.destination?.(id,mode)||groups[mode]))];
     const hostFor=id=>{
-      if(columned()&&current().mode==='split')return columnHosts[mode][wide(id)?'wide':current().split.right.includes(id)?'right':'left'];
+      if(splitActive())return columnHosts[mode][wide(id)?'wide':current().split.right.includes(id)?'right':'left'];
       return d.destination?.(id,mode)||groups[mode];
     };
     const shown=()=>hosts().flatMap(host=>[...host.children].map(n=>n.dataset.stackPanel)).filter(id=>panels[id]&&!panels[id].hidden&&panels[id].getClientRects().length);
     function changed(){try{win.localStorage.setItem(key,JSON.stringify(state));}catch(error){d.onStorageError?.(error);}positions();d.onChange?.();}
-    function positions(){const visible=shown();for(const id of ids){const e=entries.get(id);if(!e)continue;e.name.textContent=title(id);e.grip.title=text('ドラッグでパネルを並べ替え');e.handle.setAttribute('aria-label',text('{name}の高さ',{name:title(id)}));e.handle.title=text('ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。');if(visible.includes(id))e.button.setAttribute('aria-description',text('{name}：{total}個中{position}番目。',{name:title(id),total:visible.length,position:visible.indexOf(id)+1}));}}
-    function commit(){const s=current(),order=host=>[...host.children].map(n=>n.dataset.stackPanel).filter(id=>idsByGroup[mode].includes(id));if(columned()&&s.mode==='split'){for(const side of ['left','right'])s.split[side]=order(columnHosts[mode][side]).filter(id=>!wide(id));refresh();}else s.single=P.migrate(idsByGroup[mode],null,hosts().flatMap(order)).single;changed();}
-    const drag=P.reorder({doc,columns:()=>hosts().filter(host=>host.dataset.stackColumn!=='wide'),items:()=>idsByGroup[mode].filter(id=>!columned()||current().mode!=='split'||!wide(id)).map(id=>panels[id]),key:n=>n.dataset.stackPanel,holeClass:'gamma-stack-hole',scrollHost:host=>d.scrollHost?.(host)||host,motion:()=>d.motion?.()!==false,onDrag:value=>{dragging=!!value;},onCommit:commit});
-    function paint(id){const e=entries.get(id),s=current();if(!s.single.includes(id))return;const closed=enabled()&&!!s.collapsed[id];e.button.setAttribute('aria-expanded',String(!closed));e.body.hidden=closed;e.handle.hidden=closed;panels[id].classList.toggle('is-stack-collapsed',closed);panels[id].hidden=enabled()&&s.hidden.includes(id)||d.unavailable?.(id,mode)===true;if(!closed&&!panels[id].hidden)e.height();}
+    function positions(){const visible=shown();for(const id of ids){const e=entries.get(id);if(!e)continue;content(e.name,title(id));attr(e.grip,'title',text('ドラッグでパネルを並べ替え'));attr(e.handle,'aria-label',text('{name}の高さ',{name:title(id)}));attr(e.handle,'title',text('ドラッグで高さを変更。上下キーで調整、Enterまたはダブルクリックで自動高。'));if(visible.includes(id))attr(e.button,'aria-description',text('{name}：{total}個中{position}番目。',{name:title(id),total:visible.length,position:visible.indexOf(id)+1}));}}
+    function commit(){const s=current(),order=host=>[...host.children].map(n=>n.dataset.stackPanel).filter(id=>idsByGroup[mode].includes(id));if(splitActive()){for(const side of ['left','right'])s.split[side]=order(columnHosts[mode][side]).filter(id=>!wide(id));refresh();}else s.single=P.migrate(idsByGroup[mode],null,hosts().flatMap(order)).single;changed();}
+    const drag=P.reorder({doc,columns:()=>hosts().filter(host=>host.dataset.stackColumn!=='wide'),items:()=>idsByGroup[mode].filter(id=>!splitActive()||!wide(id)).map(id=>panels[id]),key:n=>n.dataset.stackPanel,holeClass:'gamma-stack-hole',scrollHost:host=>d.scrollHost?.(host)||host,motion:()=>d.motion?.()!==false,onDrag:value=>{dragging=!!value;},onCommit:commit});
+    function paint(id){const e=entries.get(id),s=current();if(!s.single.includes(id))return;const closed=enabled()&&!!s.collapsed[id];attr(e.button,'aria-expanded',!closed);hidden(e.body,closed);hidden(e.handle,closed);flag(panels[id],'is-stack-collapsed',closed);hidden(panels[id],enabled()&&s.hidden.includes(id)||d.unavailable?.(id,mode)===true);if(!closed&&!panels[id].hidden)e.height();}
     function toggle(id){if(drag.justDragged)return;const s=current();s.collapsed[id]=!s.collapsed[id];paint(id);changed();}
     for(const id of ids){
       const node=panels[id];node.dataset.stackPanel=id;node.classList.add('gamma-stack-panel');
       // Hosts may nominate an existing heading/body; other content nodes retain identity.
       const old=d.headings?.[id]||node.querySelector(':scope > [data-panel-heading]');
-      const h=P.head(doc,{title:title(id),titleNode:d.titles?.[id],classes:'gamma-stack',onToggle:()=>toggle(id),onGrip:event=>{if(enabled()&&!(columned()&&current().mode==='split'&&wide(id)))drag.startGrip(event,id,node);}});
+      const h=P.head(doc,{title:title(id),titleNode:d.titles?.[id],classes:'gamma-stack',onToggle:()=>toggle(id),onGrip:event=>{if(enabled()&&!(splitActive()&&wide(id)))drag.startGrip(event,id,node);}});
       h.button.dataset.noI18n='';
       const body=d.bodies?.[id]||doc.createElement('div');body.classList.add('gamma-stack-body');body.id=body.id||namespace+'-panel-body-'+id;
       if(!d.bodies?.[id])for(const child of [...node.childNodes])if(child!==old)body.append(child);
       if(old)old.replaceWith(h.button);else node.prepend(h.button);node.append(body);
-      const handle=doc.createElement('div');handle.className='gamma-stack-height';handle.dataset.noI18n='';handle.setAttribute('aria-controls',body.id);node.append(handle);h.button.setAttribute('aria-controls',body.id);h.button.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');
-      let preview=null;
-      const max=()=>{const height=body.style.height;body.style.height='';const full=body.scrollHeight;body.style.height=height;return full;};
-      const paintHeight=()=>{const wanted=preview??current().heights[id],full=max();body.style.height=Number.isFinite(wanted)?Math.max(Math.min(80,full),Math.min(full,wanted))+'px':'';};
+      const handle=doc.createElement('div');handle.className='gamma-stack-height';handle.dataset.noI18n='';handle.setAttribute('aria-controls',body.id);node.append(handle);h.button.setAttribute('aria-controls',body.id);h.button.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight');
+      let preview=null,natural=null;
+      // A manual height needs an unconstrained measurement, but only after content
+      // or width changes. Auto height can be measured without touching the DOM.
+      const max=()=>{const before=body.style.height||'',width=body.getBoundingClientRect().width;
+        if(!before)natural={width,full:body.scrollHeight};
+        else if(!natural||natural.width!==width||body.scrollHeight>natural.full){height(body,'');natural={width,full:body.scrollHeight};height(body,before);}
+        return natural.full;};
+      const paintHeight=()=>{const wanted=preview??current().heights[id],full=max();height(body,Number.isFinite(wanted)?Math.max(Math.min(80,full),Math.min(full,wanted))+'px':'');};
       const binder=UI.bindHeight(handle,{value:()=>body.getBoundingClientRect().height,bounds:()=>{const full=max();return {min:Math.min(80,full),max:full};},start:()=>{},preview:value=>{preview=value;paintHeight();},commit:value=>{preview=null;current().heights[id]=value;paintHeight();changed();},cancel:()=>{preview=null;paintHeight();},reset:()=>{preview=null;delete current().heights[id];paintHeight();changed();}});
-      entries.set(id,{...h,body,handle,height:()=>{paintHeight();binder.update();},binder});
-      h.button.addEventListener('keydown',event=>{if(!enabled()||!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key)||columned()&&current().mode==='split'&&wide(id))return;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(!columned()||current().mode!=='split')return;event.preventDefault();event.stopPropagation();drag.flipMove(()=>columnHosts[mode][event.key==='ArrowLeft'?'left':'right'].append(node));commit();}else{event.preventDefault();event.stopPropagation();const list=[...node.parentElement.children].filter(n=>n.dataset.stackPanel&&!n.hidden),at=list.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=list[next];if(target){drag.flipMove(()=>node.parentElement.insertBefore(node,next<at?target:target.nextSibling));commit();}}h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
+      entries.set(id,{...h,body,handle,height:()=>{paintHeight();binder.update();},invalidate:()=>{natural=null;},binder});
+      h.button.addEventListener('keydown',event=>{if(!enabled()||!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key)||splitActive()&&wide(id))return;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(!splitActive())return;event.preventDefault();event.stopPropagation();drag.flipMove(()=>columnHosts[mode][event.key==='ArrowLeft'?'left':'right'].append(node));commit();}else{event.preventDefault();event.stopPropagation();const list=[...node.parentElement.children].filter(n=>n.dataset.stackPanel&&!n.hidden),at=list.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=list[next];if(target){drag.flipMove(()=>node.parentElement.insertBefore(node,next<at?target:target.nextSibling));commit();}}h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
     }
     const button=doc.createElement('button'),menu=doc.createElement('div');button.type='button';button.dataset.noI18n='';menu.dataset.noI18n='';button.id=namespace+'-panels-visibility';button.className='gamma-stack-visibility';button.innerHTML=P.ICONS.visibility;menu.id=namespace+'-panels-visibility-menu';menu.className='gamma-stack-menu';menu.setAttribute('popover','auto');button.setAttribute('popovertarget',menu.id);button.setAttribute('aria-controls',menu.id);button.setAttribute('aria-expanded','false');doc.body.append(menu);d.toolbar?.append(button);
     function visibility(){menu.replaceChildren();for(const id of idsByGroup[mode])menu.append(P.visibilityItem(doc,{id,label:title(id),checked:!current().hidden.includes(id),onChange:checked=>{const hidden=new Set(current().hidden);checked?hidden.delete(id):hidden.add(id);current().hidden=[...hidden];if(checked)current().collapsed[id]=false;paint(id);changed();}}));}
     button.addEventListener('click',visibility);menu.addEventListener('toggle',()=>{const open=menu.matches(':popover-open');button.setAttribute('aria-expanded',String(open));if(open){const r=button.getBoundingClientRect();menu.style.left=Math.max(0,Math.min(r.left,win.innerWidth-menu.offsetWidth))+'px';menu.style.top=Math.min(r.bottom,win.innerHeight-menu.offsetHeight)+'px';}});
     let layoutButton=null,layoutMenu=null;
-    function layoutChoices(){if(layoutMenu)P.choices(layoutMenu,{options:[['single','1列表示'],['split','2列表示']],current:current().mode,text,onSelect:value=>{drag.cancel();for(const e of entries.values())e.binder.cancel();current().mode=value;refresh();changed();layoutMenu.hidePopover?.();}});}
+    function layoutChoices(){if(layoutMenu)P.choices(layoutMenu,{options:P.LAYOUT_OPTIONS,current:current().mode==='split'?'split':'single-'+current().side,text,onSelect:value=>{drag.cancel();for(const e of entries.values())e.binder.cancel();current().mode=value==='split'?'split':'single';if(value!=='split')current().side=value==='single-right'?'right':'left';refresh();changed();layoutMenu.hidePopover?.();}});}
     if(d.columns){layoutButton=doc.createElement('button');layoutButton.type='button';layoutButton.dataset.noI18n='';layoutButton.id=namespace+'-panels-layout';layoutButton.className='gamma-stack-visibility';layoutButton.innerHTML=P.ICONS.layout;layoutMenu=doc.createElement('div');layoutMenu.id=layoutButton.id+'-menu';layoutMenu.className='gamma-stack-menu';layoutMenu.dataset.noI18n='';layoutMenu.setAttribute('popover','auto');layoutButton.setAttribute('popovertarget',layoutMenu.id);layoutButton.setAttribute('aria-controls',layoutMenu.id);layoutButton.setAttribute('aria-expanded','false');d.toolbar?.append(layoutButton);doc.body.append(layoutMenu);layoutButton.addEventListener('click',layoutChoices);layoutMenu.addEventListener('toggle',()=>{const open=layoutMenu.matches(':popover-open');layoutButton.setAttribute('aria-expanded',String(open));if(open){const r=layoutButton.getBoundingClientRect();layoutMenu.style.left=Math.max(0,Math.min(r.left,win.innerWidth-layoutMenu.offsetWidth))+'px';layoutMenu.style.top=Math.min(r.bottom,win.innerHeight-layoutMenu.offsetHeight)+'px';}});}
     function refresh(){if(applying||dragging)return;applying=true;try{
-      const split=columned()&&current().mode==='split',sequence=split?[...current().split.left.filter(id=>!wide(id)),...current().split.right.filter(id=>!wide(id)),...current().single.filter(wide)]:current().single;
-      if(d.columns)for(const [name,cols]of Object.entries(columnHosts)){groups[name].dataset.stackLayout=name===mode&&split?'split':'single';for(const col of Object.values(cols))col.hidden=!(name===mode&&split);}
-      for(const host of new Set(sequence.map(hostFor))){const order=sequence.filter(id=>hostFor(id)===host);for(let i=order.length-1;i>=0;i--){const node=panels[order[i]],next=i+1<order.length?panels[order[i+1]]:null;if(node.parentElement!==host||next&&node.nextElementSibling!==next)host.insertBefore(node,next);}}for(const id of current().single){paint(id);}positions();button.setAttribute('aria-label',text('パネルのオン/オフ'));button.title=text('パネルのオン/オフ');if(layoutButton){layoutButton.hidden=!enabled();layoutButton.setAttribute('aria-label',text('パネルの表示スタイル'));layoutButton.title=text('パネルの表示スタイル');}
+      const split=splitActive(),sequence=split?[...current().split.left.filter(id=>!wide(id)),...current().split.right.filter(id=>!wide(id)),...current().single.filter(wide)]:current().single;
+      if(d.columns)for(const [name,cols]of Object.entries(columnHosts)){attr(groups[name],'data-stack-layout',name===mode&&split?'split':'single');for(const col of Object.values(cols))hidden(col,!(name===mode&&split));attr(groups[name],'data-stack-side',state.groups[name].side);}
+      for(const host of new Set(sequence.map(hostFor))){const order=sequence.filter(id=>hostFor(id)===host);for(let i=order.length-1;i>=0;i--){const node=panels[order[i]],next=i+1<order.length?panels[order[i+1]]:null;if(node.parentElement!==host||next&&node.nextElementSibling!==next)host.insertBefore(node,next);}}
+      // Resolve host visibility/side before measuring panel heights.
+      d.columns?.onLayout?.({group:mode,...arrangement(),active:columned()});
+      for(const id of current().single){paint(id);}positions();attr(button,'aria-label',text('パネルのオン/オフ'));attr(button,'title',text('パネルのオン/オフ'));if(layoutButton){hidden(layoutButton,!enabled());attr(layoutButton,'aria-label',text('パネルの表示スタイル'));attr(layoutButton,'title',text('パネルの表示スタイル'));}
     }finally{applying=false;}}
-    function setMode(next){if(!groups[next])throw Error('Unknown panel group: '+next);if(next!==mode){drag.cancel();for(const e of entries.values())e.binder.cancel();menu.hidePopover?.();layoutMenu?.hidePopover?.();mode=next;for(const id of current().single)hostFor(id).append(panels[id]);}refresh();}
+    function setMode(next){if(!groups[next])throw Error('Unknown panel group: '+next);if(next!==mode){drag.cancel();for(const e of entries.values()){e.invalidate();e.binder.cancel();}menu.hidePopover?.();layoutMenu?.hidePopover?.();mode=next;for(const id of current().single)hostFor(id).append(panels[id]);}refresh();}
     let refreshFrame=0;
     const queueRefresh=()=>{if(!refreshFrame)refreshFrame=win.requestAnimationFrame(()=>{refreshFrame=0;refresh();});};
-    if(win.MutationObserver){const observer=new win.MutationObserver(queueRefresh);for(const e of entries.values())observer.observe(e.body,{subtree:true,childList:true,characterData:true});}
-    win.addEventListener('resize',queueRefresh);
+    if(win.MutationObserver){const observer=new win.MutationObserver(records=>{
+      let changed=false;
+      for(const e of entries.values())if(records.some(record=>e.body.contains(record.target)&&(record.type!=='attributes'||record.target!==e.body&&record.oldValue!==record.target.getAttribute(record.attributeName)))){e.invalidate();changed=true;}
+      if(changed)queueRefresh();
+    });
+      // Descendant open/hidden/class/style can change natural height without
+      // replacing text. Ignore our own body height/visibility and no-op setters.
+      for(const e of entries.values())observer.observe(e.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['open','hidden','class','style'],attributeOldValue:true});
+    }
+    win.addEventListener('resize',()=>{drag.cancel();for(const e of entries.values()){e.invalidate();e.binder.cancel();}queueRefresh();});
     // Initial placement is the migrated order; refresh never overrides an active gesture.
     for(const id of current().single)hostFor(id).append(panels[id]);
     const api=Object.freeze({setMode,refresh,setCollapsed(id,closed){if(!idsByGroup[mode].includes(id))return;current().collapsed[id]=closed;if(!closed)current().hidden=current().hidden.filter(value=>value!==id);paint(id);changed();},snapshot:()=>JSON.parse(JSON.stringify(state)),key});mounts.set(namespace,api);refresh();return api;

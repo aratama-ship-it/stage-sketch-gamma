@@ -104,10 +104,11 @@
   button.st.on{color:#1a1409;background:var(--brass);border-color:var(--brass)}
   button.st.off{color:#8b98a1}
   /* 灯体一覧の状態は文字ではなく、レンズ＋光輪で読む。ON/OFFを色だけに頼らない。 */
-  button.st.fixture-power{width:34px;min-width:34px;min-height:30px;padding:3px;display:inline-grid;place-items:center;line-height:0}
+  /* Shared by detailed fixtures and simple layers (N-14). */
+  :is(#list,#simple-layers) button.st.fixture-power{box-sizing:border-box;width:var(--ctrl-md,34px);height:var(--ctrl-md,34px);min-width:var(--ctrl-md,34px);min-height:var(--ctrl-md,34px);max-width:var(--ctrl-md,34px);padding:3px;display:inline-grid;place-items:center;line-height:0;border:1px solid var(--line-dark);box-shadow:none;background:var(--recess);color:var(--milk-dim);flex:0 0 auto}
+  :is(#list,#simple-layers) button.st.fixture-power:is(.on,.move){background:var(--brass);border-color:var(--brass);color:var(--gamma-on-primary,#1a1409)}
   button.st.fixture-power svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
   button.st.fixture-power .fixture-power-lens{fill:currentColor}
-  /* 「動き」は点灯中の別状態。斜線は消灯のときだけ出し、動き中を消灯に見せない。 */
   button.st.fixture-power .fixture-power-slash{display:none}
   button.st.fixture-power.off .fixture-power-rays{display:none}
   button.st.fixture-power.off .fixture-power-lens{fill:none}
@@ -840,9 +841,9 @@
   html.front-display-controls-active #front-display-controls .showtoggles{justify-content:flex-start}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261103-v041">
-<link rel="stylesheet" href="embed.css?v=20261103-v041">
-<link rel="stylesheet" href="simple-lighting.css?v=20261104-v042">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261104-v044">
+<link rel="stylesheet" href="embed.css?v=20261104-v044">
+<link rel="stylesheet" href="simple-lighting.css?v=20261104-v044">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -1097,7 +1098,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261103-v041"></script>
+<script src="../gamma-ui.js?v=20261104-v044"></script>
 <link rel="stylesheet" href="position-names.css?v=20261101-v0398">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261011-v0347"></script>
@@ -1115,7 +1116,7 @@
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-scrim.js?v=20261009-v0335"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261104-v043"></script>
+<script src="app.js?v=20261104-v044"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1126,13 +1127,13 @@
 <script src="part-lighting-model.js?v=20261104-v042"></script>
 <script src="part-lighting-flow.js"></script>
 <script src="embed.js?v=20261103-v041"></script>
-<script src="simple-lighting-ui.js?v=20261104-v042"></script>
+<script src="simple-lighting-ui.js?v=20261104-v044"></script>
 <script src="assist.js?v=20261031-v0397"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261103-v041"></script>
 <script src="../gamma-ui-i18n.js?v=20261103-v041"></script>
 <script src="../gamma-ui-i18n.ko.js?v=20261103-v041"></script>
-<script src="ui-i18n.js?v=20261103-v041"></script>
+<script src="ui-i18n.js?v=20261104-v044"></script>
 <script src="../gamma-appearance.js?v=20261031-v0396"></script>
 </body>
 </html>

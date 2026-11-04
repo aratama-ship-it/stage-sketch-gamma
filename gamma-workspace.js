@@ -611,6 +611,40 @@
   // 幅は劇場データと分け、このブラウザの表示設定として覚える。
   // 舞台タブと同じ取っ手・キー操作を使い、図の再描画は既存のResizeObserverへ任せる。
   let venueMenuWidthUi=null;
+  let venuePanelLayout=null;
+  function setupVenuePanelLayout() {
+    if(venuePanelLayout){venuePanelLayout();return;}
+    const P=window.GAMMA_PANELS,grid=venueWorkspace.querySelector('.stage-venue-editor-workspace');
+    const left=grid?.querySelector('.stage-venue-editor-menu'),rail=grid?.querySelector('.stage-venue-editor-left');
+    if(!P||!left||!rail)return;
+    const nodes=[...left.children],ids=nodes.map((node,i)=>node.id||'venue-section-'+i),byId=new Map(ids.map((id,i)=>[id,nodes[i]]));
+    const key='gamma:venue:panels-v1';let saved=null;
+    try{saved=JSON.parse(localStorage.getItem(key));}catch(_){}
+    const rightIds=ids.filter((id,i)=>nodes[i].matches('.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,.stage-venue-editor-walls-guide,.stage-venue-editor-back-screens,.stage-venue-editor-machinery,.stage-venue-editor-viewpoints,.stage-venue-editor-lines'));
+    const state=P.migrate(ids,saved,ids,{right:rightIds,mode:'split'});
+    const right=document.createElement('aside');right.className='stage-venue-editor-menu venue-panel-right';grid.append(right);
+    const tools=document.createElement('div'),button=document.createElement('button'),menu=document.createElement('div');
+    tools.className='venue-panel-tools';button.type='button';button.id='venue-panels-layout';button.className='gamma-stack-visibility';button.innerHTML=P.ICONS.layout;
+    menu.id='venue-panels-layout-menu';menu.className='gamma-stack-menu';menu.setAttribute('popover','auto');button.setAttribute('popovertarget',menu.id);button.setAttribute('aria-controls',menu.id);button.setAttribute('aria-expanded','false');
+    tools.append(button);rail.prepend(tools);document.body.append(menu);
+    const text=value=>window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang,value)||value;
+    function apply(){
+      const effective=P.layout({width:innerWidth,mode:state.mode,side:state.side});
+      grid.dataset.venuePanels=effective.mode;grid.dataset.venueSide=effective.side;
+      const split=effective.mode==='split',orders=split?state.split:{left:state.single,right:[]};
+      for(const [side,order]of Object.entries(orders))for(const id of order)(side==='left'?left:right).append(byId.get(id));
+      right.hidden=!split;button.title=text('パネルの表示スタイル');button.setAttribute('aria-label',button.title);
+    }
+    button.addEventListener('click',()=>P.choices(menu,{options:P.LAYOUT_OPTIONS,current:state.mode==='split'?'split':'single-'+state.side,text,onSelect:value=>{
+      state.mode=value==='split'?'split':'single';if(value!=='split')state.side=value==='single-right'?'right':'left';
+      try{localStorage.setItem(key,JSON.stringify(state));}catch(_){}
+      apply();menu.hidePopover?.();button.focus();
+    }}));
+    menu.addEventListener('toggle',()=>{const open=menu.matches(':popover-open');button.setAttribute('aria-expanded',String(open));if(open){const r=button.getBoundingClientRect();menu.style.left=Math.max(0,Math.min(r.left,innerWidth-menu.offsetWidth))+'px';menu.style.top=Math.min(r.bottom,innerHeight-menu.offsetHeight)+'px';}});
+    let resizeFrame=0;window.addEventListener('resize',()=>{if(!resizeFrame)resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;apply();});});
+    new MutationObserver(apply).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+    venuePanelLayout=apply;apply();
+  }
   function setupVenueMenuWidth() {
     if(venueMenuWidthUi) { venueMenuWidthUi.sync(); return; }
     const grid=venueWorkspace.querySelector('.stage-venue-editor-workspace');
@@ -701,6 +735,7 @@
     if(venueBackdrop) venueBackdrop.hidden=true;
     venueModal.hidden=false;
     setupVenueSteps();
+    setupVenuePanelLayout();
     setupVenueMenuWidth();
   }
   function hideVenue() {
@@ -1120,7 +1155,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261104-v043'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261104-v044'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
@@ -1457,7 +1492,7 @@
   ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
   ops.onload = ops.onerror = () => {
     const script = document.createElement('script');
-    script.src = 'gamma-assist.js?v=20261104-v042';
+    script.src = 'gamma-assist.js?v=20261104-v044';
     document.body.append(script);
   };
   const extension = document.createElement('script');

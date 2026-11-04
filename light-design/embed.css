@@ -353,3 +353,29 @@ html[data-gamma-embedded] #panel-lxq.gamma-stack-panel label:has(input[type=chec
   display:inline-flex; align-items:center; justify-content:center; width:auto; gap:4px; padding:0 6px;
 }
 .transport #light-program-play .light-program-lamp { fill:none; stroke:currentColor; stroke-width:1.3; }
+
+/* U1: shared rails flank the figure; one column is a viewport-only fallback. */
+html[data-gamma-light-mode=move] .leftcol.gamma-stack-columns[data-stack-external=true] { display:flex!important; flex-direction:column; align-items:stretch; grid-template-columns:none; gap:var(--gamma-gap); }
+.light-panel-right { box-sizing:border-box; grid-column:3; grid-row:1/3; width:100%; min-width:0; height:100%; min-height:0; overflow:auto; }
+.light-panel-right[hidden] { display:none!important; }
+html[data-gamma-light-mode=move] :is(.leftcol,.light-panel-right) > .gamma-stack-column { box-sizing:border-box; flex:0 0 auto; width:100%; min-width:0; }
+html[data-gamma-light-mode=move] .gamma-stack-column > .gamma-stack-panel { flex:0 0 auto!important; }
+html[data-gamma-light-mode=move][data-light-panel-style=single][data-light-panel-side=right] .figgrid.detail-columns:not([data-solo]) { grid-template-columns:minmax(0,var(--detail-mid-width)) var(--detail-right-width); }
+html[data-gamma-light-mode=move][data-light-panel-style=single][data-light-panel-side=right] .figgrid.detail-columns:not([data-solo]) > :is(.planwrap,.sec.front) { grid-column:1; }
+html[data-gamma-light-mode=move][data-light-panel-style=single][data-light-panel-side=right] .figgrid.detail-columns:not([data-solo]) > :is(.leftcol,.sec.side.l) { grid-column:2; }
+/* P used fixed CSS tracks while syncFigureSizes computed a different centre width. */
+html[data-gamma-light-mode=move] .figgrid.detail-columns[data-solo=plan] { grid-template-columns:var(--detail-left-width) minmax(0,1fr) var(--detail-right-width); gap:var(--gamma-gap); }
+html[data-gamma-light-mode=move] .figgrid.detail-columns[data-solo=plan] > .planwrap { width:100%!important; max-width:100%; min-width:0; justify-self:stretch; }
+html[data-gamma-light-mode=move][data-light-panel-style=single][data-light-panel-side=right] #light-left-resize { left:auto; right:var(--detail-right-width); }
+/* U2 N-17: stage scene typography; the scene title yields before the cue title. */
+html[data-gamma-embedded] #scenerow :is(.sno,.sno b,.sno-name,.qnow,.qcue,.qnow em,.qdraft) {
+  font-family:var(--sans); font-size:clamp(13px,1.1vw,16px);font-weight:500;
+  line-height:1.2;letter-spacing:.06em;font-style:normal;color:var(--milk);font-variant-numeric:tabular-nums;
+}
+html[data-gamma-embedded] #scenerow .sno-word {color:var(--milk-dim)}
+html[data-gamma-embedded] #scenerow .sno-name {display:block;min-width:0;max-width:11em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
+html[data-gamma-embedded] #scenerow .sno :is(b,.sno-word) {flex:none}
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar:not([data-fit="center"]) #scenerow .sno-name {max-width:4ch}
+html[data-gamma-embedded] #scenerow :is(.sno,.scenenav) {min-width:0}
+
+html[data-gamma-embedded] .figbar[data-fit="center"] #scenerow .qnow em {max-width:none}

@@ -264,7 +264,8 @@
     const settingsMapLink=document.getElementById('settings-map-link');
     if(settingsMapLink)settingsMapLink.href='../manual-gamma/index.html?lang='+(language==='ja'?'ja':'en')+'#settings-map';
     for (const button of document.querySelectorAll('[data-fixed-conflict-scenes]')) {
-      button.textContent = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
+      const label = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
+      if (button.textContent !== label) button.textContent = label;
     }
     if(document.documentElement.lang!==language) {
       document.documentElement.lang=language;

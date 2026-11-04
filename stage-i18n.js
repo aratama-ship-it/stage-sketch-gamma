@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "タイムラインの時間の換算を 1 つにそろえました。入場の区間がある場面でも、目盛りのクリックやドラッグが指した時刻どおりに着きます（以前は約 1.3 秒手前に着くことがありました）。": "Timeline time conversion now uses a single rule. In scenes with an entry section, clicks and drags on the scale land exactly at the time you point to (previously they could land about 1.3 seconds early).",
+
+    "パネルの行の寸法を 1 か所にまとめ、新しく使い始めたときは各タブのパネルが 2 列に並ぶようにしました（狭い画面では 1 列）。LX キューは 1 列の幅で並び、P の大きな表示は中央いっぱいに広がります。保存済みのパネルの配置は変わりません。": "Panel row sizes are now defined in one place, and when you start fresh each tab shows its panels in two columns (one column on narrow screens). LX cues sit in a single column width, and the large P view spreads across the centre. Saved panel arrangements are unchanged.",
+
+    "かんたん照明の確認窓のボタンをそろえました。押せない「かんたん」を押すと、標準セットへ変更するかを確かめる窓が出ます。上部の説明書きを減らし、上部のバーにシーン名を出しました。ON/OFF のボタンは詳細の灯体と同じ形になりました。": "Buttons in Simple lighting confirmation dialogs now match. Pressing the unavailable Simple button opens a dialog asking whether to switch to the Standard set. Fewer descriptions appear at the top, and the top bar now shows the scene name. ON/OFF buttons now share the shape of the fixtures in Detail.",
+
+    "進行表の「表示内容」の文字を左寄せにそろえ、演者の項目に「（Q シート）」と添えました（表示だけで、データ・CSV・印刷は変わりません）。": "Text in the run-of-show Display contents is now left-aligned, and the performer item reads “(Q sheet)” (display only; data, CSV and printing are unchanged).",
+
     "進行表を紙面で直接編集したとき、確定できなかった入力が消えずに残るようにしました。印刷は専用の写しで行い、印刷用の一時的な書式が保存に混ざらないようにしました。進行表と Q シートの CSV は、書いたとおりの文で出します（Q シートの記号の列だけ言葉に直します）。": "When you edit the run-of-show directly on the page, input that could not be confirmed is no longer lost. Printing now uses its own copy, so temporary print formatting never gets saved. Run-of-show and Q-sheet CSV files now contain the text exactly as written (only the Q-sheet symbol column is spelled out in words).",
 
     "劇場設計で図面を読み込み直すとき、新しい図面の読み込みが終わるまで前の図面を残し、古い読み込みが後から終わっても上書きしないようにしました。リハーサルの記録図では、消しゴムも描き足しと同じく 50 回まで戻せます。": "When you reload a drawing in theatre design, the previous drawing stays until the new one has finished loading, and an older load that finishes later no longer overwrites it. In rehearsal record drawings, eraser strokes can now be undone up to 50 times, the same as pen strokes.",
@@ -5484,6 +5492,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "この端末の保存は保護されています（インストール済み）。それでも控えは取ってください。": "Storage on this device is protected (installed). Please still keep backups.",
   "控え: まだ一度も書き出していません": "Backup: never exported",
   "PDF出力": "Export PDF",
+  "{name}（Q シート）": "{name} (Q sheet)",
   "表示内容": "View content",
   "紙面": "Page",
   "上下に並べ替え": "Move panel up or down",

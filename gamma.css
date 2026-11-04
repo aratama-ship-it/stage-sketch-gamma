@@ -2083,3 +2083,13 @@ html.stage-pwa-tablet .stage-project-panel-actions > .stage-tablet-samples-open 
   .stage-playback-dock.is-active :is(.stage-timeline-grip-label,.stage-timeline-shortcut) { display:none; }
   .stage-playback-dock.is-active .stage-playback-position { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; }
 }
+
+/* U2 N-01: the common confirmation footer cancels vertical action-list metrics. */
+.stage-modal.stage-surface-dialog footer { flex-wrap:nowrap; align-items:stretch; }
+.stage-modal.stage-surface-dialog footer > button:not(#stage-venue-editor-apply) {
+  box-sizing:border-box; margin:0; height:auto; min-height:var(--ctrl-lg);
+  padding:8px 18px; font:400 var(--fs-6)/1.2 var(--sans); letter-spacing:.15em;
+}
+
+/* N-12: only the inner bright strip; retain the face and gold timeline edge. */
+#stage-timeline-grip::after { display:none; }
