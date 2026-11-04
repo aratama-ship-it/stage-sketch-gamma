@@ -1804,6 +1804,23 @@
     return timelineTransportBridge.toggleTimeline();
   }
   /* 再生／停止は1つのSVGトグル。押すと起きることは title / aria-label、状態は図形と色で示す。 */
+  const transportButtonIcons = new WeakMap();
+  function renderTransportButton(button, playing, label, shortcut, lamp = false) {
+    // Keep the actual SVG nodes through ticks and language changes. A replaced
+    // button gets its own initial render; availability remains owned by callers.
+    const iconKey = `${playing}:${lamp}`;
+    if (transportButtonIcons.get(button) !== iconKey) {
+      const lampIcon = lamp ? '<svg class="light-program-lamp" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 2h6M8 2v3M5 5h6l1 5H4l1-5ZM5 12l-2 2m5-2v3m3-3 2 2"/></svg>' : '';
+      button.innerHTML = lampIcon + (playing
+        ? '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>'
+        : '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>');
+      transportButtonIcons.set(button, iconKey);
+    }
+    for (const [name, value] of [["title", label], ["aria-label", label], ["aria-pressed", String(playing)], ["aria-keyshortcuts", shortcut]]) {
+      if (button.getAttribute(name) !== value) button.setAttribute(name, value);
+    }
+    if (button.classList.contains("playing") !== playing) button.classList.toggle("playing", playing);
+  }
   function renderTransport() {
     const b = $("t-play"); if (!b) return;
     const playing = timelineTransportBridge ? timelineTransportBridge.playing() : state.play.on;
@@ -1811,20 +1828,11 @@
       ? (playing ? "タイムラインを止める（Space）" : "タイムラインを再生する（Space）")
       : (state.play.on ? "動きを止める（Space）" : "動きを再生する（Space）");
     const label = window.GAMMA_LIGHT_UI_TEXT?.(rawLabel) || window.GAMMA_UI_TEXT?.(rawLabel) || rawLabel;
-    b.innerHTML = playing
-      ? '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>'
-      : '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>';
-    b.title = label;
-    b.setAttribute("aria-label", label);
-    b.setAttribute("aria-pressed", String(playing));
-    b.setAttribute("aria-keyshortcuts", "Space");
-    b.classList.toggle("playing", playing);
+    renderTransportButton(b, playing, label, "Space");
     const program=$("light-program-play");
     if(program){
       const programLabel=window.GAMMA_LIGHT_UI_TEXT?.(state.play.on?"照明の停止":"照明の再生")||(state.play.on?"照明の停止":"照明の再生");
-      const lampIcon='<svg class="light-program-lamp" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 2h6M8 2v3M5 5h6l1 5H4l1-5ZM5 12l-2 2m5-2v3m3-3 2 2"/></svg>';
-      program.innerHTML=lampIcon+(state.play.on?'<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>':'<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>');
-      program.title=programLabel;program.setAttribute('aria-label',programLabel);program.setAttribute('aria-pressed',String(state.play.on));program.setAttribute('aria-keyshortcuts','Shift+Space');program.classList.toggle('playing',state.play.on);
+      renderTransportButton(program, state.play.on, programLabel, "Shift+Space", true);
     }
     renderXfer();
   }

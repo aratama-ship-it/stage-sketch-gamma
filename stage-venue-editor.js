@@ -2538,6 +2538,18 @@
   let lineDraft = null;            // 直線の壁を描いている途中 { points: [[x,y]...], cursor, snapped }
   let wallThicknessM = 0.2;        // 新しく描く直線の壁の厚み（m）
   let placementTimer = null;
+  let underlayLoadGeneration = 0;
+
+  function invalidateUnderlayLoad() {
+    underlayLoadGeneration += 1;
+  }
+
+  function removeUnderlay() {
+    invalidateUnderlayLoad();
+    underlay.loaded = null; underlay.refs = []; underlay.t = null; underlay.mode = null;
+    setStatus("図面を外しました（劇場の形はそのままです）。");
+    render();
+  }
   const LINE_SNAP_PX = 10;
   const lineMode = () => Boolean(UL) && state.areaMode === "wall" && state.areaShape === "line";
   /* ★2026-10-06 本人「ステージの形成に線で囲うものがないと図面に対してフレキシブルに対応できない」:
@@ -2550,8 +2562,10 @@
   function saveUnderlayPlacementSoon() {
     if (!UL || !underlay.loaded) return;
     if (placementTimer) window.clearTimeout(placementTimer);
+    const loaded = underlay.loaded;
     placementTimer = window.setTimeout(() => {
       placementTimer = null;
+      if (loaded !== underlay.loaded) return;
       try {
         UL.savePlacement(window.localStorage, underlayKey(), {
           t: underlay.t, refs: underlay.refs, opacity: underlay.opacity, invert: underlay.invert, visible: underlay.visible,
@@ -2953,11 +2967,14 @@
   }
   function loadUnderlayFile(file) {
     if (!UL || !file) return;
+    const generation = ++underlayLoadGeneration;
     if (!/^image\//.test(file.type || "")) { setStatus("図面は画像（PNG・JPEG など）を選んでください。PDF は画像にしてから選びます。"); return; }
     const reader = new FileReader();
     reader.onload = () => {
+      if (generation !== underlayLoadGeneration) return;
       const img = new Image();
       img.onload = () => {
+        if (generation !== underlayLoadGeneration) return;
         const prepared = UL.prepareImage(img, document);
         underlay.loaded = Object.assign({ name: file.name }, prepared);
         const saved = UL.loadPlacement(window.localStorage, underlayKey());
@@ -2978,10 +2995,10 @@
         saveUnderlayPlacementSoon();
         render();
       };
-      img.onerror = () => setStatus("画像として読めませんでした。");
+      img.onerror = () => { if (generation === underlayLoadGeneration) setStatus("画像として読めませんでした。"); };
       img.src = String(reader.result);
     };
-    reader.onerror = () => setStatus("ファイルを読めませんでした。");
+    reader.onerror = () => { if (generation === underlayLoadGeneration) setStatus("ファイルを読めませんでした。"); };
     reader.readAsDataURL(file);
   }
   function setUnderlayMode(mode) {
@@ -3354,6 +3371,7 @@
   }
 
   function applyDocumentSnapshot(snapshot) {
+    if (snapshot.templateKey !== state.templateKey) invalidateUnderlayLoad();
     [
       "shape", "points", "room", "viewpoints", "viewPositions", "stageExtensions", "audience", "wings", "walls", "backScreen", "fixtures", "access", "ceiling",
       "stageHeightM",
@@ -3765,6 +3783,7 @@
     const variant = confirmedTemplateVariant(venue, detail);
     const floor = variant && variant.floor;
     if (!floor || !validOutline(floor.outline)) return false;
+    invalidateUnderlayLoad();
 
     state.shape = inferTemplateShape(floor.outline);
     state.points = clone(floor.outline);
@@ -3881,6 +3900,7 @@
 
   function loadBlankVenue({ force = false } = {}) {
     if (!force && state.templateKey === "__blank__") return false;
+    invalidateUnderlayLoad();
     state.shape = "rectangle";
     state.points = pointsForShape("rectangle");
     state.stagePresent = false;
@@ -6526,7 +6546,7 @@
     });
     on("stage-venue-underlay-close", "click", () => { underlay.panelOpen = false; underlay.mode = null; render(); });
     on("stage-venue-underlay-file", "change", (event) => { const f = event.target.files && event.target.files[0]; event.target.value = ""; loadUnderlayFile(f); });
-    on("stage-venue-underlay-remove", "click", () => { underlay.loaded = null; underlay.refs = []; underlay.t = null; underlay.mode = null; setStatus("図面を外しました（劇場の形はそのままです）。"); render(); });
+    on("stage-venue-underlay-remove", "click", removeUnderlay);
     on("stage-venue-underlay-visible", "change", (event) => { underlay.visible = event.target.checked; saveUnderlayPlacementSoon(); render(); });
     on("stage-venue-underlay-invert", "change", (event) => { underlay.invert = event.target.checked; saveUnderlayPlacementSoon(); render(); });
     on("stage-venue-underlay-opacity", "input", (event) => { underlay.opacity = clamp(Number(event.target.value) || 0.6, 0.05, 1); saveUnderlayPlacementSoon(); render(); });
@@ -7279,6 +7299,7 @@
   }
   function restoreRuntime(saved) {
     if (!saved) return;
+    invalidateUnderlayLoad();
     Object.assign(state,clone(saved.state));openingDraft=clone(saved.openingDraft);
     for (const [key,value] of Object.entries(saved.draft.metadata)) if (els[key]) els[key].value=value;
     undoStack.splice(0,undoStack.length,...saved.undo);redoStack.splice(0,redoStack.length,...saved.redo);
@@ -7287,7 +7308,7 @@
   }
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
     captureRuntime,restoreRuntime,
-    commitDocumentTransition() { openingDraft=null;undoStack.length=0;redoStack.length=0;syncHistoryButtons(); },
+    commitDocumentTransition() { invalidateUnderlayLoad();openingDraft=null;undoStack.length=0;redoStack.length=0;syncHistoryButtons(); },
     previewSnapshot, beginPreviewMove, movePreviewArea, finishPreviewMove,
     openPlanRegionAt: (clientX, clientY) => openPlanRegion(fromEvent({ clientX, clientY })),
     viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, setViewpointEyeHeight,

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.2";
+  const GAMMA_APP_VERSION = "v0.4.3";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -4580,697 +4580,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     panelLayout: "舞台画面の操作パネルと図の並べ方を選びます。",
   };
 
-  const els = {
-    undo: document.getElementById("stage-undo"),
-    redo: document.getElementById("stage-redo"),
-    export: document.getElementById("stage-export"),
-    cueSheetOpen: document.getElementById("stage-cue-sheet-open"),
-    cueSheetModal: document.getElementById("stage-cue-sheet-modal"),
-    cueSheetBackdrop: document.getElementById("stage-cue-sheet-backdrop"),
-    cueSheetClose: document.getElementById("stage-cue-sheet-close"),
-    cueSheetTitle: document.getElementById("stage-cue-sheet-title"),
-    cueSheetList: document.getElementById("stage-cue-sheet-list"),
-    cueSheetView: document.getElementById("stage-cue-sheet-view"),
-    cueSheetBack: document.getElementById("stage-cue-sheet-back"),
-    cueSheetContent: document.getElementById("stage-cue-sheet-content"),
-    cueSheetViewTitle: document.getElementById("stage-cue-sheet-view-title"),
-    cueSheetViewPrint: document.getElementById("stage-cue-sheet-view-print"),
-    cueSheetViewA4: document.getElementById("stage-cue-sheet-view-a4"),
-    cueSheetViewOnePage: document.getElementById("stage-cue-sheet-view-one-page"),
-    cueSheetViewOrient: document.getElementById("stage-cue-sheet-view-orient"),
-    cueSheetViewCsv: document.getElementById("stage-cue-sheet-view-csv"),
-    launchBackupWarning: document.getElementById("stage-launch-backup-warning"),
-    launchBackupBackdrop: document.getElementById("stage-launch-backup-backdrop"),
-    launchBackupClose: document.getElementById("stage-launch-backup-close"),
-    launchBackupExport: document.getElementById("stage-launch-backup-export"),
-    launchBackupContinue: document.getElementById("stage-launch-backup-continue"),
-    lang: document.getElementById("stage-lang"),
-    tour: document.getElementById("stage-tour"),
-    tourRing: document.getElementById("stage-tour-ring"),
-    tourShadePath: document.getElementById("stage-tour-shade-path"),
-    tourCard: document.getElementById("stage-tour-card"),
-    tourStep: document.getElementById("stage-tour-step"),
-    tourTitle: document.getElementById("stage-tour-title"),
-    tourBody: document.getElementById("stage-tour-body"),
-    tourPrev: document.getElementById("stage-tour-prev"),
-    tourNext: document.getElementById("stage-tour-next"),
-    tourClose: document.getElementById("stage-tour-close"),
-    tourStart: document.getElementById("stage-tour-start"),
-    helpOpen: document.getElementById("stage-help-open"),
-    manualOpen: document.getElementById("stage-manual-open"),
-    quickOpen: document.getElementById("stage-quick-open"),
-    helpModal: document.getElementById("stage-help-modal"),
-    helpBackdrop: document.getElementById("stage-help-backdrop"),
-    helpClose: document.getElementById("stage-help-close"),
-    helpFind: document.getElementById("stage-help-find"),
-    helpResults: document.getElementById("stage-help-results"),
-    helpNote: document.getElementById("stage-help-note"),
-    aboutOpenFromPrefs: document.getElementById("stage-about-open-from-prefs"),
-    aboutOpenFromFooter: document.getElementById("stage-about-open-from-footer"),
-    aboutModal: document.getElementById("stage-about-modal"),
-    releaseOpen: document.getElementById("stage-release-open"),
-    releaseModal: document.getElementById("stage-release-modal"),
-    releaseBackdrop: document.getElementById("stage-release-backdrop"),
-    releaseClose: document.getElementById("stage-release-close"),
-    releaseBody: document.getElementById("stage-release-body"),
-    releaseStatus: document.getElementById("stage-release-status"),
-    releaseStatusText: document.getElementById("stage-release-status-text"),
-    releaseRetry: document.getElementById("stage-release-retry"),
-    feedbackOpen: document.getElementById("stage-feedback-open"),
-    feedbackModal: document.getElementById("stage-feedback-modal"),
-    feedbackBackdrop: document.getElementById("stage-feedback-backdrop"),
-    feedbackClose: document.getElementById("stage-feedback-close"),
-    feedbackFrame: document.getElementById("stage-feedback-frame"),
-    aboutBackdrop: document.getElementById("stage-about-backdrop"),
-    aboutClose: document.getElementById("stage-about-close"),
-    feedback: document.getElementById("stage-feedback"),
-    exportModal: document.getElementById("stage-export-modal"),
-    exportBackdrop: document.getElementById("stage-export-backdrop"),
-    exportClose: document.getElementById("stage-export-close"),
-    exportRun: document.getElementById("stage-export-run"),
-    exportNote: document.getElementById("stage-export-note"),
-    exportTitle: document.getElementById("stage-export-title"),
-    exportPurposeBlock: document.getElementById("stage-export-purpose-block"),
-    exportDraftFields: document.getElementById("stage-export-draft-fields"),
-    exportPitchFields: document.getElementById("stage-export-pitch-fields"),
-    pitchStyleNote: document.getElementById("stage-pitch-style-note"),
-    pitchCaption: document.getElementById("stage-pitch-caption"),
-    pitchLangs: document.getElementById("stage-pitch-langs"),
-    toolHint: document.getElementById("stage-tool-hint"),
-    idleMotionToggle: document.getElementById("stage-idle-motion-toggle"),
-    lightRenderToggle: document.getElementById("stage-light-render-toggle"),
-    workLightToggle: document.getElementById("stage-work-light-toggle"),
-    arrowOptions: document.getElementById("stage-arrow-options"),
-    arrowPlaneFloor: document.getElementById("stage-arrow-plane-floor"),
-    arrowPlaneAir: document.getElementById("stage-arrow-plane-air"),
-    arrowDepthControl: document.getElementById("stage-arrow-depth-control"),
-    arrowDepth: document.getElementById("stage-arrow-depth"),
-    arrowDepthValue: document.getElementById("stage-arrow-depth-value"),
-    arrowHeadOne: document.getElementById("stage-arrow-head-one"),
-    arrowHeadBoth: document.getElementById("stage-arrow-head-both"),
-    arrowWidthThin: document.getElementById("stage-arrow-width-thin"),
-    arrowWidthMid: document.getElementById("stage-arrow-width-mid"),
-    arrowWidthBold: document.getElementById("stage-arrow-width-bold"),
-    arrowColor: document.getElementById("stage-arrow-color"),
-    arrowClear: document.getElementById("stage-arrow-clear"),
-    /* 図ごとの「矢印を消す」（2026-09-24）。矢印道具のあいだ、その図に矢印があるときだけ右上に出す。 */
-    arrowClearFront: document.getElementById("stage-front-arrow-clear"),
-    arrowClearPlan: document.getElementById("stage-plan-arrow-clear"),
-    background: document.getElementById("stage-bg-color"),
-    lowFog: document.getElementById("stage-lowfog"),
-    lowFogValue: document.getElementById("stage-lowfog-value"),
-    paintColor: document.getElementById("stage-paint-color"),
-    brushSize: document.getElementById("stage-brush-size"),
-    brushValue: document.getElementById("stage-brush-value"),
-    clearPaint: document.getElementById("stage-clear-paint"),
-    bgOpen: document.getElementById("stage-bg-open"),
-    photoBlock: document.getElementById("stage-photo-block"),
-    screenTextInput: document.getElementById("stage-screentext-input"),
-    screenTextAdd: document.getElementById("stage-screentext-add"),
-    screenTextList: document.getElementById("stage-screentext-list"),
-    screenTextEdit: document.getElementById("stage-screentext-edit"),
-    screenTextSize: document.getElementById("stage-screentext-size"),
-    screenTextSizeValue: document.getElementById("stage-screentext-size-value"),
-    screenTextOpacity: document.getElementById("stage-screentext-opacity"),
-    screenTextOpacityValue: document.getElementById("stage-screentext-opacity-value"),
-    screenTextAngle: document.getElementById("stage-screentext-angle"),
-    screenTextAngleValue: document.getElementById("stage-screentext-angle-value"),
-    screenTextFont: document.getElementById("stage-screentext-font"),
-    screenTextColor: document.getElementById("stage-screentext-color"),
-    screenTextVertical: document.getElementById("stage-screentext-vertical"),
-    screenTextSurface: document.getElementById("stage-screentext-surface"),
-    screenTextBlock: document.getElementById("stage-screentext-block"),
-    photoFile: document.getElementById("stage-photo-file"),
-    photoOn: document.getElementById("stage-photo-on"),
-    photoBright: document.getElementById("stage-photo-bright"),
-    photoBrightValue: document.getElementById("stage-photo-bright-value"),
-    photoClear: document.getElementById("stage-photo-clear"),
-    photoNote: document.getElementById("stage-photo-note"),
-    selectionControls: document.getElementById("stage-selection-controls"),
-    selectedName: document.getElementById("stage-selected-name"),
-    selectionScope: document.getElementById("stage-selection-scope"),
-    selectedLightPresetOpen: document.getElementById("stage-selected-light-preset-open"),
-    selectedLightPresetModal: document.getElementById("stage-selected-light-preset-modal"),
-    selectedLightPresetBackdrop: document.getElementById("stage-selected-light-preset-backdrop"),
-    selectedLightPresetClose: document.getElementById("stage-selected-light-preset-close"),
-    selectedLightPresetSummary: document.getElementById("stage-selected-light-preset-summary"),
-    selectedLightPresetGroups: document.getElementById("stage-selected-light-preset-groups"),
-    selectedLightWanderAdjust: document.getElementById("stage-selected-light-wander-adjust"),
-    selectedLightWanderSummary: document.getElementById("stage-selected-light-wander-summary"),
-    selectedLightWanderLoop: document.getElementById("stage-selected-light-wander-loop"),
-    selectedLightWanderIrregularity: document.getElementById("stage-selected-light-wander-irregularity"),
-    selectedLightWanderIrregularityValue: document.getElementById("stage-selected-light-wander-irregularity-value"),
-    selectedLightWanderRegion: document.getElementById("stage-selected-light-wander-region"),
-    selectedLightWanderReroll: document.getElementById("stage-selected-light-wander-reroll"),
-    selectedLightWanderStop: document.getElementById("stage-selected-light-wander-stop"),
-    selectedLightCustomRegion: document.getElementById("stage-selected-light-custom-region"),
-    selectedLightCustomCanvas: document.getElementById("stage-selected-light-custom-canvas"),
-    selectedLightCustomLeft: document.getElementById("stage-selected-light-custom-left"),
-    selectedLightCustomRight: document.getElementById("stage-selected-light-custom-right"),
-    selectedLightCustomBack: document.getElementById("stage-selected-light-custom-back"),
-    selectedLightCustomFront: document.getElementById("stage-selected-light-custom-front"),
-    selectedLightCustomApply: document.getElementById("stage-selected-light-custom-apply"),
-    selectedLightCustomBackToPresets: document.getElementById("stage-selected-light-custom-back-to-presets"),
-    selectedLightCustomTitle: document.getElementById("stage-selected-light-custom-title"),
-    selectedLightCustomIntro: document.getElementById("stage-selected-light-custom-intro"),
-    fpvOpen: document.getElementById("stage-fpv-open"),
-    freecamOpen: document.getElementById("stage-freecam-open"),
-    openSetInfo: document.getElementById("stage-open-setinfo"),
-    routeClear: document.getElementById("stage-route-clear"),
-    pieceLock: document.getElementById("stage-piece-lock"),
-    pieceLockIconOpen: document.getElementById("stage-piece-lock-icon-open"),
-    pieceLockIconClosed: document.getElementById("stage-piece-lock-icon-closed"),
-    facingControls: document.getElementById("stage-facing-controls"),
-    planRoute: document.getElementById("stage-plan-route"),
-    planDeriveRoute: document.getElementById("stage-plan-derive-route"),
-    planNote: document.getElementById("stage-plan-note"),
-    frontNote: document.getElementById("stage-front-note"),
-    frontZoom: document.getElementById("stage-front-zoom"),
-    planZoom: document.getElementById("stage-plan-zoom"),
-    planZoomIn: document.getElementById("stage-plan-zoom-in"),
-    planZoomOut: document.getElementById("stage-plan-zoom-out"),
-    rename: document.getElementById("stage-rename"),
-    renameBackdrop: document.getElementById("stage-rename-backdrop"),
-    renameInput: document.getElementById("stage-rename-input"),
-    renameSectionFields: document.getElementById("stage-rename-section-fields"),
-    renameSectionNote: document.getElementById("stage-rename-section-note"),
-    renameSceneFields: document.getElementById("stage-rename-scene-fields"),
-    renameSceneNumber: document.getElementById("stage-rename-scene-number"),
-    renameSceneSection: document.getElementById("stage-rename-scene-section"),
-    renameScenePosition: document.getElementById("stage-rename-scene-position"),
-    renameSceneHold: document.getElementById("stage-rename-scene-hold"),
-    renameSceneTransition: document.getElementById("stage-rename-scene-transition"),
-    // R-25（2026-09-17）: そのシーンの顔ぶれ（キューシートの一部として使う）
-    renameSceneCast: document.getElementById("stage-rename-scene-cast"),
-    renameSceneOnStage: document.getElementById("stage-rename-scene-onstage"),
-    renameSceneBackstage: document.getElementById("stage-rename-scene-backstage"),
-    renameSceneSets: document.getElementById("stage-rename-scene-sets"),
-    renameSceneProps: document.getElementById("stage-rename-scene-props"),
-    renameSceneHeld: document.getElementById("stage-rename-scene-held"),
-    renameSubtitle: document.getElementById("stage-rename-subtitle"),
-    renameSceneNote: document.getElementById("stage-rename-scene-note"),
-    renameOk: document.getElementById("stage-rename-ok"),
-    renameDelete: document.getElementById("stage-rename-delete"),
-    renameClose: document.getElementById("stage-rename-close"),
-    renameTitle: document.getElementById("stage-rename-title"),
-    renameColors: document.getElementById("stage-rename-colors"),
-    renameColorPicker: document.getElementById("stage-rename-color-picker"),
-    renameColorSummary: document.getElementById("stage-rename-color-summary"),
-    renameColorPreview: document.getElementById("stage-rename-color-preview"),
-    renameColorValue: document.getElementById("stage-rename-color-value"),
-    renameSwatches: document.getElementById("stage-rename-swatches"),
-    formationModal: document.getElementById("stage-formation-modal"),
-    formationBackdrop: document.getElementById("stage-formation-backdrop"),
-    formationClose: document.getElementById("stage-formation-close"),
-    formationFrame: document.getElementById("stage-formation-frame"),
-    formationStatus: document.getElementById("stage-formation-status"),
-    delete: document.getElementById("stage-delete"),
-    saveStatus: document.getElementById("stage-save-status"),
-    backupNote: document.getElementById("stage-backup-note"),
-    backupHint: document.getElementById("stage-backup-hint"),
-    backupExport: document.getElementById("stage-backup-export"),
-    musicFile: document.getElementById("stage-music-file"),
-    timelineAudioImportFile: document.getElementById("stage-timeline-audio-import-file"),
-    musicBetaNote: document.getElementById("stage-music-beta-note"),
-    musicStatus: document.getElementById("stage-music-status"),
-    musicLibrary: document.getElementById("stage-music-library"),
-    sceneAudioTrack: document.getElementById("stage-scene-audio-track"),
-    musicAssignment: document.getElementById("stage-music-assignment"),
-    musicAssignmentTitle: document.getElementById("stage-music-assignment-title"),
-    musicClearScenes: document.getElementById("stage-music-clear-scenes"),
-    musicSceneList: document.getElementById("stage-music-scene-list"),
-    musicRelink: document.getElementById("stage-music-relink"),
-    musicRelinkFile: document.getElementById("stage-music-relink-file"),
-    musicAudio: document.getElementById("stage-music-audio"),
-    resetLayout: document.getElementById("stage-reset-layout"),
-    resetAll: document.getElementById("stage-reset-all"),
-    resetModal: document.getElementById("stage-reset-modal"),
-    resetBackdrop: document.getElementById("stage-reset-backdrop"),
-    resetTitle: document.getElementById("stage-reset-title"),
-    resetLead: document.getElementById("stage-reset-lead"),
-    resetDetail: document.getElementById("stage-reset-detail"),
-    resetWarning: document.getElementById("stage-reset-warning"),
-    resetError: document.getElementById("stage-reset-error"),
-    resetConfirm: document.getElementById("stage-reset-confirm"),
-    resetCancel: document.getElementById("stage-reset-cancel"),
-    resetClose: document.getElementById("stage-reset-close"),
-    sceneMusic: document.getElementById("stage-scene-music"),
-    musicToggle: document.getElementById("stage-music-toggle"),
-    musicRestart: document.getElementById("stage-music-restart"),
-    musicCurrent: document.getElementById("stage-music-current"),
-    musicSeek: document.getElementById("stage-music-seek"),
-    musicTime: document.getElementById("stage-music-time"),
-    askPanel: document.getElementById("stage-ask-panel"),
-    askInput: document.getElementById("stage-ask-input"),
-    askIdle: document.getElementById("stage-ask-idle"),
-    askRun: document.getElementById("stage-ask-run"),
-    askRunning: document.getElementById("stage-ask-running"),
-    askElapsed: document.getElementById("stage-ask-elapsed"),
-    askStop: document.getElementById("stage-ask-stop"),
-    askDraft: document.getElementById("stage-ask-draft"),
-    askDraftBody: document.getElementById("stage-ask-draft-body"),
-    askWarning: document.getElementById("stage-ask-warning"),
-    askAdopt: document.getElementById("stage-ask-adopt"),
-    askResolve: document.getElementById("stage-ask-resolve"),
-    askDiscard: document.getElementById("stage-ask-discard"),
-    askError: document.getElementById("stage-ask-error"),
-    askAgentInfo: document.getElementById("stage-ask-agent-info"),
-    rehearsalExportOpen: document.getElementById("stage-rehearsal-export-open"),
-    rehearsalExportModal: document.getElementById("stage-rehearsal-export-modal"),
-    rehearsalExportBackdrop: document.getElementById("stage-rehearsal-export-backdrop"),
-    rehearsalExportClose: document.getElementById("stage-rehearsal-export-close"),
-    rehearsalExportRun: document.getElementById("stage-rehearsal-export-run"),
-    rehearsalCheck: document.getElementById("stage-rehearsal-check"),
-    rehearsalDefaults: document.getElementById("stage-rehearsal-defaults"),
-    rehearsalDefaultHold: document.getElementById("stage-rehearsal-default-hold"),
-    rehearsalDefaultTransition: document.getElementById("stage-rehearsal-default-transition"),
-    rehearsalApplyDefaults: document.getElementById("stage-rehearsal-apply-defaults"),
-    rehearsalSoundtrack: document.getElementById("stage-rehearsal-soundtrack"),
-    rehearsalUnsupported: document.getElementById("stage-rehearsal-unsupported"),
-    rehearsalAllowUnsupported: document.getElementById("stage-rehearsal-allow-unsupported"),
-    rehearsalOmittedList: document.getElementById("stage-rehearsal-omitted-list"),
-    live: document.getElementById("stage-live"),
-    venueSelect: document.getElementById("stage-venue-select"),
-    venuePick: document.getElementById("stage-venue-pick"),
-    venuePickName: document.getElementById("stage-venue-pick-name"),
-    venuePickModal: document.getElementById("stage-venue-pick-modal"),
-    venuePickBackdrop: document.getElementById("stage-venue-pick-backdrop"),
-    venuePickClose: document.getElementById("stage-venue-pick-close"),
-    venuePickApply: document.getElementById("stage-venue-pick-apply"),
-    venueGallery: document.getElementById("stage-venue-pick-grid"),
-    venueCustomOpen: document.getElementById("stage-venue-custom-open"),
-    sizeSelect: document.getElementById("stage-size-select"),
-    showFront: document.getElementById("stage-show-front"),
-    showPlan: document.getElementById("stage-show-plan"),
-    viewSelect: document.getElementById("stage-view-select"),
-    frontCell: document.getElementById("stage-front-cell"),
-    planCell: document.getElementById("stage-plan-cell"),
-    canvasStack: document.getElementById("stage-canvas-stack"),
-    frontCaption: document.getElementById("stage-front-caption"),
-    frontLightCueCaption: document.getElementById("stage-front-light-cue-caption"),
-    sceneBar: document.getElementById("stage-scene-bar"),
-    sceneDesc: document.getElementById("stage-scene-desc"),
-    sceneDescLabel: document.getElementById("stage-scene-desc-label"),
-    sceneDescText: document.getElementById("stage-scene-desc-text"),
-    propMoves: document.getElementById("stage-prop-moves"),
-    lightIntent: document.getElementById("stage-light-intent"),
-    lightIntentCompare: document.getElementById("stage-light-intent-compare"),
-    lightIntentCompareIntent: document.getElementById("stage-light-intent-compare-intent"),
-    lightIntentCompareLights: document.getElementById("stage-light-intent-compare-lights"),
-    lightIntentPresets: document.getElementById("stage-light-intent-presets"),
-    lightIntentSummary: document.getElementById("stage-light-intent-summary-text"),
-    lightObjective: document.getElementById("stage-light-objective"),
-    lightAudienceFocus: document.getElementById("stage-light-audience-focus"),
-    lightPerformerIntent: document.getElementById("stage-light-layer-performer-intent"),
-    lightPerformerNote: document.getElementById("stage-light-layer-performer-note"),
-    lightSpaceIntent: document.getElementById("stage-light-layer-space-intent"),
-    lightSpaceNote: document.getElementById("stage-light-layer-space-note"),
-    lightBackgroundIntent: document.getElementById("stage-light-layer-background-intent"),
-    lightBackgroundNote: document.getElementById("stage-light-layer-background-note"),
-    lightTriggerType: document.getElementById("stage-light-trigger-type"),
-    lightChange: document.getElementById("stage-light-change"),
-    lightTempo: document.getElementById("stage-light-tempo"),
-    lightTriggerNote: document.getElementById("stage-light-trigger-note"),
-    lightMood: document.getElementById("stage-light-mood"),
-    lightReferenceNote: document.getElementById("stage-light-reference-note"),
-    lightImplementationNote: document.getElementById("stage-light-implementation-note"),
-    lightIntentClear: document.getElementById("stage-light-intent-clear"),
-    venueScale: document.getElementById("stage-venue-scale"),
-    venueMissing: document.getElementById("stage-venue-missing"),
-    venueSummaryTitle: document.getElementById("stage-venue-summary-title"),
-    venueSummarySize: document.getElementById("stage-venue-summary-size"),
-    bgSection: document.getElementById("stage-bg-section"),
-    seatList: document.getElementById("stage-seat-list"),
-    front2Seat: document.getElementById("stage-front2-seat"),
-    canvas2: document.getElementById("stage-canvas-2"),
-    projectSummaryTitle: document.getElementById("stage-project-summary-title"),
-    projectSummaryVersion: document.getElementById("stage-project-summary-version"),
-    lastSaveTime: document.getElementById("stage-last-save-time"),
-    lastBackupTime: document.getElementById("stage-last-backup-time"),
-    showElapsed: document.getElementById("stage-show-elapsed"),
-    projectSettingsOpen: document.getElementById("stage-project-settings-open"),
-    projectSettingsModal: document.getElementById("stage-project-settings-modal"),
-    projectSettingsBackdrop: document.getElementById("stage-project-settings-backdrop"),
-    projectSettingsClose: document.getElementById("stage-project-settings-close"),
-    /* R-07（2026-09-17）: 照明プランはモーダルをやめ、劇場設定の中へ常に出す形にした。
-       モーダルの枠（開く・閉じる・背景・変更しない）は無くなり、代わりに3択と中身の枠を持つ。 */
-    lightingPlanOpenSummary: document.getElementById("stage-lighting-plan-open-summary"),
-    lightingPlanBody: document.getElementById("stage-lighting-plan-body"),
-    lightingPlanCancel: document.getElementById("stage-lighting-plan-cancel"),
-    lightingSourceChoices: document.querySelectorAll("[data-lighting-source]"),
-    lightingPlanFile: document.getElementById("stage-lighting-plan-file"),
-    lightingPlanFileSummary: document.getElementById("stage-lighting-plan-file-summary"),
-    lightingPlanSummary: document.getElementById("stage-lighting-plan-summary"),
-    lightingPlanCandidate: document.getElementById("stage-lighting-plan-candidate"),
-    lightingPlanCandidateTitle: document.getElementById("stage-lighting-plan-candidate-title"),
-    lightingPlanCandidateDetail: document.getElementById("stage-lighting-plan-candidate-detail"),
-    lightingPlanExisting: document.getElementById("stage-lighting-plan-existing"),
-    lightingPlanChoice: document.getElementById("stage-lighting-plan-choice"),
-    lightingPlanAddChoice: document.getElementById("stage-lighting-plan-add-choice"),
-    lightingPlanReplaceChoice: document.getElementById("stage-lighting-plan-replace-choice"),
-    lightingPlanReplaceConfirm: document.getElementById("stage-lighting-plan-replace-confirm"),
-    lightingPlanReplacePhrase: document.getElementById("stage-lighting-plan-replace-phrase"),
-    lightingPlanApply: document.getElementById("stage-lighting-plan-apply"),
-    lightingPlanOverlayStatus: document.getElementById("stage-lighting-plan-overlay-status"),
-    lightingPlanOverlayClear: document.getElementById("stage-lighting-plan-overlay-clear"),
-    venueApplyModal: document.getElementById("stage-venue-apply-modal"),
-    venueApplyBackdrop: document.getElementById("stage-venue-apply-backdrop"),
-    venueApplyClose: document.getElementById("stage-venue-apply-close"),
-    venueApplyCancel: document.getElementById("stage-venue-apply-cancel"),
-    venueApplySummary: document.getElementById("stage-venue-apply-summary"),
-    venueApplyVersion: document.getElementById("stage-venue-apply-version"),
-    venueApplyVersionTitle: document.getElementById("stage-venue-apply-version-title"),
-    venueApplyVersionDetail: document.getElementById("stage-venue-apply-version-detail"),
-    venueApplyReport: document.getElementById("stage-venue-apply-report"),
-    venueApplyReportSummary: document.getElementById("stage-venue-apply-report-summary"),
-    venueApplyReportList: document.getElementById("stage-venue-apply-report-list"),
-    venueApplyReportPrint: document.getElementById("stage-venue-apply-report-print"),
-    venueApplyReportCsv: document.getElementById("stage-venue-apply-report-csv"),
-    venueApplySimple: document.getElementById("stage-venue-apply-simple"),
-    venueApplyPreset: document.getElementById("stage-venue-apply-preset"),
-    venueApplyPresetSelect: document.getElementById("stage-venue-apply-preset-select"),
-    venueApplyPresetNote: document.getElementById("stage-venue-apply-preset-note"),
-    venueApplyManual: document.getElementById("stage-venue-apply-manual"),
-    venueApplyFile: document.getElementById("stage-venue-apply-file"),
-    venueApplyFileSummary: document.getElementById("stage-venue-apply-file-summary"),
-    venueApplyNone: document.getElementById("stage-venue-apply-none"),
-    venueApplyStatus: document.getElementById("stage-venue-apply-status"),
-    venueApplyConfirm: document.getElementById("stage-venue-apply-confirm"),
-    projectTitle: document.getElementById("stage-project-title"),
-    versionLabel: document.getElementById("stage-version-label"),
-    versionCopy: document.getElementById("stage-version-copy"),
-    versionNote: document.getElementById("stage-version-note"),
-    exportJson: document.getElementById("stage-export-json"),
-    importJson: document.getElementById("stage-import-json"),
-    studyBody: document.getElementById("stage-study-body"),
-    sceneList: document.getElementById("stage-scene-list"),
-    sceneResize: document.getElementById("stage-scene-resize"),
-    sceneGridOpen: document.getElementById("stage-scene-grid-open"),
-    sceneBarGrid: document.getElementById("stage-scene-bar-grid"),
-    sceneDescPin: document.getElementById("stage-scene-desc-pin"),
-    reachOpen: document.getElementById("stage-reach-open"),
-    reachModal: document.getElementById("stage-reach-modal"),
-    reachBackdrop: document.getElementById("stage-reach-backdrop"),
-    reachClose: document.getElementById("stage-reach-close"),
-    sceneCreateModal: document.getElementById("stage-scene-create-modal"),
-    sceneCreateBackdrop: document.getElementById("stage-scene-create-backdrop"),
-    sceneCreateClose: document.getElementById("stage-scene-create-close"),
-    sceneCreateForm: document.getElementById("stage-scene-create-form"),
-    sceneCreateSource: document.getElementById("stage-scene-create-source"),
-    sceneCreateBlank: document.getElementById("stage-scene-create-blank"),
-    sceneCreateInherit: document.getElementById("stage-scene-create-inherit"),
-    sceneCreateInheritOptions: document.getElementById("stage-scene-create-inherit-options"),
-    sceneCreateMoveRoutes: document.getElementById("stage-scene-create-move-routes"),
-    sceneCreateSelectAll: document.getElementById("stage-scene-create-select-all"),
-    sceneCreateClear: document.getElementById("stage-scene-create-clear"),
-    sceneCreateList: document.getElementById("stage-scene-create-list"),
-    sceneCreateCount: document.getElementById("stage-scene-create-count"),
-    sceneCreateCancel: document.getElementById("stage-scene-create-cancel"),
-    sceneCreateSubmit: document.getElementById("stage-scene-create-submit"),
-    sceneDeleteModal: document.getElementById("stage-scene-delete-modal"),
-    sceneDeleteBackdrop: document.getElementById("stage-scene-delete-backdrop"),
-    sceneDeleteClose: document.getElementById("stage-scene-delete-close"),
-    sceneDeleteMessage: document.getElementById("stage-scene-delete-message"),
-    sceneDeleteCheck: document.getElementById("stage-scene-delete-check"),
-    sceneDeleteCancel: document.getElementById("stage-scene-delete-cancel"),
-    sceneDeleteSubmit: document.getElementById("stage-scene-delete-submit"),
-    sceneGridModal: document.getElementById("stage-scene-grid-modal"),
-    sceneGridBackdrop: document.getElementById("stage-scene-grid-backdrop"),
-    sceneGridClose: document.getElementById("stage-scene-grid-close"),
-    sceneGrid: document.getElementById("stage-scene-grid"),
-    sceneGridFront: document.getElementById("stage-scene-grid-front"),
-    sceneGridPlan: document.getElementById("stage-scene-grid-plan"),
-    sceneGridSize: document.getElementById("stage-scene-grid-size"),
-    sceneAdd: document.getElementById("stage-scene-add"),
-    scenePrev: document.getElementById("stage-scene-prev"),
-    sceneNext: document.getElementById("stage-scene-next"),
-    sceneNow: document.getElementById("stage-scene-now"),
-    sceneNowOpen: document.getElementById("stage-scene-now-open"),
-    animScenes: document.getElementById("stage-anim-scenes"),
-    timelineAnimScenes: document.getElementById("stage-timeline-transition-animation"),
-    toolbarAnimScenes: document.getElementById("stage-toolbar-transition-animation"),
-    animMs: document.getElementById("stage-anim-ms"),
-    animMsValue: document.getElementById("stage-anim-ms-value"),
-    castList: document.getElementById("stage-cast-list"),
-    pieceFacing: document.getElementById("stage-piece-facing"),
-    piecePose: document.getElementById("stage-piece-pose"),
-    pieceBuildRow: document.getElementById("stage-build-inline"),
-    pieceBuild: document.getElementById("stage-piece-build"),
-    pieceTransitionGait: document.getElementById("stage-transition-gait"),
-    pieceTransitionGaitRow: document.getElementById("stage-transition-gait-row"),
-    poseStrip: document.getElementById("stage-pose-strip"),
-    poleControls: document.getElementById("stage-pole-controls"),
-    poleLeft: document.getElementById("stage-pole-left"),
-    poleRight: document.getElementById("stage-pole-right"),
-    costumeControls: document.getElementById("stage-costume-controls"),
-    costumeFields: document.getElementById("stage-costume-fields"),
-    costumeToggle: document.getElementById("stage-costume-toggle"),
-    costumeTop: document.getElementById("stage-costume-top"),
-    costumeTopColor: document.getElementById("stage-costume-top-color"),
-    costumeBottom: document.getElementById("stage-costume-bottom"),
-    costumeBottomColor: document.getElementById("stage-costume-bottom-color"),
-    costumeHair: document.getElementById("stage-costume-hair"),
-    costumeHairColor: document.getElementById("stage-costume-hair-color"),
-    costumeHat: document.getElementById("stage-costume-hat"),
-    costumeHatColor: document.getElementById("stage-costume-hat-color"),
-    costumeAccessories: document.getElementById("stage-costume-accessories"),
-    costumeGloves: document.getElementById("stage-costume-gloves"),
-    costumeGlovesColor: document.getElementById("stage-costume-gloves-color"),
-    holdControls: document.getElementById("stage-hold-controls"),
-    heldList: document.getElementById("stage-held-list"),
-    holdSelect: document.getElementById("stage-hold-select"),
-    holderControls: document.getElementById("stage-holder-controls"),
-    holderSelect: document.getElementById("stage-holder-select"),
-    holderLeft: document.getElementById("stage-holder-left"),
-    holderRight: document.getElementById("stage-holder-right"),
-    holderFace: document.getElementById("stage-holder-face"),
-    poleH: document.getElementById("stage-pole-h"),
-    poleHValue: document.getElementById("stage-pole-h-value"),
-    trapControls: document.getElementById("stage-trap-controls"),
-    diaboloControls: document.getElementById("stage-diabolo-controls"),
-    tissueControls: document.getElementById("stage-tissue-controls"),
-    tissueH: document.getElementById("stage-tissue-h"),
-    tissueHValue: document.getElementById("stage-tissue-h-value"),
-    importModal: document.getElementById("stage-import-modal"),
-    importBackdrop: document.getElementById("stage-import-backdrop"),
-    importClose: document.getElementById("stage-import-close"),
-    importSummary: document.getElementById("stage-import-summary"),
-    importAsNew: document.getElementById("stage-import-as-new"),
-    importReplace: document.getElementById("stage-import-replace"),
-    projectExportModal: document.getElementById("stage-project-export-modal"),
-    projectExportBackdrop: document.getElementById("stage-project-export-backdrop"),
-    projectExportForm: document.getElementById("stage-project-export-form"),
-    projectExportName: document.getElementById("stage-project-export-name"),
-    projectExportDestination: document.getElementById("stage-project-export-destination"),
-    projectExportClose: document.getElementById("stage-project-export-close"),
-    projectExportCancel: document.getElementById("stage-project-export-cancel"),
-    venueExportModal: document.getElementById("stage-venue-export-modal"),
-    venueExportBackdrop: document.getElementById("stage-venue-export-backdrop"),
-    venueExportInclude: document.getElementById("stage-venue-export-include"),
-    venueExportWithout: document.getElementById("stage-venue-export-without"),
-    venueExportCancel: document.getElementById("stage-venue-export-cancel"),
-    venueExportStop: document.getElementById("stage-venue-export-stop"),
-    printBtn: document.getElementById("stage-print-btn"),
-    prefsBtn: document.getElementById("stage-prefs-btn"),
-    panelsToggle: document.getElementById("stage-panels-toggle"),
-    panelsMenu: document.getElementById("stage-panels-menu"),
-    panelLayoutControl: document.getElementById("stage-panel-layout-control"),
-    panelLayoutToggle: document.getElementById("stage-panel-layout-toggle"),
-    panelLayoutMenu: document.getElementById("stage-panel-layout-menu"),
-    prefsModal: document.getElementById("stage-prefs-modal"),
-    prefsBackdrop: document.getElementById("stage-prefs-backdrop"),
-    prefsClose: document.getElementById("stage-prefs-close"),
-    prefsList: document.getElementById("stage-prefs-list"),
-    skinButtons: Array.from(document.querySelectorAll("[data-stage-ui-skin]")),
-    prefKeysBody: document.getElementById("stage-pref-keys-body"),
-    presentBtn: document.getElementById("stage-present-btn"),
-    presentOverlay: document.getElementById("stage-present-overlay"),
-    presentCanvas: document.getElementById("stage-present-canvas"),
-    presentMini: document.getElementById("stage-present-mini"),
-    presentMiniView: document.getElementById("stage-present-mini-view"),
-    presentMiniLabel: document.getElementById("stage-present-mini-label"),
-    presentDrawer: document.getElementById("stage-present-drawer"),
-    presentDrawerBody: document.getElementById("stage-present-drawer-body"),
-    presentDrawerToggle: document.getElementById("stage-present-drawer-toggle"),
-    presentPrev: document.getElementById("stage-present-prev"),
-    presentNext: document.getElementById("stage-present-next"),
-    presentSwap: document.getElementById("stage-present-swap"),
-    presentClose: document.getElementById("stage-present-close"),
-    multiSelectStatus: document.getElementById("stage-multi-select-status"),
-    trapSit: document.getElementById("stage-trap-sit"),
-    trapHang: document.getElementById("stage-trap-hang"),
-    diaboloLay: document.getElementById("stage-diabolo-lay"),
-    diaboloStand: document.getElementById("stage-diabolo-stand"),
-    poseLabel: document.getElementById("stage-pose-label"),
-    poseModal: document.getElementById("stage-pose"),
-    poseBackdrop: document.getElementById("stage-pose-backdrop"),
-    poseClose: document.getElementById("stage-pose-close"),
-    poseGrid: document.getElementById("stage-pose-grid"),
-    poseSearch: document.getElementById("stage-pose-search"),
-    poseSearchEmpty: document.getElementById("stage-pose-search-empty"),
-    showsOpen: document.getElementById("stage-shows-open"),
-    showNew: document.getElementById("stage-show-new"),
-    newShowReturnBar: document.getElementById("stage-new-show-return-bar"),
-    newShowReturn: document.getElementById("stage-new-show-return"),
-    newShowReturnList: document.getElementById("stage-new-show-return-list"),
-    showsModal: document.getElementById("stage-shows"),
-    showsBackdrop: document.getElementById("stage-shows-backdrop"),
-    showsClose: document.getElementById("stage-shows-close"),
-    showList: document.getElementById("stage-show-list"),
-    beatTemplatesOpen: document.getElementById("stage-beat-templates-open"),
-    beatTemplatesModal: document.getElementById("stage-beat-templates"),
-    beatTemplatesBackdrop: document.getElementById("stage-beat-templates-backdrop"),
-    beatTemplatesClose: document.getElementById("stage-beat-templates-close"),
-    beatTemplateList: document.getElementById("stage-beat-template-list"),
-    facingValue: document.getElementById("stage-facing-value"),
-    profile: document.getElementById("stage-profile"),
-    profileBackdrop: document.getElementById("stage-profile-backdrop"),
-    profileClose: document.getElementById("stage-profile-close"),
-    profileName: document.getElementById("stage-profile-name"),
-    profileHeight: document.getElementById("stage-profile-height"),
-    profileHeightValue: document.getElementById("stage-profile-height-value"),
-    profileColor: document.getElementById("stage-profile-color"),
-    profileNote: document.getElementById("stage-profile-note"),
-    rosterName: document.getElementById("stage-roster-name"),
-    rosterColor: document.getElementById("stage-roster-color"),
-    rosterSearch: document.getElementById("stage-roster-search"),
-    rosterPropGrid: document.getElementById("stage-roster-prop-grid"),
-    modelPicker: document.getElementById("stage-model-picker"),
-    modelOpen: document.getElementById("stage-model-open"),
-    kindModelOpen: document.getElementById("stage-kind-model-open"),
-    kindModal: document.getElementById("stage-kind"),
-    kindTitle: document.getElementById("stage-kind-title"),
-    kindBackdrop: document.getElementById("stage-kind-backdrop"),
-    kindClose: document.getElementById("stage-kind-close"),
-    kindGrid: document.getElementById("stage-kind-grid"),
-    kindPerformerFields: document.getElementById("stage-kind-performer-fields"),
-    kindSetFields: document.getElementById("stage-kind-set-fields"),
-    kindPropFields: document.getElementById("stage-kind-prop-fields"),
-    rosterPoseGrid: document.getElementById("stage-roster-pose-grid"),
-    rosterAdd: document.getElementById("stage-roster-add"),
-    rosterEmpty: document.getElementById("stage-roster-empty"),
-    groupCast: document.getElementById("stage-group-cast"),
-    groupSets: document.getElementById("stage-group-sets"),
-    groupProps: document.getElementById("stage-group-props"),
-    groupMachinery: document.getElementById("stage-group-machinery"),
-    machineryEmpty: document.getElementById("stage-machinery-empty"),
-    lightName: document.getElementById("stage-light-name"),
-    lightAdd: document.getElementById("stage-light-add"),
-    lightKind: document.getElementById("stage-light-kind"),
-    lightPresetOpen: document.getElementById("stage-light-preset-open"),
-    lightPresetModal: document.getElementById("stage-light-preset-modal"),
-    lightPresetBackdrop: document.getElementById("stage-light-preset-backdrop"),
-    lightPresetClose: document.getElementById("stage-light-preset-close"),
-    lightPresetTiles: document.getElementById("stage-light-preset-tiles"),
-    lightPresetIntentNote: document.getElementById("stage-light-preset-intent-note"),
-    beamControls: document.getElementById("stage-beam-controls"),
-    beamDia: document.getElementById("stage-beam-dia"),
-    beamDiaValue: document.getElementById("stage-beam-dia-value"),
-    beamGlow: document.getElementById("stage-beam-glow"),
-    beamGlowValue: document.getElementById("stage-beam-glow-value"),
-    groupControls: document.getElementById("stage-group-controls"),
-    groupDia: document.getElementById("stage-group-dia"),
-    groupDiaValue: document.getElementById("stage-group-dia-value"),
-    groupGlow: document.getElementById("stage-group-glow"),
-    groupGlowValue: document.getElementById("stage-group-glow-value"),
-    groupSplit: document.getElementById("stage-group-split"),
-    beamU: document.getElementById("stage-beam-u"),
-    beamUValue: document.getElementById("stage-beam-u-value"),
-    beamV: document.getElementById("stage-beam-v"),
-    beamVValue: document.getElementById("stage-beam-v-value"),
-    beamFrom: document.getElementById("stage-beam-from"),
-    beamFromValue: document.getElementById("stage-beam-from-value"),
-    beamTo: document.getElementById("stage-beam-to"),
-    beamToValue: document.getElementById("stage-beam-to-value"),
-    beamReset: document.getElementById("stage-beam-reset"),
-    setList: document.getElementById("stage-set-list"),
-    propList: document.getElementById("stage-prop-list"),
-    machineryList: document.getElementById("stage-machinery-list"),
-    lightList: document.getElementById("stage-light-list"),
-    rigList: document.getElementById("stage-rig-list"),
-    rigName: document.getElementById("stage-rig-name"),
-    rigSave: document.getElementById("stage-rig-save"),
-    machineryCurtainKind: document.getElementById("stage-machinery-curtain-kind"),
-    sceneSection: document.getElementById("stage-scene-section"),
-    setInfo: document.getElementById("stage-setinfo"),
-    setInfoBackdrop: document.getElementById("stage-setinfo-backdrop"),
-    setInfoClose: document.getElementById("stage-setinfo-close"),
-    setInfoTitle: document.getElementById("stage-setinfo-title"),
-    setInfoName: document.getElementById("stage-setinfo-name"),
-    setInfoDims: document.getElementById("stage-setinfo-dims"),
-    setInfoPreview: document.getElementById("stage-setinfo-preview"),
-    setInfoPreviewHint: document.getElementById("stage-setinfo-preview-hint"),
-    setInfoColor: document.getElementById("stage-setinfo-color"),
-    setInfoNote: document.getElementById("stage-setinfo-note"),
-    setInfoKind: document.getElementById("stage-setinfo-kind"),
-    setInfoMotion: document.getElementById("stage-setinfo-motion"),
-    setInfoMotionRow: document.getElementById("stage-setinfo-motioncap"),
-    setInfoPropShape: document.getElementById("stage-setinfo-prop-shape"),
-    setInfoPropShapeRow: document.getElementById("stage-setinfo-propshape"),
-    setInfoFlown: document.getElementById("stage-setinfo-flown"),
-    setInfoFlownRow: document.getElementById("stage-setinfo-flown-row"),
-    setInfoFlownNote: document.getElementById("stage-setinfo-flown-note"),
-    setInfoWires: document.getElementById("stage-setinfo-wires"),
-    setInfoFramed: document.getElementById("stage-setinfo-framed"),
-    setInfoFramedRow: document.getElementById("stage-setinfo-framed-row"),
-    setInfoRound: document.getElementById("stage-setinfo-round"),
-    setInfoRoundRow: document.getElementById("stage-setinfo-round-row"),
-    setInfoFrameWidthRow: document.getElementById("stage-setinfo-frame-width-row"),
-    setInfoFrameWidth: document.getElementById("stage-setinfo-frame-width"),
-    setInfoWiresRow: document.getElementById("stage-setinfo-wires-row"),
-    liftControls: document.getElementById("stage-lift-controls"),
-    pieceLift: document.getElementById("stage-piece-lift"),
-    pieceLiftValue: document.getElementById("stage-piece-lift-value"),
-    seriControls: document.getElementById("stage-seri-controls"),
-    pieceSeri: document.getElementById("stage-piece-seri"),
-    pieceSeriValue: document.getElementById("stage-piece-seri-value"),
-    seriWarning: document.getElementById("stage-seri-warning"),
-    machineryControls: document.getElementById("stage-machinery-controls"),
-    revolveControls: document.getElementById("stage-revolve-controls"),
-    deckControls: document.getElementById("stage-deck-controls"),
-    curtainControls: document.getElementById("stage-curtain-controls"),
-    poolControls: document.getElementById("stage-pool-controls"),
-    pieceSpin: document.getElementById("stage-piece-spin"),
-    pieceSpinValue: document.getElementById("stage-piece-spin-value"),
-    pieceSpinRate: document.getElementById("stage-piece-spin-rate"),
-    pieceSpinRateValue: document.getElementById("stage-piece-spin-rate-value"),
-    pieceTilt: document.getElementById("stage-piece-tilt"),
-    pieceTiltValue: document.getElementById("stage-piece-tilt-value"),
-    pieceDeckH: document.getElementById("stage-piece-deck-h"),
-    pieceDeckHValue: document.getElementById("stage-piece-deck-h-value"),
-    pieceOpen: document.getElementById("stage-piece-open"),
-    pieceOpenValue: document.getElementById("stage-piece-open-value"),
-    scrimControls: document.getElementById("stage-scrim-controls"),
-    pieceSheer: document.getElementById("stage-piece-sheer"),
-    pieceSheerValue: document.getElementById("stage-piece-sheer-value"),
-    surfaceImageControls: document.getElementById("stage-surface-image-controls"),
-    surfaceImageFile: document.getElementById("stage-surface-image-file"),
-    surfaceImageOn: document.getElementById("stage-surface-image-on"),
-    surfaceImageClear: document.getElementById("stage-surface-image-clear"),
-    surfaceImageNote: document.getElementById("stage-surface-image-note"),
-    pieceWater: document.getElementById("stage-piece-water"),
-    pieceWaterValue: document.getElementById("stage-piece-water-value"),
-    piecePoolH: document.getElementById("stage-piece-pool-h"),
-    piecePoolHValue: document.getElementById("stage-piece-pool-h-value"),
-    machinerySceneDiff: document.getElementById("stage-machinery-scene-diff"),
-    machineryEstimated: document.getElementById("stage-machinery-estimated"),
-    deckWarning: document.getElementById("stage-deck-warning"),
-    showFlown: document.getElementById("stage-show-flown"),
-    frontLights: document.getElementById("stage-front-lights"),
-    frontLightIntent: document.getElementById("stage-front-light-intent"),
-    frontFloorGrid: document.getElementById("stage-front-floor-grid"),
-    planLights: document.getElementById("stage-plan-lights"),
-    planRoutesCast: document.getElementById("stage-plan-routes-cast"),
-    planRoutesLight: document.getElementById("stage-plan-routes-light"),
-    planRoutesSet: document.getElementById("stage-plan-routes-set"),
-    setInfoKindRow: document.getElementById("stage-setinfo-lightkind"),
-    frontInner: document.getElementById("stage-front-inner"),
-    planInner: document.getElementById("stage-plan-inner"),
-    showNames: document.getElementById("stage-show-names"),
-    showSetNames: document.getElementById("stage-show-set-names"),
-    showLightNames: document.getElementById("stage-show-light-names"),
-    showFrontBorder: document.getElementById("stage-show-front-border"),
-  };
+  const els = window.STAGE_ELEMENT_REFS.create(document);
 
   if (BETA_BROWSER_AUDIO_RESTRICTIONS) {
     const betaAudioAccept = "audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,.mp3,.m4a,.aac";
@@ -6619,18 +5929,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const member = piece.castId ? state.project.cast.find((c) => c.id === piece.castId) : null;
     const cm = member && Number(member.heightCm) ? Number(member.heightCm) : DEFAULT_HEIGHT_CM;
     return cm / 100;
-  }
-
-  // 舞台に出す名前。登録した演者なら名簿から引き、そうでなければ個別の名前
-  // 頭上に出す名前。名簿・舞台セットに登録したものは、そちらの名前を引く
-  function pieceLabel(piece) {
-    if (piece.castId) {
-      const member = state.project.cast.find((c) => c.id === piece.castId);
-      if (member) return member.name;
-    }
-    const registered = pieceSet(piece);
-    if (registered) return registered.name;
-    return piece.name || "";
   }
 
   // いま開いているシーン
@@ -9217,7 +8515,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261103-v040&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261104-v043&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -21491,22 +20789,38 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
   }
 
-  // Shared display projection; never changes a cue or the editor draft.
-  function sceneOverviewById(id) {
-    const scene = state.project.scenes.find(row => row.id === id && row.kind === "scene");
+  // One projection per synchronous list render; never retained across edits or Undo.
+  function createSceneOverviewContext(numbers = sceneNumberMap(state.project.scenes)) {
+    const project = state.project;
+    const scenes = new Map(), lightingScenes = new Map(), musicByScene = new Map();
+    for (const row of project.scenes) {
+      if (row.kind === "scene" && !scenes.has(row.id)) scenes.set(row.id, row);
+    }
+    const design = project.lightingDesign;
+    for (const row of design?.scenes || []) {
+      if (!lightingScenes.has(row.id)) lightingScenes.set(row.id, row);
+    }
+    const labels = window.SHOSAI_CUE_SHEET?.lightCueDisplayMap(design, project.cueNaming, project) || new Map();
+    const music = window.SHOSAI_CUE_SHEET?.cuePresentations({ ...project,
+      cues:(project.cues || []).filter(q => q?.cueType === "music") }, { tx }) || [];
+    for (const q of music) {
+      if (q.cueType !== "music") continue;
+      if (!musicByScene.has(q.sceneId)) musicByScene.set(q.sceneId, []);
+      musicByScene.get(q.sceneId).push({ id:q.id, kind:"music", label:q.displayName, name:q.memo || "", enabled:q.enabled !== false });
+    }
+    return { scenes, numbers, lightingScenes, labels, musicByScene };
+  }
+
+  // Standalone bridge calls get a fresh projection; list callers share only their render.
+  function sceneOverviewById(id, context = createSceneOverviewContext()) {
+    const scene = context.scenes.get(id);
     if (!scene) return null;
-    const number = sceneNumberMap(state.project.scenes).get(id) || "1-1";
-    const design = state.project.lightingDesign;
-    const lightingScene = design?.scenes?.find(row => row.id === id);
-    const labels = window.SHOSAI_CUE_SHEET?.lightCueDisplayMap(design, state.project.cueNaming, state.project) || new Map();
+    const number = context.numbers.get(id) || "1-1";
+    const lightingScene = context.lightingScenes.get(id);
     const cues = [...(lightingScene?.lxq || [])].sort((a,b) => finite(a.seq,0) - finite(b.seq,0))
-      .map(q => ({ id:q.id, label:labels.get(q.id) || "Q?", name:q.name || "", enabled:q.enabled !== false }));
-    // Q-sheet owns both the labels and the scene assignment (including in-scene starts).
+      .map(q => ({ id:q.id, label:context.labels.get(q.id) || "Q?", name:q.name || "", enabled:q.enabled !== false }));
     // Keep LX-only `cues` intact: the lighting editor consumes that bridge contract.
-    const musicCues = (window.SHOSAI_CUE_SHEET?.cuePresentations({ ...state.project,
-      cues:(state.project.cues || []).filter(q => q?.cueType === "music") }, { tx }) || [])
-      .filter(q => q.cueType === "music" && q.sceneId === id)
-      .map(q => ({ id:q.id, kind:"music", label:q.displayName, name:q.memo || "", enabled:q.enabled !== false }));
+    const musicCues = context.musicByScene.get(id) || [];
     return { id, number, name:scene.title, cues, musicCues };
   }
 
@@ -28650,6 +27964,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       /* 番号は入れ子に沿って振る。セクションの中のシーンは「4-1」のようになる。
        * 深さごとの数え札を持ち、浅い所へ戻ったら深い側は捨てる。 */
       const sceneNumbers = sceneNumberMap(p.scenes);
+      const overviewContext = createSceneOverviewContext(sceneNumbers);
       const sectionStack = [];
 
       const makeRehearsalTimeInput = (ownerScene, labelJa, key) => {
@@ -29032,7 +28347,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         }
         row.append(bars, head);
         if (scene.kind === "scene") {
-          const info = sceneOverviewById(scene.id);
+          const info = sceneOverviewById(scene.id, overviewContext);
           if (info.cues.length || info.musicCues.length) row.append(sceneOverviewCueBadges(info));
         }
 
@@ -29297,6 +28612,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (els.sceneGridFront) els.sceneGridFront.setAttribute("aria-pressed", String(sceneGridView === "front"));
     if (els.sceneGridPlan) els.sceneGridPlan.setAttribute("aria-pressed", String(sceneGridView === "plan"));
     const numbers = sceneNumberMap(state.project.scenes);
+    const overviewContext = createSceneOverviewContext(numbers);
     const jobs = [];
 
     state.project.scenes.forEach((scene, index) => {
@@ -29350,7 +28666,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const caption = document.createElement("span");
       caption.className = "stage-scene-grid-caption";
       const title = document.createElement("strong");
-      const overview = sceneOverviewById(scene.id);
+      const overview = sceneOverviewById(scene.id, overviewContext);
       title.textContent = `${tx("シーン")} ${overview.number} ${overview.name}`;
       title.title = title.textContent;
       caption.append(title, sceneOverviewCueBadges(overview));
@@ -39303,7 +38619,7 @@ document.addEventListener("keydown", function (event) {
 
   /* 錠は「そのもの」に掛ける。登録があれば登録側、無ければ駒そのものに持つ。
    * 二か所に別々の錠を置くと、どちらで外すのか分からなくなる。 */
-  // announce で名指しするときの呼び名。登録名があればそれを使う
+  // 名札・一覧・通知で共用する呼び名。登録名、個別名、型名の順（無名でも型名を表示）。
   function pieceLabel(piece) {
     const owner = lockOwner(piece);
     if (owner && owner.name) return piece.castId ? castDisplayName(owner) : owner.name;
@@ -49653,14 +48969,53 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     const summary = container.querySelector("summary");
     if (summary) summary.textContent = tx("JSONファイルへ自動保存");
   }
+  // Like the language loader, bound every request to 15 seconds. Factories are
+  // initialized by the current caller only; detached late events cannot reopen UI.
+  function createDeferredScriptLoader(timeoutMs = 15000) {
+    const pending = new Map(), attempts = new Map();
+    return function load(src, available) {
+      if (pending.has(src)) return pending.get(src);
+      if (available()) return Promise.resolve();
+      const attempt = attempts.get(src) || 0;
+      attempts.set(src, attempt + 1);
+      const job = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        let settled = false;
+        const finish = error => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          script.onload = script.onerror = null;
+          if (error) { script.remove(); reject(error); }
+          else resolve();
+        };
+        const timer = setTimeout(() => finish(new Error("Script load timed out: " + src)), timeoutMs);
+        // Callers await dependencies in order. Do not queue retries behind a
+        // timed-out request that the browser may still be fetching.
+        script.async = true;
+        // A fresh retry URL also avoids reusing the still-pending network resource.
+        // Preserve the asset version query; only failed attempts get this suffix.
+        script.src = attempt === 0 ? src : src + (src.includes("?") ? "&" : "?") + "stage-retry=" + attempt;
+        script.onload = () => finish(available() ? null : new Error("Invalid script asset: " + src));
+        script.onerror = () => finish(new Error("Script load failed: " + src));
+        try { document.head.append(script); } catch (error) { finish(error); }
+      });
+      pending.set(src, job);
+      // Keep successful requests shared; failures release the slot for the next open.
+      void job.catch(() => { if (pending.get(src) === job) pending.delete(src); });
+      return job;
+    };
+  }
+  const loadDeferredScript = createDeferredScriptLoader();
   let fileAutosaveLoad = null;
   function loadFileAutosaveUi() {
     if (fileAutosaveUi) return Promise.resolve(fileAutosaveUi);
     if (fileAutosaveLoad) return fileAutosaveLoad;
-    fileAutosaveLoad = new Promise(resolve => {
-      const loaded = () => {
+    fileAutosaveLoad = (async () => {
+      await loadDeferredScript("stage-file-autosave.js", () => Boolean(window.STAGE_FILE_AUTOSAVE && window.STAGE_FILE_AUTOSAVE_UI));
+      if (!fileAutosaveUi) {
         const container = document.getElementById("stage-file-autosave");
-        if (!container || !window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) { resolve(null); return; }
+        if (!container || !window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) return null;
         const restoreSummaryFocus = container.contains(document.activeElement);
         container.replaceChildren();
         fileAutosaveUi = window.STAGE_FILE_AUTOSAVE_UI.create({
@@ -49682,18 +49037,11 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
             persist:() => { fileAutosaveSnapshotRequested = true; return saveCurrentShow(); }},
         });
         if (restoreSummaryFocus) container.querySelector("summary")?.focus();
-        resolve(fileAutosaveUi);
-      };
-      if (window.STAGE_FILE_AUTOSAVE_UI) { loaded(); return; }
-      const script = document.createElement("script");
-      script.src = "stage-file-autosave.js";
-      script.onload = loaded;
-      script.onerror = () => {
-        script.remove();
-        announce(tx("この機能はまだオフラインで使えません。一度オンラインで開いてから、もう一度お試しください。保存済みのショーは変更していません。"));
-        resolve(null);
-      };
-      document.head.append(script);
+      }
+      return fileAutosaveUi;
+    })().catch(() => {
+      announce(tx("この機能はまだオフラインで使えません。一度オンラインで開いてから、もう一度お試しください。保存済みのショーは変更していません。"));
+      return null;
     }).then(ui => { if (!ui) fileAutosaveLoad = null; return ui; });
     return fileAutosaveLoad;
   }
@@ -49796,9 +49144,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(workFolderUi)return Promise.resolve(workFolderUi);
     if(workFolderLoad)return workFolderLoad;
     workFolderLoad=(async()=>{
-      for(const src of ['stage-work-folder.js','stage-work-folder-ui.js'])await new Promise((resolve,reject)=>{
-        const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(Error('work-folder-load-failed'));document.head.append(script);
-      });
+      for (const [src, key] of [['stage-work-folder.js','STAGE_WORK_FOLDER'], ['stage-work-folder-ui.js','STAGE_WORK_FOLDER_UI']]) {
+        await loadDeferredScript(src, () => Boolean(window[key]));
+      }
       initializeWorkFolder();return workFolderUi;
     })().catch(error=>{workFolderLoad=null;importFailureNotice(driveText('work.failed'));return null;});
     return workFolderLoad;
@@ -49818,6 +49166,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     event.preventDefault();event.returnValue='';
   });
   function initializeDriveBackup() {
+  if (driveBackupUi) return;
   const driveContainer=document.getElementById('stage-drive-backup');
   if(driveContainer && window.STAGE_DRIVE_BACKUP_UI) {
     driveBackupUi=window.STAGE_DRIVE_BACKUP_UI.create({container:driveContainer,tx:driveText,host:{
@@ -49901,13 +49250,17 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      if(!window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title'])await new Promise((resolve,reject)=>{
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261104-v042';script.onload=resolve;script.onerror=reject;document.head.append(script);
-      });
+      await loadDeferredScript('stage-i18n.ja.js?v=20261104-v042', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
-      for(const name of ['stage-drive-backup-browser.js','stage-drive-backup-store.js','stage-drive-backup-scheduler.js','stage-drive-backup-snapshot.js','stage-drive-backup-controller.js','stage-drive-backup-ui.js']){
-        await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=name;script.onload=resolve;script.onerror=reject;document.head.append(script);});
-      }
+      if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
+      for (const [name, key] of [
+        ['stage-drive-backup-browser.js','STAGE_DRIVE_BACKUP_BROWSER'],
+        ['stage-drive-backup-store.js','STAGE_DRIVE_BACKUP_STORE'],
+        ['stage-drive-backup-scheduler.js','STAGE_DRIVE_BACKUP_SCHEDULER'],
+        ['stage-drive-backup-snapshot.js','STAGE_DRIVE_BACKUP_SNAPSHOT'],
+        ['stage-drive-backup-controller.js','STAGE_DRIVE_BACKUP_CONTROLLER'],
+        ['stage-drive-backup-ui.js','STAGE_DRIVE_BACKUP_UI'],
+      ]) await loadDeferredScript(name, () => Boolean(window[key]));
       initializeDriveBackup();return driveBackupUi;
     })().catch(()=>{driveBackupLoad=null;announce(driveText('drive.loadFailed'),{warning:true});return null;});
     return driveBackupLoad;

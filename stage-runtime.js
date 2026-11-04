@@ -151,6 +151,7 @@
     "stage-drive-backup-snapshot.js",
     "stage-drive-backup-store.js",
     "stage-drive-backup-ui.js",
+    "stage-element-refs.js",
     "stage-field-run-checkpoint.js",
     "stage-field-run-console.js",
     "stage-field-run-frame.js",

@@ -2,8 +2,8 @@
  *
  * ★中身は stage-sketch.js から**行範囲をそのまま抜き出して**組み立ててある（手で写していない）。
  *   各ブロックの見出しに本体の行番号を書いてある。本体を直したら、同じ範囲を取り直す。
- *   本体を直すたびにズレる、という二重管理の弱点は承知の上で、
- *   「試作の3D画面で演者が立体に見えること」を優先した（本人指示 2026-09-12）。
+ *   共通の描画補助は STAGE_PERFORMER_BODY.drawing を使う（C5）。
+ *   衣装・胴の外周・手足の輪郭は意味が違うため、旧描画の実装を維持する。
  *
  * 持ってきたもの: 関節モデル（BASE_JOINTS）・姿勢（POSES）・胴の断面（TORSO/NECK_RINGS）・
  *   骨格の投影（buildRig）・体の塗り（paintBody）と、その補助関数。
@@ -618,24 +618,7 @@
   ];
 
   /* ===== smoothClosedPath・torsoOutline・taperedChain・lerpPt・limbNodes・mixToward・LIMBS（本体 3505-3613） ===== */
-  function smoothClosedPath(target, pts, tension) {
-    const n = pts.length;
-    if (n < 3) return;
-    const k = (tension === undefined ? 0.5 : tension) / 3;
-    target.beginPath();
-    target.moveTo(pts[0].x, pts[0].y);
-    for (let i = 0; i < n; i += 1) {
-      const p0 = pts[(i - 1 + n) % n];
-      const p1 = pts[i];
-      const p2 = pts[(i + 1) % n];
-      const p3 = pts[(i + 2) % n];
-      target.bezierCurveTo(
-        p1.x + (p2.x - p0.x) * k, p1.y + (p2.y - p0.y) * k,
-        p2.x - (p3.x - p1.x) * k, p2.y - (p3.y - p1.y) * k,
-        p2.x, p2.y);
-    }
-    target.closePath();
-  }
+  const smoothClosedPath = (...args) => root.STAGE_PERFORMER_BODY.drawing.smoothClosedPath(...args);
 
   /* 胴の外周。断面の中心を上から下へたどり、各断面で体の軸に直交する向きへ
      張り出した点を左右に取る。張り出しは楕円断面としての見かけの半径
@@ -718,55 +701,14 @@
 
   /* 手足の節を、中間のふくらみを挟んだ列に開く。
      肩→肘→手首 の3点が 肩→上腕→肘→前腕→手首 の5点になる。 */
-  function limbNodes(pts, kind) {
-    const mids = LIMB_MIDS[kind];
-    const out = [pts[0]];
-    for (let i = 0; i < pts.length - 1; i += 1) {
-      const t = mids[Math.min(i, mids.length - 1)];
-      out.push(lerpPt(pts[i], pts[i + 1], t));
-      out.push(pts[i + 1]);
-    }
-    return out;
-  }
+  const limbNodes = (pts, kind) => root.STAGE_PERFORMER_BODY.drawing.limbNodes(pts, kind, lerpPt);
 
   /* 袖と裾は、姿勢で折れた手足の線に沿って付け根から必要な長さだけ塗る。 */
-  function chainPrefix(points, radii, fraction) {
-    const amount = clamp(finite(fraction, 0), 0, 1);
-    if (!Array.isArray(points) || points.length < 2 || amount <= 0) return { points: [], radii: [] };
-    const lengths = [];
-    let total = 0;
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const length = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
-      lengths.push(length); total += length;
-    }
-    if (!(total > 0) || amount >= 1) return { points: points.slice(), radii: radii.slice() };
-    const wanted = total * amount;
-    const outPoints = [points[0]];
-    const outRadii = [radii[0]];
-    let walked = 0;
-    for (let i = 0; i < lengths.length; i += 1) {
-      const next = walked + lengths[i];
-      if (next <= wanted) {
-        outPoints.push(points[i + 1]); outRadii.push(radii[i + 1]); walked = next; continue;
-      }
-      const t = lengths[i] ? (wanted - walked) / lengths[i] : 0;
-      outPoints.push(lerpPt(points[i], points[i + 1], t));
-      outRadii.push(radii[i] + (radii[i + 1] - radii[i]) * t);
-      break;
-    }
-    return { points: outPoints, radii: outRadii };
-  }
+  const chainPrefix = (points, radii, fraction) => root.STAGE_PERFORMER_BODY.drawing.chainPrefix(points, radii, fraction, lerpPt);
 
   // 色を地の暗さへ寄せる。奥の手足を沈ませるのに使う（重ね塗りで濃くならないよう、
   // 半透明ではなく色そのものを混ぜる）
-  function mixToward(hex, t) {
-    const c = hex.replace("#", "");
-    const n = parseInt(c.length === 3 ? c.split("").map((x) => x + x).join("") : c, 16);
-    const r = Math.round(((n >> 16) & 255) * (1 - t) + 13 * t);
-    const g = Math.round(((n >> 8) & 255) * (1 - t) + 12 * t);
-    const b = Math.round((n & 255) * (1 - t) + 11 * t);
-    return `rgb(${r},${g},${b})`;
-  }
+  const mixToward = (...args) => root.STAGE_PERFORMER_BODY.drawing.mixToward(...args);
 
   // 体の部位。太さは身長に対する割合。奥にあるものから塗るために z も見る
   /* 手足。足首から先（足）と手首から先（手）は形が違うので別に描く。
@@ -828,7 +770,6 @@
     arm: [0.010, 0.030, 0.026, 0.022, 0.0132],
   };
   // 節の間に挟む中間点の位置（0=手前の関節、1=先の関節）
-  const LIMB_MIDS = { leg: [0.45, 0.35], arm: [0.5, 0.35] };
   const HAND_LEN = 0.062;      // 手首から指先まで
   const HAND_R = 0.019;
   const FOOT_R = 0.021;        // 足の甲の厚み
@@ -857,10 +798,7 @@
   }
 
   /* ===== rgba（本体 7321-7324） ===== */
-  function rgba(hex, alpha) {
-    const value = parseInt(hex.slice(1), 16);
-    return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`;
-  }
+  const rgba = (...args) => root.STAGE_PERFORMER_BODY.drawing.rgba(...args);
 
   /* ===== buildRig（本体 7887-7998） ===== */
   function buildRig(poseId, originX, originY, ux, uy, yaw, zDrop, tilt, sampledPose) {

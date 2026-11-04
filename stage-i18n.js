@@ -32,6 +32,16 @@
 
   const TEXT = {
 
+    "進行表を紙面で直接編集したとき、確定できなかった入力が消えずに残るようにしました。印刷は専用の写しで行い、印刷用の一時的な書式が保存に混ざらないようにしました。進行表と Q シートの CSV は、書いたとおりの文で出します（Q シートの記号の列だけ言葉に直します）。": "When you edit the run-of-show directly on the page, input that could not be confirmed is no longer lost. Printing now uses its own copy, so temporary print formatting never gets saved. Run-of-show and Q-sheet CSV files now contain the text exactly as written (only the Q-sheet symbol column is spelled out in words).",
+
+    "劇場設計で図面を読み込み直すとき、新しい図面の読み込みが終わるまで前の図面を残し、古い読み込みが後から終わっても上書きしないようにしました。リハーサルの記録図では、消しゴムも描き足しと同じく 50 回まで戻せます。": "When you reload a drawing in theatre design, the previous drawing stays until the new one has finished loading, and an older load that finishes later no longer overwrites it. In rehearsal record drawings, eraser strokes can now be undone up to 50 times, the same as pen strokes.",
+
+    "Mac 版で、ファイル名に「..」を含む音源も読み込めるようにしました。親フォルダを指す参照は、これまでどおり読み込みません。": "The Mac version can now load audio whose file name contains “..”. References that point to a parent folder are still not loaded.",
+
+    "シーン一覧の番号と LX/M の表示をまとめて計算し、軽くしました。保存まわりの部品の読み込みが止まったときは 15 秒で打ち切って読み直します。照明の再生ボタンは状態や言語が変わったときだけ描き直します。相談役は、利用量の集計を待たずに返答を返します。": "Scene list numbers and LX/M labels are now worked out together, which makes the list lighter. If a saving-related component stops loading, it is retried after 15 seconds. The lighting play buttons are redrawn only when their state or language changes. The assistant now replies without waiting for usage tallying.",
+
+    "演者の描き方を舞台と照明で共通にし（見た目は変わりません）、画面の部品の参照をひとまとめにするなど、内部を整理しました。": "Performers are now drawn the same way on the stage and in lighting (they look the same as before), and on-screen element references are gathered in one place, among other internal tidy-ups.",
+
     "かんたん照明の種類の上に、用途で絞り込むボタン（すべて・人に当てる・舞台を染める・輪郭・影・効果）を付けました。新しい種類「奥だけ染める」「手前だけ染める」を加え、灯数は 2 灯か 4 灯から選べます。": "Easy lighting now has buttons above the lighting types to filter them by purpose: All, Light people, Colour the stage, Outline & shadow and Effects. Two new types, “Upstage wash” and “Downstage wash”, can use two or four fixtures.",
 
     "照明の機材配置で、囲み選択の途中で操作が中断されても、エラーにならず選択が元に戻るようにしました。照明の編集履歴を軽くし、長く作業しても重くなりにくくしました。戻せる回数（100 回）は変わりません。": "In lighting equipment placement, an interrupted box selection no longer causes an error; the selection returns to how it was. The lighting edit history is lighter, so long sessions slow down less. You can still undo up to 100 steps.",
@@ -5723,6 +5733,9 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"別の処理が続いてい
 
 // B57 A4-05: paper validation keys, resolved by run-of-show uiText at display time.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "舞台シーンには項目名を入力してください。": "Enter a name for the stage scene.",
+  "舞台シーンの各時間は86400秒以内で入力してください。": "Each stage scene duration must be at most 86,400 seconds.",
+  "時間を固定したシーンです。舞台タブで固定を解除してください。": "This scene’s timing is locked. Unlock it in the Stage tab.",
   "秒数は0以上、または未定の空欄にしてください。": "Enter a non-negative number of seconds, or leave blank if undecided.",
   "この欄は10万文字以内で入力してください。": "Keep this field within 100,000 characters.",
   "各部の指示は100行以内で入力してください。": "Keep department instructions within 100 lines.",

@@ -759,11 +759,11 @@
     return pages;
   }
 
-  function csvCell(value, words) {
+  function csvCell(value, words = null) {
     let expanded = text(value);
-    if (/^[●→◆]+$/.test(expanded)) {
+    if (words && /^[●→◆]+$/.test(expanded)) {
       expanded = [...expanded].map((symbol) => words[symbol] || symbol).join(" / ");
-    } else {
+    } else if (words) {
       expanded = expanded.replace(/^[●→◆](?=\s|$)/, (symbol) => words[symbol] || symbol);
     }
     expanded = root.STAGE_DATA_SAFETY.csvSafeText(expanded);
@@ -773,9 +773,15 @@
   function sheetToCsv(sheet) {
     const columns = list(sheet && sheet.columns);
     const words = sheet && sheet.symbolWords || { "●": "舞台上", "→": "動線あり", "◆": "持ち物の変化" };
-    const lines = [columns.map((column) => csvCell(column.label, words)).join(",")];
+    const lines = [columns.map((column) => csvCell(column.label)).join(",")];
     list(sheet && sheet.rows).forEach((row) => {
-      lines.push(columns.map((column) => csvCell(row && row[column.key], words)).join(","));
+      lines.push(columns.map((column) => {
+        const value = row && row[column.key];
+        // Only generated Q-sheet marks are prose in CSV. Names, cues and ROS text stay literal.
+        const marks = sheet.kind === "master" && column.role === "performer"
+          || sheet.kind === "performer" && ["present", "route"].includes(column.key) && /^[●→◆]+$/.test(text(value));
+        return csvCell(value, marks ? words : null);
+      }).join(","));
     });
     return `\uFEFF${lines.join("\r\n")}`;
   }

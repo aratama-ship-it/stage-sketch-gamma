@@ -1,7 +1,7 @@
 "use strict";
 // Edits the visible fragment in place. Canonical data belongs to the native host; editor.js coordinates pagination.
-window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},continuous=()=>false,text=key=>key}){
-  let active=null,pending=null;
+window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},onCommit=()=>{},continuous=()=>false,text=key=>key}){
+  let active=null,pending=null,finishing=false;
   const selector="[data-direct-field],[data-direct-info]";
   const descriptor=node=>({itemId:node.dataset.directItem||null,key:node.dataset.directField||node.dataset.directInfo,info:!!node.dataset.directInfo,type:node.dataset.directType||"text",label:node.getAttribute("aria-label"),start:node.dataset.sourceStart===undefined?null:Number(node.dataset.sourceStart),end:node.dataset.sourceEnd===undefined?null:Number(node.dataset.sourceEnd)});
   const identity=d=>[d.info,d.itemId,d.key].join("|");
@@ -15,20 +15,29 @@ window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},
   }
   function state(key){onState(text(key),!!active,key);}
   function finish(cancel=false,next=null){
-    if(!active)return true;
+    if(finishing)return false;
+    if(!active){if(cancel)pending=null;return true;}
     const edit=active;
+    const reject=error=>{edit.input.setCustomValidity(text(error));edit.input.focus({preventScroll:true});edit.input.reportValidity();state(error);return false;};
     if(!cancel)edit.input.setCustomValidity("");
-    if(!cancel&&!edit.input.checkValidity()){edit.input.reportValidity();state("入力を確認してください。Escで取り消せます。");return false;}
-    const value=edit.input.value,full=edit.prefix+value+edit.suffix;
-    if(!cancel){const error=commit(edit.desc,full,true);if(error){edit.input.setCustomValidity(text(error));edit.input.reportValidity();state(error);return false;}}
+    if(!cancel&&!edit.input.checkValidity()){edit.input.focus({preventScroll:true});edit.input.reportValidity();state("入力を確認してください。Escで取り消せます。");return false;}
+    const full=edit.prefix+edit.input.value+edit.suffix,changed=full!==edit.original;
+    if(!cancel&&changed){
+      // Keep the input and selection until the authoritative host accepts it.
+      finishing=true;
+      try{const error=commit(edit.desc,full,true)||commit(edit.desc,full,false,true);if(error)return reject(error);}
+      finally{finishing=false;}
+    }
     active=null;edit.node.classList.remove("paper-editing-field");edit.node.replaceChildren(...edit.children);edit.node.setAttribute("role","button");edit.node.tabIndex=0;
-    if(cancel||full===edit.original){state(cancel?"この欄の入力を取り消しました。":"紙面の欄をクリックして編集できます。");if(next)begin(locate(next));else edit.node.focus({preventScroll:true});return true;}
-    pending={desc:next||edit.desc,edit:!!next};commit(edit.desc,full,false);state("変更を反映し、ページを整えています…");return true;
+    if(cancel||!changed){pending=null;state(cancel?"この欄の入力を取り消しました。":"紙面の欄をクリックして編集できます。");if(next)begin(locate(next));else edit.node.focus({preventScroll:true});return true;}
+    pending={desc:next||edit.desc,edit:!!next};state("変更を反映し、ページを整えています…");onCommit();return true;
   }
   function begin(node){
     if(!node||active?.node===node)return;
-    const desc=descriptor(node),data=read(desc);if(!data)return;
-    if(active){const next=desc;if(!finish(false,next))return;if(pending)return;node=locate(next);if(!node)return;}
+    const desc=descriptor(node);
+    if(active){if(!finish(false,desc))return;if(active||pending)return;node=locate(desc);if(!node)return;}
+    // read() selects the item, so a refused prior edit must be resolved first.
+    const data=read(desc);if(!data)return;
     const original=data.value,partial=data.multiline&&desc.start!==null;
     const start=partial?desc.start:0,end=partial?desc.end:original.length;
     const input=document.createElement(data.multiline?"textarea":"input");

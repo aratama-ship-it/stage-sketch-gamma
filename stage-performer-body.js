@@ -110,19 +110,19 @@
 
   /* 手足の節を、中間のふくらみを挟んだ列に開く。
      肩→肘→手首 の3点が 肩→上腕→肘→前腕→手首 の5点になる。 */
-  function limbNodes(pts, kind) {
+  function limbNodes(pts, kind, interpolate = lerpPt) {
     const mids = LIMB_MIDS[kind];
     const out = [pts[0]];
     for (let i = 0; i < pts.length - 1; i += 1) {
       const t = mids[Math.min(i, mids.length - 1)];
-      out.push(lerpPt(pts[i], pts[i + 1], t));
+      out.push(interpolate(pts[i], pts[i + 1], t));
       out.push(pts[i + 1]);
     }
     return out;
   }
 
   /* 袖と裾は、姿勢で折れた手足の線に沿って付け根から必要な長さだけ塗る。 */
-  function chainPrefix(points, radii, fraction) {
+  function chainPrefix(points, radii, fraction, interpolate = lerpPt) {
     const amount = clamp(finite(fraction, 0), 0, 1);
     if (!Array.isArray(points) || points.length < 2 || amount <= 0) return { points: [], radii: [] };
     const lengths = [];
@@ -142,7 +142,7 @@
         outPoints.push(points[i + 1]); outRadii.push(radii[i + 1]); walked = next; continue;
       }
       const t = lengths[i] ? (wanted - walked) / lengths[i] : 0;
-      outPoints.push(lerpPt(points[i], points[i + 1], t));
+      outPoints.push(interpolate(points[i], points[i + 1], t));
       outRadii.push(radii[i] + (radii[i + 1] - radii[i]) * t);
       break;
     }
@@ -1639,5 +1639,8 @@
     }
     target.drawImage(sprite.canvas,rig.P.head.x+sprite.dx,rig.P.head.y+sprite.dy,sprite.w,sprite.h);
   }
-  root.STAGE_PERFORMER_BODY=Object.freeze({supportOverlapSkin,projectRig,paint,paintWithMeshParts,paintWithDepthFaces,paintHands,paintArms,paintPiggybackFront,handIsFar,paintNearArmContour,stats,geometryKey,contourGeometryKey});
+  // Shared drawing primitives. Lighting keeps its legacy x/y-only interpolation;
+  // the body defaults also carry perspective scale s. Shape-specific painters stay local.
+  const drawing = Object.freeze({ smoothClosedPath, limbNodes, chainPrefix, mixToward, rgba });
+  root.STAGE_PERFORMER_BODY=Object.freeze({supportOverlapSkin,projectRig,paint,paintWithMeshParts,paintWithDepthFaces,paintHands,paintArms,paintPiggybackFront,handIsFar,paintNearArmContour,stats,geometryKey,contourGeometryKey,drawing});
 })(typeof window==='undefined'?globalThis:window);

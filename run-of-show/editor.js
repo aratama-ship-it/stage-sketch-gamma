@@ -864,23 +864,39 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   $("redo-edit").addEventListener("click",()=>{paperEditor.cancel();bridge.redo();refresh();});
   // G1 #1: a device setting. The show's saved `language` is not rewritten (v0.3.21 accepts only bilingual/ja/en there).
   $("heading-language").addEventListener("change",e=>{languageMode=layout.languageMode(e.target.value);store(LANGUAGE_KEY,languageMode==="auto"?null:languageMode);renderDocumentInfo();renderFlow();renderPaper();});$("print-sample").addEventListener("click",()=>printCurrent().catch(showError));
+  async function buildPrintSnapshot(){
+    // Capture before the first await. Pagination owns only this hidden projection.
+    // The free table already carries its profile; never borrow/overwrite the A4 profile.
+    const format=paperFormat==='free'?lastA4:paperFormat,lang=language;
+    const source=$('paper-source').cloneNode(true),table=$('ros-table').cloneNode(true);
+    const scope=$('paper-scope-note').hidden?'':$('paper-scope-note').textContent;
+    const context=table.querySelector('caption').textContent,title=$('paper-info-title').textContent;
+    const text={notSet:P('notSet'),runOfShow:P('runOfShow'),abbreviations:P('abbreviations'),continued:(no,part,first)=>layout.paperText(lang,'continued',no,part,first)};
+    const mount=el('div','','paginated-pages page-building');mount.inert=true;
+    const computed=getComputedStyle(document.documentElement);
+    for(const name of computed)if(name.startsWith('--'))mount.style.setProperty(name,computed.getPropertyValue(name));
+    const styles=mount.style.cssText;
+    document.querySelector('.doc-frame').append(mount);
+    try{
+      const result=await window.ROSPages.render({source,table,mount,portrait:format==='a4-portrait',scope,context,text});
+      if(!result)throw Error(uiText('印刷画面を開けませんでした。'));
+      const pages=mount.cloneNode(true);pages.classList.remove('page-building');pages.inert=false;
+      return {pages,styles,title,orientation:format==='a4-portrait'?'portrait':'landscape'};
+    }finally{mount.remove();}
+  }
   async function printCurrent(reservedWindow=null){
     if(cueView){if(cueHost.selection()?.kind==='handover'){cueFrame.contentDocument.getElementById('stage-cue-sheet-view-print').click();return true;}return cuePaper?.print();}
     if(!paperEditor.finish()||!infoValid())return false;
     const printWindow=reservedWindow||window.open('','_blank');if(!printWindow)throw Error(uiText('印刷画面を開けませんでした。'));
-    const format=paperFormat,temporary=format==='free',key=lastA4+':'+kindOfLayout(),previous=layouts[key];
-    if(temporary){layouts[key]=files.clone(layoutFor());paperFormat=lastA4;renderPaper();}
-    try{
-      await new Promise((resolve,reject)=>{const status=$('pagination-status');const check=()=>{if(status.dataset.state==='ready'){observer.disconnect();resolve();}else if(status.dataset.state==='error'){observer.disconnect();reject(Error(status.textContent));}};const observer=new MutationObserver(check);observer.observe(status,{attributes:true});check();});
-      const doc=printWindow.document;doc.open();doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body class="pages-ready"><div id="preview"><div class="doc-frame"><div id="page-output"></div></div></div></body></html>');doc.close();
-      doc.documentElement.dataset.gammaPrintOrientation=paperFormat==='a4-portrait'?'portrait':'landscape';
-      const loads=[];for(const sheet of document.querySelectorAll('link[rel=stylesheet]')){const link=doc.createElement('link');link.rel='stylesheet';link.href=sheet.href;loads.push(new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=()=>reject(Error(uiText('印刷用のスタイルを読み込めませんでした。')));}));doc.head.append(link);}
-      const pageRule=doc.createElement('style');pageRule.textContent=$('paper-page-rule').textContent+' #page-output{transform:none!important;margin:0!important} .doc-frame{border:0!important;padding:0!important} [data-screen-only]{display:none!important}';doc.head.append(pageRule);
-      doc.documentElement.style.cssText=document.documentElement.style.cssText;doc.documentElement.style.setProperty('--page-scale','1');doc.title=$('paper-info-title').textContent;
-      doc.getElementById('page-output').append($('page-output').firstElementChild.cloneNode(true));
-      await Promise.all(loads);await doc.fonts?.ready;await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;})));
-      printWindow.focus();printWindow.print();return true;
-    }finally{if(temporary){paperFormat=format;layouts[key]=previous;renderPaper();}}
+    const snapshot=await buildPrintSnapshot();
+    const doc=printWindow.document;doc.open();doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body class="pages-ready"><div id="preview"><div class="doc-frame"><div id="page-output"></div></div></div></body></html>');doc.close();
+    doc.documentElement.dataset.gammaPrintOrientation=snapshot.orientation;
+    const loads=[];for(const sheet of document.querySelectorAll('link[rel=stylesheet]')){const link=doc.createElement('link');link.rel='stylesheet';link.href=sheet.href;loads.push(new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=()=>reject(Error(uiText('印刷用のスタイルを読み込めませんでした。')));}));doc.head.append(link);}
+    const pageRule=doc.createElement('style');pageRule.textContent='@page{size:A4 '+snapshot.orientation+';margin:0} #page-output{transform:none!important;margin:0!important} .doc-frame{border:0!important;padding:0!important} [data-screen-only]{display:none!important}';doc.head.append(pageRule);
+    doc.documentElement.style.cssText=snapshot.styles;doc.documentElement.style.setProperty('--page-scale','1');doc.title=snapshot.title;
+    doc.getElementById('page-output').append(snapshot.pages);
+    await Promise.all(loads);await doc.fonts?.ready;await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;})));
+    printWindow.focus();printWindow.print();return true;
   }
   function freshId(prefix){if(nextId>Number.MAX_SAFE_INTEGER-10000)nextId=1;let value;do{value=`${prefix}-${nextId++}`;}while(items.some(x=>x.id===value||x.sceneId===value));return value;}
   function markDirty(){
@@ -1432,7 +1448,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     const multiline=desc.type==="text"&&(["details","notes","transitionDetail","transitionNotes","dept"].includes(desc.key)||desc.key.startsWith("cue:")&&desc.key.endsWith(":notes")||value.includes("\n"));
     return {value,max,multiline};
   }
-  function commitDirect(desc,text,dry){
+  function commitDirect(desc,text,dry,deferRender=false){
     let value=text;
     try{
       if(desc.info){if(desc.key==="startTime")value=timing.normalizeStart(text);files.documentInfo({documentInfo:{...documentInfo,[desc.key]:value}});}
@@ -1441,18 +1457,22 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
       if(desc.key==="dept"&&text.split("\n").filter(line=>line.trim()).length>100)throw new Error("各部の指示は100行以内で入力してください。");
       if(!desc.info&&["hold","transition"].includes(desc.key)&&items.find(i=>i.id===desc.itemId)?.sceneId&&value===null)throw new Error("舞台と連携した項目の時間を入力してください。");
       if(dry){bridge.canEdit(token);return null;}
-      checkpoint();
-      if(desc.info)documentInfo[desc.key]=value;
-      else{const item=items.find(x=>x.id===desc.itemId);if(!item)throw new Error("編集先の項目がありません。");
+      const candidate=packDocument();
+      if(desc.info)candidate.documentInfo[desc.key]=value;
+      else{const item=candidate.items.find(x=>x.id===desc.itemId);if(!item)throw new Error("編集先の項目がありません。");
         if(desc.key==="dept")item.dept=text.split("\n").filter(line=>line.trim()).map(line=>{const m=/^(\S+)\s+([\s\S]*)$/.exec(line.trim());return m?[m[1],m[2]]:["",line.trim()];});
-        else if(desc.key.startsWith("cue:")){const [cueId,field]=cueField(desc.key);const entry={...cueNotes[cueId]};if(text)entry[field]=text;else delete entry[field];if(Object.keys(entry).length)cueNotes[cueId]=entry;else delete cueNotes[cueId];}
+        else if(desc.key.startsWith("cue:")){const [cueId,field]=cueField(desc.key);const notes=candidate.cueNotes||={},entry={...notes[cueId]};if(text)entry[field]=text;else delete entry[field];if(Object.keys(entry).length)notes[cueId]=entry;else delete notes[cueId];if(!Object.keys(notes).length)delete candidate.cueNotes;}
         else if(desc.key.startsWith("caption:")){const [,field,index]=desc.key.split(":");item[field==="details"?"detailAssets":"noteAssets"][Number(index)].caption=text;}
         else item[desc.key]=value;
       }
-      render();notice("紙面の変更を進行と保存内容へ反映しました");return null;
+      const result=bridge.apply(candidate,token);
+      token=result.token;dirty=false;accept(result.document);
+      $("storage-status").textContent="ショーへ反映しました · 自動保存中";
+      notice("紙面の変更を進行と保存内容へ反映しました",false);
+      if(!deferRender)render();return null;
     }catch(error){return error.message;}
   }
-  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,text:uiText,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing,key)=>{
+  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,onCommit:render,text:uiText,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing,key)=>{
     $("paper-edit-status").dataset.rosStatusKey=key;$("paper-edit-status").lang=uiLanguage();
     if($("paper-edit-status").textContent!==text)$("paper-edit-status").textContent=text;document.body.classList.toggle("paper-is-editing",editing);document.body.classList.toggle("pages-ready",!editing&&!busy&&$("pagination-status").dataset.state==="ready");$("print-sample").disabled=editing||busy||$("pagination-status").dataset.state!=="ready";
     if(!editing&&!dirty&&storageReady&&!busy)$("storage-status").textContent=savedRevision?"ショーの保存を使っています。":"ショーと一緒に自動保存します。";

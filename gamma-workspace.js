@@ -1120,7 +1120,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261104-v042'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261104-v043'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
