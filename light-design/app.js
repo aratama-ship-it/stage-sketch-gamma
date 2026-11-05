@@ -1525,7 +1525,40 @@
     };
     (state.scenes || []).forEach((sc) => { fix(sc.cue); (sc.lxq || []).forEach((q) => fix(q.cue)); });
   }
-  /* 動きパネル（球を選んだとき）: 回す／止める だけ。色・強さ・狙いは持たない。当てているピンを添える。 */
+  // One settings component for Simple, the detailed inspector and Equipment layout.
+  // Values belong only to fixture.mirrorBall; callbacks resolve the fixture by ID after Undo/load.
+  function renderMirrorBallSettings(host, fid, options = {}) {
+    const f = fixtureById(fid); if (!E.isMirrorBall(f)) return;
+    const text = (key, values = {}) => (window.GAMMA_LIGHT_UI_TEXT?.(key) || key).replace(/\{(\w+)\}/g, (all, k) => values[k] ?? all);
+    const spec = E.mirrorBallOf(f);
+    const rows = {
+      rpm: ["回る速さ", E.MIRROR_BALL.rpms.map(v => [String(v), text("{rpm}回転/分", { rpm: v })])],
+      diameterM: ["直径", E.MIRROR_BALL.diametersM.map(v => [String(v), `${Math.round(v * 100)}cm`])],
+      facetSize: ["鏡片の大きさ", E.MIRROR_BALL.facetSizes.map((v, i) => [v, text(["細かい", "標準", "粗い"][i])])],
+    };
+    for (const key of options.keys || Object.keys(rows)) {
+      const [name, choices] = rows[key];
+      let row = host.querySelector(`[data-mirror-setting-row="${key}"]`);
+      if (!row) {
+        row = document.createElement("label"); row.className = "field"; row.dataset.mirrorSettingRow = key;
+        row.append(document.createElement("span"), document.createElement("select")); host.append(row);
+      }
+      row.firstChild.textContent = text(name);
+      const select = row.lastChild; select.dataset.mirrorSetting = key; select.setAttribute("aria-label", text(name));
+      // Keep controls in place across repaints and preserve non-menu legacy diameter/rpm values.
+      if (!choices.some(([value]) => value === String(spec[key]))) choices.unshift([String(spec[key]), String(spec[key])]);
+      if (JSON.stringify([...select.options].map(o => [o.value, o.textContent])) !== JSON.stringify(choices)) select.replaceChildren(...choices.map(([v, label]) => new Option(label, v)));
+      select.value = String(spec[key]); select.disabled = !!options.disabled;
+      select.onchange = () => {
+        const fixture = fixtureById(fid); if (!E.isMirrorBall(fixture) || select.disabled) return;
+        const value = key === "facetSize" ? select.value : Number(select.value);
+        if (!rows[key][1].some(([v]) => v === String(value))) return;
+        if (options.onChange) options.onChange(fid, key, value);
+        else { fixture.mirrorBall = { ...fixture.mirrorBall, [key]: value }; commit(); }
+      };
+    }
+  }
+  /* 動きパネル: 回す／止めるはキュー、鏡片は全キュー共通の機材設定。色・強さは当てているピン。 */
   function renderMirrorBallInspector(host, ids) {
     const balls = ids.filter(isBallFixture);
     if (balls.length !== ids.length) { host.append(el("p", "warn", "ミラーボールだけを選んでください")); return; }
@@ -1537,6 +1570,8 @@
         ensureBallCue(fid, v === "on"); commit(`${label(fid)}を${v === "on" ? "回しました" : "止めました"}`);
       }), true));
       b.append(el("p", "hint", `直径 ${Math.round(spec.diameterM * 100)}cm・${spec.rpm ? `${spec.rpm}回転/分` : "モーターなし（止まったまま）"}。直径と速さは配置パネルで変えられます`));
+      b.append(el("p", "hint", "全キュー共通（機材の設定）"));
+      renderMirrorBallSettings(b, fid, { keys: ["facetSize"] });
       const pins = state.rig.fixtures.filter((p) => { const pl = lightOf(p.id); return pl && pl.target && pl.target.fixtureId === fid && isLit(pl); });
       b.append(el("p", "hint", pins.length
         ? `当てているピン: ${pins.map((p) => escapeHtml(label(p.id))).join("・")}。粒は床・ホリゾント（3Dは天井・袖も）に散ります`
@@ -2022,7 +2057,7 @@
         const S = fixtureWorld(pin); if (!S) return null;
         return { from: S, color: colorOf(pin, pl), level: litFactorOf(pin, pl) * 100, beamDeg: beamOf(pin) };
       }).filter(Boolean);
-      return { centre, radiusM: spec.diameterM / 2, rpm: bl && bl.on === true ? spec.rpm : 0, phaseDeg: 0, hangFrom: top, sources };
+      return { centre, radiusM: spec.diameterM / 2, rpm: bl && bl.on === true ? spec.rpm : 0, facetSize: spec.facetSize, phaseDeg: 0, hangFrom: top, sources };
     }).filter(Boolean);
     if (!balls.length) return 0;
     const surfaces = view === "plan" ? { floor: true } : (view === "front" || view === "front3d") ? { floor: true, back: true } : {};
@@ -6830,7 +6865,7 @@
       if (!state.rig.fixtures.length) return;
       lxGoto(si);
       const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q"); const no = E.cueNumberNext(allCueNos());
-      s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(visibleCue(s2))) }]);
+      s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(visibleCue(s2))), ...(window.GAMMA_SIMPLE_LIGHT_UI?.active()?{timing:window.GAMMA_SIMPLE_LIGHT_UI.newCueTiming(s2,seq)}:{}) }]);
       viewedCueIds.set(s2.id,id);
       commit(`${qLabel(lxEditingQ(s2))} を作りました。このまま編集できます`);
     }, "primary", "いま出ている明かりを新しいLXキューにして、そのまま編集を続けます");
@@ -6910,7 +6945,7 @@
           lxGoto(si);
           const s2 = lxScene(), id = uid("q"), no = E.cueNumberNext(allCueNos());
           const seq = E.finite(q.seq,0) + 0.5;
-          s2.lxq = lxList(s2).concat([{id,seq,no,name:"",trigger:"",at:new Date().toISOString(),cue:JSON.parse(cueJson(visibleCue(s2)))}]);
+          s2.lxq = lxList(s2).concat([{id,seq,no,name:"",trigger:"",at:new Date().toISOString(),cue:JSON.parse(cueJson(visibleCue(s2))),...(window.GAMMA_SIMPLE_LIGHT_UI?.active()?{timing:window.GAMMA_SIMPLE_LIGHT_UI.newCueTiming(s2,seq)}:{})}]);
           lxSorted(s2).forEach((z,i) => {z.seq=i+1;});viewedCueIds.set(s2.id,id);
           commit(`${qLabel(lxEditingQ(s2))} を ${qLabel(q)} の後ろに入れました`);
         }, "small quiet lxbetween", "このQの後ろに追加する（いまの明かりから）");
@@ -7026,11 +7061,8 @@
           if (m.type === "truss") kinds.push(["mirrorball", "ミラーボール"]);
           host.append(field("動き・種類", seg(kinds, kindKey(f), (v) => setFixtureKind(f.id, v))));
           if (isBallFixture(f.id)) {
-            const mb = f.mirrorBall || (f.mirrorBall = { ...E.MIRROR_BALL.defaults });
-            host.append(field("直径", seg(E.MIRROR_BALL.diametersM.map((d) => [String(d), `${Math.round(d * 100)}cm`]), String(E.mirrorBallOf(f).diameterM),
-              (v) => { mb.diameterM = Number(v); commit(`${label(f.id)}の直径を${Math.round(Number(v) * 100)}cmにしました`); })));
-            host.append(field("回る速さ", seg(E.MIRROR_BALL.rpms.map((r) => [String(r), r === 0 ? "止める" : `${r}回転/分`]), String(E.mirrorBallOf(f).rpm),
-              (v) => { mb.rpm = Number(v); commit(`${label(f.id)}の回る速さを${Number(v) ? `${v}回転/分` : "0"}にしました`); })));
+            host.append(el("p", "hint", "全キュー共通（機材の設定）"));
+            renderMirrorBallSettings(host, f.id);
             host.append(el("p", "hint", "鏡を貼った球。細い光（ピンスポット）を当てると粒が部屋じゅうに散る。ピンにしたい灯体を選び、動きの「狙い」で「ミラーボール」を選ぶ。回す／止めるはシーンごと（動きパネル）"));
           }
           if (f.kind !== "laser") {
@@ -8527,7 +8559,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, canvasViewRect, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, clearLog, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, applyFingerprint, appliedContentFingerprint:()=>appliedFingerprint, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { renderMirrorBallSettings, captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, clearLog, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, applyFingerprint, appliedContentFingerprint:()=>appliedFingerprint, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

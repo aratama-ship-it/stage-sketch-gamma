@@ -67,14 +67,15 @@
   const isMoving = (fixture) => Boolean(fixture) && fixture.kind !== "fixed" && fixture.kind !== "laser" && fixture.kind !== "mirrorball";
   const isLaser = (fixture) => Boolean(fixture) && fixture.kind === "laser";
   /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）。灯体の種類のひとつ。
-     吊り物なのでバトンに付ける。持つのは直径と回る速さだけ（型番・モーター種別・DMXは持たない＝機材はモデル化しない）。
+     吊り物なのでバトンに付ける。直径・回る速さ・鏡片の大きさを機材設定として持つ（型番・モーター種別・DMXは持たない）。
      ピンスポットは既存の灯体で、cue の light.target = { fixtureId: 球のid } で「この光が球を照らしている」と結ぶ。
      surface は "air" のまま・path.a は球の中心（旧版のための代表点）＝新しい列挙値は kind だけ。
      ★「mirror」の語は組の鏡映（mirrorMount 等）で使っているので、ここは必ず mirrorBall と書く。 */
   const MIRROR_BALL = Object.freeze({
     diametersM: Object.freeze([0.2, 0.3, 0.45]),   // Panasonic φ203/305/407・丸茂 φ300/450 を丸めた
     rpms: Object.freeze([0, 1, 1.5, 3]),           // 定速型 1〜1.2rpm・モーター単体 1〜1.5rpm・変速型 〜4.5rpm
-    defaults: Object.freeze({ diameterM: 0.3, rpm: 1 }),
+    facetSizes: Object.freeze(["fine", "standard", "coarse"]),
+    defaults: Object.freeze({ diameterM: 0.3, rpm: 1, facetSize: "standard" }),
     hangM: 0.3,                                    // バトンから球の天辺までの吊り代（モーター分）
     pinBeamDeg: 6,                                 // ピンスポットの既定の広がり（実機の値は未確認）
     pinWideDeg: 10,                                // これより広いピンには「細くする」注記を出す
@@ -83,7 +84,8 @@
   const mirrorBallOf = (fixture) => {
     const m = (fixture && fixture.mirrorBall) || {};
     return { diameterM: clamp(finite(m.diameterM, MIRROR_BALL.defaults.diameterM), 0.1, 1.0),
-      rpm: clamp(finite(m.rpm, MIRROR_BALL.defaults.rpm), 0, 6) };
+      rpm: clamp(finite(m.rpm, MIRROR_BALL.defaults.rpm), 0, 6),
+      facetSize: MIRROR_BALL.facetSizes.includes(m.facetSize) ? m.facetSize : "standard" };
   };
   /* 色の作り方（2026-09-28）。fixture.colorMode:"wheel"＝カラーホイール機。CMY/RGB のように途中の色を作れないので、
      キューの間はスナップの遅れの後に一瞬で替わり、動きの中（colorTo）は位相の半分で一瞬で替わる。無ければ混色（"mix"）。 */

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.4";
+  const GAMMA_APP_VERSION = "v0.4.5";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2828,7 +2828,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-04`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-05`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -33110,8 +33110,28 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      二列の左右位置・順番・開閉はショー側、幅・一列/iPad表示は端末設定側に
      分かれているため、両方のレイアウト項目だけを明示して戻す。 */
   async function resetPanelLayoutToDistributionDefault() {
-    const message = tx("パネル配置を初期状態に戻しますか？ショーの内容、スキン、機能設定は変わりません。");
+    const message = tx("パネル配置を初期状態に戻しますか？進行表・照明・劇場設計のパネルも戻ります。ショーの内容、スキン、機能設定は変わりません。");
     if (!await surfaceProjectConfirm(message)) return;
+    // Only layout keys: never clear the gamma namespace, show, language or feature preferences.
+    const panelKeys = [
+      'gamma:ros:panels-v1', 'gamma:ros:left-panels',
+      'gamma:lighting:panels-v1', 'gamma:venue:panels-v1',
+      'gamma:simple-lighting-panel-layout-v1', 'gamma:light-design-panel-layout-v1',
+      'gamma:light-panel-style-v1', 'gamma:ros:left-width', 'gamma:ros:index-width',
+      'gamma:ros:index-open', 'gamma:ros:stage-panel-open', 'gamma:ros:columns-open',
+      'gamma-venue-menu-width-v2',
+      ...['band-format','band-cues','band-settings','column-popover','panel-0','panel-3','panel-4','band-output']
+        .map(id => 'gamma:ros:left-collapsed:' + id),
+    ];
+    try {
+      if (!rawStorage) throw new Error('localStorage unavailable');
+      for (const key of panelKeys) rawStorage.removeItem(key);
+      if (panelKeys.some(key => rawStorage.getItem(key) !== null)) throw new Error('panel layout keys remained');
+    } catch (error) {
+      console.error('panel layout reset failed', error);
+      await surfaceNotice(tx('パネル配置を戻せませんでした。保存領域を確認し、もう一度お試しください。'));
+      return;
+    }
     state.layout = defaultLayout();
     ["panelLayoutMode", "panelLayoutByWorkspace", "panelSingleSide", "panelSingleSideByWorkspace", "panelSingleOrder", "panelBottomLayout", "panelWidths", "rosterListHeights", "rosterAccordionClosed", "tabletMode"].forEach((key) => {
       delete prefs[key];
@@ -37760,7 +37780,7 @@ ${propsPlotHtml}
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261104-v042';
+        script.src = 'light-design/part-lighting-model.js?v=20261105-v045';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -49250,7 +49270,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261104-v044', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261105-v045', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

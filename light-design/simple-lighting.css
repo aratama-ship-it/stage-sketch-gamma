@@ -94,6 +94,10 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 #simple-unavailable{border-left:3px solid var(--simple-accent);padding:16px;line-height:1.8}#simple-unavailable label{display:block;margin-bottom:16px}.simple-controls{display:block}
 .simple-workbench[hidden],#simple-unavailable[hidden]{display:none}
 
+.simple-fixtures{display:flex;flex-direction:column;gap:var(--simple-gap)}
+.simple-fixture-row{display:flex;align-items:center;flex-wrap:wrap;gap:var(--simple-gap);min-height:var(--simple-tap)}
+.simple-fixture-row>small{flex-basis:100%;color:var(--simple-muted);font-size:var(--simple-label)}
+.simple-controls [id^="simple-fixtures-label"]{grid-column:1/-1}
 .simple-controls [hidden]{display:none!important}
 
 html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:var(--ctrl-md,34px);min-width:var(--ctrl-md,34px)}#simple-column-resize{z-index:1}#simple-column-resize::before{content:"";position:absolute;inset:0 calc(50% - 1px);background:var(--line-dark);cursor:col-resize}
@@ -128,9 +132,8 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:var
 .simple-operations .part-light-list button:disabled small{color:inherit}
 .simple-operations .simple-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;padding:0;border-top:0}
 .simple-controls label,.simple-level-control>label{margin:0;font-size:var(--simple-label)}
-#simple-fade-label{grid-column:1/-1}
 .simple-controls input,.simple-controls select{box-sizing:border-box;min-width:0;max-width:100%}
-.simple-level-control{grid-column:1/-1}
+.simple-level-control,.simple-mirror-controls{grid-column:1/-1}
 .simple-controls .part-light-number{display:grid;grid-template-columns:minmax(34px,1fr) var(--simple-number-width) auto;gap:8px}
 .simple-controls .part-light-number input[type=number]{width:var(--simple-number-width);padding:6px;min-height:var(--simple-tap);font-size:var(--fs-4,12px)}
 .simple-controls .part-light-number input[type=range]{width:100%;min-width:var(--ctrl-md,34px);min-height:var(--simple-tap);margin:0;padding:0;border:0}
@@ -143,7 +146,7 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:var
 #simple-layers{display:grid;gap:0}
 .simple-layer{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:8px;min-height:var(--simple-tap);border-left:2px solid transparent;border-bottom:1px solid var(--simple-border);padding:0 4px}
 .simple-layer.is-selected{border-left-color:var(--simple-accent);background:var(--desk-2)}
-.simple-layer-name{display:flex;align-items:baseline;gap:6px;min-width:0}
+.simple-layer-name{display:flex;align-items:baseline;gap:var(--gamma-simple-layer-name-gap);min-width:0}
 .simple-layer-name b,.simple-layer-name small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .simple-layer-name b{font-size:var(--simple-card-name);font-weight:600}
 .simple-layer-name small,.simple-layer-level{font-size:var(--simple-body);color:var(--simple-muted)}
@@ -194,8 +197,6 @@ html[data-gamma-embedded] .simple-mode-choice .showtoggles button{min-height:var
 .simple-cue-tools label{flex:1}
 .simple-context-tools select{width:100%;min-width:0;max-width:100%;flex:1}
 #simple-new-cue,.simple-preview-tools button,.simple-actions button{white-space:nowrap;overflow-wrap:normal;flex-shrink:0}
-.simple-preview-tools #simple-fade-label{margin:0}
-.simple-preview-tools #simple-fade{width:auto}
 .simple-layer{grid-template-columns:minmax(0,1fr) auto auto auto auto}
 .simple-layer-name{flex-wrap:wrap;gap:0 6px}
 .simple-layer-name small{font-size:var(--fs-3,11px)}
@@ -236,7 +237,7 @@ html[data-stage-skin="paper-light"] .simple-mode-panel{--simple-danger:#aa2828}
    Keep the five header cells on the common 34px centre line at every width. */
 #simple-layers>.simple-layer{display:block;padding:0 4px;min-height:0}
 .simple-layer-header{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;align-items:center;gap:var(--simple-gap);min-height:var(--simple-tap)}
-.simple-layer-header>.simple-layer-name{display:flex;flex-wrap:nowrap;align-items:center;align-self:center;grid-column:auto;gap:0 6px;padding:0;line-height:1.5}
+.simple-layer-header>.simple-layer-name{display:flex;flex-wrap:nowrap;align-items:center;align-self:center;grid-column:auto;gap:0 var(--gamma-simple-layer-name-gap);padding:0;line-height:1.5}
 .simple-layer-header>.simple-layer-name>*{align-self:center;line-height:1.5}
 .simple-layer-header>.simple-layer-name b{flex-shrink:1}
 .simple-layer-header>.simple-layer-name small{flex-shrink:2}
@@ -259,7 +260,16 @@ html:not(.simple-light-active) #simple-adopt,.simple-light-active .gamma-light-a
 .simple-operations #panel-lxq { box-sizing:border-box; width:100%!important; max-width:100%; height:auto; min-height:0; overflow:visible; flex:0 0 auto!important; }
 /* v0.4.1 integration: app.js refreshPanelLayout writes an inline flex-basis (the detail row width, e.g. 320px) on #panel-lxq; in this vertical stack it became a fixed 320px height and left a blank area under the closed LX cue head. The detail column already overrides it with !important. */
 .simple-mode-panel #panel-lxq :is(button,input:not([type=checkbox]),select) { min-height:var(--ctrl-md); height:auto; font-size:var(--fs-4); }
-.simple-mode-panel #panel-lxq .lxrow .lxtime { padding:4px 8px; }
+/* TM: reuse shared controls, inside the Q whose time they edit. */
+.simple-light-active #panel-lxq .simple-cue-card { grid-template-columns:minmax(0,1fr) auto auto; }
+.simple-light-active #panel-lxq .simple-cue-card .qno { grid-column:1; grid-row:1; }
+.simple-light-active #panel-lxq .simple-cue-card .lx-enabled { grid-column:2; grid-row:1; }
+.simple-light-active #panel-lxq .simple-cue-card .lxdel { grid-column:3; grid-row:1; }
+.simple-light-active #panel-lxq .simple-cue-card .lxtime { display:none; }
+.simple-cue-fade { grid-column:1/-1; grid-row:2; display:flex; align-items:center; flex-wrap:wrap; gap:var(--gamma-gap,8px); margin:0; font-size:var(--fs-3); }
+.simple-cue-fade select { flex:1 1 auto; width:auto; min-width:0; max-width:100%; font:400 var(--fs-4)/1.5 var(--sans); }
+.simple-cue-fade select:focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }
+#simple-pending-cue>span { grid-column:1/-1; }
 .simple-mode-panel #panel-lxq .lxrow { min-width:0; }
 
 /* L1G: cards follow the width of their own panel, including shared split columns. */

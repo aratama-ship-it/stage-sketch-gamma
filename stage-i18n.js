@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "かんたん照明の「全体照らし」を「床を照らす」に改め、照らす範囲を 10 通りから選べるようにしました（吊りは灯体の向き、前明かりは点ける灯体で範囲を決めます）。吊りのムービングの「床を照らす」「背景染め」「逆光」は平行とクロスを選べます。灯体ごとに ON/OFF を切り替えられ、足もと（転がし）は手前と奥の 2 か所にまとめました。": "In Simple lighting, “Wash” is now “Light the floor”, and you can choose the area to light from 10 options (overhead fixtures set the area by where they point; front lights by which fixtures switch on). For the overhead moving lights, “Light the floor”, “Background colour” and “Backlight” can be set to Parallel or Cross. Each fixture can be switched ON/OFF, and the floor units are grouped into two positions, downstage and upstage.",
+
+    "ミラーボールの調整を加えました。回す／止める、回る速さ、直径、鏡片の大きさ（機材の設定で全キュー共通）と、専用のピンの色と明るさを変えられます。照明画面でもミラーボールの粒が描かれるようになりました（v0.4.4 までは照明画面だけ描かれていませんでした）。": "Mirror ball controls are added: rotate/stop, rotation speed, diameter and mirror tile size (rig settings shared by every cue), plus the colour and brightness of its dedicated pin spot. The mirror-ball spots are now drawn in the lighting screen as well (up to v0.4.4 they were missing only there).",
+
+    "かんたん照明の上部にあった「移る時間」を、LX キューの各行に移しました。新しいキューは、同じシーンの直前のキューの値を引き継ぎます（無ければ 3 秒）。": "The “Transition time” at the top of Simple lighting has moved to each row of the LX cue list. A new cue takes the value of the previous cue in the same scene (3 seconds if there is none).",
+
+    "パネルの既定の幅を見直しました。照明のかんたんの左右の列は最も長いレイヤー名が収まる幅に、進行表の右の列は 200px までになり、「クリックして記入」は 1 行で省略します。「パネル配置を初期状態に戻す」で、進行表・照明・劇場設計のパネルも初期の位置に戻ります。": "Default panel widths are revised. The left and right columns of Simple lighting fit the longest layer name, the right column of the run-of-show is limited to 200 px, and “Click to fill in” is shortened to one line. “Reset panel layout” now also resets the panels of the run-of-show, lighting and theatre design.",
+
     "タイムラインの時間の換算を 1 つにそろえました。入場の区間がある場面でも、目盛りのクリックやドラッグが指した時刻どおりに着きます（以前は約 1.3 秒手前に着くことがありました）。": "Timeline time conversion now uses a single rule. In scenes with an entry section, clicks and drags on the scale land exactly at the time you point to (previously they could land about 1.3 seconds early).",
 
     "パネルの行の寸法を 1 か所にまとめ、新しく使い始めたときは各タブのパネルが 2 列に並ぶようにしました（狭い画面では 1 列）。LX キューは 1 列の幅で並び、P の大きな表示は中央いっぱいに広がります。保存済みのパネルの配置は変わりません。": "Panel row sizes are now defined in one place, and when you start fresh each tab shows its panels in two columns (one column on narrow screens). LX cues sit in a single column width, and the large P view spreads across the centre. Saved panel arrangements are unchanged.",
@@ -1866,7 +1874,8 @@
     "パネル配置を初期状態に戻す": "Reset panel layout",
     "今開いているショーの位置・並び・開閉と、この端末のパネル幅・表示スタイルだけを戻します。ショーの内容や他の設定は残ります。": "Reset the current show's panel positions, order and collapsed state, plus this device's panel widths and display style. The show and other settings stay unchanged.",
     "配置を戻す": "Reset layout",
-    "パネル配置を初期状態に戻しますか？ショーの内容、スキン、機能設定は変わりません。": "Reset the panel layout to its initial arrangement? The show, skin and feature settings will not change.",
+    "パネル配置を初期状態に戻しますか？進行表・照明・劇場設計のパネルも戻ります。ショーの内容、スキン、機能設定は変わりません。": "Reset the panel layout to its initial arrangement? Run of show, lighting and theatre design panels will also reset. The show, skin and feature settings will not change.",
+    "パネル配置を戻せませんでした。保存領域を確認し、もう一度お試しください。": "Could not reset the panel layout. Check this browser’s storage and try again.",
     "リセット": "Reset",
     "いまのシーンに置いたものと背景の塗りを消す（他のシーンはそのまま）": "Clear what is placed in this scene and the backdrop paint (other scenes stay)",
     "はじめての案内": "First-time tour",
@@ -6341,6 +6350,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text,{
   "この位置の型を選び直すと、詳細の調整を置き換えます。": "Choosing a pattern replaces detailed adjustments at this position.",
   "組み合わせた明かりの正面図": "Front view of the composed lighting",
   "スポットの直径": "Spot diameter",
+  "{seconds}秒": "{seconds}s",
+  "{cue} の移る時間": "{cue} transition time",
   "移る時間": "Transition time",
   "奥の吊り": "Upstage batten",
   "手前の吊り": "Downstage batten",
@@ -6678,7 +6689,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "パネルを上へ": "Move panel up",
   "パネルを下へ": "Move panel down"
 });
-Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Wash", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Light the floor", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
 // G-010: independent folder backups.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "drive.title": "Back up to a folder (Google Drive, Dropbox, etc.)",
@@ -6953,3 +6964,45 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 
 // T1F: English is loaded eagerly from this pack.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"{count}灯": "{count} lights"});
+
+// LA: floor area, direction and the shared fixture-power controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "床を照らす": "Light the floor",
+  "右半分（上手）": "Right half (stage left)",
+  "左半分（下手）": "Left half (stage right)",
+  "前半分": "Downstage half",
+  "後ろ半分": "Upstage half",
+  "左前（下手）": "Downstage left (stage right)",
+  "右前（上手）": "Downstage right (stage left)",
+  "左奥（下手）": "Upstage left (stage right)",
+  "右奥（上手）": "Upstage right (stage left)",
+  "平行": "Parallel",
+  "クロス": "Cross",
+  "灯体": "Fixtures",
+  "範囲の外": "Outside the area",
+  "灯数・左右の選択対象外": "Excluded by fixture count or side",
+  "固定灯の向きではこの範囲を作れません": "The fixed fixture aim cannot create this area",
+  "最後の1台は消せません。レイヤーをOFFにしてください": "Keep one fixture on; use the layer power to switch all off",
+  "転がし手前": "Downstage floor units",
+  "転がし奥": "Upstage floor units",
+  "灯体ごとに違う": "Different fixture settings",
+  "転がしの設定が灯体ごとに違います。詳細で調整してください": "Floor units have different settings. Adjust them in Detail",
+  "左右で違う設定です。詳細で調整してください": "The sides have different settings. Adjust them in Detail",
+  "この位置では範囲を選べません": "Area selection is unavailable at this position",
+  "この位置では向きを選べません": "Direction selection is unavailable at this position",
+  "灯体の選択を確認してください": "Check the fixture selection",
+  "点灯する灯体がありません": "No fixtures would light"
+});
+// v045 MB: mirror-ball equipment and incident light.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["en"] = window.SHOSAI_I18N_PACKS["en"] || {text:{}};
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "回る速さ": "Rotation speed",
+  "鏡片の大きさ": "Mirror tile size",
+  "細かい": "Fine",
+  "粗い": "Coarse",
+  "{rpm}回転/分": "{rpm} rpm",
+  "全キュー共通（機材の設定）": "All cues (equipment setting)",
+  "当てる光（専用ピン26番）": "Incident light (dedicated pin 26)",
+  "粒は床・ホリゾント（3Dでは天井・袖も）に散ります。範囲は球の位置とピンの向きで決まります。": "Dots scatter over the floor and cyclorama (also the ceiling and sides in 3D). Coverage depends on the ball position and pin direction."
+});

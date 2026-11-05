@@ -280,6 +280,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text,{
   "この位置の型を選び直すと、詳細の調整を置き換えます。": "この位置の型を選び直すと、詳細の調整を置き換えます。",
   "組み合わせた明かりの正面図": "組み合わせた明かりの正面図",
   "スポットの直径": "スポットの直径",
+  "{seconds}秒": "{seconds}秒",
+  "{cue} の移る時間": "{cue} の移る時間",
   "移る時間": "移る時間",
   "奥の吊り": "奥の吊り",
   "手前の吊り": "手前の吊り",
@@ -621,7 +623,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "パネルを上へ": "パネルを上へ",
   "パネルを下へ": "パネルを下へ"
 });
-Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"assist.light2.button": "照明を調整", "assist.light2.notice": "現在のシーンの層・灯体と、選んだ範囲のキューの名前・値を送ります。確認後に下書きを作り、「適用する」で反映します。", "assist.light2.review": "変わること（まだ下書きにしていません）", "assist.light2.stage": "下書きにする", "assist.light2.cueChange": "Q{no}: 名前 {from} → {to} ／ 入り {fromFadeIn}→{fadeIn}秒・出 {fromFadeOut}→{fadeOut}秒", "assist.light2.function.spot": "ピンスポット", "assist.light2.function.wash": "全体照らし", "assist.light2.function.background": "背景染め", "assist.light2.function.rim": "輪郭・補助", "assist.light2.function.custom": "詳細で調整済み", "assist.light2.detailOnly": "詳細で調整済みの層や組は、詳細画面で確認してください。強さ以外の層の変更は行っていません。", "assist.light2.fixedColor": "この固定灯の色は全シーンに関わるため、ここから変更できません。詳細画面で確認してください。", "assist.light2.warning": "照射範囲と背景幕を詳細画面で確認してください。", "assist.light2.scope": "送るキュー", "assist.light2.scopeScene": "現在のシーン", "assist.light2.scopeShow": "ショー全体のキュー"});
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"assist.light2.button": "照明を調整", "assist.light2.notice": "現在のシーンの層・灯体と、選んだ範囲のキューの名前・値を送ります。確認後に下書きを作り、「適用する」で反映します。", "assist.light2.review": "変わること（まだ下書きにしていません）", "assist.light2.stage": "下書きにする", "assist.light2.cueChange": "Q{no}: 名前 {from} → {to} ／ 入り {fromFadeIn}→{fadeIn}秒・出 {fromFadeOut}→{fadeOut}秒", "assist.light2.function.spot": "ピンスポット", "assist.light2.function.wash": "床を照らす", "assist.light2.function.background": "背景染め", "assist.light2.function.rim": "輪郭・補助", "assist.light2.function.custom": "詳細で調整済み", "assist.light2.detailOnly": "詳細で調整済みの層や組は、詳細画面で確認してください。強さ以外の層の変更は行っていません。", "assist.light2.fixedColor": "この固定灯の色は全シーンに関わるため、ここから変更できません。詳細画面で確認してください。", "assist.light2.warning": "照射範囲と背景幕を詳細画面で確認してください。", "assist.light2.scope": "送るキュー", "assist.light2.scopeScene": "現在のシーン", "assist.light2.scopeShow": "ショー全体のキュー"});
 // G-010: independent folder backups.
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "drive.title": "フォルダにバックアップ（Google Drive・Dropbox など）",
@@ -856,3 +858,49 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
 
 // T1F: actual wash count in the shared lamp selector.
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {"{count}灯": "{count}灯"});
+
+// LA: floor area, direction and the shared fixture-power controls.
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "床を照らす": "床を照らす",
+  "右半分（上手）": "右半分（上手）",
+  "左半分（下手）": "左半分（下手）",
+  "前半分": "前半分",
+  "後ろ半分": "後ろ半分",
+  "左前（下手）": "左前（下手）",
+  "右前（上手）": "右前（上手）",
+  "左奥（下手）": "左奥（下手）",
+  "右奥（上手）": "右奥（上手）",
+  "平行": "平行",
+  "クロス": "クロス",
+  "灯体": "灯体",
+  "範囲の外": "範囲の外",
+  "灯数・左右の選択対象外": "灯数・左右の選択対象外",
+  "固定灯の向きではこの範囲を作れません": "固定灯の向きではこの範囲を作れません",
+  "最後の1台は消せません。レイヤーをOFFにしてください": "最後の1台は消せません。レイヤーをOFFにしてください",
+  "転がし手前": "転がし手前",
+  "転がし奥": "転がし奥",
+  "灯体ごとに違う": "灯体ごとに違う",
+  "転がしの設定が灯体ごとに違います。詳細で調整してください": "転がしの設定が灯体ごとに違います。詳細で調整してください",
+  "左右で違う設定です。詳細で調整してください": "左右で違う設定です。詳細で調整してください",
+  "この位置では範囲を選べません": "この位置では範囲を選べません",
+  "この位置では向きを選べません": "この位置では向きを選べません",
+  "灯体の選択を確認してください": "灯体の選択を確認してください",
+  "点灯する灯体がありません": "点灯する灯体がありません"
+});
+// v045 MB: mirror-ball equipment and incident light.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["ja"] = window.SHOSAI_I18N_PACKS["ja"] || {text:{}};
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "回転": "回転",
+  "回る速さ": "回る速さ",
+  "回す": "回す",
+  "止める": "止める",
+  "鏡片の大きさ": "鏡片の大きさ",
+  "細かい": "細かい",
+  "粗い": "粗い",
+  "標準": "標準",
+  "{rpm}回転/分": "{rpm}回転/分",
+  "全キュー共通（機材の設定）": "全キュー共通（機材の設定）",
+  "当てる光（専用ピン26番）": "当てる光（専用ピン26番）",
+  "粒は床・ホリゾント（3Dでは天井・袖も）に散ります。範囲は球の位置とピンの向きで決まります。": "粒は床・ホリゾント（3Dでは天井・袖も）に散ります。範囲は球の位置とピンの向きで決まります。"
+});

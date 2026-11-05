@@ -1081,6 +1081,9 @@
      ★「mirror」の語は組の鏡映（mirrorMount 等）に既に使っているので、ここは必ず mirrorBall と書く。 */
   const MIRROR_BALL_FACETS = Object.freeze({ low: 240, mid: 600, high: 1500 });   // 鏡片の標本数（実物 φ300 は約2,800枚）
   const MIRROR_BALL_DOT_BASE_M = 0.012;     // 粒の半径の底（鏡片 10mm ＋ 少し）
+  // v045 MB: 推測。指示書の鏡片5〜20mm（未確認）を10mm基準で0.5/1/2倍にする。
+  // 実物の光学計算ではなく粒半径の見た目の近似。標準は従来と完全一致、標本数や明るさは変えない。
+  const MIRROR_BALL_FACET_SCALE = Object.freeze({ fine: 0.5, standard: 1, coarse: 2 });
   const MIRROR_BALL_DOT_SPREAD = 0.006;     // 1m 進むごとの広がり（≒0.7°・推測値。デモで見た目を確認した）
   const MIRROR_BALL_DOT_FALL_M = 7;         // 明るさが半分になる距離(m)
   const MIRROR_BALL_DOT_ALPHA = Object.freeze([0.9, 0.6, 0.3]);   // 明るさ3段
@@ -1127,6 +1130,7 @@
     const C = ball && ball.centre;
     if (!C || !Array.isArray(ball.sources) || !ball.sources.length) return out;
     const R = Math.max(0.05, finite(ball.radiusM, 0.15));
+    const facetScale = Object.hasOwn(MIRROR_BALL_FACET_SCALE, ball.facetSize) ? MIRROR_BALL_FACET_SCALE[ball.facetSize] : 1;
     const facets = mirrorBallFacets(o.facets);
     const every = Math.max(1, Math.round(finite(o.every, MIRROR_BALL_RAY_EVERY)));
     const ang = finite(ball.phaseDeg, 0) * Math.PI / 180
@@ -1165,7 +1169,7 @@
         const P = { x: F.x + r.x * t, y: F.y + r.y * t, z: F.z + r.z * t };
         const b = level / (1 + (t / MIRROR_BALL_DOT_FALL_M) * (t / MIRROR_BALL_DOT_FALL_M));
         k += 1;
-        out.dots.push({ P, F, on, b, rm: MIRROR_BALL_DOT_BASE_M + t * MIRROR_BALL_DOT_SPREAD, color: colour,
+        out.dots.push({ P, F, on, b, rm: (MIRROR_BALL_DOT_BASE_M + t * MIRROR_BALL_DOT_SPREAD) * facetScale, color: colour,
           bin: b > 0.55 ? 0 : b > 0.28 ? 1 : 2, ray: (k % every) === 0 });
       }
     });

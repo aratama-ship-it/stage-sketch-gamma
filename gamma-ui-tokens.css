@@ -9,6 +9,11 @@
   --gamma-panel-head-padding: 10px 2px 8px;
   --gamma-panel-padding: 0 0 14px;
   --gamma-panel-column-min: 240px;
+  /* UX: fresh layout widths; measured layer text can raise the right minimum. */
+  --gamma-simple-rail-min: 280px;
+  --gamma-simple-layer-name-gap: 6px;
+  --gamma-simple-layer-row-inset: 10px;
+  --gamma-ros-companion-max: 200px;
   /* U1 / N-13: Stage cast rows are the single source for panel density. */
   --gamma-panel-row-height: 28px;
   --gamma-panel-row-gap: 4px;

@@ -319,7 +319,7 @@
         sources.push({ from: worldOf({ u: pin.u, v: pin.v, hM: pin.h }, dims), color: pin.color, level: pin.level,
           beamDeg: engine && typeof engine.beamDegOf === "function" ? engine.beamDegOf(fixtureById.get(id), light) : 6 });
       });
-      row.mirrorBall = { centre, radiusM: R, rpm: row.state === "on" ? spec.rpm : 0, phaseDeg: 0, hangFrom: top, sources };
+      row.mirrorBall = { centre, radiusM: R, rpm: row.state === "on" ? spec.rpm : 0, facetSize: spec.facetSize, phaseDeg: 0, hangFrom: top, sources };
       row.pool = null; row.aim = null; row.laser = null;
     });
 

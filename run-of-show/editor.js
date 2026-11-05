@@ -527,7 +527,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   function figure(target){if(runOnly)return;const fig=el("figure"),img=el("img");img.src=figureUrl;img.alt=P("sampleAlt");fig.append(img,el("figcaption",P("sampleFigure")));target.append(fig);}
   function directMark(node,itemId,key,label,type="text",info=false){
     node.dataset[info?"directInfo":"directField"]=key;if(itemId)node.dataset.directItem=itemId;node.dataset.directType=type;
-    node.classList.add("paper-editable");node.tabIndex=0;node.setAttribute("role","button");node.setAttribute("aria-label",uiFormat(itemId?"{name}の{field}を紙面で編集":"{field}を紙面で編集",{name:items.find(x=>x.id===itemId)?.title||"",field:uiText(label)}));node.dataset.emptyLabel=language==="en"?"Click to fill in":"クリックして記入";return node;
+    node.classList.add("paper-editable");node.tabIndex=0;node.setAttribute("role","button");node.setAttribute("aria-label",uiFormat(itemId?"{name}の{field}を紙面で編集":"{field}を紙面で編集",{name:items.find(x=>x.id===itemId)?.title||"",field:uiText(label)}));node.dataset.emptyLabel=language==="en"?"Click to fill in":"クリックして記入";if(!node.textContent.trim())node.title=node.dataset.emptyLabel;return node;
   }
   function rich(text,hasImage,refs=[],itemId=null,key=null){const td=el("td"),body=el("div",text,"text");if(key)directMark(body,itemId,key,key.includes("Notes")||key==="notes"?"備考":"詳細");td.append(body);if(hasImage)figure(td);for(const [index,ref] of refs.entries())assetFigure(td,ref,itemId,key,index);if(["details","notes"].includes(key))installImageCell(td,itemId,key);return td;}
   function selectItem(id,scroll=true){selected=id;editGroup=null;renderFlow();renderFields();updateStageFigures();for(const row of document.querySelectorAll("#ros-body tr,.pg-row,.portrait-row,.portrait-head"))row.classList.toggle("selected",(row.dataset.itemId||items.find(i=>row.dataset.rowId===i.id)?.id)===id);const target=[...document.querySelectorAll(".doc-frame [data-direct-item]")].find(n=>n.dataset.directItem===id&&n.getClientRects().length);if(target&&scroll){const y=target.getBoundingClientRect().top,band=panelLayout()?0:document.querySelector(".paper-sticky").getBoundingClientRect().height;window.scrollBy({top:y-band-48,behavior:"instant"});}}
@@ -1160,6 +1160,8 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
       const preview=$('preview');indexMode='docked';preview.dataset.index='unified';preview.dataset.leftOpen='true';
       preview.style.setProperty('--left-w',`${panelWidth()}px`);
       preview.style.setProperty('--panel-w',`${panelWidth()}px`);
+      const companionMax=parseFloat(getComputedStyle(preview).getPropertyValue('--gamma-ros-companion-max'));
+      preview.style.setProperty('--ros-right-w',`${leftWidthPref===null?Math.min(panelWidth(),companionMax):panelWidth()}px`);
       queueAutomaticPageScale();updateStageFigures();leftPanels.refreshHeights();return;
     }
     // 1600px keeps the owner's default two-companion layout.  At 1200–1599px

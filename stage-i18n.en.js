@@ -501,7 +501,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "パネルを上へ": "Move panel up",
   "パネルを下へ": "Move panel down"
 });
-Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Wash", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Light the floor", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
 
 /* J3 shared panel controls. */
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"パネルの並びを変更しました。": "Panel order changed.", "{name}の高さ": "Height of {name}"});
@@ -558,3 +558,32 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 
 // T1F: actual wash count in the shared lamp selector.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"{count}灯": "{count} lights"});
+
+// LA: floor area, direction and the shared fixture-power controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "床を照らす": "Light the floor",
+  "右半分（上手）": "Right half (stage left)",
+  "左半分（下手）": "Left half (stage right)",
+  "前半分": "Downstage half",
+  "後ろ半分": "Upstage half",
+  "左前（下手）": "Downstage left (stage right)",
+  "右前（上手）": "Downstage right (stage left)",
+  "左奥（下手）": "Upstage left (stage right)",
+  "右奥（上手）": "Upstage right (stage left)",
+  "平行": "Parallel",
+  "クロス": "Cross",
+  "灯体": "Fixtures",
+  "範囲の外": "Outside the area",
+  "灯数・左右の選択対象外": "Excluded by fixture count or side",
+  "固定灯の向きではこの範囲を作れません": "The fixed fixture aim cannot create this area",
+  "最後の1台は消せません。レイヤーをOFFにしてください": "Keep one fixture on; use the layer power to switch all off",
+  "転がし手前": "Downstage floor units",
+  "転がし奥": "Upstage floor units",
+  "灯体ごとに違う": "Different fixture settings",
+  "転がしの設定が灯体ごとに違います。詳細で調整してください": "Floor units have different settings. Adjust them in Detail",
+  "左右で違う設定です。詳細で調整してください": "The sides have different settings. Adjust them in Detail",
+  "この位置では範囲を選べません": "Area selection is unavailable at this position",
+  "この位置では向きを選べません": "Direction selection is unavailable at this position",
+  "灯体の選択を確認してください": "Check the fixture selection",
+  "点灯する灯体がありません": "No fixtures would light"
+});

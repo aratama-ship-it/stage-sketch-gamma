@@ -119,5 +119,17 @@
       } catch(e) {return e.message;}
     }).filter(Boolean);
   }
-  root.GAMMA_SIMPLE_LIGHT_MODEL=Object.freeze({presets,colors,get,defaults,validateStage,createRig,isCommon,withCommonRig,makeCue,targetStatus,clone});
+  // Cue order is authored by seq, as in app.js lxSorted; cue numbers and the
+  // browsing selection do not determine the predecessor. Never mutate old Qs.
+  function newCueTiming(scene, seq = Infinity) {
+    const E=root.RIG_ENGINE, order=q=>E.finite(q.seq,0);
+    const previous=[...(scene?.lxq||[])].filter(q=>order(q)<seq).sort((a,b)=>order(a)-order(b)).at(-1);
+    const seconds=E.normalizeTiming(previous?.timing)?.fadeInSec ?? 3;
+    return {fadeInSec:seconds,fadeOutSec:seconds,curve:'linear'};
+  }
+  function withCueFade(timing, seconds) {
+    if(!Number.isFinite(seconds)||seconds<0||seconds>600)throw Error('Invalid cue fade');
+    return {...(timing||{curve:'linear'}),fadeInSec:seconds};
+  }
+  root.GAMMA_SIMPLE_LIGHT_MODEL=Object.freeze({presets,colors,get,defaults,validateStage,createRig,isCommon,withCommonRig,makeCue,targetStatus,clone,newCueTiming,withCueFade});
 })(typeof window==='undefined'?globalThis:window);

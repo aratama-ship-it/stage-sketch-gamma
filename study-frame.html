@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.4</span>
+                <span class="stage-app-version">0.4.5</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2792,16 +2792,16 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261104-v044">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261105-v045">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v044-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v044-title">v0.4.4</h3><time datetime="2026-11-04">2026-11-04</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v045-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v045-title">v0.4.5</h3><time datetime="2026-11-05">2026-11-05</time></header>
       <ul>
-        <li>タイムラインの時間の換算を 1 つにそろえました。入場の区間がある場面でも、目盛りのクリックやドラッグが指した時刻どおりに着きます（以前は約 1.3 秒手前に着くことがありました）。</li>
-        <li>パネルの行の寸法を 1 か所にまとめ、新しく使い始めたときは各タブのパネルが 2 列に並ぶようにしました（狭い画面では 1 列）。LX キューは 1 列の幅で並び、P の大きな表示は中央いっぱいに広がります。保存済みのパネルの配置は変わりません。</li>
-        <li>かんたん照明の確認窓のボタンをそろえました。押せない「かんたん」を押すと、標準セットへ変更するかを確かめる窓が出ます。上部の説明書きを減らし、上部のバーにシーン名を出しました。ON/OFF のボタンは詳細の灯体と同じ形になりました。</li>
-        <li>進行表の「表示内容」の文字を左寄せにそろえ、演者の項目に「（Q シート）」と添えました（表示だけで、データ・CSV・印刷は変わりません）。</li>
+        <li>かんたん照明の「全体照らし」を「床を照らす」に改め、照らす範囲を 10 通りから選べるようにしました（吊りは灯体の向き、前明かりは点ける灯体で範囲を決めます）。吊りのムービングの「床を照らす」「背景染め」「逆光」は平行とクロスを選べます。灯体ごとに ON/OFF を切り替えられ、足もと（転がし）は手前と奥の 2 か所にまとめました。</li>
+        <li>ミラーボールの調整を加えました。回す／止める、回る速さ、直径、鏡片の大きさ（機材の設定で全キュー共通）と、専用のピンの色と明るさを変えられます。照明画面でもミラーボールの粒が描かれるようになりました（v0.4.4 までは照明画面だけ描かれていませんでした）。</li>
+        <li>かんたん照明の上部にあった「移る時間」を、LX キューの各行に移しました。新しいキューは、同じシーンの直前のキューの値を引き継ぎます（無ければ 3 秒）。</li>
+        <li>パネルの既定の幅を見直しました。照明のかんたんの左右の列は最も長いレイヤー名が収まる幅に、進行表の右の列は 200px までになり、「クリックして記入」は 1 行で省略します。「パネル配置を初期状態に戻す」で、進行表・照明・劇場設計のパネルも初期の位置に戻ります。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3760,18 +3760,18 @@
 <script src="/study-assets/stage-scrim.js?v=20261009-v0335"></script>
 <script src="/study-assets/stage-fixture-body.js?v=20261031-v0396"></script>
 <script src="/study-assets/stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
-<script src="/study-assets/light-design/rig-engine.js?v=20261011-v0347"></script>
+<script src="/study-assets/light-design/rig-engine.js?v=20261105-v045"></script>
 <script src="/study-assets/light-design/laser-effects.js?v=20261005-batch98"></script>
-<script src="/study-assets/stage-light-render.js?v=20261027-v0390"></script>
-<script src="/study-assets/gamma-light-cue-overlay.js?v=20261006-v0318"></script>
+<script src="/study-assets/stage-light-render.js?v=20261105-v045"></script>
+<script src="/study-assets/gamma-light-cue-overlay.js?v=20261105-v045"></script>
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261104-v044"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261104-v044"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261105-v045"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-element-refs.js?v=20261104-v043"></script>
-<script src="/study-assets/stage-sketch.js?v=20261104-v044"></script>
+<script src="/study-assets/stage-sketch.js?v=20261105-v045"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261031-v0396"></script>
 </body></html>

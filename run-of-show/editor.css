@@ -161,7 +161,7 @@
 .paper-actions p:last-child{margin-bottom:0}
 .paper-editable{display:block;min-height:var(--control);min-width:var(--control);cursor:text;white-space:pre-wrap;border-radius:var(--radius)}
 .paper-editable:hover,.paper-editable:focus-visible{outline:var(--focus) solid var(--accent);outline-offset:0;background:var(--accent-light)}
-.paper-editable:empty::after{content:attr(data-empty-label);font-weight:400;color:var(--muted)}
+.paper-editable:empty::after{content:attr(data-empty-label);display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:400;color:var(--muted)}
 .page-heading .paper-editable,.paper-header .paper-editable{display:inline-flex;align-items:center;max-width:100%;vertical-align:middle;overflow-wrap:anywhere}
 .paper-input{display:block;width:100%;min-width:0;min-height:var(--control);font:inherit;line-height:inherit;margin:0;padding:var(--s1);border:0;border-radius:0;background:var(--surface);outline:var(--focus) solid var(--accent);outline-offset:0;white-space:pre-wrap}
 textarea.paper-input{min-height:var(--textarea);resize:vertical}
@@ -825,7 +825,7 @@ body:not(.lite-paper) #paper-band .band-items .band-subgroup .action-tip-target 
   }
   body.ros-unified-panels #preview[data-ros-panels=split] {
     grid-template-areas:"panel note index" "panel paper index";
-    grid-template-columns:var(--left-w,240px) minmax(0,1fr) var(--left-w,240px);
+    grid-template-columns:var(--left-w,240px) minmax(0,1fr) var(--ros-right-w,var(--left-w,240px));
   }
   body.ros-unified-panels #preview .paper-panel { padding-top:0; display:flex; visibility:visible; pointer-events:auto; min-height:0; height:100%; max-height:none; position:relative; }
   body.ros-unified-panels #preview .paper-sticky { overflow:auto; min-height:0; max-height:none; flex:1 1 auto; position:static; }
