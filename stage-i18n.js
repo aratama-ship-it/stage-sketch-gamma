@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "まだ配置していない新しい LX キューへ GO すると次のシーンへ進んでいたのを直しました。再生線はそのキューのシーンの中（見せる時間の終わりの少し手前）で止まります。保存の形とキューの配置は変わりません。": "Fixed: pressing GO on a new LX cue that has not been placed yet moved on to the next scene. The playhead now stops inside that cue's scene (just before the end of its showing time). The save format and the cue placement do not change.",
+
     "かんたん照明の「全体照らし」を「床を照らす」に改め、照らす範囲を 10 通りから選べるようにしました（吊りは灯体の向き、前明かりは点ける灯体で範囲を決めます）。吊りのムービングの「床を照らす」「背景染め」「逆光」は平行とクロスを選べます。灯体ごとに ON/OFF を切り替えられ、足もと（転がし）は手前と奥の 2 か所にまとめました。": "In Simple lighting, “Wash” is now “Light the floor”, and you can choose the area to light from 10 options (overhead fixtures set the area by where they point; front lights by which fixtures switch on). For the overhead moving lights, “Light the floor”, “Background colour” and “Backlight” can be set to Parallel or Cross. Each fixture can be switched ON/OFF, and the floor units are grouped into two positions, downstage and upstage.",
 
     "ミラーボールの調整を加えました。回す／止める、回る速さ、直径、鏡片の大きさ（機材の設定で全キュー共通）と、専用のピンの色と明るさを変えられます。照明画面でもミラーボールの粒が描かれるようになりました（v0.4.4 までは照明画面だけ描かれていませんでした）。": "Mirror ball controls are added: rotate/stop, rotation speed, diameter and mirror tile size (rig settings shared by every cue), plus the colour and brightness of its dedicated pin spot. The mirror-ball spots are now drawn in the lighting screen as well (up to v0.4.4 they were missing only there).",

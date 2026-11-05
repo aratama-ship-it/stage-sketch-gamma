@@ -100,9 +100,17 @@
     for (let i=index-1;i>=0 && !prev;i--) prev=position(entries[i]);
     for (let i=index+1;i<entries.length && !next;i++) next=position(entries[i]);
     if (!prev && !next) return null;
-    const seconds = prev && next ? (prev.seconds + next.seconds) / 2 : (prev || next).seconds;
-    const segment = domain.scenes?.find(s => seconds >= s.start && seconds < s.end);
-    return {seconds, cueId:null, sceneId:segment?.sceneId || (prev || next).sceneId, sectionId:domain.byId.get(segment?.sceneId || (prev || next).sceneId)?.sectionId, inferred:true};
+    const inferredSeconds = prev && next ? (prev.seconds + next.seconds) / 2 : (prev || next).seconds;
+    const sceneId = entries[index].scene.id, row = domain.byId.get(sceneId);
+    // Keep navigation inside the owning scene's hold, away from the timeline's
+    // 1e-6-second transition tolerance. An unusable clock must not seek to zero.
+    if ((domain.config && !domain.valid) || !row
+      || ![inferredSeconds, row.start, row.sceneEnd, row.end, domain.duration].every(Number.isFinite)
+      || row.start < 0 || row.sceneEnd > row.end || row.end > domain.duration) return null;
+    const lastHoldSecond = row.sceneEnd - 0.001;
+    if (lastHoldSecond <= row.start || row.sceneEnd - lastHoldSecond <= 1e-6) return null;
+    const seconds = Math.max(row.start, Math.min(inferredSeconds, lastHoldSecond));
+    return {seconds, cueId:null, sceneId, sectionId:row.sectionId, inferred:true};
   }
 
   function sectionScenes(rows, sectionId) {
