@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "照明の詳細の『型の一覧』を、絵と名前がきちんと読めるカードの並びに直しました。型の数や選び方、保存の形は変わりません。": "Fixed the lighting detail panel's type list so each card's diagram and name are readable again. The number of types, how you choose one, and the save format are unchanged.",
+
     "まだ配置していない新しい LX キューへ GO すると次のシーンへ進んでいたのを直しました。再生線はそのキューのシーンの中（見せる時間の終わりの少し手前）で止まります。保存の形とキューの配置は変わりません。": "Fixed: pressing GO on a new LX cue that has not been placed yet moved on to the next scene. The playhead now stops inside that cue's scene (just before the end of its showing time). The save format and the cue placement do not change.",
 
     "かんたん照明の「全体照らし」を「床を照らす」に改め、照らす範囲を 10 通りから選べるようにしました（吊りは灯体の向き、前明かりは点ける灯体で範囲を決めます）。吊りのムービングの「床を照らす」「背景染め」「逆光」は平行とクロスを選べます。灯体ごとに ON/OFF を切り替えられ、足もと（転がし）は手前と奥の 2 か所にまとめました。": "In Simple lighting, “Wash” is now “Light the floor”, and you can choose the area to light from 10 options (overhead fixtures set the area by where they point; front lights by which fixtures switch on). For the overhead moving lights, “Light the floor”, “Background colour” and “Backlight” can be set to Parallel or Cross. Each fixture can be switched ON/OFF, and the floor units are grouped into two positions, downstage and upstage.",

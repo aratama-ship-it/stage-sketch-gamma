@@ -379,3 +379,41 @@ html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar:not([data-fit="c
 html[data-gamma-embedded] #scenerow :is(.sno,.scenenav) {min-width:0}
 
 html[data-gamma-embedded] .figbar[data-fit="center"] #scenerow .qnow em {max-width:none}
+
+/* N-10: use the existing modal-card minimum and selected-diagram height.
+   The panel, rather than the window, determines how many readable cards fit. */
+html[data-gamma-embedded] .slp-list {
+  --slp-card-min:132px;
+  --slp-card-height:88px;
+  --slp-diagram-height:58px;
+  --slp-card-gap:7px;
+  --slp-label-gap:4px;
+  --slp-card-inset:4px;
+  --slp-card-bottom:6px;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--slp-card-min)),1fr));
+  gap:var(--slp-card-gap);
+}
+html[data-gamma-embedded] .slp-list .slp-card {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:var(--slp-diagram-height) auto;
+  align-content:start;
+  gap:var(--slp-label-gap);
+  min-width:0;
+  min-height:var(--slp-card-height);
+  padding:0 var(--slp-card-inset) var(--slp-card-bottom);
+}
+html[data-gamma-embedded] .slp-list .slp-card svg {
+  width:calc(100% + var(--slp-card-inset) * 2);
+  height:var(--slp-diagram-height);
+  margin:0 calc(-1 * var(--slp-card-inset));
+}
+html[data-gamma-embedded] .slp-list .slp-card b {
+  min-width:0;
+  font-size:var(--fs-4,12px);
+  line-height:1.5;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}

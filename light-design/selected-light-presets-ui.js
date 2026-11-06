@@ -419,8 +419,9 @@
       const text = cardText(preset);
       const disabled = !canUse(preset);
       const suffix = preset.id === "motion.wander.stageAudience" ? audienceSuffix() : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
-      // R-02: 一覧では説明（small）をCSSで隠すので、中身を title に入れて読めるようにしておく。
-      return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" title="${esc(text[0])}／${esc(scopeText(preset).changes)} ／ ${esc(suffix)}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
+      // N-10: reuse gamma-appearance's .card contract for image selection cards.
+      // Keep the full name and hidden description in the existing tooltip.
+      return `<button type="button" class="slp-card card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" title="${esc(text[0])}／${esc(scopeText(preset).changes)} ／ ${esc(suffix)}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="slp-list-empty">該当する型はありません。</p>`;
     const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
       ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで決めてから「この型を適用」を押します。速さは画面上いまのところ最大3（1秒に3灯）です。</p>`
