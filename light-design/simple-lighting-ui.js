@@ -12,6 +12,7 @@ const layerEditors=new Map();
 const $=id=>document.getElementById(id)||adjustmentTemplate?.querySelector('#'+id),el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
 let context=null,wanted=true,busy=false,error='',draft=null,partId='',targetId=null,edited=false,timeEdited=false,fullTiming=false,fade=3,operation=null,task=null,sceneId='',pendingId='',pendingSelected=false;
 let hoverPartId='',focusPartId='',pointerFocusPartId='';
+let descriptionHover='',descriptionFocus='';
 let patternTag='all'; // UI only: never enters draft snapshots or project persistence.
 let functionId='',editingPartId='',levelGesture=null,provisional=null,sizeGesture=null;
 const functions=F.functions();
@@ -24,7 +25,7 @@ const bar=el('div');bar.className='simple-mode-choice';bar.innerHTML='<button id
 const toolbar=document.querySelector('.figbar');toolbar.classList.add('simple-light-toolbar');toolbar.querySelector('.fb').prepend(bar);
 const panel=el('section');panel.id='simple-lighting';panel.className='simple-mode-panel';panel.innerHTML=`
 <div id="simple-unavailable"><p>かんたん照明は標準セットだけで使えます。保存済みの照明は詳細で編集できます。</p><label>機材配置 <select id="simple-rig-preset"></select></label><p id="simple-rig-info"></p><button type="button" id="simple-configure">プリセット配置に整える</button><button type="button" id="simple-unavailable-detail">詳細で編集</button></div>
-<div class="simple-workbench"><div class="simple-preview"><div class="simple-context-tools"><label>シーン <select id="simple-scene"></select></label><div class="simple-cue-tools"><label>対象キュー <select id="simple-cue"></select></label><button type="button" id="simple-new-cue">＋ 新規</button></div></div><div class="simple-preview-tools"><label>視点 <select id="simple-seat"></select></label><button type="button" id="simple-work-light" aria-pressed="true"><span>作業灯を消す</span></button></div><div class="simple-preview-figure"><canvas id="simple-front" width="1000" height="560" aria-label="組み合わせた明かりの正面図"></canvas><p id="simple-location-hint" hidden role="status"></p></div></div><div class="simple-operations"><div class="simple-actions"><button type="button" id="simple-adopt">LX キューを保存</button></div><p id="simple-warning" role="status"></p><h3 id="simple-layers-heading">レイヤー</h3><div id="simple-layers" role="group" aria-labelledby="simple-layers-heading"></div><p id="simple-layers-empty">まだレイヤーはありません。照明の種類から選んでください。</p><h3 id="simple-functions-heading">照明の種類</h3><div id="simple-pattern-tags" role="group" aria-labelledby="simple-functions-heading"></div><div id="simple-patterns" class="part-light-patterns" role="group" aria-labelledby="simple-functions-heading"></div><h3 id="simple-positions-heading">使う位置</h3><div id="simple-parts" class="part-light-list" role="group" aria-labelledby="simple-positions-heading"></div><details id="simple-adjust" hidden><summary id="simple-adjust-heading"><span id="simple-part-title">調整</span></summary><p id="simple-role-change" role="status"></p><div class="simple-controls"><label>色 <select id="simple-color"><option value="white">白</option><option value="warm">暖色</option><option value="blue">青</option><option value="red">赤</option></select></label><div class="simple-level-control"><label for="simple-level">強さ</label><span class="part-light-number"><input id="simple-level-range" type="range" min="0" max="100" step="1" aria-label="強さ"><input id="simple-level" type="number" min="0" max="100" step="1"><span>%</span></span></div><label id="simple-target-label">当て先 <select id="simple-target"></select></label><div id="simple-size-label"><label for="simple-size">直径</label><span class="part-light-number"><input id="simple-size-range" type="range" min=".5" max="4" step=".1" aria-label="直径"><input id="simple-size" type="number" min=".5" max="4" step=".1"><span>m</span></span></div><label id="simple-laser-span-label">レーザーの広がり（度） <input id="simple-laser-span" type="number" min="0" max="120" step="1"></label><label id="simple-moving-period-label">動きの1往復（秒） <input id="simple-moving-period" type="number" min=".2" max="120" step=".1"></label><label id="simple-flash-hz-label">発光回数（毎秒） <input id="simple-flash-hz" type="number" min=".5" max="20" step=".5"></label><label id="simple-area-label">範囲 <select id="simple-area"></select></label><p id="simple-area-reason" hidden></p><label id="simple-orientation-label">向き <select id="simple-orientation"><option value="parallel">平行</option><option value="cross">クロス</option></select></label><div id="simple-fixtures-label"><span>灯体</span><div id="simple-fixtures" class="simple-fixtures"></div></div><label id="simple-count-label">灯数 <select id="simple-count"><option value="2">2灯</option><option value="6">6灯</option></select></label><label id="simple-side-label">左右 <select id="simple-side"><option value="both">全体</option><option value="left">左だけ</option><option value="right">右だけ</option></select></label><p id="simple-side-mixed" hidden>左右で違う</p><div id="simple-spread-label"><label for="simple-spread">灯体の広がり方</label><span class="part-light-number"><input id="simple-spread-range" type="range" min="1" max="120" step="1" aria-label="灯体の広がり方"><input id="simple-spread" type="number" min="1" max="120" step="1"><span>°</span></span></div><div class="simple-strobe-control"><label><input id="simple-strobe-on" type="checkbox"> 点滅</label><div id="simple-strobe-settings" hidden><label>速さ（Hz） <input id="simple-strobe-hz" type="number" min=".1" max="20" step=".1"></label><label>点灯割合（%） <input id="simple-strobe-duty" type="number" min="5" max="95" step="1"></label></div></div></div>
+<div class="simple-workbench"><div class="simple-preview"><div class="simple-context-tools"><label>シーン <select id="simple-scene"></select></label><div class="simple-cue-tools"><label>対象キュー <select id="simple-cue"></select></label><button type="button" id="simple-new-cue">＋ 新規</button></div></div><div class="simple-preview-tools"><label>視点 <select id="simple-seat"></select></label><button type="button" id="simple-work-light" aria-pressed="true"><span>作業灯を消す</span></button></div><div class="simple-preview-figure"><canvas id="simple-front" width="1000" height="560" aria-label="組み合わせた明かりの正面図"></canvas><p id="simple-location-hint" hidden role="status"></p></div></div><div class="simple-operations"><div class="simple-actions"><button type="button" id="simple-adopt">LX キューを保存</button></div><p id="simple-warning" role="status"></p><h3 id="simple-layers-heading">レイヤー</h3><div id="simple-layers" role="group" aria-labelledby="simple-layers-heading"></div><p id="simple-layers-empty">まだレイヤーはありません。照明の種類から選んでください。</p><h3 id="simple-functions-heading">照明の種類</h3><div id="simple-pattern-tags" role="group" aria-labelledby="simple-functions-heading"></div><div id="simple-patterns" class="part-light-patterns" role="group" aria-labelledby="simple-functions-heading"></div><h3 id="simple-positions-heading">使う位置</h3><div id="simple-parts" class="part-light-list" role="group" aria-labelledby="simple-positions-heading"></div><details id="simple-adjust" hidden><summary id="simple-adjust-heading"><span id="simple-part-title">調整</span></summary><p id="simple-role-change" role="status"></p><div class="simple-controls"><label id="simple-searchlight-form-label">サーチライトの型 <select id="simple-searchlight-form"></select></label><p id="simple-searchlight-reason" hidden></p><label>色 <select id="simple-color"><option value="white">白</option><option value="warm">暖色</option><option value="blue">青</option><option value="red">赤</option></select></label><div class="simple-level-control"><label for="simple-level">強さ</label><span class="part-light-number"><input id="simple-level-range" type="range" min="0" max="100" step="1" aria-label="強さ"><input id="simple-level" type="number" min="0" max="100" step="1"><span>%</span></span></div><label id="simple-target-label">当て先 <select id="simple-target"></select></label><div id="simple-size-label"><label for="simple-size">直径</label><span class="part-light-number"><input id="simple-size-range" type="range" min=".5" max="4" step=".1" aria-label="直径"><input id="simple-size" type="number" min=".5" max="4" step=".1"><span>m</span></span></div><label id="simple-laser-span-label">レーザーの広がり（度） <input id="simple-laser-span" type="number" min="0" max="120" step="1"></label><label id="simple-moving-period-label">動きの1往復（秒） <input id="simple-moving-period" type="number" min=".2" max="120" step=".1"></label><label id="simple-flash-hz-label">発光回数（毎秒） <input id="simple-flash-hz" type="number" min=".5" max="20" step=".5"></label><label id="simple-area-label">範囲 <select id="simple-area"></select></label><p id="simple-area-reason" hidden></p><label id="simple-orientation-label">向き <select id="simple-orientation"><option value="parallel">平行</option><option value="cross">クロス</option></select></label><div id="simple-fixtures-label"><span>灯体</span><div id="simple-fixtures" class="simple-fixtures"></div></div><label id="simple-count-label">灯数 <select id="simple-count"><option value="2">2灯</option><option value="6">6灯</option></select></label><label id="simple-side-label">左右 <select id="simple-side"><option value="both">全体</option><option value="left">左だけ</option><option value="right">右だけ</option></select></label><p id="simple-side-mixed" hidden>左右で違う</p><div id="simple-spread-label"><label for="simple-spread">灯体の広がり方</label><span class="part-light-number"><input id="simple-spread-range" type="range" min="1" max="120" step="1" aria-label="灯体の広がり方"><input id="simple-spread" type="number" min="1" max="120" step="1"><span>°</span></span></div><div class="simple-strobe-control"><label><input id="simple-strobe-on" type="checkbox"> 点滅</label><div id="simple-strobe-settings" hidden><label>速さ（Hz） <input id="simple-strobe-hz" type="number" min=".1" max="20" step=".1"></label><label>点灯割合（%） <input id="simple-strobe-duty" type="number" min="5" max="95" step="1"></label></div></div></div>
 </details><p id="simple-status" role="status" aria-live="polite"></p></div></div>`;
 document.querySelector('.body').prepend(toolbar,panel);
 panel.querySelector('.simple-context-tools').hidden=true;
@@ -58,6 +59,7 @@ for(const id of ['simple-laser-span','simple-moving-period','simple-flash-hz']){
   if(delta<0)row.prepend(button);else row.append(button);
  }
 }
+$('simple-searchlight-form').onchange=e=>{if(e.target.value!=='legacy')change({searchlightForm:e.target.value});};
 for(const [id,key]of [['simple-laser-span','laserSpanDeg'],['simple-moving-period','periodSec'],['simple-flash-hz','flashHz']])$(id).onchange=e=>{if(e.target.value!==''&&e.target.validity.valid)change({[key]:Number(e.target.value)});};
   const workbench=panel.querySelector('.simple-workbench');
   const divider=el('div');divider.className='simple-column-resize';divider.id='simple-column-resize';divider.tabIndex=0;
@@ -152,8 +154,47 @@ const needsReaim=()=>['spot','gobo'].includes(functionId)&&!!partId&&P.targetSta
 const occupied=id=>F.occupied(draft,state.rig,id);
 const mayAdjust=()=>!!selectedPart()&&occupied(partId);
 const layerEnabled=part=>F.enabled(draft,state.rig,part.id);
+function searchlightDims(){return P.searchlightDims(state.dims,state.venueMask);}
 function remember(){undoDrafts.push(draftSnapshot());redoDrafts=[];}
 function setDraft(result){draft=result.cue;edited=true;error=result.warnings.join(' ／ ');render();GAMMA_LIGHT_EDITOR.saveDraft();}
+// N-03: the slot keeps the height of the longest explanation at the current
+// width and language, so hovering a type never moves the buttons below it.
+function reserveDescription(node){
+ const w=node.clientWidth,key=w+'|'+document.documentElement.lang;
+ if(!w||node.dataset.reserved===key)return;
+ const probe=node.cloneNode(true);probe.removeAttribute('id');probe.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));
+ probe.style.cssText='position:absolute;visibility:hidden;left:0;top:0;min-height:0;width:'+w+'px';
+ node.parentNode.append(probe);
+ const title=probe.querySelector('strong'),text=probe.querySelector('p');let max=0;
+ for(const id of Object.keys(P.patternDescriptions))for(const d of id==='moving'?['',...Object.values(P.searchlightDescriptions)]:['']){
+  title.textContent=T(functionName(id));text.textContent=T(P.patternDescriptions[id])+(d?' '+T(d):'');max=Math.max(max,probe.offsetHeight);
+ }
+ probe.remove();node.style.minHeight=max?max+'px':'';node.dataset.reserved=key;
+}
+function renderDescription(){
+ const id=descriptionHover||descriptionFocus||functionId;
+ const node=$('simple-type-description');node.hidden=false;reserveDescription(node);
+ node.style.visibility=P.patternDescriptions[id]?'':'hidden';
+ if(!P.patternDescriptions[id])return;
+ $('simple-type-description-title').textContent=T(functionName(id));
+ const form=id==='moving'?(id===functionId?meta().searchlightForm:'motion.sweep'):null;
+ const detail=id==='moving'?P.searchlightDescriptions[form||'legacy']:'';
+ $('simple-type-description-text').textContent=id==='moving'&&!form?T(detail):T(P.patternDescriptions[id])+(detail?' '+T(detail):'');
+ node.dataset.pattern=id;
+}
+function renderSearchlightForm(o){
+ const moving=o.patternId==='moving',legacy=moving&&!P.isSearchlight(o),select=$('simple-searchlight-form');
+ $('simple-searchlight-form-label').hidden=!moving;
+ const hasAudience=P.searchlightHasAudience(searchlightDims());
+ const rows=P.searchlightForms.map(form=>[form.id,T(form.name)]);
+ if(legacy)rows.unshift(['legacy',T('往復（従来の動き）')]);
+ selectRows(select,rows,legacy?'legacy':o.searchlightForm);
+ for(const option of select.options)option.disabled=option.value==='legacy'||(option.value==='motion.wander.stageAudience'&&!hasAudience);
+ const reason=moving&&!hasAudience?T('客席の領域がないため、この型は使えません。'):'';
+ $('simple-searchlight-reason').hidden=!reason;$('simple-searchlight-reason').textContent=reason;
+ $('simple-moving-period').min=legacy?'.2':'1';
+ if(o.searchlightForm==='aim.converge')$('simple-moving-period-label').hidden=true;
+}
 function chooseFunction(id){
  if(busy||context.readOnly||!P.canUseSimple(state.rig,state.dims,context.venueType))return;
  clearLocationHint();finishLevelGesture();
@@ -161,7 +202,7 @@ function chooseFunction(id){
  const part=viewParts().find(p=>eligible(p,id)&&!F.occupied(base,state.rig,p.id));
  if(!part)return;
  try{
-  const result=F.compose(base,state.rig,state.dims,sc().pieces||[],part.id,{...P.defaults(id,state.rig,part.id),patternId:id,...(id==='follow'&&sc().pieces?.some(p=>p.kind==='performer')?{target:'person:'+sc().pieces.find(p=>p.kind==='performer').id}:{})},'both');
+  const result=F.compose(base,state.rig,searchlightDims(),sc().pieces||[],part.id,{...P.defaults(id,state.rig,part.id),patternId:id,...(id==='moving'?{searchlightForm:'motion.sweep'}:{}),...(id==='follow'&&sc().pieces?.some(p=>p.kind==='performer')?{target:'person:'+sc().pieces.find(p=>p.kind==='performer').id}:{})},'both');
   remember();provisional={base:clone(base),id:part.id};partId=part.id;functionId=id;editingPartId=part.id;pendingOpenPartId=part.id;setDraft(result);
  }catch(e){error=e.message;render();}
 }
@@ -176,7 +217,7 @@ async function choosePosition(id){
  try{
   const options=clone(meta()),side=partId===F.SS?F.direction(draft,state.rig):'both';
   const base=id===partId?draft:(provisional?.base||F.remove(draft,state.rig,state.dims,sc().pieces||[],partId).cue);
-  const result=id===partId?{cue:draft,warnings:[]}:F.compose(base,state.rig,state.dims,sc().pieces||[],id,options,side);
+  const result=id===partId?{cue:draft,warnings:[]}:F.compose(base,state.rig,searchlightDims(),sc().pieces||[],id,options,side);
   remember();partId=id;provisional=null;if(editingPartId){editingPartId=id;pendingOpenPartId=id;}setDraft(result);
  }catch(e){error=e.message;render();}
 }
@@ -393,7 +434,7 @@ function render(){if(!context)return;refreshPending();
  renderSeats();
  const parts=viewParts(),partNodes=$('simple-parts');
  renderLayers(parts);sectionNodes.positions.hidden=!functionId||functionId==='custom';
- for(const x of functions){let button=$('simple-pattern-'+x.id);if(!button){button=el('button');button.id='simple-pattern-'+x.id;button.type='button';button.append(el('b'),el('small'));button.onclick=()=>chooseFunction(x.id);$('simple-patterns').append(button);}
+ for(const x of functions){let button=$('simple-pattern-'+x.id);if(!button){button=el('button');button.id='simple-pattern-'+x.id;button.type='button';button.append(el('b'),el('small'));button.onclick=()=>chooseFunction(x.id);button.onpointerenter=()=>{descriptionHover=x.id;renderDescription();};button.onpointerleave=()=>{descriptionHover='';renderDescription();};button.onfocus=()=>{descriptionFocus=x.id;renderDescription();};button.onblur=()=>{descriptionFocus='';renderDescription();};$('simple-patterns').append(button);}
  const base=provisional?.base||draft,capable=parts.some(p=>eligible(p,x.id)&&!F.occupied(base,state.rig,p.id));button.disabled=busy||context.readOnly||blocked||!capable;button.setAttribute('aria-pressed',String(functionId===x.id));button.firstChild.textContent=T(x.name);button.title=capable?T(x.name):T('この種類を使える空き位置がありません');const count=parts.filter(p=>storedMeta(p.id).patternId===x.id).length;button.lastChild.textContent=count?T('使用中: {count}か所',{count}):T('未使用');}
 
  renderPatternFilter();
@@ -409,6 +450,7 @@ function render(){if(!context)return;refreshPending();
  const p=selectedPart(),o=p?meta():P.defaults(),adjusted=p&&F.detailAdjusted(draft,state.rig,p.id);if(p){$('simple-part-title').textContent=p?T('調整: {position}',{position:T(p.name)})+(adjusted?' · '+T('詳細で調整済み'):''):T('調整');$('simple-role-change').textContent='';
  if(![...$('simple-color').options].some(x=>x.value===o.color))$('simple-color').add(new Option(o.color,o.color));$('simple-color').value=o.color;if(document.activeElement!==$('simple-level'))$('simple-level').value=o.level;$('simple-level-range').value=o.level;if(document.activeElement!==$('simple-size'))$('simple-size').value=o.sizeM;$('simple-size-range').value=o.sizeM;$('simple-side-label').hidden=!p||p.mountType==='mirrorball'||p.mountType==='cyc'||p.fixtureIds.length<2||o.patternId==='custom';$('simple-side').value=partId===F.LASERS?F.laserSide(draft,state.rig):partId===F.SS?({shimote:'left',kamite:'right'}[F.direction(draft,state.rig)]||'both'):(o.side||'both');$('simple-side-mixed').hidden=!F.mixed(draft,state.rig,partId);$('simple-side-mixed').textContent=T(F.floorGroup(partId)?'転がしの設定が灯体ごとに違います。詳細で調整してください':'左右で違う');if(F.floorGroup(partId))$('simple-side-label').hidden=true;
  for(const [label,input,key,type]of [['simple-laser-span-label','simple-laser-span','laserSpanDeg','laser'],['simple-moving-period-label','simple-moving-period','periodSec','moving'],['simple-flash-hz-label','simple-flash-hz','flashHz','flash']]){const show=o.patternId===type;$(label).hidden=!show;if(show&&document.activeElement!==$(input))$(input).value=o[key];}
+ renderSearchlightForm(o);
  const targets=[...(sc().pieces||[]).filter(x=>x.kind==='performer').map(x=>['person:'+x.id,x.name||'人物']),['place:center','中央'],['place:left','客席から見て左'],['place:right','客席から見て右'],['place:back','奥'],['place:front','手前']];if(o.target&&!targets.some(x=>x[0]===o.target))targets.push([o.target,'対象の人物が不在']);selectRows($('simple-target'),targets,o.target);$('simple-target-label').hidden=!['spot','gobo','follow'].includes(o.patternId);$('simple-size-label').hidden=true; // Retain the legacy size controls/data, never display a second spread control.
  const countId=F.ids(state.rig,partId).find(id=>draft?.simpleComposition?.parts?.[id]?.patternId!=='off')||F.ids(state.rig,partId)[0];
  const areaVisible=P.supportsArea(state.rig,p,o);$('simple-area-label').hidden=!areaVisible;
@@ -418,7 +460,7 @@ function render(){if(!context)return;refreshPending();
  const areaReason=areaRows.find(a=>a.disabled)?.reason||'';$('simple-area-reason').hidden=!areaVisible||!areaReason;$('simple-area-reason').textContent=T(areaReason);
  $('simple-orientation-label').hidden=!P.supportsCross(state.rig,p,o);$('simple-orientation').value=o.orientation||'parallel';
  renderFixtures(p,o);
- $('simple-count-label').hidden=p.fixtureIds.length<2||['laser','mirrorball','custom'].includes(o.patternId);
+ $('simple-count-label').hidden=P.isSearchlight(o)||p.fixtureIds.length<2||['laser','mirrorball','custom'].includes(o.patternId);
  const limited=P.patterns.find(row=>row.id===o.patternId)?.countLimit==='available';
  const choices=P.lampCountChoices(state.rig,p,o.patternId);
  const savedCount=(!limited?o.lampCount:null)??F.ids(state.rig,partId).filter(id=>draft?.simpleComposition?.parts?.[id]?.patternId!=='off').reduce((n,id)=>n+P.displayedCount(draft,state.rig,id),0);
@@ -427,7 +469,7 @@ function render(){if(!context)return;refreshPending();
  selectRows($('simple-count'),countRows,choices.includes(savedCount)?String(savedCount):'legacy');
  const oldCount=$('simple-count').querySelector('option[value=legacy]');if(oldCount)oldCount.disabled=true;
  const movable=p?.fixtureIds.map(id=>state.rig.fixtures.find(f=>f.id===id)).filter(f=>f&&f.kind==='moving'&&!RIG_ENGINE.isMirrorBall(f)&&(o.lampCount!=null||f.opticalType===(['spot','gobo','follow','moving','mirrorball'].includes(o.patternId)?'spot':'wash')))||[];
- $('simple-spread-label').hidden=p.mountType==='mirrorball'||!movable.length;
+ $('simple-spread-label').hidden=P.isSearchlight(o)||p.mountType==='mirrorball'||!movable.length;
  const spread=Math.round(P.displayedSpread(draft,state.rig,state.dims,countId));
  for(const id of ['simple-spread','simple-spread-range'])if(document.activeElement!==$(id))$(id).value=spread;
  const isBall=p.mountType==='mirrorball';$('simple-mirror-controls').hidden=!isBall;
@@ -441,11 +483,11 @@ function render(){if(!context)return;refreshPending();
  $('simple-strobe-on').checked=!!strobe.on;$('simple-strobe-settings').hidden=!strobe.on;
  for(const [id,value] of [['simple-strobe-hz',strobe.hz],['simple-strobe-duty',strobe.duty]])if(document.activeElement!==$(id))$(id).value=value;
  }
- renderCueFades();renderFade();
+ renderDescription();renderCueFades();renderFade();
  $('simple-warning').textContent=error||(meta().warnings||[]).join(' ／ ')||P.targetStatus(draft,sc().pieces||[]).join(' ／ ')||(draft?.migrationState?'このキューの明かりは要再設定です。':'')|| (adjusted?'この位置の型を選び直すと、詳細の調整を置き換えます。':'');$('simple-status').textContent=busy?'適用しています…':edited||timeEdited?'':draft?.simplePreset?'旧かんたん照明を表示中。操作した位置だけを変更します。':'適用済みの明かりを表示中';
  for(const control of panel.querySelectorAll('.simple-controls input,.simple-controls select,.simple-controls button')){const layer=control.closest('.simple-layer-adjust')?.dataset.layerPart,role=layer?storedMeta(layer).patternId:functionId;control.disabled=busy||context.readOnly||control.dataset.fixtureBlocked==='true'||(layer&&!occupied(layer))||(role==='custom'&&!control.closest('.part-light-number,.simple-strobe-control,.simple-mirror-controls'));}
  $('simple-adopt').disabled=busy||context.readOnly||(!edited&&!timeEdited&&!state.dirty&&!(mayAdjust()&&roleChange())&&!needsReaim());$('simple-new-cue').disabled=busy||context.readOnly;$('simple-scene').disabled=busy;$('simple-cue').disabled=busy;sharedPanels?.refresh();paint();}
-async function change(patch,gesture=null){if(busy||context.readOnly||!supported()||!mayAdjust())return false;if(!roleChange()&&!('patternId' in patch)&&Object.keys(patch).every(key=>(key==='side'&&partId===F.SS?F.direction(draft,state.rig):key==='side'&&partId===F.LASERS?F.laserSide(draft,state.rig):meta()[key])===patch[key]))return false;const identity=owner(context),id=partId,chosenFunction=functionId,gainOnly='level' in patch&&!roleChange()&&F.detailAdjusted(draft,state.rig,id);if(!gainOnly&&!Object.keys(patch).every(key=>['spreadDeg','strobe'].includes(key))&&F.detailAdjusted(draft,state.rig,id)&&!await parent.GAMMA_SURFACE_DIALOG.confirm(T('この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？')))return false;if(identity!==owner(parent.GAMMA_LIGHT_HOST.context())||id!==partId||chosenFunction!==functionId)return false;try{const result=gainOnly?F.gain(draft,state.rig,id,patch.level):F.patch(draft,state.rig,state.dims,sc().pieces||[],id,patch);if(!gesture||!gesture.recorded){undoDrafts.push(draftSnapshot());redoDrafts=[];if(gesture)gesture.recorded=true;}draft=result.cue;provisional=null;editingPartId=id;edited=true;error=result.warnings.join(' ／ ');}catch(e){error=e.message;render();return false;}render();GAMMA_LIGHT_EDITOR.saveDraft();return true;}
+async function change(patch,gesture=null){if(busy||context.readOnly||!supported()||!mayAdjust())return false;if(!roleChange()&&!('patternId' in patch)&&Object.keys(patch).every(key=>(key==='side'&&partId===F.SS?F.direction(draft,state.rig):key==='side'&&partId===F.LASERS?F.laserSide(draft,state.rig):meta()[key])===patch[key]))return false;const identity=owner(context),id=partId,chosenFunction=functionId,gainOnly='level' in patch&&!roleChange()&&F.detailAdjusted(draft,state.rig,id);if(!gainOnly&&!Object.keys(patch).every(key=>['spreadDeg','strobe'].includes(key))&&F.detailAdjusted(draft,state.rig,id)&&!await parent.GAMMA_SURFACE_DIALOG.confirm(T('この位置の詳細編集を、選んだ明かりの型で置き換えます。続けますか？')))return false;if(identity!==owner(parent.GAMMA_LIGHT_HOST.context())||id!==partId||chosenFunction!==functionId)return false;try{const result=gainOnly?F.gain(draft,state.rig,id,patch.level):F.patch(draft,state.rig,P.searchlightDims(state.dims,state.venueMask),sc().pieces||[],id,patch);if(!gesture||!gesture.recorded){undoDrafts.push(draftSnapshot());redoDrafts=[];if(gesture)gesture.recorded=true;}draft=result.cue;provisional=null;editingPartId=id;edited=true;error=result.warnings.join(' ／ ');}catch(e){error=e.message;render();return false;}render();GAMMA_LIGHT_EDITOR.saveDraft();return true;}
 function track(fn){if(busy||task)return task||Promise.resolve();const next=fn();task=next;next.finally(()=>{if(task===next)task=null;});return next;}
 function adopt(toDetail=false){return track(async()=>{finishLevelGesture();refreshPending();
  // A time-only edit of an existing Q must not turn the browsing selection into
@@ -619,6 +661,9 @@ function legacyLayout(){
  }
  return layoutPrefs;
 }
+const description=el('div');description.id='simple-type-description';description.className='simple-type-description';description.hidden=true;description.dataset.noI18n='';description.innerHTML='<strong id="simple-type-description-title"></strong><p id="simple-type-description-text"></p>';operations.insertBefore(description,$('simple-layers-heading'));// Re-measure only when the slot's width changes, after layout, so setting
+// its reserved height never re-enters the observer (WebKit reports a loop).
+let descriptionWidth=0,descriptionFrame=0;new ResizeObserver(entries=>{const w=Math.round(entries[0]?.contentRect?.width||0);if(w===descriptionWidth||descriptionFrame)return;descriptionWidth=w;descriptionFrame=requestAnimationFrame(()=>{descriptionFrame=0;renderDescription();});}).observe(description);
 const groups=el('div');groups.className='light-layout-sections';operations.insertBefore(groups,$('simple-layers-heading'));
 // Status is a separate normal-flow row, never a sibling painted over cue cards.
 groups.before($('simple-status'));

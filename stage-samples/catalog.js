@@ -27,6 +27,18 @@ const index = [
     "url": "./stage-samples/romeo-juliet-second.json?v=20261010-v0338"
   },
   {
+    "id": "midsummer-rehearsal-v1",
+    "title": "真夏の夜の稽古場 ― 職人たちの『ピラマスとシスビー』",
+    "version": "v1",
+    "scenes": 28,
+    "parentVersionId": null,
+    "branchReason": "",
+    "description": "γの機能を一通り見せる28シーン。職人たちの芝居づくり。",
+    "type": "second",
+    "rawBytes": 1877282,
+    "url": "./stage-samples/midsummer-rehearsal.json?v=20261107-v048"
+  },
+  {
     "id": "gamma-feature-test-v47-retired-pose",
     "title": "テスト: 全機能の試験場",
     "version": "v2",

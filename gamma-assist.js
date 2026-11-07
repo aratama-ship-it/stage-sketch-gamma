@@ -507,7 +507,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261105-v045';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261107-v048';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;
@@ -564,7 +564,7 @@
   const lightAPI=()=>lightFrame()?.contentWindow?.GAMMA_LIGHT_ASSIST;
   const lightOwner=()=>{const s=lightFrame()?.contentWindow?.GAMMA_LIGHT_EDITOR?.status();return s?JSON.stringify([s.showId,s.documentSessionId,s.pageGeneration,s.deliveryGeneration,s.contextGeneration,s.baseBasis,s.alternativeVector]):'';};
   function lightReasons(){try{return root.GAMMA_LIGHT_HOST?.assistReasons?.()||['unavailable'];}catch{return ['unavailable'];}}
-  function lightReasonKey(reasons){const map={'detail-required':'light2.detailOnly','fixed-color':'light2.fixedColor',shared:'lightShared',lite:'lightLite',unapplied:'lightUnapplied','common-rig-required':'lightCommon','proscenium-required':'lightTheatre',stale:'lightStale','changed-elsewhere':'lightStale','read-only':'lightReadOnly','contract-read-only':'lightReadOnly',playing:'lightPlaying',preview:'lightPlaying',rehearsal:'lightRehearsal',field:'lightField'};return reasons.map(r=>map[r]).find(Boolean)||'lightBlocked';}
+  function lightReasonKey(reasons){const map={'detail-required':'light2.detailOnly','fixed-color':'light2.fixedColor','audience-required':'light2.audienceRequired',shared:'lightShared',lite:'lightLite',unapplied:'lightUnapplied','common-rig-required':'lightCommon','proscenium-required':'lightTheatre',stale:'lightStale','changed-elsewhere':'lightStale','read-only':'lightReadOnly','contract-read-only':'lightReadOnly',playing:'lightPlaying',preview:'lightPlaying',rehearsal:'lightRehearsal',field:'lightField'};return reasons.map(r=>map[r]).find(Boolean)||'lightBlocked';}
   function refreshLightAvailability(){
     const reasons=lightReasons();
     try {if(lightAPI()){const s=lightFrame().contentWindow.GAMMA_LIGHT_EDITOR.status();if(s.active)reasons.push(...lightAPI().context().reasons);else if(s.dirty||s.hasUnappliedDrafts)reasons.push('unapplied');}}catch{reasons.push('unavailable');}

@@ -22,7 +22,7 @@ const patterns=Object.freeze([
  {id:'gobo',name:'模様',tags:['person','stage','spot','still'],requires:{regular:true,optical:'spot',kind:'moving'},partOrder:60,defaults:{sizeM:3}},
  {id:'mirrorball',name:'ミラーボール',tags:['effect','special','moving'],requires:{mount:'mirrorball'},partOrder:10},
  {id:'laser',name:'レーザー',tags:['effect','special','moving'],requires:{effectRole:'laser'},partOrder:10,defaults:{color:'#38e04a',laserSpanDeg:40}},
- {id:'moving',name:'ムービング',tags:['effect','spot','moving'],requires:[{effectRole:'moving-effect'},{regular:true,optical:'spot',kind:'moving'}],partOrder:70,defaults:{periodSec:6}},
+ {id:'moving',name:'サーチライト',tags:['effect','spot','moving'],requires:[{effectRole:'moving-effect'},{regular:true,optical:'spot',kind:'moving'}],partOrder:70,defaults:{periodSec:6}},
  {id:'follow',name:'フォロー',tags:['person','spot','moving'],requires:[{effectRole:'follow'},{regular:true,optical:'spot',kind:'moving'}],partOrder:80},
  {id:'flash',name:'ストロボ',tags:['effect','wash','flash'],requires:{effectRole:'flash'},partOrder:10,defaults:{flashHz:6}},
  {id:'uv',name:'UV',tags:['effect','special','still'],requires:{effectRole:'uv'},partOrder:10,defaults:{color:'#8f5bff'}},
@@ -36,6 +36,60 @@ const patterns=Object.freeze([
  defaults:Object.freeze(row.legacyDefaults?{patternId:row.id,level:70,color:'white',target:'place:center',sizeM:1.6}:{patternId:row.id,...baseDefaults,...row.defaults})})));
 
 const color=x=>M.colors[x]||(/^#[0-9a-f]{6}$/i.test(x||'')?x.toLowerCase():null);
+const searchlightForms=Object.freeze([
+ ['motion.sweep','往復'],['motion.cross','交差移動'],['motion.circle','円'],['motion.chase','追いかけ'],
+ ['motion.wander.stage','舞台を漂う'],['motion.wander.stageAudience','舞台＋客席を漂う'],
+ ['motion.mirror','鏡'],['motion.fan','扇を動かす'],['aim.converge','一点へ集める']
+].map(([id,name])=>Object.freeze({id,name})));
+const patternDescriptions=Object.freeze({
+ "spot": "人物や場所を細いスポットで照らします。人物の位置を変えた後は、当て先を選び直してください。",
+ "wash": "広い光で床を照らします。範囲と灯体を選び、必要な場所を明るくします。",
+ "background": "ホリゾントや背景面を光で染めます。人物に当てる明かりとは別に重ねられます。",
+ "backlight": "奥から人物に光を当て、輪郭を浮かび上がらせます。",
+ "side": "袖の灯体から横向きに照らし、体の立体感を出します。",
+ "foot": "床の灯体から上向きに照らします。前後の転がしを別々に選べます。",
+ "silhouette": "背景を明るくして人物の影を見せます。人物を照らす他のレイヤーはOFFにしてください。",
+ "gobo": "スポットに模様を入れて人物や場所へ投影します。細かな模様は詳細で調整できます。",
+ "mirrorball": "専用ピンの光を球の鏡片で反射して散らします。回転と鏡片は全キュー共通の設定です。",
+ "laser": "細いレーザーの光を扇状に広げます。左右の灯体と広がる角度を選べます。",
+ "moving": "16°のスポットで型を描きます。使える6灯のうち、選んだ位置の灯体を動かします。",
+ "follow": "人物を選ぶと、その人物の動きに合わせてスポットを向けます。場所へ固定することもできます。",
+ "flash": "専用の灯体を短く繰り返し点滅させます。毎秒の発光回数を変えられます。",
+ "uv": "UV専用の灯体を点けます。舞台の見え方では紫色の光として表します。"
+});
+const searchlightDescriptions=Object.freeze({
+ "motion.sweep": "左右へ同時に往復します。",
+ "motion.cross": "隣り合う光が逆向きに動いて交差します。",
+ "motion.circle": "円の軌道を、灯体ごとに向きと時間をずらして回ります。",
+ "motion.chase": "同じ往復の軌道を、時間をずらして追いかけます。",
+ "motion.wander.stage": "舞台の中を不規則に漂います。同じ設定なら毎回同じ動きになります。",
+ "motion.wander.stageAudience": "舞台と客席の領域へ光を振り分けて漂わせます。客席の領域が必要です。",
+ "motion.mirror": "左右の光を対にして、鏡のように逆向きへ往復させます。",
+ "motion.fan": "中央から光を扇状に開き、閉じる動きを繰り返します。",
+ "aim.converge": "光を舞台中央の床へ集めて止めます。動きはありません。",
+ "legacy": "従来の動き・灯体・周期を保ちます。型を選び直したときだけ新しい動きへ切り替わります。"
+});
+const isSearchlight=o=>o?.patternId==='moving'&&o.searchlightForm!=null;
+// Six spots in the standard rig; follow and mirror-ball pins retain their roles.
+function searchlightFixtures(rig){return (rig.fixtures||[]).filter(f=>f.kind==='moving'&&f.opticalType==='spot'&&f.beamDeg===16&&['back','front','moving-effect'].includes(f.simpleRole));}
+// Audience geometry comes only from the host's venue mask and is never saved in
+// the design. Every caller (simple UI, AI review) joins it to the stage here.
+function searchlightDims(dims,venueMask){return {...dims,audienceAreas:venueMask?.audienceAreas};}
+function searchlightRegions(dims){return root.SELECTED_LIGHT_PRESETS_ENGINE.buildVenueRegions(dims,dims.audienceAreas);}
+function searchlightHasAudience(dims){return root.SELECTED_LIGHT_PRESETS_ENGINE.audienceRegionIds(searchlightRegions(dims)).length>0;}
+function searchlightCue(rig,dims,o){
+ const X=root.SELECTED_LIGHT_PRESETS_ENGINE,fixtures=searchlightFixtures(rig),regions=searchlightRegions(dims);
+ // A stable six-light order keeps cross/chase/mirror/fan coherent across the
+ // existing position-owned layers. Only this position's lights are copied below.
+ const result=X.applySelectedLightPreset({presetId:o.searchlightForm,cue:{lights:{}},fixtures,
+  selection:fixtures.map(f=>f.id),regions,choices:{periodSec:o.periodSec,u:.5,v:o.searchlightForm==='aim.converge'?.5:.6,audienceRegionIds:X.audienceRegionIds(regions)}});
+ if(result.status==='invalid'||result.status==='noop'){
+  const audience=result.reason==='audience-region-required';
+  // The message is unchanged; reason lets non-UI callers name the same cause.
+  throw Object.assign(Error(audience?'客席の領域がないため、この型は使えません。':'サーチライトの型を確認してください。'),audience?{reason:'audience-required'}:{});
+ }
+ return result.nextCue;
+}
 // Generate the shipped layout first so retained IDs, numbers and optics stay exact.
 // Legacy variants are used only for compatibility checks and explicit resizing.
 function standardRig(dims,venueType,count=44){
@@ -156,6 +210,7 @@ function sideIds(fixtures,rig,dims,side){
 // Explicit counts use the position's moving fixtures, retaining their actual
 // optical type / beam range. A missing count uses the shipped family filter.
 function eligibleFixtures(rig,part,o){
+ if(isSearchlight(o)){const ids=new Set(searchlightFixtures(rig).map(f=>f.id));return (part?.fixtureIds||[]).filter(id=>ids.has(id)).map(id=>rig.fixtures.find(f=>f.id===id));}
  const spot=['spot','gobo','follow','moving','mirrorball'].includes(o.patternId);
  const fixtureOptical=patterns.find(row=>row.id===o.patternId)?.fixtureOptical||(o.patternId==='wash'&&['front','back'].includes(o.area)?'wash':null);
  return (part?.fixtureIds||[]).map(id=>rig.fixtures.find(f=>f.id===id)).filter(f=>f&&(!fixtureOptical||f.opticalType===fixtureOptical)&&o.patternId!=='off'&&!E.isMirrorBall(f)&&(o.patternId==='laser'?E.isLaser(f):!E.isLaser(f)&&(f.mount.type==='cyc'||f.opticalType===(spot?'spot':'wash')||(o.lampCount!=null&&f.kind==='moving'&&o.patternId!=='mirrorball'))));
@@ -188,6 +243,7 @@ function displayedCount(cue,rig,id){
 }
 function displayedSpread(cue,rig,dims,id){
  const meta=cue?.simpleComposition?.parts?.[id]||{},part=parts(rig).find(p=>p.id===id);
+ if(isSearchlight(meta))return 16;
  if(meta.spreadDeg!=null)return meta.spreadDeg;
  const fixtures=eligibleFixtures(rig,part,meta).filter(f=>f.kind==='moving');
  const f=fixtures.find(f=>cue?.lights?.[f.id]?.on)||fixtures[0];if(!f)return 50;
@@ -246,6 +302,9 @@ function compose(base,rig,dims,pieces,partId,raw,fixtureMask=null){
  const legacy=raw?.patternId==='strobe';
  const p=parts(rig).find(p=>p.id===partId),o=Object.fromEntries(Object.entries(defaults(legacy?'wash':raw?.patternId)).map(([key,value])=>[key,raw?.[key]??value]));
  if(legacy)o.patternId='wash';
+ // Absence is the compatibility boundary, including edits to colour/level.
+ // Only the new-layer UI or an explicit form choice supplies this field.
+ if(Object.hasOwn(raw||{},'searchlightForm'))o.searchlightForm=raw.searchlightForm;
  delete o.lampCount; // Missing counts retain the legacy optical-family selection.
  for(const key of ['side','spreadDeg','strobe','lampCount','area','orientation','disabledFixtureIds'])if(Object.hasOwn(raw||{},key))o[key]=clone(raw[key]);
  if(legacy&&!o.strobe)o.strobe={on:true,kind:'sharp',hz:2,duty:50,depth:0,phaseNorm:0};
@@ -268,6 +327,9 @@ function compose(base,rig,dims,pieces,partId,raw,fixtureMask=null){
  if(o.spreadDeg!=null&&(!Number.isFinite(o.spreadDeg)||o.spreadDeg<1||o.spreadDeg>120))throw Error('調整値を確認してください');
  if(o.strobe&&(!Number.isFinite(o.strobe.hz)||o.strobe.hz<.1||o.strobe.hz>20||!Number.isFinite(o.strobe.duty)||o.strobe.duty<5||o.strobe.duty>95||typeof o.strobe.on!=='boolean'))throw Error('調整値を確認してください');
  if(o.patternId==='laser'&&(!Number.isFinite(o.laserSpanDeg)||o.laserSpanDeg<0||o.laserSpanDeg>120)||o.patternId==='moving'&&(!Number.isFinite(o.periodSec)||o.periodSec<.2||o.periodSec>120)||o.patternId==='flash'&&(!Number.isFinite(o.flashHz)||o.flashHz<.5||o.flashHz>20))throw Error('調整値を確認してください');
+ if(isSearchlight(o)&&!searchlightForms.some(form=>form.id===o.searchlightForm))throw Error('サーチライトの型を確認してください。');
+ if(isSearchlight(o)){o.periodSec=Math.max(1,o.periodSec);if(o.spreadDeg!=null)o.spreadDeg=16;}
+ const searchlight=isSearchlight(o)?searchlightCue(rig,dims,o):null;
  const cue=clone(base||{lights:{},groups:[],environment:{haze:35}}),warnings=[];cue.lights=cue.lights||{};cue.groups=cue.groups||[];
  if(cue.groups.some(g=>(g.members||[]).some(id=>p.fixtureIds.includes(id))))throw Error('組の効果がある位置です。詳細で調整してください');
  const focused=['spot','gobo','follow'].includes(o.patternId),backdrop=['background','silhouette'].includes(o.patternId);
@@ -303,6 +365,10 @@ function compose(base,rig,dims,pieces,partId,raw,fixtureMask=null){
  if(ball&&E.isMirrorBall(f)){cue.lights[id].on=old?.on===true;cue.lights[id].level=0;}
  if(o.patternId==='off'&&old)cue.lights[id]={...clone(old),on:false,level:0};
  if(f.kind==='fixed'&&!f.cueColor&&old?.color)cue.lights[id].color=old.color;
+ if(searchlight&&eligible){
+  // The detailed engine owns all paths and phases; no second motion formula.
+  Object.assign(cue.lights[id],searchlight.lights[id],{beamDeg:16});
+ }
  }
  if(o.patternId==='background'&&p.mountType!=='cyc'){
   const spans=p.fixtureIds.map(id=>{const f=rig.fixtures.find(f=>f.id===id),l=cue.lights[id];if(!l?.on)return null;const source=E.fixtureWorld(f,rig,dims),point=E.pointWorld(l.path.a,dims),ellipse=E.spotEllipse(source,point,l.beamDeg,'back');if(!ellipse)return null;const radius=Math.hypot(ellipse.ea.x,ellipse.eb.x);return [ellipse.c.x-radius,ellipse.c.x+radius];}).filter(Boolean).sort((a,b)=>a[0]-b[0]);
@@ -318,6 +384,7 @@ function adjust(base,rig,id,changes){
  if((base.groups||[]).some(g=>(g.members||[]).some(fid=>p.fixtureIds.includes(fid))))throw Error('組の効果がある位置です。詳細で調整してください');
  const cue=migrateLegacy(base,rig);cue.simpleComposition=cue.simpleComposition||{version:1,parts:{}};
  const meta=cue.simpleComposition.parts[id]||{...defaults('custom'),level:100};
+ if(isSearchlight(meta)&&'spreadDeg' in changes)changes={...changes,spreadDeg:16};
  Object.assign(meta,displayOptions(meta));
  cue.simpleComposition.parts[id]=meta;const warnings=[];
  if(meta.patternId==='off'&&detailAdjusted(base,rig,id))meta.patternId='custom';
@@ -388,5 +455,5 @@ function targetStatus(cue,pieces){const warnings=[];for(const value of Object.va
 function withRig(design,dims,venueType,id){const next=clone(design);next.rig=createRig(dims,venueType,id);next.fixtureGroups=[];delete next.plans;delete next.activePlanRef;
  for(const row of [...next.scenes,...(next.archivedScenes||[])]){const reset=cue=>{const value={...clone(cue||{}),lights:{},groups:[],migrationState:'needs-reset',simpleComposition:{version:1,parts:{}}};delete value.simplePreset;return value;};row.cue=reset(row.cue);for(const q of row.lxq||[])q.cue=reset(q.cue);}
  return next;}
-root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,eligibleFixtures,countedFixtures,lampCountChoices,displayedCount,displayedSpread,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage,areas,displayOptions,supportsArea,supportsCross,areaChoices,fixtureStates});
+root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,patternDescriptions,searchlightDescriptions,searchlightForms,isSearchlight,searchlightFixtures,searchlightDims,searchlightHasAudience,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,eligibleFixtures,countedFixtures,lampCountChoices,displayedCount,displayedSpread,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage,areas,displayOptions,supportsArea,supportsCross,areaChoices,fixtureStates});
 })(typeof window==='undefined'?globalThis:window);

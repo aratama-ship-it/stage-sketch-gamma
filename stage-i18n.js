@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "かんたん照明の『ムービング』を『サーチライト』という名前にし、新しい動き方(型)を9種類から選べるようにしました。これまで保存したレイヤーは、型を選び直すまで従来の動き・周期のまま動きます。": "Renamed the simple lighting 'Moving light' to 'Searchlight' and added 9 selectable motion types. Layers saved before this change keep their original motion and period until you choose a new type.",
+
+    "現在・セクション・全シーンの印刷で、写真の読み込みを待つようにしました。読み込めない写真があるときは、紙に印を出して件数を1回知らせます。": "Printing (current scene, section, or all scenes) now waits for photos to finish loading. If any photo can't load, the printed page shows a placeholder and you get a one-time count of how many.",
+
+    "劇場設計の各手順の見出しの下に、いまの設定値を1行で表示するようにしました。": "Each collapsed theatre-design step now shows its current setting on one line under the heading.",
+
+    "新しい見本ショー『真夏の夜の稽古場』を追加しました。": "Added a new sample show, 'Midsummer Night Rehearsal'.",
+
     "照明の詳細の『型の一覧』を、絵と名前がきちんと読めるカードの並びに直しました。型の数や選び方、保存の形は変わりません。": "Fixed the lighting detail panel's type list so each card's diagram and name are readable again. The number of types, how you choose one, and the save format are unchanged.",
 
     "まだ配置していない新しい LX キューへ GO すると次のシーンへ進んでいたのを直しました。再生線はそのキューのシーンの中（見せる時間の終わりの少し手前）で止まります。保存の形とキューの配置は変わりません。": "Fixed: pressing GO on a new LX cue that has not been placed yet moved on to the next scene. The playhead now stops inside that cue's scene (just before the end of its showing time). The save format and the cue placement do not change.",
@@ -6693,7 +6701,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "パネルを上へ": "Move panel up",
   "パネルを下へ": "Move panel down"
 });
-Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Light the floor", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.light2.button": "Adjust lighting", "assist.light2.notice": "Sends current-scene layer and fixture names and values, plus cues in the selected scope. Review, create a draft, then press Apply.", "assist.light2.review": "Proposed changes (no draft yet)", "assist.light2.stage": "Create draft", "assist.light2.cueChange": "Q{no}: name {from} → {to} / fade in {fromFadeIn}→{fadeIn}s · out {fromFadeOut}→{fadeOut}s", "assist.light2.function.spot": "Spot", "assist.light2.function.wash": "Light the floor", "assist.light2.function.background": "Background", "assist.light2.function.rim": "Rim / fill", "assist.light2.function.custom": "Adjusted in detail", "assist.light2.detailOnly": "Check detailed layers and groups in the detail screen. This proposal has not replaced their setup.", "assist.light2.fixedColor": "This fixed fixture colour affects all scenes. Change it in the detail screen.", "assist.light2.audienceRequired": "This venue has no audience area, so the searchlight form “Wander on stage and audience” cannot be used.", "assist.light2.warning": "Check the beam coverage and backdrop in the detail screen.", "assist.light2.scope": "Cues to send", "assist.light2.scopeScene": "Current scene", "assist.light2.scopeShow": "All show cues"});
 // G-010: independent folder backups.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "drive.title": "Back up to a folder (Google Drive, Dropbox, etc.)",
@@ -7009,4 +7017,70 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "全キュー共通（機材の設定）": "All cues (equipment setting)",
   "当てる光（専用ピン26番）": "Incident light (dedicated pin 26)",
   "粒は床・ホリゾント（3Dでは天井・袖も）に散ります。範囲は球の位置とピンの向きで決まります。": "Dots scatter over the floor and cyclorama (also the ceiling and sides in 3D). Coverage depends on the ball position and pin direction."
+});
+
+// J2: print-only missing-photo annotation and one completion notice.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "写真を読めませんでした": "Could not load photo",
+  "印刷用ページを作りました。読めなかった写真: {count}件。": "Print page ready. Photos that could not be loaded: {count}."
+});
+
+/* v0.4.8: collapsed venue step summaries (display only). */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "舞台 {count}面": "Stage areas: {count}",
+  "{width}×{depth}m": "{width} × {depth} m",
+  "床高 {height}m": "Floor height {height} m",
+  "天井高 なし": "No ceiling height",
+  "天井 {height}m": "Ceiling {height} m",
+  "一文字幕あり": "Front border present",
+  "一文字幕なし": "No front border",
+  "客席 {count}区画": "Audience areas: {count}",
+  "舞台袖 {count}区画": "Wing areas: {count}",
+  "壁 {count}": "Walls: {count}",
+  "柱 {count}": "Columns: {count}",
+  "什器 {count}": "Furniture: {count}",
+  "スクリーン {count}枚": "Screens: {count}",
+  "ショーの機構 {count}点": "Show machinery: {count}",
+  "見る位置 {count}点": "Viewpoints: {count}"
+});
+
+// v0.4.8 SEARCHLIGHT: simple-lighting types and form descriptions.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "サーチライト": "Searchlight",
+  "サーチライトの型": "Searchlight form",
+  "往復（従来の動き）": "Sweep (legacy motion)",
+  "サーチライトの型を確認してください。": "Check the searchlight form.",
+  "客席の領域がないため、この型は使えません。": "This form needs an audience area in the venue.",
+  "往復": "Sweep",
+  "交差移動": "Crossing motion",
+  "追いかけ": "Chase",
+  "舞台を漂う": "Wander on stage",
+  "舞台＋客席を漂う": "Wander on stage and audience",
+  "鏡": "Mirror",
+  "扇を動かす": "Moving fan",
+  "一点へ集める": "Converge",
+  "人物や場所を細いスポットで照らします。人物の位置を変えた後は、当て先を選び直してください。": "Light a person or place with a narrow spot. Select the target again after moving the person.",
+  "広い光で床を照らします。範囲と灯体を選び、必要な場所を明るくします。": "Wash the floor with broad light. Choose an area and fixtures to light the places you need.",
+  "ホリゾントや背景面を光で染めます。人物に当てる明かりとは別に重ねられます。": "Colour the cyclorama or backdrop with light. Combine it with separate lighting for people.",
+  "奥から人物に光を当て、輪郭を浮かび上がらせます。": "Light people from upstage to reveal their outlines.",
+  "袖の灯体から横向きに照らし、体の立体感を出します。": "Light from the wings to give bodies depth.",
+  "床の灯体から上向きに照らします。前後の転がしを別々に選べます。": "Light upwards from floor fixtures. Choose downstage and upstage floor units separately.",
+  "背景を明るくして人物の影を見せます。人物を照らす他のレイヤーはOFFにしてください。": "Light the background to show silhouettes. Turn off other layers lighting the people.",
+  "スポットに模様を入れて人物や場所へ投影します。細かな模様は詳細で調整できます。": "Project a gobo pattern onto a person or place. Refine the pattern in Detail.",
+  "専用ピンの光を球の鏡片で反射して散らします。回転と鏡片は全キュー共通の設定です。": "Reflect the dedicated pin spot from the ball's facets. Rotation and facets are shared by all cues.",
+  "細いレーザーの光を扇状に広げます。左右の灯体と広がる角度を選べます。": "Spread thin laser rays into a fan. Choose the sides and fan angle.",
+  "16°のスポットで型を描きます。使える6灯のうち、選んだ位置の灯体を動かします。": "Draw a form with 16° spots. Move the fixtures at the selected position from the six available spots.",
+  "人物を選ぶと、その人物の動きに合わせてスポットを向けます。場所へ固定することもできます。": "Aim a spot at a selected person as they move, or hold it on a place.",
+  "専用の灯体を短く繰り返し点滅させます。毎秒の発光回数を変えられます。": "Flash dedicated fixtures repeatedly. Adjust the number of flashes per second.",
+  "UV専用の灯体を点けます。舞台の見え方では紫色の光として表します。": "Turn on dedicated UV fixtures. The stage preview represents them as violet light.",
+  "左右へ同時に往復します。": "Sweep left and right together.",
+  "隣り合う光が逆向きに動いて交差します。": "Adjacent lights travel in opposite directions and cross.",
+  "円の軌道を、灯体ごとに向きと時間をずらして回ります。": "Circle with alternating directions and staggered timing.",
+  "同じ往復の軌道を、時間をずらして追いかけます。": "Follow the same sweep path at staggered times.",
+  "舞台の中を不規則に漂います。同じ設定なら毎回同じ動きになります。": "Wander irregularly within the stage. The same settings repeat the same motion.",
+  "舞台と客席の領域へ光を振り分けて漂わせます。客席の領域が必要です。": "Assign lights to the stage and audience areas and let them wander. Requires an audience area.",
+  "左右の光を対にして、鏡のように逆向きへ往復させます。": "Pair left and right lights in mirrored sweeps.",
+  "中央から光を扇状に開き、閉じる動きを繰り返します。": "Repeatedly open the lights from the centre into a fan and close them.",
+  "光を舞台中央の床へ集めて止めます。動きはありません。": "Hold the lights together at the centre of the stage floor. This form is still.",
+  "従来の動き・灯体・周期を保ちます。型を選び直したときだけ新しい動きへ切り替わります。": "Keeps the legacy motion, fixtures and period. Only choosing a new form switches the motion."
 });

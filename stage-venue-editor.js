@@ -2285,7 +2285,79 @@
     ctx.restore();
   }
 
+  // Display-only projection of the current draft. Never infer seats from area or
+  // call a preset's name the current geometry after the user has edited it.
+  function buildVenueStepSummaries(draft, { text, size, frontBorder, viewpointNames, machineryCount }) {
+    const format = (key, values = {}) => text(key).replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match);
+    const none = text("なし");
+    const number = value => Number.isFinite(value) ? String(Number(value.toFixed(1))) : text("なし");
+    const join = parts => parts.join(text("・"));
+    const count = (items, key) => items.length ? format(key, { count: items.length }) : none;
+    const stage = draft.stagePresent ? join([
+      format("舞台 {count}面", { count: 1 + draft.stageExtensions.length }),
+      format("{width}×{depth}m", { width: number(size.width), depth: number(size.depth) }),
+      ...(Number.isFinite(draft.stageHeightM) ? [format("床高 {height}m", { height: number(draft.stageHeightM) })] : []),
+    ]) : none;
+    const ceiling = draft.ceiling.hasCeiling === false ? text("天井なし") :
+      Number.isFinite(draft.ceiling.heightM) ? format("天井 {height}m", { height: number(draft.ceiling.heightM) }) :
+        text("天井高 なし");
+    const columns = draft.fixtures.filter(item => item.type === "column").length;
+    const furniture = draft.fixtures.filter(item => item.type === "furniture").length;
+    const walls = [
+      draft.walls.length && format("壁 {count}", { count: draft.walls.length }),
+      columns && format("柱 {count}", { count: columns }),
+      furniture && format("什器 {count}", { count: furniture }),
+    ].filter(Boolean);
+    return {
+      "stage-venue-editor-extension-title": stage,
+      "stage-venue-editor-ceiling-title": join([ceiling, text(frontBorder ? "一文字幕あり" : "一文字幕なし")]),
+      "stage-venue-editor-audience-title": count(draft.audience, "客席 {count}区画"),
+      "stage-venue-editor-wings-title": count(draft.wings, "舞台袖 {count}区画"),
+      "stage-venue-editor-walls-title": walls.length ? join(walls) : none,
+      "stage-venue-editor-back-screens-title": count(draft.backScreens, "スクリーン {count}枚"),
+      "stage-venue-editor-machinery-title": machineryCount ? format("ショーの機構 {count}点", { count: machineryCount }) : none,
+      "venue-viewpoints-title": viewpointNames.length ? join([
+        format("見る位置 {count}点", { count: viewpointNames.length }),
+        String(viewpointNames[0] || text("なし")).replace(/\s+/g, " ").trim(),
+      ]) : none,
+    };
+  }
+
+  function renderStepSummaries() {
+    const summaries = buildVenueStepSummaries(state, {
+      text: tx,
+      size: dimensions(),
+      frontBorder: state.stagePresent && window.GAMMA_VENUE_CURTAINS.frontBorderForVenue({
+        stageFormat: state.stageFormat, ceiling: state.ceiling, floor: { outline: state.points },
+      }),
+      // Match stage-venue-viewpoints.js shownLabel: translate preset seats only;
+      // a name entered by the user remains their name in every language.
+      viewpointNames: state.stagePresent ? viewpointRows().map(({ point }) => {
+        const preset = point.presetSeatId && window.SHOSAI_VENUES.seats.find(seat => seat.id === point.presetSeatId);
+        return preset && (!point.label || point.label === preset.label)
+          ? window.SHOSAI_I18N_PACKS?.[languageCode()]?.maps?.seat?.[preset.id] || point.label
+          : point.label;
+      }) : [],
+      machineryCount: showMachineryOverlay().length,
+    });
+    for (const [id, value] of Object.entries(summaries)) {
+      const head = $(id);
+      if (!head) continue;
+      let line = $(id + "-summary");
+      if (!line) {
+        line = document.createElement("p");
+        line.id = id + "-summary";
+        line.className = "gamma-venue-step-summary";
+        line.dataset.noI18n = "";
+        head.after(line);
+      }
+      if (line.textContent !== value) line.textContent = value;
+      if (line.title !== value) line.title = value;
+    }
+  }
+
   function renderControls(linesResult) {
+    renderStepSummaries();
     const stageHint = document.querySelector(".stage-venue-editor-shape-step .stage-profile-hint");
     if (stageHint) stageHint.textContent = state.stagePresent
       ? tx("プリセットの舞台は平面図で調整できます。四角・丸・線で囲うを選ぶと舞台を追加できます。")

@@ -314,3 +314,7 @@ html:not(.simple-light-active) #simple-adopt,.simple-light-active .gamma-light-a
 
 /* N-02 opens a dialog even while direct Simple entry is unavailable. */
 html[data-stage-skin] #simple-mode-on.is-unavailable {cursor:pointer!important}
+
+/* N-03: stable explanation slot in the existing operations column. */
+.simple-type-description{box-sizing:border-box;padding:var(--simple-gap);border-bottom:1px solid var(--simple-border);min-width:0;overflow-wrap:anywhere}
+.simple-type-description strong,.simple-mode-panel .simple-type-description p{font-size:var(--simple-section);line-height:1.5;color:var(--simple-text)}

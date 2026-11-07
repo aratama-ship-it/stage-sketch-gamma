@@ -26,7 +26,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "86740e1f168c2c72647f9e0e581e0fe7bf250ccb73fc5130d6a3d1ff71108f15"
+      "sha256": "4c99375bd89afdcdc797de497df27bd722edb913c878aff5a383e3eb6583848c"
     },
     {
       "id": "feature-test-2",
@@ -51,7 +51,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "7cba6a5699adffe81cea753f9812f83487eecea735574ebc04d771fcca3db9bb"
+      "sha256": "c94333674525467fd2d228dfab4ce846ed4e34ce417341a23d21f67d9cda571e"
     },
     {
       "id": "eight-circus",
@@ -75,7 +75,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "c8454bf43db5682a2462c99aa8356d4835488fd533826ead52a445e19d7c5c18"
+      "sha256": "707411028600e007fd0d1ffb2a6edc7a1f9e5ae923898d96174d9704cd77fade"
     },
     {
       "id": "seam-garden",
@@ -99,7 +99,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "b48f20539b1400c213456df248514f565c3dadf0d1ba8abd0207b22f2ce774ff"
+      "sha256": "fb5fb7b202a90ce7806d4b190529c3a9904b58a19fcd50753ec2b34623d1a19a"
     },
     {
       "id": "romeo-juliet-cued",
@@ -123,7 +123,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "d947958579adb95e3d711de9d7e8c275a6972cd83d38bee62ed15cff442bc46f"
+      "sha256": "ccf5be41ae422a062d4de38e8c249a945e5b0fa675195826a002ea91b2cf4f50"
     },
     {
       "id": "romeo-juliet-second",
@@ -147,7 +147,31 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "865884e8380a30b087fe09cc71a37f80a54057dcfa48b55974052ea7cb229931"
+      "sha256": "3da0edd65aec43b40f9ed12202f686d6fe5c3e00b2f26c3382cc2bcc036508f0"
+    },
+    {
+      "id": "midsummer-rehearsal",
+      "projectId": "midsummer-rehearsal-v1",
+      "name": {
+        "ja": "真夏の夜の稽古場",
+        "en": "A Midsummer Night’s Rehearsal",
+        "zh-Hans": "仲夏夜的排练场",
+        "zh-Hant": "仲夏夜的排練場",
+        "ko": "한여름 밤의 연습실"
+      },
+      "description": {
+        "ja": "γの機能を一通り見せる28シーン。職人たちの芝居づくり。",
+        "en": "28 scenes showcasing γ’s features as craftspeople make a play.",
+        "zh-Hans": "通过工匠们排演戏剧的28个场景，展示γ的各项功能。",
+        "zh-Hant": "透過工匠們排演戲劇的28個場景，展示γ的各項功能。",
+        "ko": "장인들이 연극을 만드는 28개 장면으로 γ의 기능을 소개합니다."
+      },
+      "bytes": 1878185,
+      "version": "v1",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "midsummer-rehearsal.stageproj.zip",
+      "sha256": "d5c9fe6212fbd41dddb722b38ca84c16466a24de475ef9fedc3ab241df9e6f87"
     }
   ]
 }

@@ -130,7 +130,8 @@
           if(Object.hasOwn(input,'color')&&!color(input.color))throw Error('color');
           // Never replace a detailed layer's authored setup with a simple role.
           if(layer.adjusted&&Object.hasOwn(input,'color'))throw Error('detail-required');
-          const result=layer.adjusted?P.gain(base,next.rig,input.id,input.level):P.compose(base,next.rig,next.stage,rig().hooks.scene().pieces,input.id,{...base.simpleComposition.parts[input.id],...(Object.hasOwn(input,'level')?{level:input.level}:{}),...(Object.hasOwn(input,'color')?{color:input.color}:{})});
+          // Same audience geometry as the simple UI; without it the model names the cause.
+          const result=layer.adjusted?P.gain(base,next.rig,input.id,input.level):P.compose(base,next.rig,P.searchlightDims(next.stage,rig().state.venueMask),rig().hooks.scene().pieces,input.id,{...base.simpleComposition.parts[input.id],...(Object.hasOwn(input,'level')?{level:input.level}:{}),...(Object.hasOwn(input,'color')?{color:input.color}:{})});
           changes.push({name:layer.name,function:layer.function,from:{level:layer.level,color:layer.color},to:{level:input.level??layer.level,color:input.color??layer.color}});
           if(canonical(base)===canonical(result.cue))throw Error('no-change');
           return {ok:true,kind:'layer',input:clone(input),cue:clone(result.cue),changes,warnings:result.warnings};
@@ -169,7 +170,7 @@
         } else throw Error('invalid');
         w.GAMMA_LIGHT_MODEL.validate(next,next.scenes.map(s=>s.id));
         return {ok:true,kind:input.kind,input:clone(input),design:next,changes,warnings:[]};
-      }catch(e){return {ok:false,reasons:[e.message]};}
+      }catch(e){return {ok:false,reasons:[e.reason||e.message]};}
     }
     function stageReview(input,saved) {
       // Recompute after the click, never trust a caller-supplied candidate.

@@ -289,11 +289,29 @@ dialog.gamma-light-leave-modal::backdrop { background: rgba(var(--stage-ui-scrim
 }
 
 /* 手順1〜7のアコーディオン。開いている1つ以外は見出しの行だけ残す。 */
-#gamma-venue-workspace .gamma-venue-step:not(.is-open) > :not(.gamma-venue-step-head) { display: none; }
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) > :not(.gamma-venue-step-head):not(.gamma-venue-step-summary) { display: none; }
 /* 手順1〜3は見出しが div でくるまれている。畳んだときは説明文だけ隠し、
  * 見出し（＝押せるボタン）は必ず残す。 */
 #gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-head
-  > :not(h2):not(h3):not(h4):not(.gamma-venue-step-toggle) { display: none; }
+  > :not(h2):not(h3):not(h4):not(.gamma-venue-step-toggle):not(.gamma-venue-step-summary) { display: none; }
+/* Same small-copy tokens as .stage-profile-hint; only closed steps need a summary.
+ * Keep the full string in title and textContent, clipping only the visual line. */
+#gamma-venue-workspace .gamma-venue-step-summary {
+  display: none;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  color: var(--milk-dim);
+  font-size: var(--fs-2);
+  font-weight: 400;
+  line-height: 1.65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-summary { display: block; }
+#gamma-venue-workspace .gamma-venue-step:not(.is-open),
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .stage-venue-editor-shape-step { row-gap: 5px; }
 /* 2026-10-11 本人指摘: 畳んだ手順では「?」も出さない（全手順で揃える）。
  * 3〜9 は上の規則のついでで隠れていたが、2 は見出しが div の中の h3 にあり「?」が残っていた。 */
 #gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-help { display: none; }

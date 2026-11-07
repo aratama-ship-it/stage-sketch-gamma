@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.7";
+  const GAMMA_APP_VERSION = "v0.4.8";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2828,7 +2828,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-05`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-07`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -11676,6 +11676,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 読み込んだ写真の控え。同じデータURLを何度も復号しないため。
      読み終わった時点で一度だけ描き直す（それまでは地の色のまま出る）。 */
   const photoCache = new Map();
+  let printImageJob = null;
   function trimPhotoCache() {
     // Pin this show's images (normally at most 12). A smaller LRU would evict
     // pictures still on stage and trigger an endless decode/render cycle.
@@ -11688,6 +11689,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
   }
   function photoImage(src) {
+    // This override exists only during a synchronous print draw. Editor/PNG/3D
+    // continue to use the ordinary cache, including after a print timeout.
+    if (printImageJob) {
+      const image = printImageJob.images.get(src);
+      if (image && image.complete && image.naturalWidth) return image;
+      printImageJob.failed.add(src);
+      return printImageJob.fallback ||= createPrintImageFallback();
+    }
     if (!src) return null;
     const hit = photoCache.get(src);
     if (hit) {
@@ -11707,6 +11716,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function paintPhoto(target, rect, photo) {
     const img = photoImage(state.project.photos && state.project.photos[photo.id]);
     if (!img) return;
+    if (printImageJob && img === printImageJob.fallback) {
+      // Match the actual backdrop rectangle; cover-cropping a generic card can
+      // cut the message off on unusually wide or tall stages.
+      target.drawImage(createPrintImageFallback(rect.w, rect.h), rect.x, rect.y, rect.w, rect.h);
+      return;
+    }
     const scale = Math.max(rect.w / img.naturalWidth, rect.h / img.naturalHeight);
     const w = img.naturalWidth * scale;
     const h = img.naturalHeight * scale;
@@ -33977,6 +33992,72 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      選んだシーンと図を並べた、印刷のためのページを別タブに開く。
      ブラウザの「印刷」からPDFにして、稽古場へ紙で持っていける。
      絵は本物の描画（drawStage）をシーンごとに退避・切替して撮る。 */
+  const PRINT_IMAGE_TIMEOUT_MS = 5000;
+  const PRINT_IMAGES_TOTAL_TIMEOUT_MS = 10000;
+
+  async function preparePrintImages(project, rows, view) {
+    const job = { images: new Map(), failed: new Set(), fallback: null };
+    // All photoImage consumers read scene.photo.id or piece.imageId. Plan
+    // diagrams do not paint photos. Count only images actually drawn later.
+    const sources = new Set();
+    if (view !== "plan") for (const row of rows) {
+      if (row.photo) sources.add(project.photos?.[row.photo.id]);
+      for (const piece of row.pieces || []) {
+        if (piece.imageId) sources.add(project.photos?.[piece.imageId]);
+      }
+    }
+    const deadline = Date.now() + PRINT_IMAGES_TOTAL_TIMEOUT_MS;
+    await Promise.all([...sources].map(src => new Promise(resolve => {
+      job.images.set(src, null);
+      if (!src) { resolve(); return; }
+      // Start/reuse the editor's cache, never create a second image loader.
+      photoImage(src);
+      const image = photoCache.get(src);
+      if (!image) { resolve(); return; }
+      let settled = false, decoding = false;
+      const finish = success => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        image.removeEventListener("load", loaded);
+        image.removeEventListener("error", failed);
+        if (success && image.naturalWidth) job.images.set(src, image);
+        resolve();
+      };
+      const failed = () => finish(false);
+      const loaded = () => {
+        if (settled || decoding) return;
+        if (!image.naturalWidth) { finish(false); return; }
+        decoding = true;
+        if (typeof image.decode !== "function") { finish(true); return; }
+        try { Promise.resolve(image.decode()).then(() => finish(true), failed); }
+        catch (_) { finish(false); }
+      };
+      const timer = setTimeout(failed, Math.max(0, Math.min(PRINT_IMAGE_TIMEOUT_MS, deadline - Date.now())));
+      image.addEventListener("load", loaded);
+      image.addEventListener("error", failed);
+      if (image.complete) loaded();
+    })));
+    return job;
+  }
+
+  function createPrintImageFallback(width = 640, height = 360) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.ceil(width)); canvas.height = Math.max(1, Math.ceil(height));
+    // The existing projection renderer accepts CanvasImageSource and uses
+    // natural dimensions for its perspective mapping.
+    canvas.naturalWidth = canvas.width; canvas.naturalHeight = canvas.height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = "#404040"; context.lineWidth = 1;
+    context.strokeRect(.5, .5, canvas.width - 1, canvas.height - 1);
+    context.fillStyle = "#202020";
+    context.font = '16px "Hiragino Kaku Gothic ProN", sans-serif';
+    context.textAlign = "center"; context.textBaseline = "middle";
+    context.fillText(tx("写真を読めませんでした"), canvas.width / 2, canvas.height / 2, Math.max(1, canvas.width - 16));
+    return canvas;
+  }
+
   let printPreparing = false;
   async function openPrintPage() {
     if (printPreparing) return;
@@ -33990,7 +34071,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     win.document.body.append(progress);
     printPreparing = true;
     const snapshot = JSON.parse(JSON.stringify(state.project));
-    const iterator = buildPrintPage(win, { view: exportView, scope: exportScope });
+    const options = { view: exportView, scope: exportScope };
+    const iterator = buildPrintPage(win, options);
     // A print popup can background its opener. Do not wait for the opener's
     // animation frames, which WebKit may suspend while the popup has focus.
     const yieldPrintTask = () => new Promise(resolve => {
@@ -33999,6 +34081,12 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       channel.port2.postMessage(null);
     });
     try {
+      // exportTargets also adopts scene alternatives. Run it on the same copy
+      // as the renderer, never on the live project while selecting images.
+      const keepProject = state.project;
+      try { state.project = snapshot; options.rows = exportTargets(); }
+      finally { state.project = keepProject; }
+      options.imageJob = await preparePrintImages(snapshot, options.rows, options.view);
       await yieldPrintTask();
       let result;
       do {
@@ -34021,6 +34109,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           await yieldPrintTask();
         }
       } while (!result.done);
+      if (result?.done && !win.closed && options.imageJob.failed.size) {
+        announce(tx("印刷用ページを作りました。読めなかった写真: {count}件。")
+          .replace("{count}", String(options.imageJob.failed.size)), { warning: false });
+      }
     } catch (error) {
       if (!win.closed) win.close();
       console.error("stage print: 印刷用ページを作れませんでした", error);
@@ -34036,7 +34128,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     let rows;
     try {
       exportView = options.view; exportScope = options.scope;
-      rows = exportTargets();
+      rows = options.rows || exportTargets();
     } finally { exportView = keepView; exportScope = keepScope; }
     const views = options.view === "both" ? ["front", "plan"] : [options.view];
     const selectedIds = new Set(rows.map(row => row.id));
@@ -34068,6 +34160,15 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           if (key === "fillText" || key === "strokeText") return (...args) => {
             target.save(); if (printPaperSurface) { target.fillStyle = "#202020"; target.strokeStyle = "#202020"; }
             try { return target[key](...args); } finally { target.restore(); }
+          };
+          if (key === "drawImage") return (image, ...args) => {
+            // A missing-image card is a paper annotation, not projected light:
+            // screen blending or scrim opacity must not erase its black text.
+            if (image === options.imageJob?.fallback) {
+              target.save(); target.globalAlpha = 1; target.globalCompositeOperation = "source-over"; target.filter = "none";
+              try { return target.drawImage(image, ...args); } finally { target.restore(); }
+            }
+            return target.drawImage(image, ...args);
           };
           const value = target[key]; return typeof value === "function" ? value.bind(target) : value;
         },
@@ -34103,7 +34204,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           // clearRect do not clear it), clips and drawing state. Start every
           // rendition as a fresh single-scene canvas, keeping its size/quality.
           canvases[view].width = W * 2;
-          drawStage(contexts[view], false, view);
+          const keepImageJob = options.imageJob ? printImageJob : null;
+          try {
+            if (options.imageJob) printImageJob = options.imageJob;
+            drawStage(contexts[view], false, view);
+          } finally { if (options.imageJob) printImageJob = keepImageJob; }
           (images[view] ||= {})[paper ? "paper" : "dark"] = canvases[view].toDataURL("image/jpeg", 0.92);
         }
       }
@@ -34291,7 +34396,7 @@ ${propsPlotHtml}
     const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
     win.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
     win.location.replace(url);
-    announce("印刷用ページを開きました。ブラウザの印刷からPDFにできます。");
+    if (!options.imageJob?.failed.size) announce("印刷用ページを開きました。ブラウザの印刷からPDFにできます。");
   }
 
   // 矢印キーでシーンを送ったとき、ページ全体やフォーカスは動かさずシーン欄だけ追従させる。
@@ -37780,7 +37885,7 @@ ${propsPlotHtml}
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261105-v045';
+        script.src = 'light-design/part-lighting-model.js?v=20261107-v048';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -49270,7 +49375,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261105-v045', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261107-v048', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [
