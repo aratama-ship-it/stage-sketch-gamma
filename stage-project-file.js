@@ -268,8 +268,18 @@
       }
     } catch (_) { /* A damaged auxiliary record must not stop opening a show. */ }
     function save() { try { storage.setItem(key, JSON.stringify([...map].map(([id,ids]) => [id,[...ids]]))); return true; } catch (_) { return false; } }
+    function set(id,ids) { map.set(id,new Set(ids)); return save(); }
     return Object.freeze({has:id=>map.has(id), get:id=>map.get(id),
-      set(id,ids) { map.set(id,new Set(ids)); return save(); },
+      set,
+      copy(sourceId,targetId) {
+        if (!map.has(sourceId)) return true;
+        const previous = map.get(targetId);
+        if (set(targetId,map.get(sourceId))) return true;
+        // A failed copy must not leave a half-created version's record. Keep
+        // set()'s existing in-memory protection for failed package imports.
+        if (previous) map.set(targetId,previous); else map.delete(targetId);
+        return false;
+      },
       reconnect(id,trackId) { map.get(id)?.delete(trackId); return save(); },
     });
   }

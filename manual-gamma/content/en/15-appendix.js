@@ -428,7 +428,7 @@ ${table(["App number", "Scene", "What to check"], [
   ["4-8 / 4-9", "C-6 saved sets / C-7 wall angles (0, 45, 90°)", "Saved sets and walls"],
   ["5-1–5-3", "D-1 lifts and revolve / D-2 moving deck, water and pool floor / D-3 six curtains and scrim transparency", "Stage machinery"],
   ["6-1 / 6-2", "E-1 four kinds of light, groups, routes / E-2 lighting intent (data)", "Light pieces"],
-  ["7-1–7-4", "F-1 static cue / F-2 sweeps and circles / F-3 strobe and chases / F-4 lasers, cyc, haze, mirror ball", "Light design (LX cue cards, scene stepping above the plan and the Presets in Rig layout are also in F-1)"],
+  ["7-1–7-4", "F-1 static cue and new standard 48 (including four high-side washes) / legacy migration (N-V049-RIG) / F-2 sweeps and circles / F-3 strobe and chases / F-4 lasers, cyc, haze, mirror ball", "Light design (LX cue cards, scene stepping above the plan and the Presets in Rig layout are also in F-1)"],
   ["8-1–8-4", "G-1 notes and pen / G-2 arrows / G-3 screen text and backdrop photo / G-4 backdrop colour, blackout, transition note", "Drawing on the views"],
   ["8-5 / 8-6", "G-5 routes and crossings, scrim showing a picture / G-6 end of routes, scrim turning see-through", "Routes and scrim changes"],
   ["9-1–9-4", "H-1 30 s on scene, 5 s travel / H-2 track A (missing file) / H-3 track B (count sync 120 BPM), dialogue cues / H-4 light, music and dialogue cues", "Timeline, sound, cues, idle motion. The two script lines in H-3's note can be read with “import again” on the Dialogue tab"],

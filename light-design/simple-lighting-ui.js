@@ -16,7 +16,7 @@ let descriptionHover='',descriptionFocus='';
 let patternTag='all'; // UI only: never enters draft snapshots or project persistence.
 let functionId='',editingPartId='',levelGesture=null,provisional=null,sizeGesture=null;
 const functions=F.functions();
-const functionName=id=>functions.find(x=>x.id===id)?.name||({rim:'輪郭・補助',off:'消灯'}[id])||'詳細で調整済み';
+const functionName=id=>functions.find(x=>x.id===id)?.name||({rim:'輪郭・補助',off:'消灯',uv:'UV'}[id])||'詳細で調整済み';
 const owner=c=>JSON.stringify([c?.showId,c?.documentSessionId,c?.pageGeneration,c?.deliveryGeneration,c?.alternativeVector]);
 const same=(a,b)=>owner(a)===owner(b),owned=t=>operation===t&&same(context,t.context)&&same(context,parent.GAMMA_LIGHT_HOST.context());
 const active=()=>wanted&&state.mode==='move',sc=()=>hooks.scene(),q=()=>targetId===null?hooks.lxEditingQ(sc()):(sc().lxq||[]).find(x=>x.id===targetId);

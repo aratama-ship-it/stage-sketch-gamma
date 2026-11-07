@@ -3,12 +3,12 @@
 'use strict';
 const P=root.GAMMA_PART_LIGHTING,clone=root.GAMMA_SIMPLE_LIGHT_MODEL.clone;
 const SS='side:both',LASERS='effect:laser-both',FLOOR_FRONT='floor:front',FLOOR_BACK='floor:back';
-const floorGroup=id=>[FLOOR_FRONT,FLOOR_BACK].includes(id);
+const floorGroup=id=>[FLOOR_FRONT,FLOOR_BACK,'floor:spot-front','floor:spot-back'].includes(id);
 function parts(rig){
  const raw=P.parts(rig),groups=[
   {id:LASERS,name:'レーザー',test:p=>p.patterns.includes('laser')},
-  {id:SS,name:'SS',test:p=>p.mountType==='side'},
-  ...[[FLOOR_FRONT,'転がし手前',true],[FLOOR_BACK,'転がし奥',false]].map(([id,name,front])=>({id,name,test:p=>p.mountType==='floor'&&p.fixtureIds.every(fid=>{const f=rig.fixtures.find(f=>f.id===fid);return f?.simpleRole==='floor'&&(f.mount.v>=.5)===front;})}))
+  {id:SS,name:'SS',test:p=>['side:shimote','side:kamite'].includes(p.id)},
+  ...[[FLOOR_FRONT,'転がし手前',true,'floor'],[FLOOR_BACK,'転がし奥',false,'floor'],['floor:spot-front','転がしスポット手前',true,'floor-spot'],['floor:spot-back','転がしスポット奥',false,'floor-spot']].map(([id,name,front,role])=>({id,name,test:p=>p.mountType==='floor'&&p.fixtureIds.every(fid=>{const f=rig.fixtures.find(f=>f.id===fid);return f?.simpleRole===role&&(f.mount.v>=.5)===front;})}))
  ];
  const result=[];
  for(const p of raw){const group=groups.find(g=>g.test(p));

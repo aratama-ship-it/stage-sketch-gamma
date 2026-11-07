@@ -84,8 +84,12 @@
   function withProsceniumPositionNames(rig, assignCommon=false) {
     const next=clone(rig), existing=new Set(positionList(next).map(p=>p.id));
     next.positions=[...positionList(next),...prosceniumPositionNames().filter(p=>!existing.has(p.id))];
+    for(const [side,name] of [['shimote','斜め上 下手'],['kamite','斜め上 上手']]){
+      const id='pos-side-high-'+side;
+      if(next.fixtures.some(f=>f.simpleRole==='side-high'&&f.mount.side===side)&&!existing.has(id))next.positions.push({id,name,kind:'ss',area:'stage-side',side,supportType:null,aliases:[],levelLabel:'',evidence:{status:'virtual'},source:{label:'舞台スケッチ内部プロセニアム',revision:'proscenium-names-v1'}});
+    }
     if(assignCommon)for(const f of next.fixtures){
-      const ref=f.simpleRole==='back'?'pos-truss-back':f.simpleRole==='front'?'pos-truss-front':f.simpleRole==='front-light'?'pos-cl-1':f.simpleRole==='side'?'pos-ss-'+f.mount.side:null;
+      const ref=f.simpleRole==='back'?'pos-truss-back':f.simpleRole==='front'?'pos-truss-front':f.simpleRole==='front-light'?'pos-cl-1':f.simpleRole==='side'?'pos-ss-'+f.mount.side:f.simpleRole==='side-high'?'pos-side-high-'+f.mount.side:null;
       if(ref && !f.positionRef)f.positionRef=ref;
     }
     validatePositionNames(next);return next;

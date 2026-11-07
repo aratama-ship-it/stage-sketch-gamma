@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.8</span>
+                <span class="stage-app-version">0.4.9</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2792,16 +2792,13 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261107-v048">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261107-v049">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v048-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v048-title">v0.4.8</h3><time datetime="2026-11-07">2026-11-07</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v049-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v049-title">v0.4.9</h3><time datetime="2026-11-07">2026-11-07</time></header>
       <ul>
-        <li>かんたん照明の『ムービング』を『サーチライト』という名前にし、新しい動き方(型)を9種類から選べるようにしました。これまで保存したレイヤーは、型を選び直すまで従来の動き・周期のまま動きます。</li>
-        <li>現在・セクション・全シーンの印刷で、写真の読み込みを待つようにしました。読み込めない写真があるときは、紙に印を出して件数を1回知らせます。</li>
-        <li>劇場設計の各手順の見出しの下に、いまの設定値を1行で表示するようにしました。</li>
-        <li>新しい見本ショー『真夏の夜の稽古場』を追加しました。</li>
+        <li>照明の標準セットを48灯に更新しました。開いたときに自動で新しいセットへ替わります(替える前のショーは元の版として残ります)。UVの種類を外しました。ストロボはスポットの点滅で作るようになりました。フロントは固定ライトからムービング・ウォッシュに替わりました。斜め上(袖の高い位置)に固定ライトを4灯追加しました。v0.4.8以前(配布中のMac版を含む)で開くと、かんたん照明は使えません(詳細の照明では開けます)。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3750,7 +3747,7 @@
   </button>
 </div></div>
 <script src="/study-assets/stage-runtime.js?v=20261104-v043"></script>
-<script src="/study-assets/gamma-light-model.js?v=20261031-v0396"></script>
+<script src="/study-assets/gamma-light-model.js?v=20261107-v049"></script>
 <script src="/study-assets/stage-venues.js?v=20261104-v042"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
@@ -3768,10 +3765,10 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261104-v044"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261107-v048"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261107-v049"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-element-refs.js?v=20261104-v043"></script>
-<script src="/study-assets/stage-sketch.js?v=20261107-v048"></script>
+<script src="/study-assets/stage-sketch.js?v=20261107-v049"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261031-v0396"></script>
 </body></html>

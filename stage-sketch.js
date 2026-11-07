@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.8";
+  const GAMMA_APP_VERSION = "v0.4.9";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -25128,6 +25128,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     window.GAMMA_WORKSPACE?.syncGate?.();
     persistSoon();
     announce(message);
+    await upgradeOpenedStandardRig();
     return true;
   }
 
@@ -36511,6 +36512,7 @@ ${propsPlotHtml}
     // Re-evaluate UI restrictions from the imported show, without changing it.
     window.GAMMA_WORKSPACE?.syncGate?.();
     showPackageOutcome(packageData, packageResult);
+    await upgradeOpenedStandardRig();
   }
 
   /* ---------- Macアプリ「AI指示」 ----------
@@ -37880,12 +37882,28 @@ ${propsPlotHtml}
   // All host entry points share one on-demand load. The embedded editor and
   // Node fixture generator retain their explicit script order.
   let partsLoading = null;
+  async function upgradeOpenedStandardRig() {
+    if (!window.GAMMA_STAGE_UI_READY || !window.GAMMA_LIGHT_HOST || nativeDocumentDelivery || state.project.lightingDesign?.rig?.simpleLighting?.presetId !== 'standard26') return;
+    try {
+      const parts = await ensurePartLightingModel();
+      // The retained parent is deliberately still a legacy rig. Its saved
+      // child proves migration completed; do not mark or rewrite the backup.
+      const retainedParent = Object.values(availableShows()).some(entry => {
+        const project = entry?.state?.project;
+        return project?.parentVersionId === state.project.id
+          && project.branchReason === '標準セットの更新前の版を保持';
+      });
+      if (retainedParent) return;
+      await parts.upgradeOpenedShow(window.GAMMA_LIGHT_HOST, lightingDraftExists(state.project.id), text => surfaceNotice(tx(text)));
+    }
+    catch (_) { announce(tx('標準セットを更新できなかったため、元の版を維持しています。')); }
+  }
   function ensurePartLightingModel() {
     if (window.GAMMA_PART_LIGHTING) return Promise.resolve(window.GAMMA_PART_LIGHTING);
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261107-v048';
+        script.src = 'light-design/part-lighting-model.js?v=20261107-v049';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -46914,6 +46932,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           syncStageTourContext();
         }
       }
+      if (!nativeProject && !pendingBlocked && !alternativesStorageBlocked) await upgradeOpenedStandardRig();
     } finally {
       if (stageSketchRoot) {
         stageSketchRoot.classList.remove("stage-whoami-pending");
@@ -47019,6 +47038,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     const band=document.getElementById("stage-storage-band");if(band)band.hidden=true;
     window.GAMMA_WORKSPACE?.commitDocumentTransition?.();
     setNativeDocumentTransitioning(false);
+    queueMicrotask(upgradeOpenedStandardRig);
   }
   function installNativeProjectState(next) {
     clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
@@ -47872,21 +47892,30 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       await ensurePartLightingModel();
       const current=gammaLightingContext();
       if(current.readOnly || gammaStorageChanged || current.basis!==basis) throw Error("ショーが更新されています。元のショーを確認してから複製してください");
+      const upgraded=options.standardRigUpgrade ? window.GAMMA_PART_LIGHTING.upgradeStandardProject(sceneAlternatives?sceneAlternatives.projectCopy(state.project):state.project,{draftExists:lightingDraftExists(state.project.id)||current.draftRecoveryUnavailable||Object.keys(current.draftRecords||{}).length>0||(nativeProject?.draftRecoveryEntries||[]).length>0}) : null;
+      if(options.standardRigUpgrade&&!upgraded)throw Error('標準セットを更新できなかったため、元の版を維持しています。');
       const model=window.GAMMA_LIGHT_MODEL, simple=window.GAMMA_SIMPLE_LIGHT_MODEL;
-      const checked=model.validate(design,current.scenes.map(row=>row.id));
+      const checked=model.validate(upgraded?.project.lightingDesign||design,current.scenes.map(row=>row.id));
       if(!window.GAMMA_PART_LIGHTING.compatible(checked.rig,current.stage,current.venueType)) throw Error("共通セットの配置を確認できません");
       const original=state.project;
-      const copy=sceneAlternatives?sceneAlternatives.projectCopy(original):projectIoClone(original);
+      const copy=upgraded?.project||(sceneAlternatives?sceneAlternatives.projectCopy(original):projectIoClone(original));
       copy.id=rid("proj");copy.parentVersionId=original.id;copy.createdAt=nowIso();
       copy.versionLabel=nextVersionLabel(original.versionLabel);copy.branchReason="かんたん照明の対応プリセットを導入";
       copy.lightingDesign=checked;
-      for(const row of copy.scenes) for(const item of row.sceneAlternatives?.items||[]) {
+      if(upgraded)copy.branchReason='標準セットの更新前の版を保持';
+      if(!upgraded)for(const row of copy.scenes) for(const item of row.sceneAlternatives?.items||[]) {
         item.lighting=item.lighting||{};
         const source=item.lighting.native||checked.scenes.find(scene=>scene.id===row.id);
         if(source)item.lighting.native=window.GAMMA_PART_LIGHTING.withRig(
           {...checked,scenes:[source],archivedScenes:[]},current.stage,current.venueType,
           checked.rig.simpleLighting?.presetId || 'common24').scenes[0];
         item.lighting.intent=null;if(item.content)item.content.lightingIntent=null;
+      }
+      // Write the per-show protection before any version/scope switch. A
+      // shared track ID must never reconnect a package's omitted audio.
+      if (!nativeProject && packageOfflineTracks.has(original.id)
+          && !packageOfflineTracks.copy(original.id,copy.id)) {
+        throw Error(tx('プロジェクトを保存できませんでした。元のショーと音源は保持しています。'));
       }
       sceneAlternatives?.restore(copy,{reconcile:false});
       const next={...state,project:copy};
@@ -49375,7 +49404,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261107-v048', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261107-v049', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

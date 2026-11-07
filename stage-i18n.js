@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "照明の標準セットを48灯に更新しました。開いたときに自動で新しいセットへ替わります(替える前のショーは元の版として残ります)。UVの種類を外しました。ストロボはスポットの点滅で作るようになりました。フロントは固定ライトからムービング・ウォッシュに替わりました。斜め上(袖の高い位置)に固定ライトを4灯追加しました。v0.4.8以前(配布中のMac版を含む)で開くと、かんたん照明は使えません(詳細の照明では開けます)。": "Updated the simple-lighting standard rig to 48 fixtures. Existing shows switch to the new rig automatically when opened (the show as it was before the switch stays as its parent version). Removed the UV type. Strobe is now built from a spot's flash instead of a dedicated fixture. The front changed from fixed lights to moving washes. Added 4 fixed lights high in the wings. Shows opened or saved with this rig (including the current Mac app) can't use simple lighting in v0.4.8 or earlier (the detailed editor still opens them).",
+
     "かんたん照明の『ムービング』を『サーチライト』という名前にし、新しい動き方(型)を9種類から選べるようにしました。これまで保存したレイヤーは、型を選び直すまで従来の動き・周期のまま動きます。": "Renamed the simple lighting 'Moving light' to 'Searchlight' and added 9 selectable motion types. Layers saved before this change keep their original motion and period until you choose a new type.",
 
     "現在・セクション・全シーンの印刷で、写真の読み込みを待つようにしました。読み込めない写真があるときは、紙に印を出して件数を1回知らせます。": "Printing (current scene, section, or all scenes) now waits for photos to finish loading. If any photo can't load, the printed page shows a placeholder and you get a one-time count of how many.",
@@ -7083,4 +7085,36 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "中央から光を扇状に開き、閉じる動きを繰り返します。": "Repeatedly open the lights from the centre into a fan and close them.",
   "光を舞台中央の床へ集めて止めます。動きはありません。": "Hold the lights together at the centre of the stage floor. This form is still.",
   "従来の動き・灯体・周期を保ちます。型を選び直したときだけ新しい動きへ切り替わります。": "Keeps the legacy motion, fixtures and period. Only choosing a new form switches the motion."
+});
+
+// V049: standard rig upgrade and separate floor spots.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "転がしスポット手前": "Downstage floor spots",
+  "転がしスポット奥": "Upstage floor spots",
+  "吊りの16°スポットで型を描きます。新しい標準セットは8灯で、選んだ位置の灯体を動かします。": "Draw a form with overhead 16° spots. The new standard set has eight; lights at the selected position move.",
+  "スポットとウォッシュを短く繰り返し点滅させます。毎秒の発光回数を変えられます。": "Flash spots and washes repeatedly. Adjust the number of flashes per second.",
+  "標準セットを更新できなかったため、元の版を維持しています。": "The standard set could not be updated. The original version is unchanged.",
+  "標準セットの更新前の版を保持": "Preserve version before standard set update",
+  "標準セットを新しい版へ更新しました。元の版は控えとして残っています。UVと旧転がしの下手・上手は消灯し、ストロボはスポットの点滅へ、前明かりはムービングへ変わりました。ストロボと同じ位置のスポットを使用中だったキューはスポットを優先しました。変更したレイヤーは詳細で確認してください。": "Updated the standard set in a new version. The original version is retained as a backup. UV and the old left/right floor units are off. Strobes now use flashing spots, and front lights are moving washes. Cues already using a spot at the strobe position keep that spot instead. Check changed layers in Detail."
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "手前のスポット 3": "Downstage spot 3",
+  "手前のスポット 4": "Downstage spot 4",
+  "奥のスポット 3": "Upstage spot 3",
+  "奥のスポット 4": "Upstage spot 4",
+  "転がしスポット 手前 1": "Downstage floor spot 1",
+  "転がしスポット 手前 2": "Downstage floor spot 2",
+  "転がしスポット 奥 1": "Upstage floor spot 1",
+  "転がしスポット 奥 2": "Upstage floor spot 2"
+});
+
+// V049: separate fixed high-side washes. Japanese uses the source labels.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "斜め上 下手": "High side, stage right",
+  "斜め上 下手 1": "High side, stage right 1",
+  "斜め上 下手 2": "High side, stage right 2",
+  "斜め上 上手": "High side, stage left",
+  "斜め上 上手 1": "High side, stage left 1",
+  "斜め上 上手 2": "High side, stage left 2"
 });

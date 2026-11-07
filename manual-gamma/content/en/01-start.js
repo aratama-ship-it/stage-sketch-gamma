@@ -106,7 +106,7 @@ ${table(["Section", "What you can try"], [
   ["C Set, props and aerial", "Everything that sits on the floor, prop registration and holding, all 214 prop shapes (across three scenes), aerial apparatus, flown pieces, backstage and five effects, saved sets, wall angles"],
   ["D Stage machinery", "Lifts and revolve, moving deck, six kinds of curtain (scrim transparency), water and pool floor"],
   ["E Light pieces", "Four kinds of light, groups and routes, lighting intent data"],
-  ["F Light design", "Static cues (colour, level, gobo, shutters, costume tint), movement (sweeps and circles), strobe and chases, lasers, cyc and haze"],
+  ["F Light design", "New standard 48 (including four high-side washes) and legacy migration (F-1 / N-V049-RIG); Static cues (colour, level, gobo, shutters, costume tint), movement (sweeps and circles), strobe and chases, lasers, cyc and haze"],
   ["G Drawing on the views", "Sticky notes and pen, arrows, screen text and backdrop photo, backdrop colour, blackouts, transition notes, routes and crossings, scrim"],
   ["H Time, sound and cues", "Scene time and travel, audio assignment (missing file, count sync), light, music and dialogue cues, Q sheets, dialogue cue panel"],
   ["I Nested sections", "Sections one and two levels deep, time display and retained legacy settings"],
