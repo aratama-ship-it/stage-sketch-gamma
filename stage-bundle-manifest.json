@@ -1,0 +1,1930 @@
+{
+  "schema": 1,
+  "profile": "web",
+  "scope": "stage.html only",
+  "sourceMaps": "distributed; not precached",
+  "compiler": {
+    "esbuild": "0.24.0",
+    "esbuildModuleSha256": "2f43ded7ed5e0e1985cbed5297833e895000f9161812ca7cc29bdf549bfc6c9e",
+    "node": "v22.23.4",
+    "acorn": "8.16.0"
+  },
+  "options": {
+    "minify": true,
+    "treeShaking": false,
+    "charset": "utf8",
+    "legalComments": "inline",
+    "target": "esnext"
+  },
+  "exceptions": {
+    "stage-cue-sheet.js": {
+      "options": {
+        "minify": false,
+        "minifyWhitespace": true,
+        "minifySyntax": true,
+        "minifyIdentifiers": false
+      },
+      "reason": "Q sheet print HTML calls toString functions by their original identifier"
+    }
+  },
+  "generators": [
+    {
+      "path": "tools/bundle-stage.mjs",
+      "bytes": 15230,
+      "sha256": "56399d69d245fee94629210a81d99f3a0da8ef9b6026ed7d8c0df2c64b4902bf"
+    },
+    {
+      "path": "tools/bundle-sourcemap.mjs",
+      "bytes": 2775,
+      "sha256": "d4b69634c8ca3f564452dcdf2920430bb7acd68b2130238b4a9d67f5420d4f06"
+    },
+    {
+      "path": "tools/bundle-stage-plan.json",
+      "bytes": 5596,
+      "sha256": "374d1505e8b6d99068025cab28bc694e7a3f07f3d28e3b578b282f710b1c24fd"
+    },
+    {
+      "path": ".node-version",
+      "bytes": 8,
+      "sha256": "0c4bf84f9bedd485b2c4eac05f59e35addc86ce7dbf0d90435528e04384c6314"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "stage-runtime.js",
+      "bytes": 19641,
+      "sha256": "39e9714457d27405f8803fbca64822f9c9de4e3aae23e1fb2f69c1b75e987532",
+      "url": "stage-runtime.js?v=20261104-v043",
+      "attrs": {
+        "src": "stage-runtime.js?v=20261104-v043"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-editions.js",
+      "bytes": 32105,
+      "sha256": "bdd2aa4a57b33bf782876259cb1190d0183d13f3983c02fa77bdd8111227c7d4",
+      "url": "gamma-editions.js?v=20261029-v0394",
+      "attrs": {
+        "src": "gamma-editions.js?v=20261029-v0394"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "style.css",
+      "bytes": 548873,
+      "sha256": "2aa38e7bdbc2cbec0aa022879ae778809d515028d73b1c1097369ea197873dd7",
+      "url": "style.css?v=20261103-v040",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "style.css?v=20261103-v040"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "gamma-ui-tokens.css",
+      "bytes": 85656,
+      "sha256": "92bc87415221ad96585794f7959c4d2306111d4db1645fd7eca9300665d32e37",
+      "url": "gamma-ui-tokens.css?v=20261105-v045",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "gamma-ui-tokens.css?v=20261105-v045"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "gamma.css",
+      "bytes": 121570,
+      "sha256": "2658607aaedc266c8e6122e23e0971fe9478a2ea255b8c8a0ece6c68dbc87030",
+      "url": "gamma.css?v=20261107-v048",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "gamma.css?v=20261107-v048"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-welcome.css",
+      "bytes": 7532,
+      "sha256": "c75fccbc9a4fbd66f85816d607c43ead5a40561339bb62576c73e15d416227f4",
+      "url": "stage-welcome.css?v=20261016-v0373",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-welcome.css?v=20261016-v0373"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "gamma-mobile.css",
+      "bytes": 37753,
+      "sha256": "b8f26caf5e0289ca8d28ef047a60874b92905acca02bb1a2f676299401bea274",
+      "url": "gamma-mobile.css?v=20261103-v041",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "gamma-mobile.css?v=20261103-v041"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "gamma-light-model.js",
+      "bytes": 42239,
+      "sha256": "5a6550a41e90e6f894ffd23c9017ebe5c2ce9483c32da62140f4c20d7f0b87be",
+      "url": "gamma-light-model.js?v=20261107-v049",
+      "attrs": {
+        "src": "gamma-light-model.js?v=20261107-v049"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-formation.css",
+      "bytes": 1837,
+      "sha256": "971b549a8568f984bfb130b780e3b9ab303c68f3956a0246b828cc75babc45fe",
+      "url": "gamma-formation.css?v=20261015-v0368",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "gamma-formation.css?v=20261015-v0368"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-scene-alternatives.css",
+      "bytes": 2846,
+      "sha256": "7be4552e432aa12c50b86a51fe699a858f4ed5497e3bee891d4f1997cbc3eb58",
+      "url": "stage-scene-alternatives.css?v=20261031-v0396",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-scene-alternatives.css?v=20261031-v0396"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-vox-panel.css",
+      "bytes": 18946,
+      "sha256": "1963ebb7b3ea7640269c300839b88bfd7f664214958b7d5d5a2376e95a5faa14",
+      "url": "stage-vox-panel.css?v=20261015-v0368",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-vox-panel.css?v=20261015-v0368"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-panel-columns.css",
+      "bytes": 1694,
+      "sha256": "9856142ace79e9837dad58831c13f2b6c02e5c86ebeac05c93d4ee3d1e1a1710",
+      "url": "stage-panel-columns.css?v=20261001-release71",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-panel-columns.css?v=20261001-release71"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-panel-bottom.css",
+      "bytes": 12078,
+      "sha256": "322685c2d8d54363eb89bb1fb27887a06e78b4d49456699d90d15c7112d0761e",
+      "url": "stage-panel-bottom.css?v=20261013-v0360",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-panel-bottom.css?v=20261013-v0360"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-script-editor.css",
+      "bytes": 12033,
+      "sha256": "0e4d134608511b2daaada9de5ae85118459d5ec6d237a2bd69f08716d2a1a2f0",
+      "url": "stage-script-editor.css?v=20261017-v0376",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-script-editor.css?v=20261017-v0376"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-venue-preview.css",
+      "bytes": 15154,
+      "sha256": "e80169bbdd7aa253ba42bc3f4eff33d2b72269b9cfa4ee10665d3ab78674d6bf",
+      "url": "stage-venue-preview.css?v=20261104-v044",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-venue-preview.css?v=20261104-v044"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-venue-viewpoints.css",
+      "bytes": 4792,
+      "sha256": "59c8ef809b1107e28312bcd9ca86413950bbbca923c2c7772ff6d0995758ff7e",
+      "url": "stage-venue-viewpoints.css?v=20261015-v0368",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-venue-viewpoints.css?v=20261015-v0368"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-run-of-show.css",
+      "bytes": 1624,
+      "sha256": "207049b2bc004669d5d924efeef7bc683a65829a02b435c65a306811d044f1fb",
+      "url": "stage-run-of-show.css?v=20261009-v0337",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-run-of-show.css?v=20261009-v0337"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-timecode.css",
+      "bytes": 5252,
+      "sha256": "839eb919d6851f26c41cdb565f05272cb28218c781bf04776abeaab0cd6ec0cc",
+      "url": "stage-timecode.css?v=20261015-v0371",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-timecode.css?v=20261015-v0371"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-show-overview.css",
+      "bytes": 1525,
+      "sha256": "aff55fd05c1ad6d025aa913dad88f5d6d52ba8e1b1e015fdf35a7ab59592f323",
+      "url": "stage-show-overview.css?v=20261009-v0337",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-show-overview.css?v=20261009-v0337"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-venues.js",
+      "bytes": 138648,
+      "sha256": "bf6d7676fa21b2cae6b1dcfff4167b30f2dfb158baf13187e00c737c69437499",
+      "url": "stage-venues.js?v=20261104-v042",
+      "attrs": {
+        "src": "stage-venues.js?v=20261104-v042"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-lines.js",
+      "bytes": 34273,
+      "sha256": "cf56b94644d25f0cd9d90ff54558e4239ca119aacf78cf453504b2a3a3ae04c7",
+      "url": "stage-venue-lines.js?v=2026091992",
+      "attrs": {
+        "src": "stage-venue-lines.js?v=2026091992"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-front-shape.js",
+      "bytes": 14260,
+      "sha256": "aa1e8b132daa6e21abb8de694d33126940dbcc4a1c17bdd0f2b5654a570f771d",
+      "url": "stage-front-shape.js?v=2026092046",
+      "attrs": {
+        "src": "stage-front-shape.js?v=2026092046"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-report.js",
+      "bytes": 8165,
+      "sha256": "96bdf23d97249dc10ae9ab74ec4c3b783f58607e2138909e29c05b44dd8dcaf6",
+      "url": "stage-venue-report.js?v=2026092047",
+      "attrs": {
+        "src": "stage-venue-report.js?v=2026092047"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-samples/index.js",
+      "bytes": 44686,
+      "sha256": "466811dc14282d2378d8a8ae6470ae79cd354e90f3e7dd9bd1e4569c3f4dc158",
+      "url": "stage-samples/index.js?v=20261013-v0360",
+      "attrs": {
+        "src": "stage-samples/index.js?v=20261013-v0360"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-samples/catalog.js",
+      "bytes": 8438,
+      "sha256": "16e8144563877200f7e7ead69a376589ed2519cc61c0f25d1aca9e659d3ae91a",
+      "url": "stage-samples/catalog.js?v=20261107-v049",
+      "attrs": {
+        "src": "stage-samples/catalog.js?v=20261107-v049"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-set-model.js",
+      "bytes": 6244,
+      "sha256": "8a8c1966643451c7555124c67feaed931fb95c35ca771b3e4411df27f6dc2bd7",
+      "url": "stage-set-model.js?v=2026092354",
+      "attrs": {
+        "src": "stage-set-model.js?v=2026092354"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-set-builder.js",
+      "bytes": 21863,
+      "sha256": "492e0a4c0bd9e7be0b1776968b5e51a4637016c9e3153b01210fb9d5c06b6341",
+      "url": "stage-set-builder.js?v=20261009-v0337",
+      "attrs": {
+        "src": "stage-set-builder.js?v=20261009-v0337"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-machinery.js",
+      "bytes": 11682,
+      "sha256": "3be3e93b50a988e9095943f9dbe1bf1cac60164afc46b19bba38b513e689e0ef",
+      "url": "stage-machinery.js?v=20261012-v0358",
+      "attrs": {
+        "src": "stage-machinery.js?v=20261012-v0358"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-virtual-room.js",
+      "bytes": 5000,
+      "sha256": "0eb5dcfb591846004ff08bfe3a9275011d97950a7414ad3f68bafdcde1c19575",
+      "url": "stage-virtual-room.js?v=20261009-v0337",
+      "attrs": {
+        "src": "stage-virtual-room.js?v=20261009-v0337"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-scrim.js",
+      "bytes": 13336,
+      "sha256": "cc0e413ff6f39855e3c3ae90270fdf82cbced0cf4d939759d1ef63844fba502e",
+      "url": "stage-scrim.js?v=20261009-v0335",
+      "attrs": {
+        "src": "stage-scrim.js?v=20261009-v0335"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-render-resolution.js",
+      "bytes": 1787,
+      "sha256": "15d201952d04b6affbc48df669ddbf3d01f146f7ee3a7dc7d6799eb27cac4c17",
+      "url": "gamma-render-resolution.js?v=20261006-v0318",
+      "attrs": {
+        "src": "gamma-render-resolution.js?v=20261006-v0318"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-first-person-loader.js",
+      "bytes": 3617,
+      "sha256": "2425c633466ab7600039992ad5b5089e751e63d7c1358745a4cfb09abe009a6d",
+      "url": "stage-first-person-loader.js?v=20261015-v0368",
+      "attrs": {
+        "src": "stage-first-person-loader.js?v=20261015-v0368"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-fixture-body.js",
+      "bytes": 13356,
+      "sha256": "bb707894671b4174fffa2dd251142af570c14b38632e246adc7245d70a23c870",
+      "url": "stage-fixture-body.js?v=20261031-v0396",
+      "attrs": {
+        "src": "stage-fixture-body.js?v=20261031-v0396"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-audio-store.js",
+      "bytes": 12371,
+      "sha256": "6df9076d70a009b5cb8032a3cd5071698a5e6065145854bfcea6482896667f91",
+      "url": "stage-audio-store.js?v=20261031-v0397",
+      "attrs": {
+        "src": "stage-audio-store.js?v=20261031-v0397"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-large-project-store.js",
+      "bytes": 15766,
+      "sha256": "62c23bbc54ddd58df6ef2b9331ed296bdcec2502895cd2f1c910a067c0230a57",
+      "url": "stage-large-project-store.js?v=20261022-v0383",
+      "attrs": {
+        "src": "stage-large-project-store.js?v=20261022-v0383"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-project-backup-store.js",
+      "bytes": 12336,
+      "sha256": "4105fdba1be9e938027b5fd25380ec0075d8bfac26d9b0f4422d5e3e09943ae7",
+      "url": "stage-project-backup-store.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-project-backup-store.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-storage-codec.js",
+      "bytes": 3017,
+      "sha256": "077dd1f6fe2f2b2127971b9083e4aa6c3968390c8a9b3047d59fa554472b1ac3",
+      "url": "stage-storage-codec.js?v=2026092523",
+      "attrs": {
+        "src": "stage-storage-codec.js?v=2026092523"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-storage-recovery.js",
+      "bytes": 32917,
+      "sha256": "e9654fa9a19e2559787f994a08818a15b8133a135040d8f2cafb78f325402f08",
+      "url": "stage-storage-recovery.js?v=20261020-v0382",
+      "attrs": {
+        "src": "stage-storage-recovery.js?v=20261020-v0382"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-storage-hygiene.js",
+      "bytes": 3656,
+      "sha256": "4ea309a5880f6e2bbf47d5fe47f37e2b81f65acc0404683c6164f3b8e8c35ee6",
+      "url": "stage-storage-hygiene.js?v=20261014-v0365",
+      "attrs": {
+        "src": "stage-storage-hygiene.js?v=20261014-v0365"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-storage-pressure.js",
+      "bytes": 11522,
+      "sha256": "973627ffbb2f34a99ccbda95729df1f15f1fb119927837f458193cdb2a638000",
+      "url": "stage-storage-pressure.js?v=20260926-large39",
+      "attrs": {
+        "src": "stage-storage-pressure.js?v=20260926-large39"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "manual-gamma/manual-meta.js",
+      "bytes": 513,
+      "sha256": "89ef7e9bd435a65db3bd0652dabc82e46e89f1cd74091c4632aee820439e8633",
+      "url": "manual-gamma/manual-meta.js?v=20261108-v0410",
+      "attrs": {
+        "src": "manual-gamma/manual-meta.js?v=20261108-v0410",
+        "data-manual-content": "manual-gamma/manual-content.js?v=20261108-v0410"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-pwa.js",
+      "bytes": 13966,
+      "sha256": "02adbb2ba9479ad92c0ad377beff9f21fafdf76d8efad8a294b92d16226cc8f5",
+      "url": "stage-pwa.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-pwa.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-lighting-plans.js",
+      "bytes": 28179,
+      "sha256": "1f007edb394c6dc8aa5a942d80e601c48badfe757630d88c85915a457b25b39a",
+      "url": "stage-lighting-plans.js?v=20261005-beam99",
+      "attrs": {
+        "src": "stage-lighting-plans.js?v=20261005-beam99"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-lighting-plan-overlay.js",
+      "bytes": 6369,
+      "sha256": "31d210819d2e8e51d80a79131a0e64e1f8192f6a5d43b3d9a01275e1f4eb4751",
+      "url": "stage-lighting-plan-overlay.js?v=20261005-batch98",
+      "attrs": {
+        "src": "stage-lighting-plan-overlay.js?v=20261005-batch98"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "light-design/rig-engine.js",
+      "bytes": 116072,
+      "sha256": "18ebc39dd06dfce70a3bed2805a70b23b5789ca8380dff0ba521786c878a93f4",
+      "url": "light-design/rig-engine.js?v=20261105-v045",
+      "attrs": {
+        "src": "light-design/rig-engine.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "light-design/laser-effects.js",
+      "bytes": 9951,
+      "sha256": "a80a471662f46c477ef440c148ad59f1f483bf1437942bf9e5de1ce1c2a35cfe",
+      "url": "light-design/laser-effects.js?v=20261005-batch98",
+      "attrs": {
+        "src": "light-design/laser-effects.js?v=20261005-batch98"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-light-eval.js",
+      "bytes": 937,
+      "sha256": "80b8edabe0a0b9e3838c076c871b6ae20f5d3fe907e506b814bc82aff99d8400",
+      "url": "stage-light-eval.js?v=20261004-receiver89",
+      "attrs": {
+        "src": "stage-light-eval.js?v=20261004-receiver89"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-light-receiver.js",
+      "bytes": 19040,
+      "sha256": "a0ee31f95b514ba1a87adf768874ffeba6ed5c7738f014dcb0cc120fd298a8c1",
+      "url": "stage-light-receiver.js?v=20261004-receiver89",
+      "attrs": {
+        "src": "stage-light-receiver.js?v=20261004-receiver89"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-light-render.js",
+      "bytes": 85238,
+      "sha256": "4ce3e795c944f40cca0eaec10b9db99f3aa51f3f25ef24a9e99df987555dc7e4",
+      "url": "stage-light-render.js?v=20261105-v045",
+      "attrs": {
+        "src": "stage-light-render.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-light-cue-overlay.js",
+      "bytes": 22093,
+      "sha256": "6b2896dbdf604065b2c412c93d7caaf0a2249283e7faae61d5ce41cef6f5ee32",
+      "url": "gamma-light-cue-overlay.js?v=20261105-v045",
+      "attrs": {
+        "src": "gamma-light-cue-overlay.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-range-fields.js",
+      "bytes": 8064,
+      "sha256": "279742a511a38852c664ad3858a06e2ddf2616d50ef67c6b2441bd4babf90c69",
+      "url": "gamma-range-fields.js?v=20261014-v0361",
+      "attrs": {
+        "src": "gamma-range-fields.js?v=20261014-v0361"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-number-scrub.js",
+      "bytes": 5229,
+      "sha256": "4c16beccb29def73d433383fff361925e3bd5d9bdf96c900dad62b70e2e44b61",
+      "url": "gamma-number-scrub.js?v=2026091780",
+      "attrs": {
+        "src": "gamma-number-scrub.js?v=2026091780"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-formation-presets.js",
+      "bytes": 126814,
+      "sha256": "5493752019bf04233fe7dc855fdfed0906462f813197092a5c0de4eda14d3249",
+      "url": "gamma-formation-presets.js?v=20261026-v0388",
+      "attrs": {
+        "src": "gamma-formation-presets.js?v=20261026-v0388"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-formation-model.js",
+      "bytes": 3916,
+      "sha256": "271e0d5893a12662eab4e0b6dfa491a5874b93fd526645af0f1b196a36e39b19",
+      "url": "gamma-formation-model.js?v=20261026-v0388",
+      "attrs": {
+        "src": "gamma-formation-model.js?v=20261026-v0388"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-data-safety.js",
+      "bytes": 2213,
+      "sha256": "6578e9d51976ddb2ef6a2e1c806b659b91af1b4b9ba464ded3f1119571427354",
+      "url": "stage-data-safety.js?v=20261001-release69",
+      "attrs": {
+        "src": "stage-data-safety.js?v=20261001-release69"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-time-domain.js",
+      "bytes": 30601,
+      "sha256": "64cedcf06a7f764712e58161239849a74108d8a491923c0a63dbf2e4a52656b0",
+      "url": "stage-time-domain.js?v=20261013-v0359",
+      "attrs": {
+        "src": "stage-time-domain.js?v=20261013-v0359"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-timecode.js",
+      "bytes": 24493,
+      "sha256": "8e801950e395216d249eb45a62c4eb5ae1117ef0ff12d6d8e8e64615e9f92846",
+      "url": "stage-timecode.js?v=20261015-v0371",
+      "attrs": {
+        "src": "stage-timecode.js?v=20261015-v0371"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-cue-sheet.js",
+      "bytes": 61310,
+      "sha256": "18bf2babde82fdc4ef04f076add30a39c3f50bfde0077b24146c1842635a9ccd",
+      "url": "stage-cue-sheet.js?v=20261105-v046",
+      "attrs": {
+        "src": "stage-cue-sheet.js?v=20261105-v046"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "docs/light-panel-migration-2026-09-13/light-panel-migration.js",
+      "bytes": 16930,
+      "sha256": "8963b0f59cb10c003f5c1a3efd83d1f7833e234a9f92659f13a9d4cb2b9f3f2f",
+      "url": "docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
+      "attrs": {
+        "src": "docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-light-panel-import.js",
+      "bytes": 5822,
+      "sha256": "87b65176933f7a75373c16d6ec394bf9a108fd1cbe75aa2299663cf8e8057f54",
+      "url": "stage-light-panel-import.js?v=2026092209",
+      "attrs": {
+        "src": "stage-light-panel-import.js?v=2026092209"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-scene-alternatives.js",
+      "bytes": 17345,
+      "sha256": "938e9efb7abbdbaee9418140726ed5be85db7749cfe0cf5fa2d3cf6e611a5bd5",
+      "url": "stage-scene-alternatives.js?v=20261031-v0396",
+      "attrs": {
+        "src": "stage-scene-alternatives.js?v=20261031-v0396"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-music-cues.js",
+      "bytes": 13640,
+      "sha256": "1c7d0b9236504d16441a064929d74d4c5531ee9c86245df25138d6a1fac09dfd",
+      "url": "stage-music-cues.js?v=20261015-v0371",
+      "attrs": {
+        "src": "stage-music-cues.js?v=20261015-v0371"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-shortcuts.js",
+      "bytes": 12964,
+      "sha256": "2585d2588e26b571dfa275c2396f10f0dda50e1b347a98a5393fb026fdb97760",
+      "url": "stage-shortcuts.js?v=20261031-v0396",
+      "attrs": {
+        "src": "stage-shortcuts.js?v=20261031-v0396"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-reorder-motion.js",
+      "bytes": 4361,
+      "sha256": "1d0583d1231c48226ac371cf89dd7a446f4143bc5e512cdaff66d6c4aefa626f",
+      "url": "stage-reorder-motion.js?v=2026092420",
+      "attrs": {
+        "src": "stage-reorder-motion.js?v=2026092420"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-jog-reference.js",
+      "bytes": 17630,
+      "sha256": "c2d5952e0571a8b995bc07e0358126478941db199b95078fc3efb7da5f5ef786",
+      "url": "stage-jog-reference.js?v=2026093003",
+      "attrs": {
+        "src": "stage-jog-reference.js?v=2026093003"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-performer-motion.js",
+      "bytes": 23869,
+      "sha256": "3b02749343d519412e06f8bb26eac9f6df21daf9a579da807ad8d3509309e294",
+      "url": "stage-performer-motion.js?v=20261011-v0347",
+      "attrs": {
+        "src": "stage-performer-motion.js?v=20261011-v0347"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-idle-motion.js",
+      "bytes": 19390,
+      "sha256": "f6da3707312d40a8e6441b722d9203742753bcf0f5dcd072479bf174ad9d47b2",
+      "url": "stage-idle-motion.js?v=20261014-v0362",
+      "attrs": {
+        "src": "stage-idle-motion.js?v=20261014-v0362"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-performer-contour.js",
+      "bytes": 13811,
+      "sha256": "9b0dddc1feb7f940655ba11d2b01ba28c0f23118b80054347a61118585617d97",
+      "url": "stage-performer-contour.js?v=20261006-v0318",
+      "attrs": {
+        "src": "stage-performer-contour.js?v=20261006-v0318"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-performer-body.js",
+      "bytes": 109729,
+      "sha256": "d39b0fb0f90d2ea82287cb7bfd7b6ce31915ac2cdcb8c5aa1120f92ef1a8d365",
+      "url": "stage-performer-body.js?v=20261104-v043",
+      "attrs": {
+        "src": "stage-performer-body.js?v=20261104-v043"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-ui.js",
+      "bytes": 78864,
+      "sha256": "310443da7858484198ad4422dafda73ccbe61374471c51b3b4cb831a5992d8eb",
+      "url": "gamma-ui.js?v=20261104-v044",
+      "attrs": {
+        "src": "gamma-ui.js?v=20261104-v044"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-point-source.js",
+      "bytes": 3363,
+      "sha256": "301d0cec5d0377f2f5dcd20855a7e713b3866d704a961f2e1e484407fb1b3ff7",
+      "url": "stage-point-source.js?v=20260927-point43",
+      "attrs": {
+        "src": "stage-point-source.js?v=20260927-point43"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-save-lifecycle.js",
+      "bytes": 1353,
+      "sha256": "0f524d972696fe0c05a92819222619d4bef855e7db3297808b0fa752f20feb0a",
+      "url": "stage-save-lifecycle.js?v=20260927-guard45",
+      "attrs": {
+        "src": "stage-save-lifecycle.js?v=20260927-guard45"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "light-design/simple-lighting-model.js",
+      "bytes": 10299,
+      "sha256": "95b01fde4f32e7e8562a4ec26fc9b693c408ab28e15b8f6cf47904aa79fba714",
+      "url": "light-design/simple-lighting-model.js?v=20261105-v045",
+      "attrs": {
+        "src": "light-design/simple-lighting-model.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-run-of-show-distribution.js",
+      "bytes": 8696,
+      "sha256": "f7908dbb7da9d1b727a6fa54d0aeb3733d64f5546a1fb6ec964d521978494a53",
+      "url": "stage-run-of-show-distribution.js?v=20261012-v0358",
+      "attrs": {
+        "src": "stage-run-of-show-distribution.js?v=20261012-v0358"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-run-of-show-files.js",
+      "bytes": 17047,
+      "sha256": "7cdf9fbb25124beb47a9ca8d51e0031bb6c8f6ced438fe281a2d8b583a8f3be0",
+      "url": "stage-run-of-show-files.js?v=20261012-v0358",
+      "attrs": {
+        "src": "stage-run-of-show-files.js?v=20261012-v0358"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-run-of-show-model.js",
+      "bytes": 8058,
+      "sha256": "c819ed7931b6c2a4f2f8669bc501b1e8d3ddbefc6e8c80c93b92ef3b622de660",
+      "url": "stage-run-of-show-model.js?v=20261006-v0312",
+      "attrs": {
+        "src": "stage-run-of-show-model.js?v=20261006-v0312"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-pose-data.js",
+      "bytes": 151841,
+      "sha256": "7d81f1586bc9c05b816c197bf126ffef76600d733592fffdeca8119129f7f0ae",
+      "url": "stage-pose-data.js?v=20261013-v0360",
+      "attrs": {
+        "src": "stage-pose-data.js?v=20261013-v0360"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-prop-shapes.js",
+      "bytes": 169751,
+      "sha256": "1baa137404fb91fe46894c696b91bd7a25deb7f2e20cd3fa552278b277295fe2",
+      "url": "stage-prop-shapes.js?v=20261009-v0333",
+      "attrs": {
+        "src": "stage-prop-shapes.js?v=20261009-v0333"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-language-loader.js",
+      "bytes": 5009,
+      "sha256": "af18c0540a6fcb9fb0b60d0a67cb62766ad87df7cc818b70927ff502689eb517",
+      "url": "stage-language-loader.js?v=20261108-v0410",
+      "attrs": {
+        "src": "stage-language-loader.js?v=20261108-v0410"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-reorder-warning.js",
+      "bytes": 4148,
+      "sha256": "e3c600cec2c6731064cd27d5f135f24c4104927a78da6fefbb81e8dfd2c90905",
+      "url": "stage-reorder-warning.js?v=20261009-v0335",
+      "attrs": {
+        "src": "stage-reorder-warning.js?v=20261009-v0335"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-curtains.js",
+      "bytes": 5157,
+      "sha256": "72a70f62b1099e9ec395cd90bf90d00baf7650ffc48a8034c2d4ec52e36b3114",
+      "url": "stage-venue-curtains.js?v=20261011-v0347",
+      "attrs": {
+        "src": "stage-venue-curtains.js?v=20261011-v0347"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-metrics.js",
+      "bytes": 10683,
+      "sha256": "cd80b721c773240f170b3a2b184aec910326eb301b5e8b2bb5d425fe2060c929",
+      "url": "stage-metrics.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-metrics.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-project-file.js",
+      "bytes": 24171,
+      "sha256": "c54c6ecc65cd3034cb7284a7548bc54db112febc4cf6914b77c7b60434a949e8",
+      "url": "stage-project-file.js?v=20261107-v049",
+      "attrs": {
+        "src": "stage-project-file.js?v=20261107-v049"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-welcome.js",
+      "bytes": 19563,
+      "sha256": "f44be54e27fad8a44ce23245bac0c5c21c3945ffe0f9034b693c060a7ca74af0",
+      "url": "stage-welcome.js?v=20261025-v0387",
+      "attrs": {
+        "src": "stage-welcome.js?v=20261025-v0387"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-undo-owner.js",
+      "bytes": 13155,
+      "sha256": "3f0dee4b69d9ad467bfd736a65b4b1a2686a52e3e89e7f8a4a45a39d75c7484d",
+      "url": "gamma-undo-owner.js?v=20261030-v0395",
+      "attrs": {
+        "src": "gamma-undo-owner.js?v=20261030-v0395"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-project-bridge.js",
+      "bytes": 57199,
+      "sha256": "b785b0447f0793ba217f1b1aadc45125e2755e08c163a9c4179095a50cc1aede",
+      "url": "stage-project-bridge.js?v=20261031-v0397",
+      "attrs": {
+        "src": "stage-project-bridge.js?v=20261031-v0397"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-project-library.js",
+      "bytes": 21848,
+      "sha256": "b5c42b12af65e8d2ffccb888b4c35b8bb48e1e46d29cb10cb49cefb956b10039",
+      "url": "stage-project-library.js?v=20261103-v040",
+      "attrs": {
+        "src": "stage-project-library.js?v=20261103-v040"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-element-refs.js",
+      "bytes": 50344,
+      "sha256": "2743012f0f394bf8cd80bedd837b3b5a20f667fb3312deed6310e3ca7e4e72bf",
+      "url": "stage-element-refs.js?v=20261104-v043",
+      "attrs": {
+        "src": "stage-element-refs.js?v=20261104-v043"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-sketch.js",
+      "bytes": 2710342,
+      "sha256": "6ecbd6e1309987e6aec8b34b01ae0d0701bf7fec25c1e7b72220a7480130d0ee",
+      "url": "stage-sketch.js?v=20261108-v0410",
+      "attrs": {
+        "src": "stage-sketch.js?v=20261108-v0410"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-scene-alternatives-ui.js",
+      "bytes": 8523,
+      "sha256": "e3e84509bfbff97fb6d43ae01ec26f5ace3a267cc0a65e708226905015aee613",
+      "url": "stage-scene-alternatives-ui.js?v=20261009-v0337",
+      "attrs": {
+        "src": "stage-scene-alternatives-ui.js?v=20261009-v0337"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-formation.js",
+      "bytes": 4444,
+      "sha256": "81d4f9fd1fb2a033688eab0938f2c5c1715f1e36f4b7a957f4b0759ad0d47d85",
+      "url": "gamma-formation.js?v=20261105-v045",
+      "attrs": {
+        "src": "gamma-formation.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-vox-panel.js",
+      "bytes": 32616,
+      "sha256": "e027ab58d551a8d7fa9769fb8f5f8c7eb7d962521dbec52e7492d75317e6aedf",
+      "url": "stage-vox-panel.js?v=20261005-v030",
+      "attrs": {
+        "src": "stage-vox-panel.js?v=20261005-v030"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-script-editor.js",
+      "bytes": 58496,
+      "sha256": "2d86c3778961564d6d3c7be4616e247d4374b8767bd421649e154009a026b69f",
+      "url": "stage-script-editor.js?v=20261025-v0386",
+      "attrs": {
+        "src": "stage-script-editor.js?v=20261025-v0386"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-light-schedule.js",
+      "bytes": 4616,
+      "sha256": "f74c13c75db31e3ddcc31b4efecb0b897d11e69717e11cd068c856e00a238918",
+      "url": "stage-light-schedule.js?v=20261013-v0359",
+      "attrs": {
+        "src": "stage-light-schedule.js?v=20261013-v0359"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-timeline.js",
+      "bytes": 303628,
+      "sha256": "5ca252627881c0a7e4926e061382b3e384709642d72dd26eb55e60b6a8b9a5da",
+      "url": "stage-timeline.js?v=20261104-v044",
+      "attrs": {
+        "src": "stage-timeline.js?v=20261104-v044"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-session.js",
+      "bytes": 60741,
+      "sha256": "302a4ad3d6e2785a0e82e61d62e6524d606ac27215f6272ed3381fbcde717a01",
+      "url": "stage-session.js?v=20261029-v0393",
+      "attrs": {
+        "src": "stage-session.js?v=20261029-v0393"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-study-owner.js",
+      "bytes": 43383,
+      "sha256": "7bcf21b99d6f229237e010fca4bb16d8cc903fc4ddd454205587f17c16309bda",
+      "url": "stage-study-owner.js?v=20261027-v0390",
+      "attrs": {
+        "src": "stage-study-owner.js?v=20261027-v0390"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-usage.js",
+      "bytes": 7565,
+      "sha256": "a0aafe021cec0ee6bafa1fbdef764a499dd044ea45a747147a9b621c026f7566",
+      "url": "stage-usage.js?v=20261015-v0368",
+      "attrs": {
+        "src": "stage-usage.js?v=20261015-v0368"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-underlay.js",
+      "bytes": 24545,
+      "sha256": "102d21a0b717f5fed59239b7affd29f405a1a655cc82c1bcf3afebb0f4e9e43c",
+      "url": "stage-venue-underlay.js?v=20261006-v0312",
+      "attrs": {
+        "src": "stage-venue-underlay.js?v=20261006-v0312"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-editor.js",
+      "bytes": 361657,
+      "sha256": "a602e4ee849c06542ddcbe985d91f376b80282e24db0c0f25b23e150ab3026cd",
+      "url": "stage-venue-editor.js?v=20261107-v048",
+      "attrs": {
+        "src": "stage-venue-editor.js?v=20261107-v048"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run.css",
+      "bytes": 32911,
+      "sha256": "85019f1272b383fc49fd79aa11bfb317b5accff152f06dd312920222fc5ec250",
+      "url": "stage-field-run.css?v=20261025-v0386",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "stage-field-run.css?v=20261025-v0386"
+      },
+      "kind": "css"
+    },
+    {
+      "path": "stage-field-run-model.js",
+      "bytes": 11334,
+      "sha256": "6c179423a2ea10fb31cad35b27628d2af69c3cc46a0f804623f307ae5e87721e",
+      "url": "stage-field-run-model.js?v=20261016-v0373",
+      "attrs": {
+        "src": "stage-field-run-model.js?v=20261016-v0373"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run-store.js",
+      "bytes": 9236,
+      "sha256": "31485f3dc648e8245c738c55b20b3dea945ecd44e9b0d6e588d428eb1e13f1fc",
+      "url": "stage-field-run-store.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-field-run-store.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run-package.js",
+      "bytes": 6739,
+      "sha256": "0457a8a444e7f50a2c456bf3a3adb910bf776c8d69d0b63853ab858a800e58f2",
+      "url": "stage-field-run-package.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-field-run-package.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run-transport.js",
+      "bytes": 3964,
+      "sha256": "8f7b840b011a179edade09c2cdf88efd37841c2375c80ba75b9c14880b457bfa",
+      "url": "stage-field-run-transport.js?v=20261016-v0372",
+      "attrs": {
+        "src": "stage-field-run-transport.js?v=20261016-v0372"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run-checkpoint.js",
+      "bytes": 10456,
+      "sha256": "cad919e5c481d57bfcff682ae12f84cb6382ad3695ec9963c7e33587d1a01b0e",
+      "url": "stage-field-run-checkpoint.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-field-run-checkpoint.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-field-run-console.js",
+      "bytes": 76605,
+      "sha256": "a56dcfac6f267cfe739d072f8ade226e32501abe4545e6ed1d036ede7fc4b086",
+      "url": "stage-field-run-console.js?v=20261108-v0410",
+      "attrs": {
+        "src": "stage-field-run-console.js?v=20261108-v0410"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-run-of-show-pane.js",
+      "bytes": 5000,
+      "sha256": "a1b868086676a332b87fbdb7862e510d06ac31919548dbfee8df3668d94d01f3",
+      "url": "stage-run-of-show-pane.js?v=20261105-v045",
+      "attrs": {
+        "src": "stage-run-of-show-pane.js?v=20261105-v045"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-workspace.js",
+      "bytes": 99904,
+      "sha256": "df4629194c56bc41f31f04477251500c62a75067d3f1ce24ee4fd3c226605adc",
+      "url": "gamma-workspace.js?v=20261107-v049",
+      "attrs": {
+        "src": "gamma-workspace.js?v=20261107-v049"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-feature-search.js",
+      "bytes": 40632,
+      "sha256": "54122200c16e18971cfecd6bf84c3c44e43d9ea4e4174094b40c42356632523b",
+      "url": "gamma-feature-search.js?v=20261030-v0395",
+      "attrs": {
+        "src": "gamma-feature-search.js?v=20261030-v0395"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-mobile.js",
+      "bytes": 49289,
+      "sha256": "03ccf6f2425858fcd099f424a6aa9df9e72937f23bb91683f14814f7098968a5",
+      "url": "gamma-mobile.js?v=20261030-v0395",
+      "attrs": {
+        "src": "gamma-mobile.js?v=20261030-v0395"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-preview.js",
+      "bytes": 27071,
+      "sha256": "04bbe91addb395c0576437487c2d41de6f08302fae63b662eea108d9c71eda47",
+      "url": "stage-venue-preview.js?v=20261015-v0368",
+      "attrs": {
+        "src": "stage-venue-preview.js?v=20261015-v0368"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-venue-viewpoints.js",
+      "bytes": 18474,
+      "sha256": "4350f0fabb6614170cacc0f06497411b7173d4cc1500264746d82b3c16a09461",
+      "url": "stage-venue-viewpoints.js?v=20261012-v0357",
+      "attrs": {
+        "src": "stage-venue-viewpoints.js?v=20261012-v0357"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "run-of-show/timing.js",
+      "bytes": 4192,
+      "sha256": "8907a81d946ce116fc0fcc74d9b3a9155b975d4d0fcf5773e5f5622a214ad059",
+      "url": "run-of-show/timing.js?v=20261010-v0338",
+      "attrs": {
+        "src": "run-of-show/timing.js?v=20261010-v0338"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-show-overview.js",
+      "bytes": 10724,
+      "sha256": "4161bf82d0b1dea5146bba402e2a6f2b44a7cdce7ef88d64d9c688bcada39d90",
+      "url": "stage-show-overview.js?v=20261101-v0398",
+      "attrs": {
+        "src": "stage-show-overview.js?v=20261101-v0398"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-web-analytics.js",
+      "bytes": 1399,
+      "sha256": "d55eab3b52d022cf9dd8696c6b25d6776fc152927c659265b1318b9db6c7fb28",
+      "url": "stage-web-analytics.js?v=20261020-v0380",
+      "attrs": {
+        "src": "stage-web-analytics.js?v=20261020-v0380"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-header-fit.js",
+      "bytes": 1188,
+      "sha256": "5756dc68dc6caed591ca7131e638ef67c9c5423705aeb6216a4808a9a074645e",
+      "url": "gamma-header-fit.js?v=20261015-v0368",
+      "attrs": {
+        "src": "gamma-header-fit.js?v=20261015-v0368"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "gamma-appearance.js",
+      "bytes": 9858,
+      "sha256": "908722cf473b97579210fb7fbb6734f93cb5820a42ec9c2055b27e69086f30d4",
+      "url": "gamma-appearance.js?v=20261031-v0396",
+      "attrs": {
+        "src": "gamma-appearance.js?v=20261031-v0396"
+      },
+      "kind": "js"
+    }
+  ],
+  "preservedEntries": [
+    {
+      "path": "company.html",
+      "bytes": 339233,
+      "sha256": "cfd14767ac24edb7c10b89f1ed4c6ae2456e25f9d44cf614c1ce48ee1a8cf997"
+    },
+    {
+      "path": "run.html",
+      "bytes": 333163,
+      "sha256": "dcaeac0251d2bc1209851a9cdfc1db9b1638fee9763f9a989040eb6523ed175a"
+    },
+    {
+      "path": "field-frame.html",
+      "bytes": 330372,
+      "sha256": "2a2f1e349d00db71185f5ed3e6f07576f7127c25a7db94a00f17dcd5a1b5379d"
+    },
+    {
+      "path": "study-frame.html",
+      "bytes": 327246,
+      "sha256": "62774864a74dcc44a0a953109a0702e7481cd8d7777e0b178462d878fe03b3db"
+    }
+  ],
+  "source": [
+    {
+      "path": "stage.html",
+      "bytes": 339098,
+      "sha256": "22aaf6d745271a43e640f26406e483a30c516fcff4d9acb71f98d85f3050305a"
+    },
+    {
+      "path": "stage-sw.js",
+      "bytes": 30633,
+      "sha256": "fefd889d375aea55d08222a33dcf0dfb8ca2c6d6107d136005da101b8bfea116"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "stage-bundle-head-runtime.f6da2a15b6cf42cc91f37a3b497269ea8b6df8a15380a3fa6ee69c4163ca8c36.js",
+      "bytes": 13216,
+      "sha256": "f6da2a15b6cf42cc91f37a3b497269ea8b6df8a15380a3fa6ee69c4163ca8c36",
+      "kind": "js",
+      "group": "head-runtime",
+      "strict": false,
+      "members": [
+        "stage-runtime.js"
+      ],
+      "map": {
+        "path": "stage-bundle-head-runtime.0230db2e452c8c1cfc6ad5471b7141a6d361820a5cbc6a901dedc0dc966f1321.js.map",
+        "bytes": 29446,
+        "sha256": "0230db2e452c8c1cfc6ad5471b7141a6d361820a5cbc6a901dedc0dc966f1321",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js",
+      "bytes": 20912,
+      "sha256": "42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b",
+      "kind": "js",
+      "group": "head-edition",
+      "strict": false,
+      "members": [
+        "gamma-editions.js"
+      ],
+      "map": {
+        "path": "stage-bundle-head-edition.2a89502ca127053f9aebd19b5d31a4ac922fa3a011c134d3f371064ab965d1a5.js.map",
+        "bytes": 58551,
+        "sha256": "2a89502ca127053f9aebd19b5d31a4ac922fa3a011c134d3f371064ab965d1a5",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js",
+      "bytes": 26500,
+      "sha256": "683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c",
+      "kind": "js",
+      "group": "head-light",
+      "strict": false,
+      "members": [
+        "gamma-light-model.js"
+      ],
+      "map": {
+        "path": "stage-bundle-head-light.8420474fa66b28d732e802af751b453a940bcd0130e09e501bb95d5de41ea136.js.map",
+        "bytes": 76848,
+        "sha256": "8420474fa66b28d732e802af751b453a940bcd0130e09e501bb95d5de41ea136",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-before-manual.4861b5dc697c820e26a20d89ac3419fe86afa92908574c60c7bba8c2b8ef1e52.js",
+      "bytes": 209218,
+      "sha256": "4861b5dc697c820e26a20d89ac3419fe86afa92908574c60c7bba8c2b8ef1e52",
+      "kind": "js",
+      "group": "body-before-manual",
+      "strict": false,
+      "members": [
+        "stage-venues.js",
+        "stage-venue-lines.js",
+        "stage-front-shape.js",
+        "stage-venue-report.js",
+        "stage-samples/index.js",
+        "stage-samples/catalog.js",
+        "stage-set-model.js",
+        "stage-set-builder.js",
+        "stage-machinery.js",
+        "stage-virtual-room.js",
+        "stage-scrim.js",
+        "gamma-render-resolution.js",
+        "stage-first-person-loader.js",
+        "stage-fixture-body.js",
+        "stage-audio-store.js",
+        "stage-large-project-store.js",
+        "stage-project-backup-store.js",
+        "stage-storage-codec.js",
+        "stage-storage-recovery.js",
+        "stage-storage-hygiene.js",
+        "stage-storage-pressure.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-before-manual.b063b615f6f280af91abde53a3bfef375683f8972fd44d3270826788b4c01e66.js.map",
+        "bytes": 700204,
+        "sha256": "b063b615f6f280af91abde53a3bfef375683f8972fd44d3270826788b4c01e66",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-manual-meta.e53f7c970531d49c9a5551e9c569151c41f87397d1823911ce496d9d9993aaba.js",
+      "bytes": 234,
+      "sha256": "e53f7c970531d49c9a5551e9c569151c41f87397d1823911ce496d9d9993aaba",
+      "kind": "js",
+      "group": "manual-meta",
+      "strict": false,
+      "members": [
+        "manual-gamma/manual-meta.js"
+      ],
+      "map": {
+        "path": "stage-bundle-manual-meta.4684758db7251f439ccde815893890f5d99d30bb547b55b28c22f3513210d81f.js.map",
+        "bytes": 735,
+        "sha256": "4684758db7251f439ccde815893890f5d99d30bb547b55b28c22f3513210d81f",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-before-language-1.23fbb23f99e13a70e8e2146e64b903136f25724efcd27edd7bb1b7a2f2f709c7.js",
+      "bytes": 510768,
+      "sha256": "23fbb23f99e13a70e8e2146e64b903136f25724efcd27edd7bb1b7a2f2f709c7",
+      "kind": "js",
+      "group": "body-before-language-1",
+      "strict": false,
+      "members": [
+        "stage-pwa.js",
+        "stage-lighting-plans.js",
+        "stage-lighting-plan-overlay.js",
+        "light-design/rig-engine.js",
+        "light-design/laser-effects.js",
+        "stage-light-eval.js",
+        "stage-light-receiver.js",
+        "stage-light-render.js",
+        "gamma-light-cue-overlay.js",
+        "gamma-range-fields.js",
+        "gamma-number-scrub.js",
+        "gamma-formation-presets.js",
+        "gamma-formation-model.js",
+        "stage-data-safety.js",
+        "stage-time-domain.js",
+        "stage-timecode.js",
+        "stage-cue-sheet.js",
+        "docs/light-panel-migration-2026-09-13/light-panel-migration.js",
+        "stage-light-panel-import.js",
+        "stage-scene-alternatives.js",
+        "stage-music-cues.js",
+        "stage-shortcuts.js",
+        "stage-reorder-motion.js",
+        "stage-jog-reference.js",
+        "stage-performer-motion.js",
+        "stage-idle-motion.js",
+        "stage-performer-contour.js",
+        "stage-performer-body.js",
+        "gamma-ui.js",
+        "stage-point-source.js",
+        "stage-save-lifecycle.js",
+        "light-design/simple-lighting-model.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-before-language-1.6a5c0a420ff6db8df9e9e3e51094f1e94f6db1a9a5236fac5d6904067535d580.js.map",
+        "bytes": 1665206,
+        "sha256": "6a5c0a420ff6db8df9e9e3e51094f1e94f6db1a9a5236fac5d6904067535d580",
+        "included": true
+      },
+      "topNames": [
+        "createGammaPanelStack",
+        "createGammaPanels"
+      ]
+    },
+    {
+      "path": "stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js",
+      "bytes": 19466,
+      "sha256": "7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0",
+      "kind": "js",
+      "group": "body-before-language-2",
+      "strict": true,
+      "members": [
+        "stage-run-of-show-distribution.js",
+        "stage-run-of-show-files.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-before-language-2.8b4477762163115cc2d4198cc89e56bab724e7a56f143782c7f53ab8afbb558a.js.map",
+        "bytes": 49154,
+        "sha256": "8b4477762163115cc2d4198cc89e56bab724e7a56f143782c7f53ab8afbb558a",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js",
+      "bytes": 171996,
+      "sha256": "25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5",
+      "kind": "js",
+      "group": "body-before-language-3",
+      "strict": false,
+      "members": [
+        "stage-run-of-show-model.js",
+        "stage-pose-data.js",
+        "stage-prop-shapes.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-before-language-3.19f6ee169e0c163aa161dae2083a91b34cfd56bf472e31e86f5f51400de8d081.js.map",
+        "bytes": 591848,
+        "sha256": "19f6ee169e0c163aa161dae2083a91b34cfd56bf472e31e86f5f51400de8d081",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-language-loader.89048f676761b564845403aa39152d398d71f79d07eed3bfb677635c4dacb922.js",
+      "bytes": 2867,
+      "sha256": "89048f676761b564845403aa39152d398d71f79d07eed3bfb677635c4dacb922",
+      "kind": "js",
+      "group": "language-loader",
+      "strict": false,
+      "members": [
+        "stage-language-loader.js"
+      ],
+      "map": {
+        "path": "stage-bundle-language-loader.21723abd140b6d3e51c7ff60254f03865d9485d4695e266b79c94c0a3d59fa14.js.map",
+        "bytes": 8806,
+        "sha256": "21723abd140b6d3e51c7ff60254f03865d9485d4695e266b79c94c0a3d59fa14",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-after-language.8ab9f4dc1212206fc0e99379ebce360c06e34b784b958a156c6d2afde4628435.js",
+      "bytes": 1872829,
+      "sha256": "8ab9f4dc1212206fc0e99379ebce360c06e34b784b958a156c6d2afde4628435",
+      "kind": "js",
+      "group": "body-after-language",
+      "strict": false,
+      "members": [
+        "stage-reorder-warning.js",
+        "stage-venue-curtains.js",
+        "stage-metrics.js",
+        "stage-project-file.js",
+        "stage-welcome.js",
+        "gamma-undo-owner.js",
+        "stage-project-bridge.js",
+        "stage-project-library.js",
+        "stage-element-refs.js",
+        "stage-sketch.js",
+        "stage-scene-alternatives-ui.js",
+        "gamma-formation.js",
+        "stage-vox-panel.js",
+        "stage-script-editor.js",
+        "stage-light-schedule.js",
+        "stage-timeline.js",
+        "stage-session.js",
+        "stage-study-owner.js",
+        "stage-usage.js",
+        "stage-venue-underlay.js",
+        "stage-venue-editor.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-after-language.2887a2733b935c8217efb7cec4071c429610eadee907e00df363807beb8fc6bd.js.map",
+        "bytes": 6459098,
+        "sha256": "2887a2733b935c8217efb7cec4071c429610eadee907e00df363807beb8fc6bd",
+        "included": true
+      },
+      "topNames": [
+        "STAGE_LAYOUT_LANES_MODEL"
+      ]
+    },
+    {
+      "path": "stage-bundle-body-after-field-css-1.c5f4607b96964981c44f724d89b3520ad995550042ac0cd47ca16d34818e212c.js",
+      "bytes": 216989,
+      "sha256": "c5f4607b96964981c44f724d89b3520ad995550042ac0cd47ca16d34818e212c",
+      "kind": "js",
+      "group": "body-after-field-css-1",
+      "strict": false,
+      "members": [
+        "stage-field-run-model.js",
+        "stage-field-run-store.js",
+        "stage-field-run-package.js",
+        "stage-field-run-transport.js",
+        "stage-field-run-checkpoint.js",
+        "stage-field-run-console.js",
+        "stage-run-of-show-pane.js",
+        "gamma-workspace.js",
+        "gamma-feature-search.js",
+        "gamma-mobile.js",
+        "stage-venue-preview.js",
+        "stage-venue-viewpoints.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-after-field-css-1.7da42e968fa5d38dfe4fe681925562549a0ddaf7d9f5bd7f7bd005486078b2e8.js.map",
+        "bytes": 631183,
+        "sha256": "7da42e968fa5d38dfe4fe681925562549a0ddaf7d9f5bd7f7bd005486078b2e8",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js",
+      "bytes": 2680,
+      "sha256": "bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0",
+      "kind": "js",
+      "group": "body-after-field-css-2",
+      "strict": true,
+      "members": [
+        "run-of-show/timing.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-after-field-css-2.f39f29ca8e108adc29a828980071196a9117fe4898df753d7e04d25861eb0b6e.js.map",
+        "bytes": 8614,
+        "sha256": "f39f29ca8e108adc29a828980071196a9117fe4898df753d7e04d25861eb0b6e",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-body-after-field-css-3.237820159ac608c638e5bb3e8bf4f4042e26bef68eceaf4771c94ff717e16ac1.js",
+      "bytes": 15971,
+      "sha256": "237820159ac608c638e5bb3e8bf4f4042e26bef68eceaf4771c94ff717e16ac1",
+      "kind": "js",
+      "group": "body-after-field-css-3",
+      "strict": false,
+      "members": [
+        "stage-show-overview.js",
+        "stage-web-analytics.js",
+        "gamma-header-fit.js",
+        "gamma-appearance.js"
+      ],
+      "map": {
+        "path": "stage-bundle-body-after-field-css-3.574891160c5be14d7995bf90ce9bc19a13066d750eb66499421cfbf98ef91da7.js.map",
+        "bytes": 41903,
+        "sha256": "574891160c5be14d7995bf90ce9bc19a13066d750eb66499421cfbf98ef91da7",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-base.168d63e431506821de3de5ff59c372ce0bd26b0d4441da7211aa9d4e423e7d12.css",
+      "bytes": 381386,
+      "sha256": "168d63e431506821de3de5ff59c372ce0bd26b0d4441da7211aa9d4e423e7d12",
+      "kind": "css",
+      "group": "base",
+      "strict": false,
+      "members": [
+        "style.css"
+      ],
+      "map": {
+        "path": "stage-bundle-base.d1dc8756700acb824133fa5f7b710df84b6990df26932069a9b9c36d0ed30a93.css.map",
+        "bytes": 862042,
+        "sha256": "d1dc8756700acb824133fa5f7b710df84b6990df26932069a9b9c36d0ed30a93",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-head-before-light.c0a20831b1d2b6fd476d4ead4cb519011aa73495bf8a495bf405fa9265e282c0.css",
+      "bytes": 182690,
+      "sha256": "c0a20831b1d2b6fd476d4ead4cb519011aa73495bf8a495bf405fa9265e282c0",
+      "kind": "css",
+      "group": "head-before-light",
+      "strict": false,
+      "members": [
+        "gamma-ui-tokens.css",
+        "gamma.css",
+        "stage-welcome.css",
+        "gamma-mobile.css"
+      ],
+      "map": {
+        "path": "stage-bundle-head-before-light.418ab67a3e1dd879e6cf4c1ef3512c0884745293f88f9cc70b28fbf792b1bb48.css.map",
+        "bytes": 394259,
+        "sha256": "418ab67a3e1dd879e6cf4c1ef3512c0884745293f88f9cc70b28fbf792b1bb48",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-head-after-light.a15f7628cc33c85eb264493ac410afee03f123bcda7c0891afd96592915579f8.css",
+      "bytes": 59662,
+      "sha256": "a15f7628cc33c85eb264493ac410afee03f123bcda7c0891afd96592915579f8",
+      "kind": "css",
+      "group": "head-after-light",
+      "strict": false,
+      "members": [
+        "gamma-formation.css",
+        "stage-scene-alternatives.css",
+        "stage-vox-panel.css",
+        "stage-panel-columns.css",
+        "stage-panel-bottom.css",
+        "stage-script-editor.css",
+        "stage-venue-preview.css",
+        "stage-venue-viewpoints.css",
+        "stage-run-of-show.css",
+        "stage-timecode.css",
+        "stage-show-overview.css"
+      ],
+      "map": {
+        "path": "stage-bundle-head-after-light.63229544f0ea41b5fe0a008d8c9324e9135b3257c16ebae80bee461c19885d30.css.map",
+        "bytes": 122380,
+        "sha256": "63229544f0ea41b5fe0a008d8c9324e9135b3257c16ebae80bee461c19885d30",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css",
+      "bytes": 31201,
+      "sha256": "abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d",
+      "kind": "css",
+      "group": "field",
+      "strict": false,
+      "members": [
+        "stage-field-run.css"
+      ],
+      "map": {
+        "path": "stage-bundle-field.c2f8bf68117ee23ea89bd10368e5a5ad5eb0014df5c013d23f46249d3a667d59.css.map",
+        "bytes": 57961,
+        "sha256": "c2f8bf68117ee23ea89bd10368e5a5ad5eb0014df5c013d23f46249d3a667d59",
+        "included": true
+      },
+      "topNames": []
+    }
+  ],
+  "replacements": [
+    {
+      "before": "<script src=\"stage-runtime.js?v=20261104-v043\"></script>",
+      "after": "<script src=\"stage-bundle-head-runtime.f6da2a15b6cf42cc91f37a3b497269ea8b6df8a15380a3fa6ee69c4163ca8c36.js\"></script>"
+    },
+    {
+      "before": "<script src=\"gamma-editions.js?v=20261029-v0394\"></script>",
+      "after": "<script src=\"stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js\"></script>"
+    },
+    {
+      "before": "<script src=\"gamma-light-model.js?v=20261107-v049\"></script>",
+      "after": "<script src=\"stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-venues.js?v=20261104-v042\"></script>\n<script src=\"stage-venue-lines.js?v=2026091992\"></script>\n<script src=\"stage-front-shape.js?v=2026092046\"></script>\n<script src=\"stage-venue-report.js?v=2026092047\"></script>\n<script src=\"stage-samples/index.js?v=20261013-v0360\"></script>\n<script src=\"stage-samples/catalog.js?v=20261107-v049\"></script>\n<script src=\"stage-set-model.js?v=2026092354\"></script>\n<script src=\"stage-set-builder.js?v=20261009-v0337\"></script>\n<script src=\"stage-machinery.js?v=20261012-v0358\"></script>\n<script src=\"stage-virtual-room.js?v=20261009-v0337\"></script>\n<script src=\"stage-scrim.js?v=20261009-v0335\"></script>\n<script src=\"gamma-render-resolution.js?v=20261006-v0318\"></script>\n<script src=\"stage-first-person-loader.js?v=20261015-v0368\"></script>\n<script src=\"stage-fixture-body.js?v=20261031-v0396\"></script>\n<script src=\"stage-audio-store.js?v=20261031-v0397\"></script>\n<script src=\"stage-large-project-store.js?v=20261022-v0383\"></script>\n<script src=\"stage-project-backup-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-storage-codec.js?v=2026092523\"></script>\n<script src=\"stage-storage-recovery.js?v=20261020-v0382\"></script>\n<script src=\"stage-storage-hygiene.js?v=20261014-v0365\"></script>\n<script src=\"stage-storage-pressure.js?v=20260926-large39\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-manual.4861b5dc697c820e26a20d89ac3419fe86afa92908574c60c7bba8c2b8ef1e52.js\"></script>"
+    },
+    {
+      "before": "<script src=\"manual-gamma/manual-meta.js?v=20261108-v0410\" data-manual-content=\"manual-gamma/manual-content.js?v=20261108-v0410\"></script>",
+      "after": "<script src=\"stage-bundle-manual-meta.e53f7c970531d49c9a5551e9c569151c41f87397d1823911ce496d9d9993aaba.js\" data-manual-content=\"manual-gamma/manual-content.js?v=20261108-v0410\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-pwa.js?v=20261020-v0380\"></script>\n<script src=\"stage-lighting-plans.js?v=20261005-beam99\"></script>\n<script src=\"stage-lighting-plan-overlay.js?v=20261005-batch98\"></script>\n<script src=\"light-design/rig-engine.js?v=20261105-v045\"></script>\n<script src=\"light-design/laser-effects.js?v=20261005-batch98\"></script>\n<script src=\"stage-light-eval.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-receiver.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-render.js?v=20261105-v045\"></script>\n<script src=\"gamma-light-cue-overlay.js?v=20261105-v045\"></script>\n<script src=\"gamma-range-fields.js?v=20261014-v0361\"></script>\n<script src=\"gamma-number-scrub.js?v=2026091780\"></script>\n<script src=\"gamma-formation-presets.js?v=20261026-v0388\"></script>\n<script src=\"gamma-formation-model.js?v=20261026-v0388\"></script>\n<script src=\"stage-data-safety.js?v=20261001-release69\"></script>\n<script src=\"stage-time-domain.js?v=20261013-v0359\"></script>\n<script src=\"stage-timecode.js?v=20261015-v0371\"></script>\n<script src=\"stage-cue-sheet.js?v=20261105-v046\"></script>\n<script src=\"docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113\"></script>\n<script src=\"stage-light-panel-import.js?v=2026092209\"></script>\n<script src=\"stage-scene-alternatives.js?v=20261031-v0396\"></script>\n<script src=\"stage-music-cues.js?v=20261015-v0371\"></script>\n<script src=\"stage-shortcuts.js?v=20261031-v0396\"></script>\n<!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->\n<script src=\"stage-reorder-motion.js?v=2026092420\"></script>\n<script src=\"stage-jog-reference.js?v=2026093003\"></script>\n<script src=\"stage-performer-motion.js?v=20261011-v0347\"></script>\n<script src=\"stage-idle-motion.js?v=20261014-v0362\"></script>\n<script src=\"stage-performer-contour.js?v=20261006-v0318\"></script>\n<script src=\"stage-performer-body.js?v=20261104-v043\"></script>\n<script src=\"gamma-ui.js?v=20261104-v044\"></script>\n<script src=\"stage-point-source.js?v=20260927-point43\"></script>\n<script src=\"stage-save-lifecycle.js?v=20260927-guard45\"></script>\n<script src=\"light-design/simple-lighting-model.js?v=20261105-v045\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-language-1.23fbb23f99e13a70e8e2146e64b903136f25724efcd27edd7bb1b7a2f2f709c7.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-run-of-show-distribution.js?v=20261012-v0358\"></script>\n<script src=\"stage-run-of-show-files.js?v=20261012-v0358\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-run-of-show-model.js?v=20261006-v0312\"></script>\n<script src=\"stage-pose-data.js?v=20261013-v0360\"></script>\n<script src=\"stage-prop-shapes.js?v=20261009-v0333\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-language-loader.js?v=20261108-v0410\"></script>",
+      "after": "<script src=\"stage-bundle-language-loader.89048f676761b564845403aa39152d398d71f79d07eed3bfb677635c4dacb922.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-reorder-warning.js?v=20261009-v0335\"></script>\n<script src=\"stage-venue-curtains.js?v=20261011-v0347\"></script>\n<script src=\"stage-metrics.js?v=20261020-v0380\"></script>\n<script src=\"stage-project-file.js?v=20261107-v049\"></script>\n<script src=\"stage-welcome.js?v=20261025-v0387\"></script>\n<script src=\"gamma-undo-owner.js?v=20261030-v0395\"></script>\n<script src=\"stage-project-bridge.js?v=20261031-v0397\"></script>\n<script src=\"stage-project-library.js?v=20261103-v040\"></script>\n<script src=\"stage-element-refs.js?v=20261104-v043\"></script>\n<script src=\"stage-sketch.js?v=20261108-v0410\"></script>\n<script src=\"stage-scene-alternatives-ui.js?v=20261009-v0337\"></script>\n<script src=\"gamma-formation.js?v=20261105-v045\"></script>\n<script src=\"stage-vox-panel.js?v=20261005-v030\"></script>\n<script src=\"stage-script-editor.js?v=20261025-v0386\"></script>\n    <script src=\"stage-light-schedule.js?v=20261013-v0359\"></script>\n    <script src=\"stage-timeline.js?v=20261104-v044\"></script>\n<script src=\"stage-session.js?v=20261029-v0393\"></script>\n<script src=\"stage-study-owner.js?v=20261027-v0390\"></script>\n<script src=\"stage-usage.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-underlay.js?v=20261006-v0312\"></script>\n<script src=\"stage-venue-editor.js?v=20261107-v048\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-language.8ab9f4dc1212206fc0e99379ebce360c06e34b784b958a156c6d2afde4628435.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-field-run-model.js?v=20261016-v0373\"></script>\n<script src=\"stage-field-run-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-package.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-transport.js?v=20261016-v0372\"></script>\n<script src=\"stage-field-run-checkpoint.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-console.js?v=20261108-v0410\"></script>\n<script src=\"stage-run-of-show-pane.js?v=20261105-v045\"></script>\n<script src=\"gamma-workspace.js?v=20261107-v049\"></script>\n<script src=\"gamma-feature-search.js?v=20261030-v0395\"></script>\n<script src=\"gamma-mobile.js?v=20261030-v0395\"></script>\n<script src=\"stage-venue-preview.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-viewpoints.js?v=20261012-v0357\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-field-css-1.c5f4607b96964981c44f724d89b3520ad995550042ac0cd47ca16d34818e212c.js\"></script>"
+    },
+    {
+      "before": "<script src=\"run-of-show/timing.js?v=20261010-v0338\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-show-overview.js?v=20261101-v0398\"></script>\n<!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->\n<script src=\"stage-web-analytics.js?v=20261020-v0380\"></script>\n<script src=\"gamma-header-fit.js?v=20261015-v0368\"></script>\n<script src=\"gamma-appearance.js?v=20261031-v0396\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-field-css-3.237820159ac608c638e5bb3e8bf4f4042e26bef68eceaf4771c94ff717e16ac1.js\"></script>"
+    },
+    {
+      "before": "<link rel=\"stylesheet\" href=\"style.css?v=20261103-v040\">",
+      "after": "<link rel=\"stylesheet\" href=\"stage-bundle-base.168d63e431506821de3de5ff59c372ce0bd26b0d4441da7211aa9d4e423e7d12.css\">"
+    },
+    {
+      "before": "<link rel=\"stylesheet\" href=\"gamma-ui-tokens.css?v=20261105-v045\">\n<link rel=\"stylesheet\" href=\"gamma.css?v=20261107-v048\">\n<link rel=\"stylesheet\" href=\"stage-welcome.css?v=20261016-v0373\">\n<link rel=\"stylesheet\" href=\"gamma-mobile.css?v=20261103-v041\">",
+      "after": "<link rel=\"stylesheet\" href=\"stage-bundle-head-before-light.c0a20831b1d2b6fd476d4ead4cb519011aa73495bf8a495bf405fa9265e282c0.css\">"
+    },
+    {
+      "before": "<link rel=\"stylesheet\" href=\"gamma-formation.css?v=20261015-v0368\">\n<link rel=\"stylesheet\" href=\"stage-scene-alternatives.css?v=20261031-v0396\">\n<link rel=\"stylesheet\" href=\"stage-vox-panel.css?v=20261015-v0368\">\n<link rel=\"stylesheet\" href=\"stage-panel-columns.css?v=20261001-release71\">\n<link rel=\"stylesheet\" href=\"stage-panel-bottom.css?v=20261013-v0360\">\n<link rel=\"stylesheet\" href=\"stage-script-editor.css?v=20261017-v0376\">\n<link rel=\"stylesheet\" href=\"stage-venue-preview.css?v=20261104-v044\">\n<link rel=\"stylesheet\" href=\"stage-venue-viewpoints.css?v=20261015-v0368\">\n<link rel=\"stylesheet\" href=\"stage-run-of-show.css?v=20261009-v0337\">\n<link rel=\"stylesheet\" href=\"stage-timecode.css?v=20261015-v0371\">\n<link rel=\"stylesheet\" href=\"stage-show-overview.css?v=20261009-v0337\">",
+      "after": "<link rel=\"stylesheet\" href=\"stage-bundle-head-after-light.a15f7628cc33c85eb264493ac410afee03f123bcda7c0891afd96592915579f8.css\">"
+    },
+    {
+      "before": "<link rel=\"stylesheet\" href=\"stage-field-run.css?v=20261025-v0386\">",
+      "after": "<link rel=\"stylesheet\" href=\"stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css\">"
+    }
+  ],
+  "swCoreBefore": [
+    "./assets/brand/logo-jp-gamma-inline-white.svg",
+    "./company.html",
+    "./docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
+    "./field-frame.html?v=20261108-v0410",
+    "./gamma-appearance.js?v=20261031-v0396",
+    "./gamma-assist-check-core.js",
+    "./gamma-assist-check.css",
+    "./gamma-assist-check.js",
+    "./gamma-assist-ops.js?v=20261031-v0396",
+    "./gamma-assist-ops2.js?v=20261031-v0396",
+    "./gamma-assist.css?v=20261031-v0396",
+    "./gamma-assist.js?v=20261107-v049",
+    "./gamma-editions.js?v=20261029-v0394",
+    "./gamma-feature-search.js?v=20261030-v0395",
+    "./gamma-formation-model.js?v=20261026-v0388",
+    "./gamma-formation-presets.js?v=20261026-v0388",
+    "./gamma-formation.css?v=20261015-v0368",
+    "./gamma-formation.js?v=20261105-v045",
+    "./gamma-header-fit.js?v=20261015-v0368",
+    "./gamma-light-cue-overlay.js?v=20261105-v045",
+    "./gamma-light-model.js?v=20261107-v049",
+    "./gamma-mobile.css?v=20261103-v041",
+    "./gamma-mobile.js?v=20261030-v0395",
+    "./gamma-number-scrub.js?v=2026091780",
+    "./gamma-range-fields.js?v=20261014-v0361",
+    "./gamma-render-resolution.js?v=20261006-v0318",
+    "./gamma-select.css?v=20261012-select-local",
+    "./gamma-ui-i18n.js?v=20261103-v041",
+    "./gamma-ui-tokens.css?v=20261105-v045",
+    "./gamma-ui.js?v=20261104-v044",
+    "./gamma-undo-owner.js?v=20261030-v0395",
+    "./gamma-workspace.js?v=20261107-v049",
+    "./gamma.css?v=20261107-v048",
+    "./icons/stage-sketch-180.png",
+    "./icons/stage-sketch-192.png",
+    "./icons/stage-sketch-512.png",
+    "./light-design/laser-effects.js?v=20261005-batch98",
+    "./light-design/rig-engine.js?v=20261105-v045",
+    "./light-design/simple-lighting-model.js?v=20261105-v045",
+    "./manual-gamma/manual-content.js?v=20261108-v0410",
+    "./manual-gamma/manual-meta.js?v=20261108-v0410",
+    "./run-of-show/timing.js?v=20261010-v0338",
+    "./run.html",
+    "./stage-audio-store.js?v=20261031-v0397",
+    "./stage-cue-sheet.js?v=20261105-v046",
+    "./stage-data-safety.js?v=20261001-release69",
+    "./stage-element-refs.js?v=20261104-v043",
+    "./stage-field-run-checkpoint.js?v=20261020-v0380",
+    "./stage-field-run-console.js?v=20261108-v0410",
+    "./stage-field-run-frame.js?v=20261104-v042",
+    "./stage-field-run-model.js?v=20261016-v0373",
+    "./stage-field-run-package.js?v=20261020-v0380",
+    "./stage-field-run-store.js?v=20261020-v0380",
+    "./stage-field-run-transport.js?v=20261016-v0372",
+    "./stage-field-run.css?v=20261025-v0386",
+    "./stage-file-autosave.js",
+    "./stage-first-person-loader.js?v=20261015-v0368",
+    "./stage-fixture-body.js?v=20261031-v0396",
+    "./stage-front-shape.js?v=2026092046",
+    "./stage-i18n.ja.js?v=20261107-v049",
+    "./stage-i18n.js?v=20261108-v0410",
+    "./stage-idle-motion.js?v=20261014-v0362",
+    "./stage-jog-reference.js?v=2026093003",
+    "./stage-language-loader.js?v=20261108-v0410",
+    "./stage-large-project-store.js?v=20261022-v0383",
+    "./stage-light-eval.js?v=20261004-receiver89",
+    "./stage-light-panel-import.js?v=2026092209",
+    "./stage-light-receiver.js?v=20261004-receiver89",
+    "./stage-light-render.js?v=20261105-v045",
+    "./stage-light-schedule.js?v=20261013-v0359",
+    "./stage-lighting-plan-overlay.js?v=20261005-batch98",
+    "./stage-lighting-plans.js?v=20261005-beam99",
+    "./stage-machinery.js?v=20261012-v0358",
+    "./stage-metrics.js?v=20261020-v0380",
+    "./stage-music-cues.js?v=20261015-v0371",
+    "./stage-panel-bottom.css?v=20261013-v0360",
+    "./stage-panel-columns.css?v=20261001-release71",
+    "./stage-performer-body.js?v=20261104-v043",
+    "./stage-performer-contour.js?v=20261006-v0318",
+    "./stage-performer-motion.js?v=20261011-v0347",
+    "./stage-point-source.js?v=20260927-point43",
+    "./stage-pose-data.js?v=20261013-v0360",
+    "./stage-project-backup-store.js?v=20261020-v0380",
+    "./stage-project-bridge.js?v=20261031-v0397",
+    "./stage-project-file.js?v=20261107-v049",
+    "./stage-project-library.js?v=20261103-v040",
+    "./stage-prompt-i18n.js?v=20261013-v0360",
+    "./stage-prop-shapes.js?v=20261009-v0333",
+    "./stage-pwa.js?v=20261020-v0380",
+    "./stage-rehearsal-export.js?v=2026091501",
+    "./stage-reorder-motion.js?v=2026092420",
+    "./stage-reorder-warning.js?v=20261009-v0335",
+    "./stage-run-of-show-distribution.js?v=20261012-v0358",
+    "./stage-run-of-show-files.js?v=20261012-v0358",
+    "./stage-run-of-show-model.js?v=20261006-v0312",
+    "./stage-run-of-show-pane.js?v=20261105-v045",
+    "./stage-run-of-show.css?v=20261009-v0337",
+    "./stage-runtime.js?v=20261104-v043",
+    "./stage-samples/catalog.js?v=20261107-v049",
+    "./stage-samples/index.js?v=20261013-v0360",
+    "./stage-save-lifecycle.js?v=20260927-guard45",
+    "./stage-scene-alternatives-ui.js?v=20261009-v0337",
+    "./stage-scene-alternatives.css?v=20261031-v0396",
+    "./stage-scene-alternatives.js?v=20261031-v0396",
+    "./stage-scrim.js?v=20261009-v0335",
+    "./stage-script-editor.css?v=20261017-v0376",
+    "./stage-script-editor.js?v=20261025-v0386",
+    "./stage-session.js?v=20261029-v0393",
+    "./stage-set-builder.js?v=20261009-v0337",
+    "./stage-set-model.js?v=2026092354",
+    "./stage-shortcuts.js?v=20261031-v0396",
+    "./stage-show-overview.css?v=20261009-v0337",
+    "./stage-show-overview.js?v=20261101-v0398",
+    "./stage-sketch.js?v=20261108-v0410",
+    "./stage-sketch.webmanifest",
+    "./stage-storage-codec.js?v=2026092523",
+    "./stage-storage-hygiene.js?v=20261014-v0365",
+    "./stage-storage-pressure.js?v=20260926-large39",
+    "./stage-storage-recovery.js?v=20261020-v0382",
+    "./stage-study-owner.js?v=20261027-v0390",
+    "./stage-study.css?v=20261027-v0390",
+    "./stage-time-domain.js?v=20261013-v0359",
+    "./stage-timecode.css?v=20261015-v0371",
+    "./stage-timecode.js?v=20261015-v0371",
+    "./stage-timeline.js?v=20261104-v044",
+    "./stage-usage.js?v=20261015-v0368",
+    "./stage-venue-curtains.js?v=20261011-v0347",
+    "./stage-venue-editor.js?v=20261107-v048",
+    "./stage-venue-lines.js?v=2026091992",
+    "./stage-venue-preview.css?v=20261104-v044",
+    "./stage-venue-preview.js?v=20261015-v0368",
+    "./stage-venue-report.js?v=2026092047",
+    "./stage-venue-underlay.js?v=20261006-v0312",
+    "./stage-venue-viewpoints.css?v=20261015-v0368",
+    "./stage-venue-viewpoints.js?v=20261012-v0357",
+    "./stage-venues.js?v=20261104-v042",
+    "./stage-virtual-room.js?v=20261009-v0337",
+    "./stage-vox-panel.css?v=20261015-v0368",
+    "./stage-vox-panel.js?v=20261005-v030",
+    "./stage-web-analytics.js?v=20261020-v0380",
+    "./stage-welcome.css?v=20261016-v0373",
+    "./stage-welcome.js?v=20261025-v0387",
+    "./stage.html",
+    "./storage-recovery-ui.js?v=20261022-v0383",
+    "./storage-recovery.html",
+    "./style.css?v=20261103-v040"
+  ],
+  "rewritten": [
+    {
+      "path": "stage.html",
+      "bytes": 333345,
+      "sha256": "1c9fe6c847e85c57e5d182b361928df70c9574d315fac805ab39589ccf3a7623"
+    },
+    {
+      "path": "stage-sw.js",
+      "bytes": 32421,
+      "sha256": "8383441e0da8232a4d160fe8ec316429104722e091a6fe39d9197e255f4b9cac"
+    }
+  ]
+}

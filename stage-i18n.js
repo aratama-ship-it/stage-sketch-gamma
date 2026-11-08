@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "配布するときだけJS/CSSを1つに束ね、縮小(minify)するようにしました。見た目や機能は変わりません。初回の読み込みが軽くなります(ファイル数・バイト数が減ります)。": "The distributed app now bundles and minifies its JS/CSS at publish time only. No visible change in appearance or features. The first load is lighter (fewer files, fewer bytes).",
+
     "照明の標準セットを48灯に更新しました。開いたときに自動で新しいセットへ替わります(替える前のショーは元の版として残ります)。UVの種類を外しました。ストロボはスポットの点滅で作るようになりました。フロントは固定ライトからムービング・ウォッシュに替わりました。斜め上(袖の高い位置)に固定ライトを4灯追加しました。v0.4.8以前(配布中のMac版を含む)で開くと、かんたん照明は使えません(詳細の照明では開けます)。": "Updated the simple-lighting standard rig to 48 fixtures. Existing shows switch to the new rig automatically when opened (the show as it was before the switch stays as its parent version). Removed the UV type. Strobe is now built from a spot's flash instead of a dedicated fixture. The front changed from fixed lights to moving washes. Added 4 fixed lights high in the wings. Shows opened or saved with this rig (including the current Mac app) can't use simple lighting in v0.4.8 or earlier (the detailed editor still opens them).",
 
     "かんたん照明の『ムービング』を『サーチライト』という名前にし、新しい動き方(型)を9種類から選べるようにしました。これまで保存したレイヤーは、型を選び直すまで従来の動き・周期のまま動きます。": "Renamed the simple lighting 'Moving light' to 'Searchlight' and added 9 selectable motion types. Layers saved before this change keep their original motion and period until you choose a new type.",

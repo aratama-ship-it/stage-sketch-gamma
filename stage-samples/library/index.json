@@ -21,12 +21,12 @@
         "zh-Hant": "用於檢查功能與儲存的48個場景，含音源B。",
         "ko": "기능과 저장을 확인하는 48개 장면. 음원 B 포함."
       },
-      "bytes": 987561,
+      "bytes": 987562,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "dad556e71659227900433b7d1aea11d10dedfd53083a3ff54e6fa47e64212bd2"
+      "sha256": "d21fc470427e1117ba06296231f5bd95778a184195160ab720318cb883c9fbb8"
     },
     {
       "id": "feature-test-2",
@@ -46,12 +46,12 @@
         "zh-Hant": "用於檢查新增功能的50個場景。",
         "ko": "추가 기능을 확인하는 50개 장면."
       },
-      "bytes": 342583,
+      "bytes": 342584,
       "version": "v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "74896d3900d595f914d86a8096ac403dc463cebca99d6ef12bd55d5e77438bc6"
+      "sha256": "413d7ba154115657fc0313362040462a64506fbbf7869697b244a61adbaf9750"
     },
     {
       "id": "eight-circus",
@@ -70,12 +70,12 @@
         "zh-Hant": "8位演員的出入、道具與燈光，共8個場景。",
         "ko": "8명의 출입, 소품, 조명을 담은 8개 장면."
       },
-      "bytes": 20497,
+      "bytes": 20498,
       "version": "sample",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "65170d9e27f113211c054b4ceb7c97aca746a647a770360b522d6c494683b59a"
+      "sha256": "214724d1bf09206a8651a69ba910a67787017f0504e86badddcd62f074431405"
     },
     {
       "id": "seam-garden",
@@ -94,12 +94,12 @@
         "zh-Hant": "8個章節、32個場景的馬戲劇。",
         "ko": "8개 섹션, 32개 장면의 서커스 연극."
       },
-      "bytes": 97866,
+      "bytes": 97867,
       "version": "sample-60m-v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "fbd27904ffaaa051f84d962dc19ec3c50063e8ce8fa37d4c83920aa80d46eb0a"
+      "sha256": "1d754d8c279bcce0706cfd300c77e7213b6ec58a9a7fe88c8239b33569fe1d16"
     },
     {
       "id": "romeo-juliet-cued",
@@ -118,12 +118,12 @@
         "zh-Hant": "含劇本、燈光與聲音提示的33個場景。",
         "ko": "대본, 조명, 음향 큐가 있는 33개 장면."
       },
-      "bytes": 1005923,
+      "bytes": 1005924,
       "version": "v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "9ccc3b40c3f0169dac9607392b52c4537698bbcd833364d173bf6ba1693fc3a2"
+      "sha256": "8b2bcc3f8245d5cd7142facd484b31e3ea968889e4de93f5f783d2d0b13fcbec"
     },
     {
       "id": "romeo-juliet-second",
@@ -142,12 +142,12 @@
         "zh-Hant": "以傳遞的手為核心的第2版，共34個場景。",
         "ko": "손의 전달을 중심으로 한 두 번째 버전, 34개 장면."
       },
-      "bytes": 1538684,
+      "bytes": 1538685,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "020a21603f93c61b8d72c483329d3e796780f65bc4a607c6266df0bc4455079c"
+      "sha256": "f053c2c2663a484b81be37d60805db9dfa1c699cc4f00d70baf6a0686ad8dafc"
     },
     {
       "id": "midsummer-rehearsal",
@@ -166,12 +166,12 @@
         "zh-Hant": "透過工匠們排演戲劇的28個場景，展示γ的各項功能。",
         "ko": "장인들이 연극을 만드는 28개 장면으로 γ의 기능을 소개합니다."
       },
-      "bytes": 1878185,
+      "bytes": 1878186,
       "version": "v1",
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "midsummer-rehearsal.stageproj.zip",
-      "sha256": "1cd6806d8bb49b9bcc8b10e334220135348d3f1cdd3688c0aa69597039eed9c4"
+      "sha256": "4f31b7f84f7549970305e0a3badb234223238e0b426339ca4c1865b2b5350497"
     }
   ]
 }

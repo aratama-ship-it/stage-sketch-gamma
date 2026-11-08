@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="stage-runtime.js?v=20261104-v043"></script>
+<script src="stage-bundle-head-runtime.f6da2a15b6cf42cc91f37a3b497269ea8b6df8a15380a3fa6ee69c4163ca8c36.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.9">
+<meta name="stage-sketch-gamma-version" content="v0.4.10">
 <meta name="gamma-edition" content="studio">
-  <script src="gamma-editions.js?v=20261029-v0394"></script>
+  <script src="stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js"></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -16,29 +16,16 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=20261103-v040">
+<link rel="stylesheet" href="stage-bundle-base.168d63e431506821de3de5ff59c372ce0bd26b0d4441da7211aa9d4e423e7d12.css">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261105-v045">
-<link rel="stylesheet" href="gamma.css?v=20261107-v048">
-<link rel="stylesheet" href="stage-welcome.css?v=20261016-v0373">
-<link rel="stylesheet" href="gamma-mobile.css?v=20261103-v041">
-<script src="gamma-light-model.js?v=20261107-v049"></script>
-<link rel="stylesheet" href="gamma-formation.css?v=20261015-v0368">
-<link rel="stylesheet" href="stage-scene-alternatives.css?v=20261031-v0396">
-<link rel="stylesheet" href="stage-vox-panel.css?v=20261015-v0368">
-<link rel="stylesheet" href="stage-panel-columns.css?v=20261001-release71">
-<link rel="stylesheet" href="stage-panel-bottom.css?v=20261013-v0360">
-<link rel="stylesheet" href="stage-script-editor.css?v=20261017-v0376">
-<link rel="stylesheet" href="stage-venue-preview.css?v=20261104-v044">
-<link rel="stylesheet" href="stage-venue-viewpoints.css?v=20261015-v0368">
-<link rel="stylesheet" href="stage-run-of-show.css?v=20261009-v0337">
-<link rel="stylesheet" href="stage-timecode.css?v=20261015-v0371">
-<link rel="stylesheet" href="stage-show-overview.css?v=20261009-v0337">
+<link rel="stylesheet" href="stage-bundle-head-before-light.c0a20831b1d2b6fd476d4ead4cb519011aa73495bf8a495bf405fa9265e282c0.css">
+<script src="stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js"></script>
+<link rel="stylesheet" href="stage-bundle-head-after-light.a15f7628cc33c85eb264493ac410afee03f123bcda7c0891afd96592915579f8.css">
 </head>
 <body class="is-standalone">
 
@@ -101,7 +88,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.9</span>
+                <span class="stage-app-version">0.4.10</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2891,13 +2878,13 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261107-v049">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261108-v0410">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v049-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v049-title">v0.4.9</h3><time datetime="2026-11-07">2026-11-07</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0410-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0410-title">v0.4.10</h3><time datetime="2026-11-08">2026-11-08</time></header>
       <ul>
-        <li>照明の標準セットを48灯に更新しました。開いたときに自動で新しいセットへ替わります(替える前のショーは元の版として残ります)。UVの種類を外しました。ストロボはスポットの点滅で作るようになりました。フロントは固定ライトからムービング・ウォッシュに替わりました。斜め上(袖の高い位置)に固定ライトを4灯追加しました。v0.4.8以前(配布中のMac版を含む)で開くと、かんたん照明は使えません(詳細の照明では開けます)。</li>
+        <li>配布するときだけJS/CSSを1つに束ね、縮小(minify)するようにしました。見た目や機能は変わりません。初回の読み込みが軽くなります(ファイル数・バイト数が減ります)。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3848,106 +3835,16 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=20261104-v042"></script>
-<script src="stage-venue-lines.js?v=2026091992"></script>
-<script src="stage-front-shape.js?v=2026092046"></script>
-<script src="stage-venue-report.js?v=2026092047"></script>
-<script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261107-v049"></script>
-<script src="stage-set-model.js?v=2026092354"></script>
-<script src="stage-set-builder.js?v=20261009-v0337"></script>
-<script src="stage-machinery.js?v=20261012-v0358"></script>
-<script src="stage-virtual-room.js?v=20261009-v0337"></script>
-<script src="stage-scrim.js?v=20261009-v0335"></script>
-<script src="gamma-render-resolution.js?v=20261006-v0318"></script>
-<script src="stage-first-person-loader.js?v=20261015-v0368"></script>
-<script src="stage-fixture-body.js?v=20261031-v0396"></script>
-<script src="stage-audio-store.js?v=20261031-v0397"></script>
-<script src="stage-large-project-store.js?v=20261022-v0383"></script>
-<script src="stage-project-backup-store.js?v=20261020-v0380"></script>
-<script src="stage-storage-codec.js?v=2026092523"></script>
-<script src="stage-storage-recovery.js?v=20261020-v0382"></script>
-<script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
-<script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261107-v049" data-manual-content="manual-gamma/manual-content.js?v=20261107-v049"></script>
-<script src="stage-pwa.js?v=20261020-v0380"></script>
-<script src="stage-lighting-plans.js?v=20261005-beam99"></script>
-<script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
-<script src="light-design/rig-engine.js?v=20261105-v045"></script>
-<script src="light-design/laser-effects.js?v=20261005-batch98"></script>
-<script src="stage-light-eval.js?v=20261004-receiver89"></script>
-<script src="stage-light-receiver.js?v=20261004-receiver89"></script>
-<script src="stage-light-render.js?v=20261105-v045"></script>
-<script src="gamma-light-cue-overlay.js?v=20261105-v045"></script>
-<script src="gamma-range-fields.js?v=20261014-v0361"></script>
-<script src="gamma-number-scrub.js?v=2026091780"></script>
-<script src="gamma-formation-presets.js?v=20261026-v0388"></script>
-<script src="gamma-formation-model.js?v=20261026-v0388"></script>
-<script src="stage-data-safety.js?v=20261001-release69"></script>
-<script src="stage-time-domain.js?v=20261013-v0359"></script>
-<script src="stage-timecode.js?v=20261015-v0371"></script>
-<script src="stage-cue-sheet.js?v=20261105-v046"></script>
-<script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
-<script src="stage-light-panel-import.js?v=2026092209"></script>
-<script src="stage-scene-alternatives.js?v=20261031-v0396"></script>
-<script src="stage-music-cues.js?v=20261015-v0371"></script>
-<script src="stage-shortcuts.js?v=20261031-v0396"></script>
-<!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->
-<script src="stage-reorder-motion.js?v=2026092420"></script>
-<script src="stage-jog-reference.js?v=2026093003"></script>
-<script src="stage-performer-motion.js?v=20261011-v0347"></script>
-<script src="stage-idle-motion.js?v=20261014-v0362"></script>
-<script src="stage-performer-contour.js?v=20261006-v0318"></script>
-<script src="stage-performer-body.js?v=20261104-v043"></script>
-<script src="gamma-ui.js?v=20261104-v044"></script>
-<script src="stage-point-source.js?v=20260927-point43"></script>
-<script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="light-design/simple-lighting-model.js?v=20261105-v045"></script>
-<script src="stage-run-of-show-distribution.js?v=20261012-v0358"></script>
-<script src="stage-run-of-show-files.js?v=20261012-v0358"></script>
-<script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
-<script src="stage-pose-data.js?v=20261013-v0360"></script>
-<script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261107-v049"></script>
-<script src="stage-reorder-warning.js?v=20261009-v0335"></script>
-<script src="stage-venue-curtains.js?v=20261011-v0347"></script>
-<script src="stage-metrics.js?v=20261020-v0380"></script>
-<script src="stage-project-file.js?v=20261107-v049"></script>
-<script src="stage-welcome.js?v=20261025-v0387"></script>
-<script src="gamma-undo-owner.js?v=20261030-v0395"></script>
-<script src="stage-project-bridge.js?v=20261031-v0397"></script>
-<script src="stage-project-library.js?v=20261103-v040"></script>
-<script src="stage-element-refs.js?v=20261104-v043"></script>
-<script src="stage-sketch.js?v=20261107-v049"></script>
-<script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
-<script src="gamma-formation.js?v=20261105-v045"></script>
-<script src="stage-vox-panel.js?v=20261005-v030"></script>
-<script src="stage-script-editor.js?v=20261025-v0386"></script>
-    <script src="stage-light-schedule.js?v=20261013-v0359"></script>
-    <script src="stage-timeline.js?v=20261104-v044"></script>
-<script src="stage-session.js?v=20261029-v0393"></script>
-<script src="stage-study-owner.js?v=20261027-v0390"></script>
-<script src="stage-usage.js?v=20261015-v0368"></script>
-<script src="stage-venue-underlay.js?v=20261006-v0312"></script>
-<script src="stage-venue-editor.js?v=20261107-v048"></script>
-<link rel="stylesheet" href="stage-field-run.css?v=20261025-v0386">
-<script src="stage-field-run-model.js?v=20261016-v0373"></script>
-<script src="stage-field-run-store.js?v=20261020-v0380"></script>
-<script src="stage-field-run-package.js?v=20261020-v0380"></script>
-<script src="stage-field-run-transport.js?v=20261016-v0372"></script>
-<script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261107-v049"></script>
-<script src="stage-run-of-show-pane.js?v=20261105-v045"></script>
-<script src="gamma-workspace.js?v=20261107-v049"></script>
-<script src="gamma-feature-search.js?v=20261030-v0395"></script>
-<script src="gamma-mobile.js?v=20261030-v0395"></script>
-<script src="stage-venue-preview.js?v=20261015-v0368"></script>
-<script src="stage-venue-viewpoints.js?v=20261012-v0357"></script>
-<script src="run-of-show/timing.js?v=20261010-v0338"></script>
-<script src="stage-show-overview.js?v=20261101-v0398"></script>
-<!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->
-<script src="stage-web-analytics.js?v=20261020-v0380"></script>
-<script src="gamma-header-fit.js?v=20261015-v0368"></script>
-<script src="gamma-appearance.js?v=20261031-v0396"></script>
+<script src="stage-bundle-body-before-manual.4861b5dc697c820e26a20d89ac3419fe86afa92908574c60c7bba8c2b8ef1e52.js"></script>
+<script src="stage-bundle-manual-meta.e53f7c970531d49c9a5551e9c569151c41f87397d1823911ce496d9d9993aaba.js" data-manual-content="manual-gamma/manual-content.js?v=20261108-v0410"></script>
+<script src="stage-bundle-body-before-language-1.23fbb23f99e13a70e8e2146e64b903136f25724efcd27edd7bb1b7a2f2f709c7.js"></script>
+<script src="stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js"></script>
+<script src="stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js"></script>
+<script src="stage-bundle-language-loader.89048f676761b564845403aa39152d398d71f79d07eed3bfb677635c4dacb922.js"></script>
+<script src="stage-bundle-body-after-language.8ab9f4dc1212206fc0e99379ebce360c06e34b784b958a156c6d2afde4628435.js"></script>
+<link rel="stylesheet" href="stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css">
+<script src="stage-bundle-body-after-field-css-1.c5f4607b96964981c44f724d89b3520ad995550042ac0cd47ca16d34818e212c.js"></script>
+<script src="stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js"></script>
+<script src="stage-bundle-body-after-field-css-3.237820159ac608c638e5bb3e8bf4f4042e26bef68eceaf4771c94ff717e16ac1.js"></script>
 </body>
 </html>
