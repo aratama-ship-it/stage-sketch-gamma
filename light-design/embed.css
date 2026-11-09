@@ -337,7 +337,7 @@ html[data-gamma-light-mode=move] .leftcol { overflow:auto; }
 html[data-gamma-light-mode=place] .gamma-stack-panel > :is(.gamma-stack-head,.gamma-stack-height) { display:none; }
 html[data-gamma-light-mode=move] .gamma-stack-panel > .gamma-stack-body > #fixture-list-title { display:none; }
 /* L1: optional shared columns; LXQ spans both columns at their foot. */
-html[data-gamma-light-mode=move] .leftcol.gamma-stack-columns[data-stack-layout=split] { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; }
+html[data-gamma-light-mode=move] .figgrid:not([data-solo=side]) > .leftcol.gamma-stack-columns[data-stack-layout=split] { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; }
 html[data-gamma-light-mode=move] .gamma-stack-column > .gamma-stack-panel { box-sizing:border-box; width:100%!important; max-width:100%; min-width:0; height:auto; min-height:0; max-height:none; flex:0 0 auto; overflow:visible; }
 html[data-gamma-embedded][data-gamma-light-mode=move] .gamma-light-actions #light-program-play { display:inline-flex; }
 html[data-gamma-embedded] .gamma-light-actions :is(#apply,#simple-adopt) { min-height:var(--ctrl-md); padding:4px 10px; font:400 var(--fs-4)/1.5 var(--sans); }
@@ -354,8 +354,11 @@ html[data-gamma-embedded] #panel-lxq.gamma-stack-panel label:has(input[type=chec
 }
 .transport #light-program-play .light-program-lamp { fill:none; stroke:currentColor; stroke-width:1.3; }
 
-/* U1: shared rails flank the figure; one column is a viewport-only fallback. */
-html[data-gamma-light-mode=move] .leftcol.gamma-stack-columns[data-stack-external=true] { display:flex!important; flex-direction:column; align-items:stretch; grid-template-columns:none; gap:var(--gamma-gap); }
+/* U1: shared rails flank the figure; one column is a viewport-only fallback.
+   Side solo uses the base hidden-children rule so the rail cannot cover its exit button. */
+html[data-gamma-light-mode=move] .figgrid:not([data-solo=side]) > .leftcol.gamma-stack-columns[data-stack-external=true] { display:flex!important; flex-direction:column; align-items:stretch; grid-template-columns:none; gap:var(--gamma-gap); }
+/* Shared split-stack tokens also set display:grid; side solo must override them. */
+html[data-gamma-light-mode=move] .figgrid[data-solo=side] > .leftcol { display:none; }
 .light-panel-right { box-sizing:border-box; grid-column:3; grid-row:1/3; width:100%; min-width:0; height:100%; min-height:0; overflow:auto; }
 .light-panel-right[hidden] { display:none!important; }
 html[data-gamma-light-mode=move] :is(.leftcol,.light-panel-right) > .gamma-stack-column { box-sizing:border-box; flex:0 0 auto; width:100%; min-width:0; }

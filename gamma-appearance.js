@@ -93,7 +93,11 @@
     for(const button of document.querySelectorAll('button,label')){
       if(!visible(button)) continue;
       const svg=button.querySelector('svg');
-      if(svg&&!button.matches(excluded)&&!button.closest(inlineRows)){
+      // A labelled action remains text-sized even when its label is below the
+      // viewport during scrolling. Also repair any earlier icon classification.
+      const textAction=button.hasAttribute('data-gamma-text-button');
+      if(textAction)button.classList.remove('gamma-icon-button');
+      if(svg&&!textAction&&!button.matches(excluded)&&!button.closest(inlineRows)){
         const text=[...button.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
         const labelled=[...button.querySelectorAll('span,gamma-control-text')].some(e=>visible(e)&&e.textContent.trim()&&!e.closest('svg')&&!e.matches('.stage-tool-icon,.stage-square-glyph'));
         if((!text&&!labelled)||button.matches('.stage-header-icon,.stage-history-icon,.stage-gear-btn,.stage-release-open,.stage-panel-layout-btn,.is-icon,.stage-modal-close,.solo-btn')){

@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "sources": [
+    "stage-language-loader.js"
+  ],
+  "sourcesContent": [
+    "/* B-3: ordered language assets. Parser-time startup preserves the classic-script\n * dependency contract; later switches load serially before committing UI language.\n * This module never writes preferences or project data. */\n(() => {\n  'use strict';\n  const ASSETS = Object.freeze({\n    en: 'stage-i18n.js?v=20261109-v0411',\n    'zh-Hans': 'stage-i18n.zh-Hans.js?v=20261109-v0411',\n    'zh-Hant': 'stage-i18n.zh-Hant.js?v=20261109-v0411',\n    ko: 'stage-i18n.ko.js?v=20261109-v0411',\n    prompt: 'stage-prompt-i18n.js?v=20261013-v0360',\n    ui: 'gamma-ui-i18n.js?v=20261103-v041',\n    uiKo: 'gamma-ui-i18n.ko.js?v=20261103-v041',\n  });\n  const normalize = code => {\n    const value = typeof code === 'string' ? code.trim().replace(/_/g, '-').toLowerCase() : '';\n    if (value.startsWith('ja')) return 'ja';\n    if (value.startsWith('ko')) return 'ko';\n    if (/^zh-(hant|tw|hk|mo)(-|$)/.test(value)) return 'zh-Hant';\n    if (value === 'zh' || /^zh-(hans|cn|sg)(-|$)/.test(value)) return 'zh-Hans';\n    return 'en';\n  };\n  function resolve(open, storage, device) {\n    if (typeof open === 'string' && open) return normalize(open);\n    try {\n      const saved = storage?.getItem('gamma:shosai-stage-lang');\n      if (saved !== null && saved !== undefined) return normalize(saved);\n    } catch (_) { /* Read-only fallback to the device preference. */ }\n    try {\n      const code = device?.language || device?.languages?.[0];\n      if (code) return normalize(code);\n    } catch (_) { /* Japanese requires no dictionary. */ }\n    return 'ja';\n  }\n  // The only definition of composition order, for startup and every switch.\n  const plan = code => {\n    const lang = normalize(code);\n    return ['en', ...(lang === 'ja' || lang === 'en' ? [] : [lang]),\n      'prompt', 'ui', ...(lang === 'ko' ? ['uiKo'] : [])];\n  };\n  const loaded = new Set(), failed = new Set();\n  let queue = Promise.resolve();\n  const script = document.currentScript;\n  const base = new URL('.', script.src);\n  let storage;\n  try { storage = window.localStorage; } catch (_) { /* Storage can be unavailable. */ }\n  let open = '';\n  try { open = new URL(window.location.href).searchParams.get('lang') || ''; } catch (_) {}\n  const requested = resolve(open, storage, window.navigator);\n  const initialPlan = plan(requested);\n  const available = key => {\n    if (key === 'prompt') return !!window.SHOSAI_PROMPT_I18N;\n    if (key === 'ui') return typeof window.GAMMA_UI_I18N_MERGE === 'function';\n    if (key === 'uiKo') return window.GAMMA_UI_I18N_KO_READY === true;\n    return !!window.SHOSAI_I18N_PACKS?.[key]?.text;\n  };\n  const remember = event => {\n    const key = event.target?.getAttribute?.('data-stage-language-asset');\n    if (!key) return;\n    if (event.type === 'load' && available(key)) { loaded.add(key); failed.delete(key); }\n    else { failed.add(key); }\n  };\n  document.addEventListener('load', remember, true);\n  document.addEventListener('error', remember, true);\n  function initialLanguage() {\n    window.GAMMA_UI_I18N_MERGE?.();\n    return initialPlan.every(key => loaded.has(key) && !failed.has(key)) ? requested : 'ja';\n  }\n  function load(key) {\n    if (loaded.has(key)) return Promise.resolve();\n    return new Promise((resolveLoad, reject) => {\n      const node = document.createElement('script');\n      node.async = false;\n      node.src = new URL(ASSETS[key], base).href;\n      node.setAttribute('data-stage-language-asset', key);\n      const finish = error => {\n        clearTimeout(timer);\n        node.onload = node.onerror = null;\n        if (error) { failed.add(key); node.remove(); reject(error); }\n        else { loaded.add(key); failed.delete(key); resolveLoad(); }\n      };\n      const timer = setTimeout(() => finish(new Error('Language load timed out: ' + key)), 15000);\n      node.onload = () => finish(available(key) ? null : new Error('Invalid language asset: ' + key));\n      node.onerror = () => finish(new Error('Language load failed: ' + key));\n      document.head.appendChild(node);\n    });\n  }\n  function ensure(code) {\n    const lang = normalize(code);\n    const job = queue.then(async () => {\n      for (const key of plan(lang)) await load(key);\n      window.GAMMA_UI_I18N_MERGE?.();\n      window.dispatchEvent?.(new Event('stage-language-assets-ready'));\n      return lang;\n    });\n    queue = job.catch(() => {});\n    return job;\n  }\n  const loadedUrls = () => [...loaded].map(key => './' + ASSETS[key]);\n  const deferredUrls = () => ['ko', 'zh-Hans', 'zh-Hant', 'uiKo'].map(key => './' + ASSETS[key]);\n  window.SHOSAI_LANGUAGE_LOADER = Object.freeze({ assets: ASSETS, normalize, resolve, plan, requested, initialLanguage, ensure, loadedUrls, deferredUrls });\n  // Called by a parser-inserted classic script only. URLs are fixed assets above,\n  // including /study-assets/ in the isolated viewer; no user text enters markup.\n  for (const key of initialPlan) document.write('<script data-stage-language-asset=\"' + key\n    + '\" src=\"' + new URL(ASSETS[key], base).href + '\"><\\/script>');\n})();\n"
+  ],
+  "names": [
+    "ASSETS",
+    "normalize",
+    "code",
+    "value",
+    "resolve",
+    "open",
+    "storage",
+    "device",
+    "saved",
+    "plan",
+    "lang",
+    "loaded",
+    "failed",
+    "queue",
+    "script",
+    "base",
+    "requested",
+    "initialPlan",
+    "available",
+    "key",
+    "remember",
+    "event",
+    "initialLanguage",
+    "load",
+    "resolveLoad",
+    "reject",
+    "node",
+    "finish",
+    "error",
+    "timer",
+    "ensure",
+    "job",
+    "loadedUrls",
+    "deferredUrls"
+  ],
+  "mappings": "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"
+}

@@ -1,5 +1,5 @@
 /* G-27: the Stage panel engine, with Run-of-show storage/contents as adapters. */
-window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageOpen,indexCollapsed}){
+window.ROSLeftPanels={install(band,{store,text,format,language,onLayout,onCollapse,stageOpen,indexCollapsed}){
   const P=window.GAMMA_PANELS,doc=band.ownerDocument,$=id=>doc.getElementById(id),KEY='gamma:ros:panels-v1';
   const fixed=band.querySelector('.band-view'),panels=[...band.children].filter(n=>n.classList.contains('band-group')&&n!==fixed);
   // Positional identifiers are assigned before moving the old left rail.
@@ -20,14 +20,30 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
   $('preview').append(cols.right);
   fixed.classList.add('ros-display-band');band.prepend(fixed);doc.body.classList.add('ros-unified-panels');
   const entries=new Map();let applying=false;
-  const visible=()=>panels.filter(n=>!n.hidden&&n.getClientRects().length);
+  // Read the current column order; panels retains the pre-migration order.
+  const visible=()=>[...cols.left.children,...cols.right.children].filter(n=>byId.get(n.dataset.rosPanel)===n&&!n.hidden&&n.getClientRects().length);
   const titleOf=n=>entries.get(n.dataset.rosPanel)?.name.textContent||n.dataset.rosPanel;
-  function positions(){for(const n of panels){const e=entries.get(n.dataset.rosPanel);if(e)e.button.setAttribute('aria-description',format('{name}：{total}個中{position}番目。',{name:titleOf(n),total:visible().length,position:visible().indexOf(n)+1}));}}
+  function positions(){const nodes=visible();for(const n of panels){const e=entries.get(n.dataset.rosPanel);if(!e)continue;const at=nodes.indexOf(n);if(at<0)e.button.removeAttribute('aria-description');else e.button.setAttribute('aria-description',format('{name}：{total}個中{position}番目。',{name:titleOf(n),total:nodes.length,position:at+1}));}}
   function changed(){persist();positions();onLayout?.();}
   const arrangement=()=>P.layout({width:doc.defaultView.parent?.innerWidth??doc.defaultView.innerWidth,mode:state.mode,side:state.side});
   const splitActive=()=>arrangement().mode==='split';
   function commit(){if(!splitActive())state.single=[...cols.left.children].map(n=>n.dataset.rosPanel).filter(Boolean);else for(const k of ['left','right'])state.split[k]=[...cols[k].children].map(n=>n.dataset.rosPanel).filter(Boolean);changed();}
-  const reorder=P.reorder({doc,columns:()=>!splitActive()?[cols.left]:[cols.left,cols.right],items:()=>[...panels,...doc.querySelectorAll('.ros-panel-hole')],key:n=>n.dataset.rosPanel,scrollHost:host=>host.closest('.paper-sticky')||host,holeClass:'ros-panel-hole',dragClass:'is-ros-panel-dragging',motion:()=>parent.document.getElementById('stage-anim-scenes')?.checked!==false,onCommit:()=>{commit();$('panel-reorder-status').textContent=text('パネルの並びを変更しました。');}});
+  let announceFrame=0;
+  function announceReorder(){
+    const status=$('panel-reorder-status'),win=doc.defaultView;
+    win.cancelAnimationFrame(announceFrame);
+    status.dataset.rosStatusKey='パネルの並びを変更しました。';status.lang=language();status.textContent='';
+    // Leave an empty render opportunity so consecutive identical notices are fresh.
+    announceFrame=win.requestAnimationFrame(()=>{announceFrame=win.requestAnimationFrame(()=>{
+      announceFrame=0;status.lang=language();status.textContent=text(status.dataset.rosStatusKey);
+    });});
+  }
+  function commitReorder(){
+    const before=JSON.stringify(splitActive()?state.split:state.single);
+    commit();
+    if(JSON.stringify(splitActive()?state.split:state.single)!==before)announceReorder();
+  }
+  const reorder=P.reorder({doc,columns:()=>!splitActive()?[cols.left]:[cols.left,cols.right],items:()=>[...panels,...doc.querySelectorAll('.ros-panel-hole')],key:n=>n.dataset.rosPanel,scrollHost:host=>host.closest('.paper-sticky')||host,holeClass:'ros-panel-hole',dragClass:'is-ros-panel-dragging',motion:()=>parent.document.getElementById('stage-anim-scenes')?.checked!==false,onCommit:commitReorder});
   function height(node,body,handle){let preview=null;
     const max=()=>{const h=body.style.height;body.style.height='';const v=body.scrollHeight;body.style.height=h;return v;};
     const paint=()=>{const wanted=preview??state.heights[node.dataset.rosPanel],full=max();body.style.height=Number.isFinite(wanted)?Math.max(Math.min(80,full),Math.min(full,wanted))+'px':'';};
@@ -51,7 +67,7 @@ window.ROSLeftPanels={install(band,{store,text,format,onLayout,onCollapse,stageO
     node.append(body);node.classList.add('band-group','ros-unified-panel');node.removeAttribute('role');
     const handle=doc.createElement('div');handle.className='ros-panel-height';handle.setAttribute('aria-controls',body.id);node.append(handle);
     entries.set(id,{...h,body,handle,height:height(node,body,handle)});
-    h.button.addEventListener('keydown',event=>{if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();event.stopPropagation();const host=node.parentElement;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(splitActive())reorder.flipMove(()=>cols[event.key==='ArrowLeft'?'left':'right'].append(node));}else{const nodes=[...host.children].filter(n=>n.dataset.rosPanel&&!n.hidden),at=nodes.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];if(target)reorder.flipMove(()=>host.insertBefore(node,next<at?target:target.nextSibling));}commit();h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
+    h.button.addEventListener('keydown',event=>{if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.isComposing||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();event.stopPropagation();const host=node.parentElement;if(['ArrowLeft','ArrowRight'].includes(event.key)){if(splitActive())reorder.flipMove(()=>cols[event.key==='ArrowLeft'?'left':'right'].append(node));}else{const nodes=[...host.children].filter(n=>n.dataset.rosPanel&&!n.hidden),at=nodes.indexOf(node),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];if(target)reorder.flipMove(()=>host.insertBefore(node,next<at?target:target.nextSibling));}commitReorder();h.button.focus({preventScroll:true});h.button.scrollIntoView({block:'nearest'});});
     // Native details changes (including the pre-existing column accordion) use one state.
     if(isDetails)node.addEventListener('toggle',()=>{if(applying||Boolean(state.collapsed[id])===!node.open)return;state.collapsed[id]=!node.open;paintPanel(id);changed();});
   }

@@ -1253,7 +1253,9 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   function syncCueReadOnly(){
     const readOnly=readOnlyPaper();
     document.body.classList.toggle("readonly-cue-shell",readOnly);
-    for(const node of document.querySelectorAll('#paper-band > :not(.ros-panel-column),.ros-unified-panel:not(#band-cues),#band-selection,.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    for(const node of document.querySelectorAll('#paper-band > :not(.ros-panel-column):not(#band-cues),.ros-unified-panel:not(#band-cues),#band-selection,.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    // Q browsing stays interactive both before and after the panel is reparented.
+    $('band-cues').inert=false;
     syncSelectionBar();
     return readOnly;
   }
@@ -1362,7 +1364,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   syncCueChoices();
   if(!lite){
     leftPanels=window.ROSLeftPanels.install($('paper-band'),{
-      store,text:uiText,format:uiFormat,stageOpen:stagePanelOpen,indexCollapsed:indexPanelCollapsed,
+      store,text:uiText,format:uiFormat,language:uiLanguage,stageOpen:stagePanelOpen,indexCollapsed:indexPanelCollapsed,
       onCollapse:(id,closed)=>{if(id==='ros-stage-panel')stagePanelOpen=!closed;if(id==='ros-index')indexPanelCollapsed=closed;},
       onLayout:()=>{layoutIndex();queueTrack();},
     });
@@ -1614,7 +1616,8 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     // Only toolbar chrome: item titles and the editable paper remain source data.
     for(const id of ['paper-edit-status','panel-reorder-help'])$(id).lang=uiLanguage();
     const editingStatus=$('paper-edit-status'),statusKey=editingStatus.dataset.rosStatusKey;if(statusKey&&editingStatus.textContent!==uiText(statusKey))editingStatus.textContent=uiText(statusKey);
-    if(!$('panel-reorder-status').textContent)$('panel-reorder-status').lang=uiLanguage();
+    const reorderStatus=$('panel-reorder-status'),reorderKey=reorderStatus.dataset.rosStatusKey;reorderStatus.lang=uiLanguage();
+    if(reorderKey&&reorderStatus.textContent&&reorderStatus.textContent!==uiText(reorderKey))reorderStatus.textContent=uiText(reorderKey);
     parent.GAMMA_UI?.translateDOM($('paper-band'), {language:uiLanguage(),lookup:uiText,
       exclude:'#paper-item-picker,#cue-performer,#cue-performer-list,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
     leftPanels?.refreshPositions();

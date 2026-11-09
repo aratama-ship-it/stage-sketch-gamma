@@ -2202,13 +2202,25 @@
   function openTimelineScene(segment) {
     if (!segment || !segment.sceneId) return;
     if (timeline?.managed) { seekToSeconds(segment.start); renderTimeline(); bridge.focusTimelineScene?.(segment.sceneId); return; }
+    // Capture before opening the scene: replacing its source pauses the old audio.
+    const play = Boolean(els.audio && !els.audio.paused);
     openTimelineSceneById(segment.sceneId);
     seekSeconds = segment.start;
-    syncTimelineAudioAt(seekSeconds);
+    syncTimelineAudioAt(seekSeconds, { play });
     updatePlayhead();
     renderTimeline();
     bridge.focusTimelineScene?.(segment.sceneId);
   }
+
+  function openTimelineSceneFromList(event) {
+    if (!timeline || panel.hidden || rehearsal() || document.body.classList.contains("stage-session-guest")) return;
+    const segment = timeline.segments.find(item => item.sceneId === event.detail?.sceneId);
+    if (!segment) return; // No matching timeline entry: keep the existing list path.
+    event.preventDefault();
+    cancelPendingSceneOpen();
+    openTimelineScene(segment);
+  }
+  window.addEventListener("stage-timeline-scene-open-request", openTimelineSceneFromList);
 
   async function openTimelineTransition(transition, source, target, expand = false) {
     if (!source?.sceneId || !target?.sceneId) return;

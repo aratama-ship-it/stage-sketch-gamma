@@ -854,6 +854,16 @@
   const plan = $("plan"), secF = $("secF"), secL = $("secL"), secR = $("secR");
   const pctx = plan.getContext("2d");
   const displayCanvasSizes = new WeakMap();
+  // View-only invalidation: never persist deferred paints in the show/draft.
+  const detailCanvases = [plan, secF, secL, secR];
+  const pendingDetailPaint = new Set(detailCanvases);
+  function detailCanvasVisible(c) {
+    if (document.hidden || !c.offsetWidth || !c.offsetHeight) return false;
+    // An embedded document can retain its own layout while its host tab is hidden.
+    const frame = window.frameElement;
+    if (frame && (!frame.offsetWidth || !frame.offsetHeight || frame.hidden)) return false;
+    return getComputedStyle(c).visibility === "visible";
+  }
   const logicalWidth = c => displayCanvasSizes.get(c)?.width ?? c.width;
   const logicalHeight = c => displayCanvasSizes.get(c)?.height ?? c.height;
   /* 側面図は1枚。kind を差し替えて下手・上手を切り替える（2026-09-13 本人要望）。
@@ -1098,6 +1108,7 @@
   const planProj = () => E.makePlanProjector(state.dims, planBox());
   // Backing pixels follow the display size and resolution preference, never zoom.
   function resizeDisplayBacking(c) {
+    if (!detailCanvasVisible(c)) { pendingDetailPaint.add(c); return; }
     const size = displayCanvasSizes.get(c); if (!size) return;
     const { width, height } = size, factor = window.GAMMA_RENDER_RESOLUTION?.factor() || 1;
     const backingWidth = Math.max(1, Math.round(width * factor)), backingHeight = Math.max(1, Math.round(height * factor));
@@ -1106,29 +1117,41 @@
     ctx.setTransform(c.width / width, 0, 0, c.height / height, 0, 0);
     figureViews?.paint(c,ctx,width,height,surface("#0d0c0b"));
   }
-  function syncCanvasSize() {
+  function syncCanvasSize({ deferBacking = false } = {}) {
+    const previousScale = sectionScale;
     syncFigureSizes();   // 先に各図の表示高さを決めてから内部解像度を合わせる
     figureViews?.sync();
     const fit = (c) => {
       // Camera CSS transforms must never feed back into backing size / logical coordinates.
       const r = { width:c.offsetWidth, height:c.offsetHeight }; if (!r.width || !r.height) return;
       const width = Math.max(300, Math.round(r.width * 2)), height = Math.max(2, Math.round(r.height * 2));
+      const previous = displayCanvasSizes.get(c);
+      if (!previous || previous.width !== width || previous.height !== height) pendingDetailPaint.add(c);
       displayCanvasSizes.set(c, { width, height });
-      resizeDisplayBacking(c);
+      if (!deferBacking) resizeDisplayBacking(c);
     };
     [plan, secL, secF, secR].forEach(fit);
+    if (previousScale !== sectionScale) detailCanvases.forEach(c => pendingDetailPaint.add(c));
   }
   let panelResizeRaf = 0;
   function refreshPanelLayout() {
     if (panelResizeRaf) return;
     panelResizeRaf = requestAnimationFrame(() => {
       panelResizeRaf = 0;
-      syncCanvasSize();
-      draw();
+      // Window and element resize share this reservation. Measuring must not
+      // clear a settled backing canvas when the observer only echoes our layout.
+      syncCanvasSize({ deferBacking: true });
+      // Keep renderListContent's width-dependent column choice without rebuilding
+      // the list or dispatching an edit (which also repaints the simple preview).
+      const list = $("list");
+      list.classList.toggle("cols2", list.clientWidth >= 230);
+      drawDetailFigures(true);
+      scheduleFigbarFit();
     });
   }
   const figureLayoutObserver = new ResizeObserver(refreshPanelLayout);
-  for (const node of [document.querySelector('.figgrid'),document.querySelector('.sec.front .sechead')]) figureLayoutObserver.observe(node);
+  for (const node of [document.querySelector('.figgrid'),document.querySelector('.sec.front .sechead'), ...detailCanvases, window.frameElement].filter(Boolean)) figureLayoutObserver.observe(node);
+  document.addEventListener('visibilitychange', refreshPanelLayout);
   $("panel-layout-reset").onclick = () => {
     Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0 });
     refreshPanelLayout(); savePanelLayout();
@@ -2683,7 +2706,7 @@
   }
   /* 消灯後に受光した人だけ塗り直す際も、手前の箱を突き抜けないようにする。
      箱の実寸8頂点の投影を使い、重なる装置は一つずつclipする（重複で穴が戻らない）。 */
-  function clipForegroundSets(ctx, P, pieces, dims) {
+  function clipForegroundSets(ctx, P, pieces, dims, curtainVisible) {
     const R = window.SHOSAI_SET_RENDER;
     if (!R) return;
     const cross = (a, b, c) => (b.X-a.X)*(c.Y-a.Y)-(b.Y-a.Y)*(c.X-a.X);
@@ -2699,7 +2722,10 @@
       cache = foregroundClipFrame.get(P);
       if (!cache) { cache = new Map(); foregroundClipFrame.set(P, cache); }
     }
-    pieces.filter(pc => showPiece(pc) && (pc.kind === "set" || (state.rig.simpleLighting?.version===2 && pc.kind==='curtain' && (pc.solid || ['front','traveler','leg','border'].includes(pc.curtainKind))))).forEach(pc => {
+    // A borrowed front view owns which saved curtains are still drawable.
+    // Check before the geometry cache; retired cloth must not cut out receivers.
+    pieces.filter(pc => showPiece(pc) && (pc.kind === "set" || (state.rig.simpleLighting?.version===2 && pc.kind==='curtain'
+      && (!curtainVisible || curtainVisible(pc.id)) && (pc.solid || ['front','traveler','leg','border'].includes(pc.curtainKind))))).forEach(pc => {
       let polygons = cache?.get(pc);
       if (!polygons) {
         polygons = pc.kind==='curtain' ? curtainPanelsWorld(pc,dims).map(panel=>[P({x:panel.leftX,y:panel.leftY,z:panel.lift}),P({x:panel.rightX,y:panel.rightY,z:panel.lift}),P({x:panel.rightX,y:panel.rightY,z:panel.lift+panel.h}),P({x:panel.leftX,y:panel.leftY,z:panel.lift+panel.h})]) : setPartsOf(pc).filter(part => !part.kind || part.kind === "box").map(part => {
@@ -2755,7 +2781,7 @@
       const sc = foot.scale == null ? 1 : foot.scale;
       const k = pxPerM * sc;
       ctx.save();
-      if (relight) clipForegroundSets(ctx, P, pieces.slice(index + 1), d);
+      if (relight) clipForegroundSets(ctx, P, pieces.slice(index + 1), d, o.curtainVisible);
       if (pc.kind !== "performer" || !F) {
         /* R-13 ①②（2026-09-18）: 大道具は実寸の箱を、本体と同じ共有部品（stage-set-render.js）で
            立体に塗る。以前は幅 0.9m×2 固定の長方形で、サイズ感が本体と食い違っていた。
@@ -4278,10 +4304,11 @@
     if(sharedFront) clipSimpleLight();
     try {
     if (state.mode === "move" && showOn("blackout")) {
-      drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
+      drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true,
+        curtainVisible: sharedFront?.curtainVisible }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35); drawMirrorBalls(fctx, P, "front3d", 0.35);
     compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
-      ...(sharedFront ? { skipBorders: true } : {}) });
+      ...(sharedFront ? { skipBorders: true, curtainVisible: sharedFront.curtainVisible } : {}) });
     } finally { if(sharedFront) fctx.restore(); }
     for (const id of deferredCurtains) sharedFront.paintCurtain(fctx, id);
     if(simple && !sharedFront) drawBordersUp(fctx,P,d);
@@ -4311,7 +4338,23 @@
     } finally { frameCost?.end(layerToken); frameCost?.end(frameCostToken); }
   }
 
-  function draw() {
+  function draw() { return drawDetailFigures(false); }
+  function drawDetailFigures(pendingOnly) {
+    // Operations/Q changes still paint synchronously. Only resize notifications
+    // may reuse a settled view; hidden/collapsed figures keep the latest request.
+    if (!pendingOnly) detailCanvases.forEach(c => pendingDetailPaint.add(c));
+    const visible = detailCanvases.filter(c => {
+      if (detailCanvasVisible(c)) return true;
+      pendingDetailPaint.add(c); return false;
+    });
+    const sections = activeSections().filter(sec => visible.includes(sec.cv));
+    const canvases = visible.filter(c => c === plan || sections.some(sec => sec.cv === c));
+    if (!canvases.some(c => pendingDetailPaint.has(c))) {
+      // Fade completion owns playback cleanup even when no detail figure paints.
+      // Keep the existing preview guard and manual/scene-change semantics.
+      if (!playbackPreviewActive) lxFadeCue();
+      return;
+    }
     // PERF3: opt-in, test-owned meter; no clock reads or records by default.
     const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
     const frameCostToken = frameCost?.begin("lighting.draw");
@@ -4319,21 +4362,23 @@
     if (playbackPreviewActive) return;
     const started = performance.now();
     // Start each paint from the stable backing transform. Zoom consumes no extra pixels.
-    [plan,secF,secL,secR].forEach(resizeDisplayBacking);
+    canvases.forEach(resizeDisplayBacking);
     drawCueOverride = lxFadeCue();
     fixtureLabelFrame = new Map();
     const previousRigFrame = pieceRigFrame, previousClipFrame = foregroundClipFrame;
     pieceRigFrame = new Map(); foregroundClipFrame = new Map();
     try {
       withTimelinePlaybackDraw(() => {
-        drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
+        if (canvases.includes(plan)) drawPlan();
+        sections.forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
         paintFixtureLabels();
         // Number plates are queued; the front cloth must cover those as well.
         const frontSection = secOf("front");
-        drawFrontMasking(frontSection.ctx, secProj(frontSection), true);
+        if (sections.includes(frontSection)) drawFrontMasking(frontSection.ctx, secProj(frontSection), true);
       });
-      activeSections().forEach(drawSectionMarquee);
+      sections.forEach(drawSectionMarquee);
     } finally { drawCueOverride = null; fixtureLabelFrame = null; pieceRigFrame = previousRigFrame; foregroundClipFrame = previousClipFrame; }
+    canvases.forEach(c => pendingDetailPaint.delete(c));
     const elapsed = performance.now() - started, runtime = state.runtime;
     runtime.drawMs = elapsed;
     runtime.averageMs = runtime.averageMs ? runtime.averageMs * 0.8 + elapsed * 0.2 : elapsed;
@@ -5111,7 +5156,7 @@
   }
 
   function preservePanelScroll(render) {
-    const entries = [...document.querySelectorAll(".modal, .body, .figgrid, .panel, .list, .inspbody, .lxlist, .lxbody")]
+    const entries = [...document.querySelectorAll(".modal, .body, .figgrid, .panel, .list, .inspbody, .lxlist, .lxbody, .leftcol, .gamma-stack-body, .simple-operations, .light-panel-right")]
       .map(el => [el, el.scrollTop, el.scrollLeft]);
     const pageX = window.scrollX, pageY = window.scrollY;
     const result = render();
@@ -8563,11 +8608,7 @@
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */
-  let resizeRaf = 0;
-  window.addEventListener("resize", () => {
-    if (resizeRaf) return;
-    resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; renderAll(); });
-  });
+  window.addEventListener("resize", refreshPanelLayout);
 
   document.addEventListener('pointerdown',ev=>{if(ev.target.matches('input[type=range]'))spatialQuick=true;},true);
   document.addEventListener('pointerup',()=>{if(spatialQuick){spatialQuick=false;flushDraw();}});

@@ -146,6 +146,7 @@
     const audioConfirmations = new Map(), timedOutConfirmations = new Map();
     let bufferedSaveState = null;
     let noticeReceipt = null;
+    let standardRigParentStatus = "unavailable";
     let resolveInitial, bufferedOpen = null;
     const initialOpen = new Promise(resolve => { resolveInitial = resolve; });
     const capability = "documentSessionV1";
@@ -196,7 +197,7 @@
       const saved = tentative;
       if (!saved) return false;
       tentative = null; generation++;opening=Promise.resolve();
-      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported} = saved.bridge);
+      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,standardRigParentStatus,draftOwnerId,draftRecords,draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported} = saved.bridge);
       runtime.restoreRuntime?.(saved.runtime);
       runtime.saveNoticeChanged?.();
       const parent=saved.venueRequestId ? venuePreparation?.parent : null;
@@ -311,7 +312,7 @@
       opening = opening.catch(() => {}).then(async () => {
         if (tentative) return false;
         if (sessionful(payload) && (!once("open:" + payload.requestId) || !once("delivery:" + payload.deliveryGeneration))) return false;
-        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported};
+        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,standardRigParentStatus,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported};
         const incoming = sessionful(payload) ? Object.fromEntries(fields.map(key => [key,payload[key]])) : null;
         if (payload.venueRequestId && (!venueRequest || venueRequest.expired || payload.venueRequestId !== venueRequest.source.requestId))
           throw Error("Expired venue candidate delivery");
@@ -322,6 +323,7 @@
         opened = false; generation++;
         for (const pending of audioConfirmations.values()) pending.finish(false);
         audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null; owner = incoming; noticeReceipt = null;
+        standardRigParentStatus = ["retained", "eligible"].includes(payload.standardRigParentStatus) ? payload.standardRigParentStatus : "unavailable";
         draftRecoveryUnavailable=payload.draftRecoveryUnavailable===true;draftOwnerId=draftRecoveryUnavailable ? null : payload.draftOwnerId || null;
         draftRecoveryStopped=payload.draftRecoveryStopped===true;draftRecoveryExitSupported=payload.draftRecoveryExitSupported===true;
         receiveDraftRecords(payload);
@@ -819,6 +821,7 @@
     sendReady();
     return {
       initialOpen, store, changed, identity, matches, createVenueVersion, cancelVenueVersion, driveBackupAvailable, driveBackupRequest,
+      get standardRigParentStatus() { return standardRigParentStatus; },
       venueOperationFor(intent) {
         const key=JSON.stringify([identity().documentSessionId,contentSignature(runtime.snapshot().show),intent]);
         if(!venueIntents.has(key))venueIntents.set(key,host.crypto.randomUUID());

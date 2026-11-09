@@ -446,7 +446,9 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 .paper-band .band-selection{position:fixed;z-index:5;display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s2);background:var(--desk-2);border:1px solid var(--line-dark);box-shadow:0 4px 16px #0006;color:var(--chrome-ink)}
 .paper-band .band-selection[hidden]{display:none}
 .paper-band .band-selection .band-subgroup{display:flex;gap:var(--s1)}
-#paper-scene svg{width:var(--icon);height:var(--icon);margin-right:var(--s1);vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1}
+#band-selection #paper-scene{width:auto;flex:0 0 auto;height:var(--ctrl-md);min-height:var(--ctrl-md);white-space:nowrap}
+#band-selection #paper-scene > span{white-space:nowrap}
+#paper-scene svg{flex:none;width:var(--icon);height:var(--icon);margin-right:var(--s1);vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1}
 .action-tip-target:has(>[hidden]){display:none}
 .paper-sticky:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
 /* 左の欄（sticky・z-index なし）の中の層は、紙面の位置指定つき要素の下に潜る。層が開いている間だけ欄ごと前へ出す */

@@ -21,12 +21,12 @@
         "zh-Hant": "用於檢查功能與儲存的48個場景，含音源B。",
         "ko": "기능과 저장을 확인하는 48개 장면. 음원 B 포함."
       },
-      "bytes": 987562,
+      "bytes": 987618,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "d21fc470427e1117ba06296231f5bd95778a184195160ab720318cb883c9fbb8"
+      "sha256": "2c8e3600d94fc17c2031451b08709275349aa02b350f493cc5dc63a4bf1153e8"
     },
     {
       "id": "feature-test-2",
@@ -51,7 +51,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "413d7ba154115657fc0313362040462a64506fbbf7869697b244a61adbaf9750"
+      "sha256": "dc8ba9a8ee78aa7d5b7dc169f5804394608329e48f7fcb2c89c3a8d97dfae5bd"
     },
     {
       "id": "eight-circus",
@@ -75,7 +75,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "214724d1bf09206a8651a69ba910a67787017f0504e86badddcd62f074431405"
+      "sha256": "d312695c6de05f91bb0cc6df223bcf073a48985a07bc3fd26aadd2ac9820a66c"
     },
     {
       "id": "seam-garden",
@@ -99,7 +99,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "1d754d8c279bcce0706cfd300c77e7213b6ec58a9a7fe88c8239b33569fe1d16"
+      "sha256": "f78b548c6a1c24eae3eb2c2dc84877367bbee75d74beb0920baa745172e994c9"
     },
     {
       "id": "romeo-juliet-cued",
@@ -123,7 +123,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "8b2bcc3f8245d5cd7142facd484b31e3ea968889e4de93f5f783d2d0b13fcbec"
+      "sha256": "7699ccc2b01fbdf6c02a1665db414bb611432a90714cefdc04fb9c6c5275b719"
     },
     {
       "id": "romeo-juliet-second",
@@ -147,7 +147,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "f053c2c2663a484b81be37d60805db9dfa1c699cc4f00d70baf6a0686ad8dafc"
+      "sha256": "08c97096e06c558ba653ca9c7203c89f09dbc5f9c31e1101b97d4dbb3693ff55"
     },
     {
       "id": "midsummer-rehearsal",
@@ -171,7 +171,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "midsummer-rehearsal.stageproj.zip",
-      "sha256": "4f31b7f84f7549970305e0a3badb234223238e0b426339ca4c1865b2b5350497"
+      "sha256": "3c19416af549c894ec35713645540cf867c034086e7efa9aa87b5859e9843bc0"
     }
   ]
 }

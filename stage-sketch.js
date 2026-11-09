@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.10";
+  const GAMMA_APP_VERSION = "v0.4.11";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2828,7 +2828,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-08`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-09`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -7702,6 +7702,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!track || !audioStore || typeof audioStore.get !== "function") {
       audioPlayback.loading = false;
       audioPlayback.missing = true;
+      audioPlayback.playAfterLoad = false;
       setAudioStatus("この端末に音源がありません。元ファイルを選び直してください。",
         "The audio file is not on this device. Reconnect the original file.", "error");
       syncAudioControls();
@@ -7717,6 +7718,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (!url && !blob) {
         audioPlayback.loading = false;
         audioPlayback.missing = true;
+        audioPlayback.playAfterLoad = false;
         setAudioStatus("この端末に音源がありません。元ファイルを選び直してください。",
           "The audio file is not on this device. Reconnect the original file.", "error");
         syncAudioControls();
@@ -7731,6 +7733,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (generation !== audioLoadGeneration) return false;
       audioPlayback.loading = false;
       audioPlayback.missing = true;
+      audioPlayback.playAfterLoad = false;
       setAudioStatus("この端末では音源を読み出せませんでした。元ファイルを選び直してください。",
         "The audio could not be read on this device. Reconnect the original file.", "error");
       syncAudioControls();
@@ -20535,6 +20538,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           draw(target);
         } finally { target.restore(); }
       };
+      // Painting and borrowed relighting must use the same retirement rule,
+      // including the curtain kind inherited from its registered set.
+      const visibleCurtain = id => {
+        const piece = sc().pieces.find(p => p.id === id && p.type === "curtain");
+        return isScrimPiece(piece) ? piece : null;
+      };
       let lightingClip = null; // lazy, shared by this frame's lighting groups
       return {
         // render()/renderSpinFrame advance this for venue/custom geometry,
@@ -20610,9 +20619,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         // Use the stage's canonical curtain painter and retirement rules.
         // In D-4 only the scrims are visible; the retired front/traveler cloth
         // must not turn the borrowed view into an opaque brown sheet.
+        curtainVisible: id => Boolean(visibleCurtain(id)),
         paintCurtain(target, id) {
-          const piece = sc().pieces.find(p => p.id === id && p.type === "curtain");
-          if (!piece || !isScrimPiece(piece)) return;
+          const piece = visibleCurtain(id);
+          if (!piece) return;
           paint(target, ctx => drawStagePiece(ctx, piece, L, pos => {
             const tilt = L.seat?.tilt || 0;
             return tilt * ((pos.x - L.centerX) / (W / 2));
@@ -28316,7 +28326,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
             focusSceneChip(scene.id);
             return;
           }
-          openScene(scene.id);
+          openSceneFromList(scene.id);
           focusSceneChip(scene.id);
         });
         head.append(grip, button);
@@ -34477,6 +34487,14 @@ ${propsPlotHtml}
     beginSceneAnim(fromScene);
   }
 
+  function openSceneFromList(id) {
+    // The timeline owns seeking and playback; fall back when it cannot open this row.
+    if (!window.dispatchEvent(new CustomEvent("stage-timeline-scene-open-request", {
+      cancelable: true, detail: { sceneId: id },
+    }))) return;
+    openScene(id);
+  }
+
   function openScene(id, options = {}) {
     timelinePanelTransition = null;
     /* 共有セッションのゲストはシーンを切り替えられない（ホストのシーンに追従する）。
@@ -37885,7 +37903,14 @@ ${propsPlotHtml}
   async function upgradeOpenedStandardRig() {
     if (!window.GAMMA_STAGE_UI_READY || !window.GAMMA_LIGHT_HOST || nativeDocumentDelivery || state.project.lightingDesign?.rig?.simpleLighting?.presetId !== 'standard26') return;
     try {
+      const project = state.project, owner = nativeProject?.identity();
       const parts = await ensurePartLightingModel();
+      if (nativeProject && (state.project !== project || !nativeProject.matches(owner) || nativeDocumentDelivery)) return;
+      if (nativeProject) {
+        if (!parts.isLegacyStandard(project.lightingDesign.rig)) return;
+        if (nativeProject.standardRigParentStatus === 'retained') return;
+        if (nativeProject.standardRigParentStatus !== 'eligible') throw Error('standard-rig-history-unavailable');
+      }
       // The retained parent is deliberately still a legacy rig. Its saved
       // child proves migration completed; do not mark or rewrite the backup.
       const retainedParent = Object.values(availableShows()).some(entry => {

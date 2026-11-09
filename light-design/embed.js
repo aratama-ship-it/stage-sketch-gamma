@@ -600,10 +600,69 @@
         ? Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])) : value);
   }
   function hasVisitEdits() { return hasDraft() && visitFingerprint()!==visitBaseline; }
+  // View-only, one-visit return position. Never put this in the saved draft or
+  // document history. The host opens simple mode first, even on a detail return.
+  function createPanelScrollReturn() {
+    let saved=null, frame=0, geometry=null;
+    const simple=()=>document.documentElement.classList.contains('simple-light-active');
+    const stop=()=>{if(frame)cancelAnimationFrame(frame);frame=0;geometry=null;};
+    const cancel=()=>{stop();saved=null;};
+    function capture() {
+      if(!active)return; // The host can suspend twice during one tab switch.
+      stop();
+      saved={owner:{...context},mode:state.mode,simple:simple(),
+        entries:[...document.querySelectorAll('.leftcol, .gamma-stack-body, .simple-operations, .light-panel-right')]
+          .map(el=>({el,top:el.scrollTop,left:el.scrollLeft}))};
+    }
+    function restore() {
+      frame=0;
+      if(!saved || !active || document.hidden)return;
+      if(!sameOwner(saved.owner,context)){cancel();return;}
+      if(state.mode!==saved.mode || simple()!==saved.simple){geometry=null;return;}
+      // Wait for real layout stability, including the stack's queued height
+      // measurements and the host's frame resize. No fixed delay, and no loop
+      // while the original detail/simple view is hidden.
+      const next=saved.entries.map(({el})=>{
+        const rect=el.getBoundingClientRect();
+        return [el.parentElement,rect.width,rect.height,el.scrollWidth,el.scrollHeight];
+      });
+      if(!next.some(row=>row[1]>0 && row[2]>0)){geometry=null;return;}
+      if(!geometry || next.some((row,i)=>row.some((value,j)=>value!==geometry[i][j]))) {
+        geometry=next;frame=requestAnimationFrame(restore);return;
+      }
+      const entries=saved.entries;cancel();
+      entries.forEach(({el,top,left})=>{if(el.isConnected){el.scrollTop=top;el.scrollLeft=left;}});
+    }
+    function schedule() {
+      geometry=null;
+      if(saved && active && !frame)frame=requestAnimationFrame(restore);
+    }
+    function resume(next) {
+      if(saved && !sameOwner(saved.owner,next))cancel();
+      schedule();
+    }
+    // renderAll emits before rendering; rAF runs after its queued simple UI
+    // render. A later detail click schedules the return again after reparenting.
+    window.addEventListener('gamma-light-edit',schedule);
+    window.addEventListener('resize',schedule);
+    window.addEventListener('gamma-light-cue-view',cancel);
+    window.addEventListener('gamma-light-cue-select',cancel);
+    const interact=event=>{
+      if(!active)return;
+      if((event.type==='pointerdown' || event.type==='keydown' && ['Enter',' '].includes(event.key)) &&
+        event.target.closest?.('#simple-mode-on, #simple-mode-off'))return;
+      cancel();
+    };
+    for(const type of ['pointerdown','keydown','wheel','touchstart'])
+      document.addEventListener(type,interact,{capture:true,passive:true});
+    return {capture,resume};
+  }
+  const panelScrollReturn=createPanelScrollReturn();
   function open(next, mode) {
     const entering=!active || !sameOwner(context,next);
     const result=openContext(next,mode);
     if(entering && active) visitBaseline=visitFingerprint();
+    panelScrollReturn.resume(next);
     return result;
   }
   function openContext(next, mode) {
@@ -737,7 +796,7 @@
       return parent.GammaUndoOwner?.allows ? parent.GammaUndoOwner.allows('lightDraft', event) : true;
     } catch (_) { return false; }
   };
-  function suspend(){clearTimelineFrame();endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
+  function suspend(){panelScrollReturn.capture();clearTimelineFrame();endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
   function apply(options = {}) {return startApply(()=>applyOwned(options));}
   async function applyOwned(options = {}) {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は適用できません。下書きに戻ってください'};
