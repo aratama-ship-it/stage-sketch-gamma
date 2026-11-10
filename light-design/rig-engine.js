@@ -382,12 +382,15 @@
       if (![m.u, m.v, m.h].every(Number.isFinite)) return null;
       return { x: (m.u - 0.5) * dims.W, y: m.v * dims.D, z: m.h };
     }
+    // Newly supported theatre rigs scale their wing offset and floor-fixture
+    // height too. Proscenium and hand-built rigs keep their shipped geometry.
+    const theatreRig = rig.simpleLighting && rig.simpleLighting.venueType !== "proscenium";
     if (m.type === "floor") {
-      return { x: (clamp(finite(m.u, 0.5), 0, 1) - 0.5) * dims.W, y: clamp(finite(m.v, 0.5), 0, 1) * dims.D, z: FLOOR_FIXTURE_Z };
+      return { x: (clamp(finite(m.u, 0.5), 0, 1) - 0.5) * dims.W, y: clamp(finite(m.v, 0.5), 0, 1) * dims.D, z: FLOOR_FIXTURE_Z * (theatreRig ? dims.H / 8 : 1) };
     }
     if (m.type === "side") {
       const sign = m.side === "shimote" ? -1 : 1; // 下手=左=負、上手=右=正
-      return { x: sign * (dims.W / 2 + SIDE_OFFSET_M), y: clamp(finite(m.v, 0.5), 0, 1) * dims.D, z: clamp(finite(m.h, 2), 0.3, 14) };
+      return { x: sign * (dims.W / 2 + SIDE_OFFSET_M * (theatreRig ? dims.W / 12 : 1)), y: clamp(finite(m.v, 0.5), 0, 1) * dims.D, z: clamp(finite(m.h, 2), 0.3, 14) };
     }
     /* 前明かり（シーリング／フロントサイド）。客席の上にあるので舞台より手前（y > D）。
        ahead = 舞台の手前端からの距離(m)。高さは客席天井なので舞台のHを超えてよい。 */

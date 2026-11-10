@@ -619,3 +619,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "斜め上 上手 1": "High side, stage left 1",
   "斜め上 上手 2": "High side, stage left 2"
 });
+
+// V0412: theatre-type rigs and the wing-reference safety stop.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "この劇場の種類は、まだかんたん照明に対応していません（三方・全周の客席は別に準備中）": "This theatre type does not yet support Simple Lighting (three-sided and surrounding seating are being prepared separately).",
+  "舞台袖が無い劇場では使えません": "Not available in theatres without stage wings.",
+  "袖の灯体を使う明かりがあるため、劇場の変更を止めました。元の劇場とQを保持しています。": "The theatre change was stopped because lighting uses wing fixtures. The original theatre and cues are preserved.",
+  "舞台袖と寸法に合わせて照明を組み直します。番号は変えません。明かりは変更後に確認してください。": "Lighting will be rebuilt for the stage wings and dimensions. Numbers stay unchanged. Check the lighting afterwards.",
+  "舞台袖と寸法に合わせて配置します。番号は変えません。": "Placed to fit the stage wings and dimensions, keeping fixture numbers."
+});

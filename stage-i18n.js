@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "かんたん照明の標準セットを、プロセニアム以外のシアター型(客席が一方向)の劇場でも使えるようにしました。プロセニアムの48灯は変わりません。灯数は実際の左右の袖で決まります(両袖あり48・片袖だけ44・袖なし40)。袖が無いと「横から照らす」は選べません。袖の灯体を使う明かりがあるショーを袖の無い劇場へ替えようとすると、替える前に止めて知らせます。説明書の照明の章を更新しました。AI相談役(共有Worker)が照明の全種類を受け付けるようになりました。劇場の選択肢から4種類(歌舞伎の舞台・ホテルの宴会場・シャピトー・ドーム)を外しました(データは消しません。既存のショーはそのまま開けます)。保存の形・読み込み・音楽・共有の処理は変わりません。": "The simple-lighting standard rig now works at theatre-type venues (audience on one side) beyond the proscenium. The proscenium's 48 fixtures are unchanged. Fixture count now depends on the actual wings (48 with both wings, 44 with one wing, 40 with none). \"Side lighting\" can't be selected where there are no wings. Switching a show with wing-fixture lighting (cues, groups, or alternates) to a wingless theatre is blocked with a notice before the switch happens. Updated the lighting chapter of the manual. The AI advisor (shared Worker) now accepts every lighting type. Removed 4 theatre choices (kabuki stage, hotel banquet hall, chapiteau, dome) from the picker (data isn't deleted; existing shows still open as before). Save format, loading, audio, and sharing are unchanged.",
+
     "不具合を8件直しました。照明タブを他のタブと行き来しても、外側のパネルの位置が変わりません。ゲストも、進行表の中のQシートで全体表・演者・部署を切り替えられます。袖の図を拡大している間、左の列が重なりません。進行表のパネルの位置の読み上げと、キーボードで並べ替えたときのお知らせが、画面の順と今の言語に合います。照明の正面図で、片付けた幕が演者を隠しません。見えていない照明の詳細図は、ウィンドウの幅を変えても描き直しません。Safari系のブラウザでも、進行表の書式の「下」を押せます。再生中にシーンの一覧でシーンを押すと、タイムラインと同じく、そのシーンの頭から再生が続きます。": "Fixed 8 bugs. The lighting tab's outer panel keeps its position when you switch to another tab and back. Guests can switch between the master sheet, cast and departments in the Q-sheet inside the running order. The left column no longer overlaps while a wing diagram is enlarged. The running order's spoken panel position and the notice after reordering with the keyboard now match the on-screen order and the current language. In the lighting front view, a stowed curtain no longer hides performers. Hidden lighting detail diagrams are no longer redrawn when you resize the window. \"Bottom\" in the running-order format can be pressed in Safari-type browsers too. Pressing a scene in the scene list during playback jumps to the start of that scene and keeps playing, as the timeline does.",
     "Mac版: 新しい標準セットへ一度移した元のファイルを開き直しても、もう一度移行して保存先を聞かなくなりました(元のファイルは書き換えません)。v0.4.9・v0.4.10で移したファイルは、自動の移行を見送り、元の版のまま開きます。": "Mac app: reopening the original file after it has been moved to the new standard set no longer migrates it again or asks where to save (the original file is not modified). Files migrated in v0.4.9 or v0.4.10 skip the automatic migration and open as the original version.",
     "保存の形は変わりません。起動時に読み込む量の上限を、配布時に束ねた後のサイズで数えるように変更しました(見た目・機能への影響はありません)。": "Save format is unchanged. The startup load budget now measures the bundled distribution size (no visible or functional change).",
@@ -7123,4 +7125,13 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "斜め上 上手": "High side, stage left",
   "斜め上 上手 1": "High side, stage left 1",
   "斜め上 上手 2": "High side, stage left 2"
+});
+
+// V0412: theatre-type rigs and the wing-reference safety stop.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "この劇場の種類は、まだかんたん照明に対応していません（三方・全周の客席は別に準備中）": "This theatre type does not yet support Simple Lighting (three-sided and surrounding seating are being prepared separately).",
+  "舞台袖が無い劇場では使えません": "Not available in theatres without stage wings.",
+  "袖の灯体を使う明かりがあるため、劇場の変更を止めました。元の劇場とQを保持しています。": "The theatre change was stopped because lighting uses wing fixtures. The original theatre and cues are preserved.",
+  "舞台袖と寸法に合わせて照明を組み直します。番号は変えません。明かりは変更後に確認してください。": "Lighting will be rebuilt for the stage wings and dimensions. Numbers stay unchanged. Check the lighting afterwards.",
+  "舞台袖と寸法に合わせて配置します。番号は変えません。": "Placed to fit the stage wings and dimensions, keeping fixture numbers."
 });

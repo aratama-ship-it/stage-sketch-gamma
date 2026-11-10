@@ -164,10 +164,10 @@ window.MANUAL_CONTENT = {
         },
         {
           id: "p-venue", title: "劇場サイズ", titleEn: "Venue size",
-          keywords: ["劇場", "会場", "舞台の形", "広さ", "プロセニアム", "テント", "シャピトー", "サーカス", "リング", "全周", "シアタートラム", "TOHU", "シルク・ディヴェール"],
-          keywordsEn: ["venue", "theatre", "stage shape", "size", "proscenium", "big top", "chapiteau", "circus", "ring", "in the round", "Theatre Tram", "TOHU", "Cirque d'Hiver"],
-          html: "<p>舞台の形式と規模を選び、〈この部屋を作る〉で舞台が組み上がります。形式はプロセニアム・スラスト・ビッグトップ・屋外ステージ・ブラックボックスに加え、サーカス向けの〈シャピトー（巡演テント）〉と〈劇場のサーカス公演〉があります。実在の劇場は3つ——シアタートラム（東京・三軒茶屋）、TOHU（モントリオール・現代サーカスの全周360度）、シルク・ディヴェール（パリ1852年・古典サーカスのワンリング）。寸法を自分で入れるカスタムもあります。会場だけをファイルにして受け渡すこともできます。</p><p>会場を選ぶと、欄の下にその会場がどういう場所かの説明が出ます。</p>",
-          htmlEn: "<p>Choose the form and the size, then 〈Build this room〉 assembles the stage. Besides proscenium, thrust, big top, outdoor stage and black box, there are two circus forms — 〈Chapiteau〉 (a touring tent) and 〈Circus in a theatre〉. Three real venues are included: Theatre Tram (Tokyo), TOHU (Montreal — contemporary circus, fully in the round), and Cirque d'Hiver (Paris, 1852 — the classical one-ring house). A custom option takes your own dimensions. A venue on its own can also be exported and passed along as a file.</p><p>Choosing a venue shows a note below the panel describing what kind of room it is.</p>"
+          keywords: ["劇場", "会場", "舞台の形", "広さ", "プロセニアム", "テント", "サーカス", "リング", "全周", "シアタートラム", "TOHU", "シルク・ディヴェール"],
+          keywordsEn: ["venue", "theatre", "stage shape", "size", "proscenium", "big top", "circus", "ring", "in the round", "Theatre Tram", "TOHU", "Cirque d'Hiver"],
+          html: "<p>舞台の形式と規模を選び、〈この部屋を作る〉で舞台が組み上がります。形式はプロセニアム・スラスト・ビッグトップ・屋外ステージ・ブラックボックスに加え、サーカス向けの〈劇場のサーカス公演〉があります。実在の劇場は3つ——シアタートラム（東京・三軒茶屋）、TOHU（モントリオール・現代サーカスの全周360度）、シルク・ディヴェール（パリ1852年・古典サーカスのワンリング）。寸法を自分で入れるカスタムもあります。会場だけをファイルにして受け渡すこともできます。</p><p>会場を選ぶと、欄の下にその会場がどういう場所かの説明が出ます。</p>",
+          htmlEn: "<p>Choose the form and the size, then 〈Build this room〉 assembles the stage. Besides proscenium, thrust, big top, outdoor stage and black box, there is also 〈Circus in a theatre〉. Three real venues are included: Theatre Tram (Tokyo), TOHU (Montreal — contemporary circus, fully in the round), and Cirque d'Hiver (Paris, 1852 — the classical one-ring house). A custom option takes your own dimensions. A venue on its own can also be exported and passed along as a file.</p><p>Choosing a venue shows a note below the panel describing what kind of room it is.</p>"
         },
         {
           id: "p-cast", title: "出るもの（演者・舞台セット・小道具）", titleEn: "Cast & set (performers, set pieces, props)",

@@ -8178,7 +8178,7 @@
     try {
       const made = await host.design(key);
       if (made.kind === "simple") {
-        state.rig = window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(state.dims, made.venueType);
+        state.rig = window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(state.dims, made.venueType, made.wings);
       } else {
         state.rig = JSON.parse(JSON.stringify(made.rig));
         /* 窓の〈プリセット〉と同じく、灯体ごとの全消灯の明かり（狙いはプリセットの既定）を各シーンへ。

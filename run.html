@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Lite | Stage Sketch Gamma Lite</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.11">
+<meta name="stage-sketch-gamma-version" content="v0.4.12">
 <meta name="gamma-edition" content="lite">
   <script src="gamma-editions.js?v=20261029-v0394"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -102,7 +102,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.11</span>
+                <span class="stage-app-version">0.4.12</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2887,15 +2887,13 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261109-v0411">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261109-v0412">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0411-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0411-title">v0.4.11</h3><time datetime="2026-11-09">2026-11-09</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0412-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0412-title">v0.4.12</h3><time datetime="2026-11-09">2026-11-09</time></header>
       <ul>
-        <li>不具合を8件直しました。照明タブを他のタブと行き来しても、外側のパネルの位置が変わりません。ゲストも、進行表の中のQシートで全体表・演者・部署を切り替えられます。袖の図を拡大している間、左の列が重なりません。進行表のパネルの位置の読み上げと、キーボードで並べ替えたときのお知らせが、画面の順と今の言語に合います。照明の正面図で、片付けた幕が演者を隠しません。見えていない照明の詳細図は、ウィンドウの幅を変えても描き直しません。Safari系のブラウザでも、進行表の書式の「下」を押せます。再生中にシーンの一覧でシーンを押すと、タイムラインと同じく、そのシーンの頭から再生が続きます。</li>
-        <li>Mac版: 新しい標準セットへ一度移した元のファイルを開き直しても、もう一度移行して保存先を聞かなくなりました(元のファイルは書き換えません)。v0.4.9・v0.4.10で移したファイルは、自動の移行を見送り、元の版のまま開きます。</li>
-        <li>保存の形は変わりません。起動時に読み込む量の上限を、配布時に束ねた後のサイズで数えるように変更しました(見た目・機能への影響はありません)。</li>
+        <li>かんたん照明の標準セットを、プロセニアム以外のシアター型(客席が一方向)の劇場でも使えるようにしました。プロセニアムの48灯は変わりません。灯数は実際の左右の袖で決まります(両袖あり48・片袖だけ44・袖なし40)。袖が無いと「横から照らす」は選べません。袖の灯体を使う明かりがあるショーを袖の無い劇場へ替えようとすると、替える前に止めて知らせます。説明書の照明の章を更新しました。AI相談役(共有Worker)が照明の全種類を受け付けるようになりました。劇場の選択肢から4種類(歌舞伎の舞台・ホテルの宴会場・シャピトー・ドーム)を外しました(データは消しません。既存のショーはそのまま開けます)。保存の形・読み込み・音楽・共有の処理は変わりません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3840,12 +3838,12 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=20261104-v042"></script>
+<script src="stage-venues.js?v=20261109-v0412"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261109-v0411"></script>
+<script src="stage-samples/catalog.js?v=20261109-v0412"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3861,7 +3859,7 @@
 <script src="stage-storage-recovery.js?v=20261020-v0382"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261109-v0411" data-manual-content="manual-gamma/manual-content.js?v=20261109-v0411"></script>
+<script src="manual-gamma/manual-meta.js?v=20261109-v0412" data-manual-content="manual-gamma/manual-content.js?v=20261109-v0412"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 
 
@@ -3894,13 +3892,13 @@
 <script src="gamma-ui.js?v=20261104-v044"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="light-design/simple-lighting-model.js?v=20261105-v045"></script>
+<script src="light-design/simple-lighting-model.js?v=20261109-v0412"></script>
 <script src="stage-run-of-show-distribution.js?v=20261012-v0358"></script>
 <script src="stage-run-of-show-files.js?v=20261012-v0358"></script>
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261109-v0411"></script>
+<script src="stage-language-loader.js?v=20261109-v0412"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
 <script src="stage-metrics.js?v=20261020-v0380"></script>
@@ -3910,7 +3908,7 @@
 <script src="stage-project-bridge.js?v=20261109-v0411"></script>
 <script src="stage-project-library.js?v=20261103-v040"></script>
 <script src="stage-element-refs.js?v=20261104-v043"></script>
-<script src="stage-sketch.js?v=20261109-v0411"></script>
+<script src="stage-sketch.js?v=20261109-v0412"></script>
 
 
 
@@ -3930,7 +3928,7 @@
 
 
 <script src="stage-run-of-show-pane.js?v=20261109-v0411"></script>
-<script src="gamma-workspace.js?v=20261109-v0411"></script>
+<script src="gamma-workspace.js?v=20261109-v0412"></script>
 <script src="gamma-feature-search.js?v=20261030-v0395"></script>
 <script src="gamma-mobile.js?v=20261030-v0395"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>

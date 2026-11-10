@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.11">
+<meta name="stage-sketch-gamma-version" content="v0.4.12">
 <meta name="gamma-edition" content="studio">
   <script src="stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -88,7 +88,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.11</span>
+                <span class="stage-app-version">0.4.12</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2878,15 +2878,13 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261109-v0411">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261109-v0412">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0411-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0411-title">v0.4.11</h3><time datetime="2026-11-09">2026-11-09</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0412-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0412-title">v0.4.12</h3><time datetime="2026-11-09">2026-11-09</time></header>
       <ul>
-        <li>不具合を8件直しました。照明タブを他のタブと行き来しても、外側のパネルの位置が変わりません。ゲストも、進行表の中のQシートで全体表・演者・部署を切り替えられます。袖の図を拡大している間、左の列が重なりません。進行表のパネルの位置の読み上げと、キーボードで並べ替えたときのお知らせが、画面の順と今の言語に合います。照明の正面図で、片付けた幕が演者を隠しません。見えていない照明の詳細図は、ウィンドウの幅を変えても描き直しません。Safari系のブラウザでも、進行表の書式の「下」を押せます。再生中にシーンの一覧でシーンを押すと、タイムラインと同じく、そのシーンの頭から再生が続きます。</li>
-        <li>Mac版: 新しい標準セットへ一度移した元のファイルを開き直しても、もう一度移行して保存先を聞かなくなりました(元のファイルは書き換えません)。v0.4.9・v0.4.10で移したファイルは、自動の移行を見送り、元の版のまま開きます。</li>
-        <li>保存の形は変わりません。起動時に読み込む量の上限を、配布時に束ねた後のサイズで数えるように変更しました(見た目・機能への影響はありません)。</li>
+        <li>かんたん照明の標準セットを、プロセニアム以外のシアター型(客席が一方向)の劇場でも使えるようにしました。プロセニアムの48灯は変わりません。灯数は実際の左右の袖で決まります(両袖あり48・片袖だけ44・袖なし40)。袖が無いと「横から照らす」は選べません。袖の灯体を使う明かりがあるショーを袖の無い劇場へ替えようとすると、替える前に止めて知らせます。説明書の照明の章を更新しました。AI相談役(共有Worker)が照明の全種類を受け付けるようになりました。劇場の選択肢から4種類(歌舞伎の舞台・ホテルの宴会場・シャピトー・ドーム)を外しました(データは消しません。既存のショーはそのまま開けます)。保存の形・読み込み・音楽・共有の処理は変わりません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3837,15 +3835,15 @@
   </button>
 </div>
 
-<script src="stage-bundle-body-before-manual.da42602d0c3975139ef89ae802b56024df59a7d3b4815e877bf6efc71da92b68.js"></script>
-<script src="stage-bundle-manual-meta.d98d0a2b0dce2972aa61973833eff9aa705f0e70616e571da42297e35909c1da.js" data-manual-content="manual-gamma/manual-content.js?v=20261109-v0411"></script>
-<script src="stage-bundle-body-before-language-1.23fbb23f99e13a70e8e2146e64b903136f25724efcd27edd7bb1b7a2f2f709c7.js"></script>
+<script src="stage-bundle-body-before-manual.601946ce7e04daa87e8cc83edabf0a1693bed5316efc3853b938153aa12c9691.js"></script>
+<script src="stage-bundle-manual-meta.9822a8dc2944298087cd8f37c739ff07527ef439712a11877ccbdb32e5cde10e.js" data-manual-content="manual-gamma/manual-content.js?v=20261109-v0412"></script>
+<script src="stage-bundle-body-before-language-1.818e3addf59e038089950d6ff20fc57ba49b6d1fb8715313cf19d30dae8c564b.js"></script>
 <script src="stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js"></script>
 <script src="stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js"></script>
-<script src="stage-bundle-language-loader.c2c2fc3256132a74fb136e58e99ef12c3c48ab4b8b249790e59753b249dc669f.js"></script>
-<script src="stage-bundle-body-after-language.f1f1659cea3b5bd2927ff54b3427df4fff26873c7f79fb1f33e33ba501964726.js"></script>
+<script src="stage-bundle-language-loader.642f540bff250a99a71b73651aebd1a42bfca9598b7a3ef9d06778b610e4813e.js"></script>
+<script src="stage-bundle-body-after-language.3bffb52f1a1fda05eb78cd4dec8be1aaa885cd53d6ce2f71be5d8e1b9da8eb65.js"></script>
 <link rel="stylesheet" href="stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css">
-<script src="stage-bundle-body-after-field-css-1.53f7b73703d9441815efa55fed860cd9a79a2b5e8296ce50fbef95302fab7ec3.js"></script>
+<script src="stage-bundle-body-after-field-css-1.cc6f0dbade961786e755089d6d7c7d43da6cc404d60405b5805c2749eba5a546.js"></script>
 <script src="stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js"></script>
 <script src="stage-bundle-body-after-field-css-3.29f90e4c8931a578617511ca3a9b4fc5e1020fd8a681411c7f322fffabb58ac4.js"></script>
 </body>

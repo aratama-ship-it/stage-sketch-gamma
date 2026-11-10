@@ -904,7 +904,7 @@
   VENUES_V2.push(circusTheatreV2);
 
   // 新規選択からは外す。以前このIDを保存したショーの読込・再編集には定義を残す。
-  const RETIRED_PRESET_IDS = new Set(["circus-theatre"]);
+  const RETIRED_PRESET_IDS = new Set(["circus-theatre", "kabuki-stage", "banquet-hall", "chapiteau", "dome-concert"]);
 
   /* ── 実在会場プリセット ──────────────────────────────
    * 形式プリセット（上のVENUES_V2）と違い、実在の劇場を図面から起こす。
@@ -2328,6 +2328,7 @@
       return VENUES.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))
         .concat(readLibrary().map(customLegacyVenue));
     },
+    isRetired: (id) => RETIRED_PRESET_IDS.has(id),
     byId: legacyVenueById,
     sizeById: (venue, sizeId) => (venue.sizes.find((s) => s.id === sizeId) || venue.sizes[0]),
     seats: SEATS,

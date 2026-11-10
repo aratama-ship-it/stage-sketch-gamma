@@ -111,7 +111,7 @@ function legacyStandardRig(dims,venueType,count=44){
    simpleRole:role,beamDeg:opticalType==='spot'?16:50,colorMode:'mix',...extra});
   for(const [i,u]of [.12,.37,.63,.88].entries())for(const [depth,v]of [['front',.88],['back',.18]])
    add('floor-'+depth+'-'+i,'転がし '+(depth==='front'?'手前':'奥')+' '+(i+1),'fixed','led-par','wash',
-    {type:'floor',u,v},'floor',{cueColor:true,fixedSetup:{surface:'air',path:{kind:'still',a:{u,v:depth==='front'?.5:.65,hM:1.2}}}});
+    {type:'floor',u,v},'floor',{cueColor:true,fixedSetup:{surface:'air',path:{kind:'still',a:{u,v:depth==='front'?.5:.65,hM:venueType==='proscenium'?1.2:.15*dims.H}}}});
   for(const [i,u]of [.25,.75].entries()){
    add('laser-'+i,'レーザー '+(i+1),'laser',null,null,{type:'truss',trussId:'simple-truss-back',u},'laser');
    add('moving-'+i,'ムービング '+(i+1),'moving','moving-profile','spot',{type:'truss',trussId:'simple-truss-front',u},'moving-effect');
@@ -144,7 +144,13 @@ function standardRig(dims,venueType){
  rig.simpleLighting.standardRigRevision=STANDARD_RIG_REVISION;
  return root.GAMMA_LIGHT_MODEL?.positionNames ? root.GAMMA_LIGHT_MODEL.positionNames.withProscenium(rig,true) : rig;
 }
-function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
+function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID,wings){
+ const rig=assembleRig(dims,venueType,presetId);
+ // Assemble the shipped numbers first. Missing wings must never renumber lamps.
+ M.forWings(rig,wings);
+ return M.forVenue(rig,venueType);
+}
+function assembleRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
  if(!presets.some(p=>p.id===presetId))throw Error('対応する機材配置を選んでください');
  if(presetId===DEFAULT_PRESET_ID)return standardRig(dims,venueType);
  const rig=M.createRig(dims,venueType);if(presetId==='common24')return rig;
@@ -158,30 +164,43 @@ function createRig(dims,venueType,presetId=DEFAULT_PRESET_ID){
  if(presetId==='balanced24')for(const [side,u]of [['shimote',.15],['kamite',.85]])rig.fixtures.push({id:'parts-floor-'+side,no:rig.fixtures.length+1,name:side==='shimote'?'転がし下手':'転がし上手',kind:'fixed',fixtureType:'led-par',opticalType:'wash',beamDeg:50,cueColor:true,mount:{type:'floor',u,v:.8},fixedSetup:{surface:'air',path:{kind:'still',a:{u,v:.5,hM:1}}}});
  rig.simpleLighting={version:2,presetId,stage:clone(dims),venueType};return rig;
 }
-function assessStage(dims,venueType,presetId=DEFAULT_PRESET_ID){
- try{createRig(dims,venueType,presetId);}catch(e){return {status:'unavailable',message:e.message};}
+function assessStage(dims,venueType,presetId=DEFAULT_PRESET_ID,wings){
+ try{createRig(dims,venueType,presetId,wings);}catch(e){return {status:'unavailable',message:e.message};}
  // These are drawing limits, not structural or photometric certification.
  const conditional=dims.W>14||dims.D>10||dims.H>8||dims.H<3.5;
  return {status:conditional?'conditional':'supported',message:conditional?'条件付き：照射範囲と吊り高さを詳細で確認してください':'配置可能：機材数を保って舞台寸法に合わせます'};
 }
 function signature(rig){return JSON.stringify({trusses:rig.trusses,fixtures:rig.fixtures.map(f=>({id:f.id,kind:f.kind,fixtureType:f.fixtureType,opticalType:f.opticalType,mount:f.mount,cueColor:f.cueColor}))});}
-function compatible(rig,dims,venueType){try{
+// No new persisted backup fields: reject references to fixtures about to disappear.
+function hasRemovedReferences(design,nextRig,scenes){
+ const ids=new Set(nextRig.fixtures.map(f=>f.id));
+ const values=JSON.stringify([design.scenes,design.archivedScenes,design.fixtureGroups,scenes?.map(s=>s.sceneAlternatives)]);
+ return design.rig.fixtures.some(f=>!ids.has(f.id)&&values.includes(JSON.stringify(f.id)));
+}
+function legacyCount(rig,dims,venueType,wings){
+ return [26,44,46].find(n=>signature(rig)===signature(M.forVenue(M.forWings(legacyStandardRig(dims,venueType,n),wings),venueType)));
+}
+function compatible(rig,dims,venueType,wings){try{
+ // Cue composition has no host venue object. Compare the complete surviving
+ // sides in that case; host entry/rebuild callers pass the actual venue wings
+ // so manually removed fixtures cannot become an automatic rebuild candidate.
+ wings=wings??Object.fromEntries(['shimote','kamite'].map(side=>[side,rig.fixtures.some(f=>f.mount.type==='side'&&f.mount.side===side)]));
  if(['W','D','H'].some(k=>rig?.simpleLighting?.stage?.[k]!==dims[k]))return false;
- if(rig?.simpleLighting?.version===1)return M.isCommon(rig,dims,venueType);
+ if(rig?.simpleLighting?.version===1)return M.isCommon(rig,dims,venueType,wings);
  if(rig?.simpleLighting?.version!==2)return false;
- const count=rig.fixtures.length,presetId=rig.simpleLighting.presetId;
+ const presetId=rig.simpleLighting.presetId;
  if(presetId===DEFAULT_PRESET_ID&&rig.simpleLighting.standardRigRevision!=null&&rig.simpleLighting.standardRigRevision!==STANDARD_RIG_REVISION)return false;
- const expected=presetId===DEFAULT_PRESET_ID&&rig.simpleLighting.standardRigRevision==null&&[26,44,46].includes(count)
-  ?legacyStandardRig(dims,venueType,count):createRig(dims,venueType,presetId);
+ if(presetId===DEFAULT_PRESET_ID&&rig.simpleLighting.standardRigRevision==null)return !!legacyCount(rig,dims,venueType,wings);
+ const expected=createRig(dims,venueType,presetId,wings);
  return signature(rig)===signature(expected);
  }catch{return false;}}
 // UI entry policy is separate from reading/composing legacy cues.
-function canUseSimple(rig,dims,venueType){return rig?.simpleLighting?.presetId===DEFAULT_PRESET_ID&&compatible(rig,dims,venueType);}
-function rebuildRig(rig,dims,venueType){
- const presetId=rig.simpleLighting?.presetId||'common24',count=rig.fixtures.length;
- const next=presetId===DEFAULT_PRESET_ID&&rig.simpleLighting.standardRigRevision==null&&[26,44,46].includes(count)
-  ?legacyStandardRig(dims,venueType,count):createRig(dims,venueType,presetId);
- const ids=new Set(rig.fixtures.map(f=>f.id));next.fixtures=next.fixtures.filter(f=>ids.has(f.id));return next;
+function canUseSimple(rig,dims,venueType,wings){return rig?.simpleLighting?.presetId===DEFAULT_PRESET_ID&&compatible(rig,dims,venueType,wings);}
+function rebuildRig(rig,dims,venueType,wings){
+ const marker=rig.simpleLighting,presetId=marker?.presetId||'common24';
+ const oldWings=Object.fromEntries(['shimote','kamite'].map(side=>[side,rig.fixtures.some(f=>f.mount.type==='side'&&f.mount.side===side)]));
+ const count=presetId===DEFAULT_PRESET_ID&&marker.standardRigRevision==null?legacyCount(rig,marker.stage,marker.venueType,oldWings):null;
+ return count?M.forVenue(M.forWings(legacyStandardRig(dims,venueType,count),wings),venueType):createRig(dims,venueType,presetId,wings);
 }
 function matchesRequirements(requires,context,fixtures){
  return (Array.isArray(requires)?requires:[requires]).some(r=>
@@ -480,7 +499,7 @@ function drawLaserType(ctx,project,source,aim,dims,light,level=1){
  L.drawProjected(ctx,project,rays,[light.color],level,100,{alphaScale:1,fill:false,surface:false});return rays;
 }
 function targetStatus(cue,pieces){const warnings=[];for(const value of Object.values(cue?.simpleComposition?.parts||{})){if(!['spot','gobo'].includes(value.patternId)||!value.target?.startsWith('person:'))continue;try{if(JSON.stringify(target(value.target,pieces))!==JSON.stringify(value.targetPoint))warnings.push('対象の配置が変わりました。ピンスポットの位置を選び、適用して再照準してください');}catch(e){warnings.push(e.message);}}return [...new Set(warnings)];}
-function withRig(design,dims,venueType,id){const next=clone(design);next.rig=createRig(dims,venueType,id);next.fixtureGroups=[];delete next.plans;delete next.activePlanRef;
+function withRig(design,dims,venueType,id,wings){const next=clone(design);next.rig=createRig(dims,venueType,id,wings);next.fixtureGroups=[];delete next.plans;delete next.activePlanRef;
  for(const row of [...next.scenes,...(next.archivedScenes||[])]){const reset=cue=>{const value={...clone(cue||{}),lights:{},groups:[],migrationState:'needs-reset',simpleComposition:{version:1,parts:{}}};delete value.simplePreset;return value;};row.cue=reset(row.cue);for(const q of row.lxq||[])q.cue=reset(q.cue);}
  return next;}
 // Upgrade copies only. Rendering is owned by resolved cues, never recomposed here.
@@ -576,5 +595,5 @@ async function upgradeOpenedShow(host,draftExists,notify){
  try{await host.beginSimpleCopy(context.design,context.basis,{standardRigUpgrade:true});notify(UPGRADE_NOTICE);return true;}
  finally{upgradingHosts.delete(host);}
 }
-root.GAMMA_PART_LIGHTING=Object.freeze({DEFAULT_PRESET_ID,STANDARD_RIG_REVISION,NEW_SPOT_POSITIONS,SIDE_HIGH_POSITIONS,isLegacyStandard,upgradeStandardProject,upgradeOpenedShow,UPGRADE_NOTICE,patternDescriptions,searchlightDescriptions,searchlightForms,isSearchlight,searchlightFixtures,searchlightDims,searchlightHasAudience,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,eligibleFixtures,countedFixtures,lampCountChoices,displayedCount,displayedSpread,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage,areas,displayOptions,supportsArea,supportsCross,areaChoices,fixtureStates});
+root.GAMMA_PART_LIGHTING=Object.freeze({hasRemovedReferences,DEFAULT_PRESET_ID,STANDARD_RIG_REVISION,NEW_SPOT_POSITIONS,SIDE_HIGH_POSITIONS,isLegacyStandard,upgradeStandardProject,upgradeOpenedShow,UPGRADE_NOTICE,patternDescriptions,searchlightDescriptions,searchlightForms,isSearchlight,searchlightFixtures,searchlightDims,searchlightHasAudience,canUseSimple,rebuildRig,resolveFollowCue,drawLaserType,presets,presetChoices,patterns,availableParts,createRig,compatible,parts,defaults,compose,migrateLegacy,sideIds,eligibleFixtures,countedFixtures,lampCountChoices,displayedCount,displayedSpread,adjust,detailAdjusted,withRig,gain,setEnabled,targetStatus,assessStage,areas,displayOptions,supportsArea,supportsCross,areaChoices,fixtureStates});
 })(typeof window==='undefined'?globalThis:window);
