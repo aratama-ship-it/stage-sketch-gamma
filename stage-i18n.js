@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "会議用のリアルタイム共有・Qシートのゲスト表示・演者からのメモ送信を止めました(データは消していません)。入口を押すと理由が表示されます。接続中の会議があった場合は、その場で終了します。主催者は、受信していたメモと画像をZIPで書き出せます。受け取ったメモの書き出しは、この版の公開から30日間できます(期限の日時は共有の窓に表示します)。": "Stopped conference real-time sharing, Q-sheet guest viewing, and performer-note sending (no data was deleted). Opening these entry points now shows the reason. Any meeting already connected ends immediately. Organizers can export received notes and images as a ZIP. You can export received notes for 30 days after this release is published (the exact deadline is shown in the share window).",
+
     "かんたん照明の標準セットを、プロセニアム以外のシアター型(客席が一方向)の劇場でも使えるようにしました。プロセニアムの48灯は変わりません。灯数は実際の左右の袖で決まります(両袖あり48・片袖だけ44・袖なし40)。袖が無いと「横から照らす」は選べません。袖の灯体を使う明かりがあるショーを袖の無い劇場へ替えようとすると、替える前に止めて知らせます。説明書の照明の章を更新しました。AI相談役(共有Worker)が照明の全種類を受け付けるようになりました。劇場の選択肢から4種類(歌舞伎の舞台・ホテルの宴会場・シャピトー・ドーム)を外しました(データは消しません。既存のショーはそのまま開けます)。保存の形・読み込み・音楽・共有の処理は変わりません。": "The simple-lighting standard rig now works at theatre-type venues (audience on one side) beyond the proscenium. The proscenium's 48 fixtures are unchanged. Fixture count now depends on the actual wings (48 with both wings, 44 with one wing, 40 with none). \"Side lighting\" can't be selected where there are no wings. Switching a show with wing-fixture lighting (cues, groups, or alternates) to a wingless theatre is blocked with a notice before the switch happens. Updated the lighting chapter of the manual. The AI advisor (shared Worker) now accepts every lighting type. Removed 4 theatre choices (kabuki stage, hotel banquet hall, chapiteau, dome) from the picker (data isn't deleted; existing shows still open as before). Save format, loading, audio, and sharing are unchanged.",
 
     "不具合を8件直しました。照明タブを他のタブと行き来しても、外側のパネルの位置が変わりません。ゲストも、進行表の中のQシートで全体表・演者・部署を切り替えられます。袖の図を拡大している間、左の列が重なりません。進行表のパネルの位置の読み上げと、キーボードで並べ替えたときのお知らせが、画面の順と今の言語に合います。照明の正面図で、片付けた幕が演者を隠しません。見えていない照明の詳細図は、ウィンドウの幅を変えても描き直しません。Safari系のブラウザでも、進行表の書式の「下」を押せます。再生中にシーンの一覧でシーンを押すと、タイムラインと同じく、そのシーンの頭から再生が続きます。": "Fixed 8 bugs. The lighting tab's outer panel keeps its position when you switch to another tab and back. Guests can switch between the master sheet, cast and departments in the Q-sheet inside the running order. The left column no longer overlaps while a wing diagram is enlarged. The running order's spoken panel position and the notice after reordering with the keyboard now match the on-screen order and the current language. In the lighting front view, a stowed curtain no longer hides performers. Hidden lighting detail diagrams are no longer redrawn when you resize the window. \"Bottom\" in the running-order format can be pressed in Safari-type browsers too. Pressing a scene in the scene list during playback jumps to the start of that scene and keeps playing, as the timeline does.",
@@ -7134,4 +7136,31 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "袖の灯体を使う明かりがあるため、劇場の変更を止めました。元の劇場とQを保持しています。": "The theatre change was stopped because lighting uses wing fixtures. The original theatre and cues are preserved.",
   "舞台袖と寸法に合わせて照明を組み直します。番号は変えません。明かりは変更後に確認してください。": "Lighting will be rebuilt for the stage wings and dimensions. Numbers stay unchanged. Check the lighting afterwards.",
   "舞台袖と寸法に合わせて配置します。番号は変えません。": "Placed to fit the stage wings and dimensions, keeping fixture numbers."
+});
+
+// STOP3 UI: discontinued entry points and complete owner exports.
+Object.assign(window.SHOSAI_I18N.text, {
+  "会議用のリアルタイム共有とQシートのゲスト表示は、提供を停止しました。": "Real-time meeting sharing and guest Q-sheet viewing have been discontinued.",
+  "オーナーへのメモ送信は、提供を停止しました。自分用メモは引き続き使えます。": "Sending notes to the owner has been discontinued. You can still use personal notes.",
+  "受信済みのメモと添付画像は、{deadline}まで書き出せます。": "You can export received notes and attached images until {deadline}.",
+  "書き出し期間は終了しました。保管中のデータは削除していません。": "The export period has ended. Stored data has not been deleted.",
+  "受信メモを書き出す": "Export received notes",
+  "受信メモ": "Received notes",
+  "書き出し期限はまだ設定されていません。受信済みのメモと添付画像を書き出せます。": "The export deadline has not been set yet. You can export received notes and attached images.",
+  "書き出しの期限を確認できません。状態を再取得してください。": "The export deadline could not be checked. Refresh the status.",
+  "受信メモと画像を取得しています…": "Retrieving received notes and images…",
+  "書き出しを開始しました。ZIPにはHTML・JSON・添付画像が含まれています。": "Export started. The ZIP contains HTML, JSON and attached images.",
+  "書き出しをキャンセルしました。保管中のデータは変更していません。": "Export cancelled. Stored data has not been changed.",
+  "画像を取得できなかったため、書き出しを中止しました。取得できなかった画像:": "Export stopped because images could not be retrieved. Missing images:",
+  "受信メモをすべて取得できなかったため、書き出しを中止しました。": "Export stopped because not all received notes could be retrieved.",
+  "受信済みのメモと添付画像は保管中のため、削除できません。": "Received notes and attached images are being preserved and cannot be deleted.",
+  "このページは静的配信です。演者用リンクと受信メモの書き出しはγ専用ホストで使えます。": "This page is static. Performer links and received-note exports are available on Gamma's dedicated host.",
+  "受取人は招待リンクから、このショーを開けます。自分用メモは本人だけに保存されます。オーナーへのメモ送信は停止しました。ローカル音源と端末内の独自モデルは共有されません。": "Recipients can open this show from the invitation link. Personal notes stay private. Sending notes to the owner has stopped. Local audio and device-only custom models are not shared.",
+  "線もシーンごとにアカウントへ保存します。自分だけのメモです。": "Strokes are saved to your account for each scene. These notes stay private.",
+  "文章・線・図上メモをアカウントに自動保存します。同じアカウントでスマホでも見られます。オーナーには届きません。": "Text, strokes and pinned notes are saved automatically to your account. Sign in with the same account on your phone. They are not sent to the owner."
+});
+
+Object.assign(window.SHOSAI_I18N.text, {
+  "文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。オーナーには届きません。": "Text, strokes and pinned notes are saved in this browser and do not sync to other devices. They are not sent to the owner.",
+  "線もシーンごとに、このブラウザへ保存します。自分だけのメモです。": "Strokes are saved in this browser for each scene. These notes stay private."
 });

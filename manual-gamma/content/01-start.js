@@ -10,7 +10,7 @@
         id: "open", title: "開く（URL・端末・ブラウザ）", status: "verified",
         keywords: ["開く", "URL", "アドレス", "ログイン", "パスワード", "ブラウザ", "Safari", "Chrome", "PC", "パソコン", "iPad", "iPhone", "スマホ", "推奨環境", "インストール"],
         html: `
-<p>ブラウザで次のアドレスを開きます。GitHub Pagesのγはログインなしで開けます。リアルタイム共有・演者用リンクは、別のγ共有用ホストへログインして使います（第11部）。</p>
+<p>ブラウザで次のアドレスを開きます。GitHub Pagesのγはログインなしで開けます。演者用リンクと受信メモの書き出しは、別のγ共有用ホストへログインして使います（第11部）。</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html" target="_blank" rel="noopener">https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html</a></p>
 <p>対応環境：Appleシリコン搭載Mac・macOS 14以降。Intel搭載Macには対応していません。 この配布物はDeveloper IDで署名し、Appleの公証を受けています。「開発元を確認できない」警告を回避するための操作は通常不要です。 導入と更新の手順は${ref("browser-storage", "第13部13-2")}をご覧ください。</p>
 ${table(["端末", "向いていること", "備考"], [

@@ -1492,7 +1492,7 @@
   ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
   ops.onload = ops.onerror = () => {
     const script = document.createElement('script');
-    script.src = 'gamma-assist.js?v=20261109-v0412';
+    script.src = 'gamma-assist.js?v=20261110-v0413';
     document.body.append(script);
   };
   const extension = document.createElement('script');

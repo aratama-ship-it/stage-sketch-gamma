@@ -52,6 +52,7 @@
   }
   // G130 end pure expiry helpers.
   const language = () => document.documentElement.lang || (en() ? 'en' : 'ja');
+  const exportText = key => window.SHOSAI_STAGE_I18N_MODEL?.text(language(), key) || window.SHOSAI_I18N_PACKS?.[language()]?.text?.[key] || key;
   const expiryMessage = () => t('期限切れ（閲覧・投稿は停止中。受信済みのメモは残っています）', 'Expired (viewing and posting have stopped; received notes are kept).');
   const expiryMismatch = () => t('発行した期限を確認できません。リンクは配布せず、保存済みリンクを確認してください。', 'The issued expiry could not be verified. Do not distribute the link; check saved links.');
   const entryTarget = document.getElementById('stage-share-study-action'); if (!entryTarget) return;
@@ -69,6 +70,51 @@
   let link = null, showId = '', generation = 0, busy = false, savedLinks = [];
   let expiringLinks = false, expiryInput = null, expiryTimer = null, unverifiedIssue = null;
   let status, controls, notes, stamp, urlField, confirmBox, refreshButton, library;
+  let exportButton, exportNotice, exportStatus, exportUntil, exportClosed = false, exportTimer = null;
+  const exportModel = window.SHOSAI_STUDY_EXPORT;
+  function renderExportState() {
+    if (!exportButton) return;
+    const state = exportClosed ? 'closed' : exportModel?.deadlineState(exportUntil);
+    exportButton.disabled = busy || !savedLinks.length || !exportModel || state === 'closed' || state === 'unavailable';
+    exportNotice.textContent = exportClosed ? exportText('書き出し期間は終了しました。保管中のデータは削除していません。') : exportModel?.deadlineText(exportUntil, language(), exportText) || '';
+    clearTimeout(exportTimer);
+    if (state === 'open') exportTimer = setTimeout(renderExportState, Math.min(2147483647, Math.max(0, Date.parse(exportUntil) - Date.now())));
+  }
+  async function readExportState(epoch) {
+    if (!savedLinks.length) { renderExportState(); return; }
+    try {
+      const result = await api(`links/${savedLinks[0].token}/notes/export`);
+      if (epoch !== generation) return;
+      exportUntil = result.exportUntil; exportClosed = false;
+    } catch (error) {
+      if (epoch !== generation) return;
+      exportClosed = error.message === 'notes-export-closed'; exportUntil = undefined;
+      exportStatus.textContent = errorText(error);
+    }
+    renderExportState();
+  }
+  async function exportReceivedNotes() {
+    if (busy || !exportModel || exportButton.disabled) return;
+    const epoch = generation;
+    pending(true); exportStatus.classList.remove('stage-share-study-danger'); exportStatus.textContent = exportText('受信メモと画像を取得しています…');
+    try {
+      const result = await api('links'), bundles = [];
+      for (const record of result.links) bundles.push(await api(`links/${record.token}/notes/export`));
+      const blob = await exportModel.build({bundles, language:language(), translate:exportText,
+        makeZip: entries => window.SHOSAI_STAGE_EXPORT_MODEL.makeZipBlob(entries),
+        fetchImage: path => fetch(path, {credentials:'same-origin', cache:'no-store', redirect:'error', signal:AbortSignal.timeout(15000)})});
+      if (epoch !== generation) return;
+      const saved = await window.SHOSAI_STAGE_DOWNLOAD_MODEL.downloadBlob(blob, 'received-notes.zip');
+      if (epoch !== generation) return;
+      exportStatus.textContent = exportText(saved ? '書き出しを開始しました。ZIPにはHTML・JSON・添付画像が含まれています。' : '書き出しをキャンセルしました。保管中のデータは変更していません。');
+    } catch (error) {
+      if (epoch !== generation) return;
+      exportClosed = error.message === 'notes-export-closed';
+      exportStatus.textContent = errorText(error);
+      if (error.failures?.length) exportStatus.textContent += '\n' + error.failures.map(f => `${f.show} / ${f.scene} / ${f.name} / ${f.noteId} / ${exportText(f.view === 'front' ? '正面図' : '平面図')}`).join('\n');
+      exportStatus.classList.add('stage-share-study-danger');
+    } finally { if (epoch === generation) { pending(false); renderExportState(); } }
+  }
   // Static editions have no owner API. Check the existing Worker endpoint once;
   // a hostname allow-list would break custom domains and local Worker previews.
   let ownerService = null;
@@ -126,7 +172,12 @@
     }
     return api(path, { method, body: json });
   };
-  const errorText = error => error.contractBlocked || ['plan-expired','plan-required'].includes(error.message) ? publicationNotice() : error.status === 401
+  const errorText = error => error.message === 'notes-export-closed' ? exportText('書き出し期間は終了しました。保管中のデータは削除していません。')
+    : error.message === 'notes-preserved' ? exportText('受信済みのメモと添付画像は保管中のため、削除できません。')
+    : error.message === 'notes-export-images-failed' ? exportText('画像を取得できなかったため、書き出しを中止しました。取得できなかった画像:')
+    : error.message === 'notes-export-unavailable' ? exportText('書き出しの期限を確認できません。状態を再取得してください。')
+    : ['notes-export-invalid', 'notes-export-empty'].includes(error.message) ? exportText('受信メモをすべて取得できなかったため、書き出しを中止しました。')
+    : error.contractBlocked || ['plan-expired','plan-required'].includes(error.message) ? publicationNotice() : error.status === 401
     ? t('ログインが必要です。Stage Sketchへログインしてから再試行してください。', 'Sign in to Stage Sketch, then try again.')
     : error.status === 413 ? (mib => t(`ショーが共有サイズの上限（${mib} MiB）を超えています。`, `This show exceeds the ${mib} MiB sharing limit.`))(Math.round((error.limitBytes || 1048576) / 1048576))
     : error.message === 'history-full' ? t('過去の公開版の保存上限（50版・32 MiB）です。今回の更新は行わず、公開内容とメモを保持しました。', 'The earlier publication limit (50 revisions / 32 MiB) was reached. This update was not applied; published content and notes are kept.')
@@ -137,6 +188,7 @@
     busy = value;
     entryTarget.querySelectorAll('button').forEach(el => { el.disabled = value || (el.dataset.contractPublication === 'true' && !publicationAllowed()); });
     expiryInput?.setBusy(value);
+    renderExportState();
     entryTarget.setAttribute('aria-busy', String(value));
     if (message) { status.textContent = message; status.classList.remove('stage-share-study-danger'); }
   }
@@ -323,6 +375,7 @@
     if (epoch !== generation) return;
     savedLinks = Array.isArray(result.links) ? result.links : [];
     renderLibrary();
+    await readExportState(epoch);
   }
   function confirmAction(message, label, callback) {
     confirmBox.replaceChildren(node('p', message), button(label, callback), button(t('キャンセル', 'Cancel'), () => { confirmBox.hidden = true; }));
@@ -388,9 +441,9 @@
       if (epoch !== generation) return;
       expiringLinks = result.capabilities?.expiringLinks === 1;
       link = result.link; renderLink();
+      await readSavedLinks(epoch);
       if (link) await readNotes(epoch);
       else notes.textContent = t('メモはまだありません。', 'No notes yet.');
-      await readSavedLinks(epoch);
       if (epoch === generation) status.textContent = expiredLink(link) ? expiryMessage() : link?.revokedAt ? t('無効化済み', 'Revoked') : link ? t('発行済み。編集中の変更は自動公開されません。', 'Published. Working changes are not published automatically.') : t('未発行', 'Not issued');
     } catch (error) { if (epoch === generation) { status.textContent = errorText(error); status.classList.add('stage-share-study-danger'); } }
     finally { if (epoch === generation) pending(false); }
@@ -492,7 +545,7 @@
   async function openInlineOwnerControls() {
     relabel();
     if (document.body.classList.contains('stage-session-guest')) return;
-    generation++; clearTimeout(expiryTimer); expiringLinks = false; expiryInput = null; busy = false; link = null; savedLinks = []; entryTarget.replaceChildren();
+    generation++; clearTimeout(expiryTimer); clearTimeout(exportTimer); exportUntil = undefined; exportClosed = false; expiringLinks = false; expiryInput = null; busy = false; link = null; savedLinks = []; entryTarget.replaceChildren();
     const epoch = generation;
     if (!await hasOwnerService() || epoch !== generation) return;
     const doc = bridge.snapshot(); showId = doc.project.id;
@@ -501,7 +554,7 @@
     confirmBox = node('div', '', 'stage-share-study-block stage-share-study-confirm'); confirmBox.hidden = true; library = node('div', '', 'stage-share-study-library');
     refreshButton = button(t('状態・メモを再取得', 'Refresh status and notes'), refresh);
     const published = node('p', t('発行・更新した時点の全シーンを公開します。編集中の変更は、次に「公開内容を更新」するまで届きません。', 'Publishes all scenes as a snapshot. Working changes stay private until you update the published content.'), 'stage-share-study-copy');
-    const recipients = node('p', t('受取人は招待リンクから、このショーを開けます。自分用メモは本人だけに保存され、共有ボタンを押した内容だけが届きます。ローカル音源と端末内の独自モデルは共有されません。', 'Recipients can open this show from the invitation link. Personal notes stay private; you receive only what they explicitly share. Local audio and device-only custom models are not shared.'), 'stage-share-study-muted');
+    const recipients = node('p', t('受取人は招待リンクから、このショーを開けます。自分用メモは本人だけに保存されます。オーナーへのメモ送信は停止しました。ローカル音源と端末内の独自モデルは共有されません。', 'Recipients can open this show from the invitation link. Personal notes stay private. Sending notes to the owner has stopped. Local audio and device-only custom models are not shared.'), 'stage-share-study-muted');
     const history = node('p', t('更新後も以前の舞台図を最大50版・32 MiBまで残し、リンクの受取人が確認できます。保存上限では更新を止め、古い内容を自動削除しません。', 'Earlier stage views remain available to recipients of this link, up to 50 revisions / 32 MiB. At the limit, updates stop; earlier content is not deleted automatically.'), 'stage-share-study-muted');
     const limit = node('p', t('上限に達したときは、不要なリンクを無効化してから保存データを削除すると、発行枠が空きます。', 'When you reach the limit, revoke an unneeded link and then delete its saved data to free a show slot.'), 'stage-share-study-muted');
     const feedback = button(t('フィードバックを見る', 'View feedback'), openFeedback);
@@ -513,10 +566,15 @@
     const explanationBody = node('div', '', 'stage-viewer-link-explanation-body');
     explanationBody.append(node('p', t('リンクは舞台スケッチ本体の編集画面から発行します。', 'Issue the link from the Stage Sketch editor.'), 'stage-share-study-copy'), published, recipients, history, limit);
     explanations.append(explanationSummary, explanationBody);
-    entryTarget.append(controls, project, stamp, status, confirmBox, feedback, notesTitle, refreshButton, notes, libraryTitle, library, explanations);
+    exportButton = button(exportText('受信メモを書き出す'), exportReceivedNotes); exportButton.id = 'study-owner-export-notes';
+    exportNotice = node('p', '', 'stage-share-study-muted'); exportNotice.id = 'study-owner-export-deadline';
+    exportStatus = node('p', '', 'stage-share-study-status'); exportStatus.id = 'study-owner-export-status'; exportStatus.setAttribute('role', 'status'); exportStatus.style.whiteSpace = 'pre-wrap';
+    exportButton.setAttribute('aria-describedby', exportNotice.id + ' ' + exportStatus.id);
+    entryTarget.append(controls, project, stamp, status, confirmBox, feedback, exportButton, exportNotice, exportStatus, notesTitle, refreshButton, notes, libraryTitle, library, explanations);
+    renderExportState();
     refresh();
   }
-  const reviewExpiry = () => { if (controls && link) { renderLink(); renderLibrary(); } };
+  const reviewExpiry = () => { renderExportState(); if (controls && link) { renderLink(); renderLibrary(); } };
   window.addEventListener('gamma-contract-change', () => {
     if (!controls) return;
     controls.querySelectorAll('[data-contract-publication]').forEach(el => { el.disabled = busy || !publicationAllowed(); el.title = publicationAllowed() ? '' : publicationNotice(); });

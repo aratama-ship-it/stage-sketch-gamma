@@ -1,7 +1,9 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const NOTES_DISCONTINUED = true;
   const dictionary = {
+    discontinued: ['オーナーへのメモ送信は、提供を停止しました。自分用メモは引き続き使えます。', 'Sending notes to the owner has been discontinued. You can still use personal notes.'],
     panelWidth: ['右パネルの幅', 'Right panel width'],
     panelResizeHint: ['ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す。', 'Drag to resize. Use Left/Right arrows to adjust; double-click or press Enter to reset.'],
     stickyTool: ['メモ', 'Note'], stickyHeading: ['図に貼る自分用メモ', 'My pinned notes'],
@@ -50,14 +52,14 @@
     memo: ['自分用メモ', 'My notes'], name: ['表示名（オーナーへ送信）', 'Display name (sent to the owner)'],
     nameSaved: ['共有時にオーナーへ伝わる名前です。この端末にも保存します。', 'The owner receives this name when you share. It is also saved on this device.'],
     pen: ['ペン', 'Pen'], penUndo: ['線を1本戻す', 'Undo stroke'], penClear: ['線を消す', 'Clear strokes'],
-    penHint: ['線もシーンごとにアカウントへ保存します。共有ボタンを押すまで、自分だけのメモです。', 'Strokes are saved to your account for each scene. They stay private until you press Share.'],
+    penHint: ["線もシーンごとにアカウントへ保存します。自分だけのメモです。", "Strokes are saved to your account for each scene. These notes stay private."],
     penConfirm: ['このシーンの線をすべて消しますか？', 'Clear all strokes for this scene?'], penClearYes: ['すべて消す', 'Clear all'], cancel: ['キャンセル', 'Cancel'],
     penOn: ['ペン有効', 'Pen on'], penOff: ['ペン無効', 'Pen off'], penReplay: ['再生中は線と図上メモを隠します。停止すると再表示します。', 'Strokes and pinned notes are hidden during replay. Stop to show them again.'],
     penLimit: ['線の上限に達しました。不要な線を戻してください。', 'Stroke limit reached. Undo an unneeded stroke.'],
     penLong: ['一筆の上限に達しました。続きは新しい線で描いてください。', 'This stroke reached its limit. Continue with a new stroke.'],
     body: ['このシーンの自分用メモ', 'My notes for this scene'], send: ['このメモと図をオーナーへ共有', 'Share these notes and drawings with the owner'],
-    private: ['現在表示している舞台図・線・図上メモを画像にして、メモ・表示名と一緒に送ります。他の閲覧者には表示されません。', 'Sends an image of the visible stage views, strokes and pinned notes, together with your note and display name. Other viewers cannot see it.'],
-    personal: ['文章・線・図上メモをアカウントに自動保存します。同じアカウントでスマホでも見られます。共有するまでオーナーには届きません。', 'Text, strokes and pinned notes are saved automatically to your account. Sign in with the same account on your phone. The owner receives them only when you share.'],
+    private: ["オーナーへのメモ送信は、提供を停止しました。自分用メモは引き続き使えます。", "Sending notes to the owner has been discontinued. You can still use personal notes."],
+    personal: ["文章・線・図上メモをアカウントに自動保存します。同じアカウントでスマホでも見られます。オーナーには届きません。", "Text, strokes and pinned notes are saved automatically to your account. Sign in with the same account on your phone. They are not sent to the owner."],
     saved: ['この端末に保存済み', 'Saved on this device'], saving: ['この端末に保存中…', 'Saving on this device…'],
     saveFailed: ['端末に保存できません。今の画面には残っていますが、閉じると失われることがあります。', 'Could not save on this device. Your notes remain on this page but may be lost when you close it.'],
     unreadable: ['保存済みメモを読み込めません。既存データは上書きせず、この画面だけで編集できます。', 'Saved notes could not be read. Existing data is preserved; edits stay on this page only.'],
@@ -163,8 +165,8 @@
     });
   }
   const deviceText = {
-    personal: ['文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。共有ボタンを押すまでオーナーには届きません。', 'Text, strokes and pinned notes are saved in this browser and do not sync to other devices. The owner receives them only when you press Share.'],
-    penHint: ['線もシーンごとに、このブラウザへ保存します。共有ボタンを押すまで、自分だけのメモです。', 'Strokes are saved in this browser for each scene. They stay private until you press Share.'],
+    personal: ['文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。オーナーには届きません。', 'Text, strokes and pinned notes are saved in this browser and do not sync to other devices. They are not sent to the owner.'],
+    penHint: ['線もシーンごとに、このブラウザへ保存します。自分だけのメモです。', 'Strokes are saved in this browser for each scene. These notes stay private.'],
   };
   const t = key => studyText(lang, !account && deviceText[key] || dictionary[key], window.SHOSAI_I18N_PACKS);
   // The Viewer previously used only its ja/en pairs. Reuse the permitted locale
@@ -273,7 +275,9 @@
     $('study-next').setAttribute('aria-label', lang === 'en' ? 'Next scene' : '次のシーン');
     $('study-status').textContent = t(pageState);
     if (pageState === 'expired' && expiryDraftRecovery) $('study-status').append(expiryDraftRecovery);
-    $('study-note-status').textContent = noteState ? t(noteState) : '';
+    $('study-send').disabled = NOTES_DISCONTINUED || pendingNote;
+    $('study-send').setAttribute('aria-describedby', 'study-note-status');
+    $('study-note-status').textContent = NOTES_DISCONTINUED ? t('discontinued') : noteState ? t(noteState) : '';
     $('study-status').hidden = pageState === 'ready';
     $('study-status').classList.toggle('study-danger', pageState === 'expired');
     if ($('study-expiry-draft-label')) $('study-expiry-draft-label').textContent = t('expiryDraft');
@@ -476,7 +480,7 @@
       $('study-verified-name').textContent = result.displayName || '';
       $('study-name').required = !result.displayName;
       if (!frame) {
-        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261109-v0412-' + (lang === 'en' ? 'en' : 'ja');
+        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261110-v0413-' + (lang === 'en' ? 'en' : 'ja');
         $('study-frame-host').replaceChildren(frame);
       } else if (frameReady) { frame.title = t('both'); loadFrame(); }
       $('study-workspace').hidden = false;
@@ -533,7 +537,7 @@
     } catch (error) { if (current === epoch) { epoch++; conceal(availabilityState(error)); } }
     finally { checking = false; }
   }
-  function select(index) { if (!live || pendingNote) return; savePrivate(); at = Math.max(0, Math.min(scenes.length - 1, index)); restorePrivate(); noteState = ''; $('study-note-status').textContent = ''; replaying = false; penLimit = ''; $('study-pen-confirm').hidden = true; post({ action: 'scene', sceneId: scenes[at].id, strokes: currentInk(), stickies: currentStickies() }); syncScene(); }
+  function select(index) { if (!live || pendingNote) return; savePrivate(); at = Math.max(0, Math.min(scenes.length - 1, index)); restorePrivate(); noteState = ''; $('study-note-status').textContent = NOTES_DISCONTINUED ? t('discontinued') : ''; replaying = false; penLimit = ''; $('study-pen-confirm').hidden = true; post({ action: 'scene', sceneId: scenes[at].id, strokes: currentInk(), stickies: currentStickies() }); syncScene(); }
   $('study-prev').onclick = () => select(at - 1); $('study-next').onclick = () => select(at + 1);
   $('study-scenes').onchange = event => select(scenes.findIndex(s => s.id === event.target.value));
   $('study-view').onchange = event => { post({ action: 'view', view: event.target.value }); notifyReaderState(); };
@@ -621,7 +625,8 @@
   $('study-note').oninput = () => { if (!draft) return; if (!edited()) { $('study-note').value = draft.text; return; } clearTimeout(saveTimer); saveTimer = setTimeout(savePrivate, 300); };
   try { $('study-name').value = localStorage.getItem('stage-study-display-name') || ''; } catch {}
   $('study-note-form').onsubmit = async event => {
-    event.preventDefault(); if (expireLocally() || !live || pendingNote) return;
+    event.preventDefault();
+    if (NOTES_DISCONTINUED) { noteState = 'discontinued'; relabel(); return; } if (expireLocally() || !live || pendingNote) return;
     const name = $('study-name').value.trim();
     if (!data.displayName && !name) { noteState = 'nameRequired'; relabel(); $('study-name').focus(); return; }
     savePrivate();
@@ -637,10 +642,10 @@
       noteState = 'sent';
     } catch (error) {
       if (current !== epoch) return;
-      noteState = error.message === 'images-full' ? 'imagesFull' : error.status === 429 ? 'rate' : error.status === 409 ? 'full' : error.message === 'invalid-note' ? 'changed' : 'failed';
+      noteState = error.message === 'notes-discontinued' ? 'discontinued' : error.message === 'images-full' ? 'imagesFull' : error.status === 429 ? 'rate' : error.status === 409 ? 'full' : error.message === 'invalid-note' ? 'changed' : 'failed';
       if (error.status === 404) { epoch++; conceal(availabilityState(error)); }
       else if (noteState === 'changed') await load();
-    } finally { pendingNote = false; $('study-send').disabled = false; relabel(); }
+    } finally { pendingNote = false; $('study-send').disabled = NOTES_DISCONTINUED; relabel(); }
   };
   window.addEventListener('keydown', event => {
     if (event.ctrlKey || event.metaKey) { if (['s', 'p', 'o'].includes(event.key.toLowerCase()) || (['z', 'y'].includes(event.key.toLowerCase()) && !/^(INPUT|TEXTAREA)$/.test(event.target.tagName))) event.preventDefault(); return; }

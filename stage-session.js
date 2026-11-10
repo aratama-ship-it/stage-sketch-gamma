@@ -49,7 +49,7 @@
     && location.pathname.startsWith("/stage-sketch-gamma/");
   if (isStaticPages && els.shareHostNote) {
     els.shareHostNote.hidden = false;
-    els.panel.querySelectorAll(".stage-share-live, .stage-share-study").forEach((section) => {
+    els.panel.querySelectorAll(".stage-share-study").forEach((section) => {
       section.hidden = true;
     });
   }
@@ -60,6 +60,9 @@
   const HOST_SESSION_OWNER_MAX_LENGTH = 128;
   const RECONNECT_LIMIT = 5;
   const RECONNECT_DELAY_MS = 3000;
+  const MEETINGS_DISCONTINUED = true;
+  const MEETING_STOP_STATUS = "会議用のリアルタイム共有とQシートのゲスト表示は、提供を停止しました。";
+  let meetingStopped = MEETINGS_DISCONTINUED;
   const ACCESS_REVOKED_STATUS = "共有の利用資格が変わったため、接続を終了しました。ページを再読み込みして、もう一度ログインしてください。";
   const PING_INTERVAL_MS = 25 * 1000;
   const PONG_TIMEOUT_MS = 10 * 1000;
@@ -148,8 +151,8 @@
     if (els.shareClose) els.shareClose.setAttribute("aria-label", shareText("閉じる", "Close"));
     if (isStaticPages) {
       if (els.shareHostExplanation) els.shareHostExplanation.textContent = shareText(
-        "このページは静的配信です。リアルタイム共有と演者用リンクはγ専用ホストで使えます。",
-        "This page is static. Live sharing and performer links are available on Gamma's dedicated host."
+        "このページは静的配信です。演者用リンクと受信メモの書き出しはγ専用ホストで使えます。",
+        "This page is static. Performer links and received-note exports are available on Gamma's dedicated host."
       );
       if (els.shareHostLink) els.shareHostLink.textContent = shareText("γの共有用画面を開く ↗", "Open Gamma sharing ↗");
       if (els.shareHostMigration) els.shareHostMigration.textContent = shareText(
@@ -158,19 +161,25 @@
       );
     }
     if (els.realtimeTitle) els.realtimeTitle.textContent = shareText("リアルタイム共有（会議用）", "Live sharing (for meetings)");
-    if (els.realtimeHint) els.realtimeHint.textContent = shareText(
-      "同じショーを開いたまま、会議中に配置や注釈を一緒に確認します。",
-      "Keep the same show open while you review placements and annotations together during a meeting."
-    );
+    if (els.realtimeHint) els.realtimeHint.textContent = sessionText(MEETING_STOP_STATUS);
   }
 
   function sharingAllowed() { return window.GAMMA_CONTRACT?.decision("session").allowed !== false; }
   function contractSharingStatus() {
+    if (meetingStopped) { setStatus(MEETING_STOP_STATUS, true); return false; }
     if (sharingAllowed()) return true;
     setStatus(window.GAMMA_CONTRACT.message("session"), true);
     return false;
   }
   function syncContractSharing() {
+    if (meetingStopped) {
+      for (const control of [els.start, els.resume, els.copy, els.reconnect, els.refresh, els.hostName, els.url]) {
+        if (!control) continue;
+        control.disabled = true; control.title = sessionText(MEETING_STOP_STATUS);
+        control.setAttribute("aria-describedby", "stage-share-realtime-hint");
+      }
+      return;
+    }
     const allowed = sharingAllowed();
     for (const button of [els.start, els.resume, els.copy, els.reconnect, els.refresh]) {
       if (!button) continue;
@@ -298,7 +307,7 @@
   }
 
   function updateResumeButton() {
-    if (els.resume) els.resume.hidden = Boolean(role) || !storedHostSession;
+    if (els.resume) els.resume.hidden = meetingStopped ? false : Boolean(role) || !storedHostSession;
   }
 
   async function currentSessionOwner() {
@@ -989,11 +998,14 @@
   }
 
   function handleSocketMessage(event) {
-    if (!sharingAllowed()) { syncContractSharing(); return; }
     if (typeof event.data !== "string") return;
     let message;
     try { message = JSON.parse(event.data); } catch (_) { return; }
     if (!message || typeof message !== "object") return;
+    if (message.t === "meeting-discontinued" || message.reason === "meeting-discontinued") {
+      stopDiscontinuedMeeting(); return;
+    }
+    if (!sharingAllowed()) { syncContractSharing(); return; }
     if (message.t === "pong") {
       acceptKeepalivePong();
     } else if (message.t === "welcome") {
@@ -1080,8 +1092,20 @@
     }
   }
 
+  function stopDiscontinuedMeeting() {
+    meetingStopped = true; accessRevoked = true; reconnectAllowed = false;
+    applyGeneration++;
+    clearTimeout(reconnectTimer); reconnectTimer = null;
+    const previous = socket;
+    handleSocketClose(previous);
+    try { previous?.close(4000, "meeting-discontinued"); } catch (_) {}
+    syncContractSharing();
+    setStatus(MEETING_STOP_STATUS, true);
+    if (els.reconnect) els.reconnect.hidden = true;
+  }
+
   function scheduleReconnect() {
-    if (!role || !reconnectAllowed || accessRevoked) return;
+    if (meetingStopped || !role || !reconnectAllowed || accessRevoked) return;
     if (reconnectAttempts >= RECONNECT_LIMIT) {
       setStatus("切断しました。再接続してください。", true);
       if (els.reconnect) els.reconnect.hidden = false;
@@ -1160,6 +1184,7 @@
   }
 
   function showGuestNameModal(invitedRoom) {
+    if (meetingStopped) { openShareModal(); setStatus(MEETING_STOP_STATUS, true); return; }
     closeGuestNameModal();
     closeShareModal();
     const backdrop = document.createElement("div");
@@ -1346,6 +1371,7 @@
   }
 
   function reconnectNow() {
+    if (meetingStopped) { setStatus(MEETING_STOP_STATUS, true); return; }
     if (accessRevoked) { setStatus(ACCESS_REVOKED_STATUS, true); return; }
     reconnectAllowed = true;
     reconnectAttempts = 0;
@@ -1353,6 +1379,7 @@
   }
 
   function refreshGuestDocument() {
+    if (meetingStopped) { setStatus(MEETING_STOP_STATUS, true); return; }
     if (accessRevoked) { setStatus(ACCESS_REVOKED_STATUS, true); return; }
     if (role !== "guest") return;
     stopKeepalive();
@@ -1428,9 +1455,10 @@
     });
   }
   applySessionLabels();
-  void refreshStoredHostSession();
+  if (!meetingStopped) void refreshStoredHostSession();
+  else updateResumeButton();
   renderParticipants([]);
-  setStatus("未接続です。");
+  setStatus(meetingStopped ? MEETING_STOP_STATUS : "未接続です。", meetingStopped);
   const invitedRoom = invitedRoomId();
   if (invitedRoom) {
     revealStageView();

@@ -27,7 +27,7 @@ ${table(["Where", "Name", "What it does"], [
   ["Controls", ui("Q sheets"), "Opens Run of show with the selected Q sheet in its centre ( " + ref("cuesheet", "Part 9, 9-6") + ")"],
   ["Controls", ui("Export, save & print"), "Export images, open the print sheet, or export the show, Q sheets and venues (" + ref("export", "Part 11, 11-1") + ")"],
   ["Tabs", ui("Rehearsal"), "To the right of Run of show. Front and plan views, GO, lighting, work lights and independent run records. Studio and Company only"],
-  ["Controls", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
+  ["Controls", ui("Sharing"), "Performer links and received-note exports on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
   ["Controls", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
 ])}
 <p>In the Mac app, ${ui("Edit")} → ${ui("Undo")} and redo follow the current editor: text while typing, stage edits on Stage, lighting drafts in Equipment placement or Light design, the theatre draft in Theatre settings, or marks on a rehearsal drawing. Each reverses the same single action as the keyboard and on-screen controls. If that editor has no history, the command does not switch to another editor's history. While a confirmation is open, it does not undo edits behind the window (a confirmation's text field keeps its own text editing history).</p>`

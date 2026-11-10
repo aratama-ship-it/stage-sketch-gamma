@@ -56,19 +56,17 @@ ${fig("release401-previous-shows", "Previous shows on Mac: select an earlier sho
 `
       },
       {
-        id: "share", title: "Sharing (live sessions and performer links)", status: "sourced",
+        id: "share", title: "Sharing (performer links and received notes)", status: "sourced",
         keywords: ["share", "sharing", "live", "meeting", "session", "invite", "url", "link", "performer link", "viewer", "guest", "host", "laser pointer", "cannot connect", "not working", "json", "migration", "sign in", "login", "google", "phone", "line rehearsal", "personal notes", "update published content", "revoke link"],
         html: `
 ${note("Use the Gamma sharing host", "GitHub Pages serves static files and cannot run the sharing server. For sharing, <a href=\"https://stage-sketch-gamma-share.juggler-arata.workers.dev/stage.html\" target=\"_blank\" rel=\"noopener noreferrer\">open the Gamma sharing editor</a>. Shows saved on Pages do not appear there automatically: export the show as JSON on Pages, then import it in the sharing editor. The original remains on Pages.", true)}
-<p>Use ${ui("Share")} in the header to choose ${ui("Live sharing (for meetings)")} for reviewing the same scene together, or ${ui("Performer link")} for performers to review the show at their own pace. Send links only to intended recipients.</p>
-<h4>Live sharing — the host leads, guests point things out</h4>
-${steps([
-  "Sign in to the sharing editor with an editor account and open the show you want to present. In " + ui("Share") + " → " + ui("Live sharing (for meetings)") + ", enter a " + ui("Display name") + " and press " + ui("Start a session") + ".",
-  "Press " + ui("Copy") + " beside the " + ui("Invite link") + " and send it by email or a messaging app. Stage Sketch does not send it to recipients automatically.",
-  "Guests open the invitation URL and sign in to the sharing host. In the session joining dialog, they enter a display name and submit it."
-])}
-<p>The guests' scene follows the host. Guests can share a laser pointer and arrows, but cannot move pieces or edit the source show. If the host disconnects, the screen shows that it is waiting for the host to return.</p>
-<p>If your sign-in credentials (roster entry or password) change, open live-sharing connections are disconnected and a notice asks you to sign in again. Reload the page and sign in again.</p>
+<p>Use ${ui("Share")} in the header to issue a ${ui("Performer link")} for performers to review the show at their own pace. Send links only to intended recipients.</p>
+<h4>Meetings, guest Q sheets and note submission discontinued</h4>
+<p>Real-time meeting sharing and guest Q-sheet viewing have been discontinued. Starting, resuming and inviting people to meetings are unavailable. Normal Q-sheet creation, viewing, CSV export and printing remain available.</p>
+<p>Sending notes to the owner has also stopped. Performer-link viewing and personal notes remain available. Older Mac versions may show connection errors.</p>
+<h4>Export received notes and images as a ZIP</h4>
+<p>Sign in to the sharing host with the editor account, open ${ui("Share")} and press ${ui("Export received notes")}. This exports received notes from all saved links, including revoked and expired viewing links. Extract the ZIP and open index.html to read the show, scene, name, date, text and images. notes.json keeps the original information and the images folder contains JPEG files.</p>
+<p>If any image cannot be retrieved, no ZIP is downloaded and the missing images are listed. The screen shows the deadline in Japan time. The export period lasts 30 days from the day the button is made available and users are notified. An unset deadline is shown explicitly. Stored data is not deleted after the period ends.</p>
 <h4>Performer links — publish a snapshot for later review</h4>
 ${steps([
   "The editor opens the show and presses " + ui("Create a link for this show") + " under " + ui("Share") + " → " + ui("Performer link") + ". This publishes the selected scenes as they are at that moment.",
@@ -82,7 +80,7 @@ ${steps([
 <li>Choose scenes from the list or with Previous / Next. Review the Front / Plan / Both stage views, scene descriptions and transition replay. Unlike a live meeting, you do not need to wait for the host to change scenes.</li>
 <li>The phone viewer offers ${ui("Line rehearsal")} and ${ui("Script (all lines)")}. For shows with lines, step through them and see who is speaking. Shows with lighting also let you switch the work light on or off.</li>
 <li>Write ${ui("My notes")} for each scene, draw strokes and pin notes on the diagrams. Notes made without sign-in are saved on that device; notes made while signed in to a performer account sync to the account.</li>
-<li>Only pressing <strong>“Share these notes and drawings with the owner”</strong> sends your note, display name and images of the current stage views, strokes and pinned notes to the issuer. Other viewers do not see them. The issuer reads them in ${ui("Notes for this show (owner only)")} in the editor's Share window.</li>
+<li>Sending notes to the owner is discontinued. Personal notes stay private.</li>
 </ul>
 <h4>Annotation pages on iPad</h4>
 <p>Open a performer link on iPad to draw or type over the diagrams. Pinch with two fingers to zoom in or out while annotating.</p>
@@ -91,9 +89,9 @@ ${steps([
 ${fig("release044-ipad-pages", "iPad annotation pages: duplicate, name and switch pages for different purposes.", "Page selection, renaming, duplication and adding a blank page")}
 <h4>What is excluded, and how to manage links</h4>
 <p>Before issuing a link, choose ${ui("No expiry")} (the default) or ${ui("Specify date and time")}. Enter local time and check the time zone and UTC preview before issuing. A blank or past date cannot be used. Servers without expiry support disable the dated option. Existing links remain unlimited; updating published content does not change the expiry. Expiry cannot be edited or extended.</p>
-<p>At expiry, viewing, posting and sync stop, and the viewer says ${ui("This link has expired. Please contact the issuer.")}. The owner can still read and delete received notes and images. To issue a replacement, first revoke the link, then read the confirmation about deleting received notes.</p>
+<p>At expiry, viewing, posting and sync stop, and the viewer says ${ui("This link has expired. Please contact the issuer.")}. The owner can retrieve received notes and images until the note-export deadline. Links with received notes cannot be reissued.</p>
 <p>The performer viewer cannot edit the source show. Local audio and device-only custom models are not shared. Sharing requires an internet connection and the sharing host.</p>
-<p>Each account can keep links for up to 10 shows. Earlier stage views are kept up to 50 revisions / 32 MiB; updates stop at the limit. After revocation, ${ui("Create a new link")} deletes received notes. ${ui("Delete saved data")} permanently deletes the published content and notes, so keep any copies you need before using it.</p>`
+<p>Each account can keep links for up to 10 shows. Earlier stage views are kept up to 50 revisions / 32 MiB; updates stop at the limit. Links with received notes cannot have their notes or saved data deleted, or be reissued after revocation. Updating the same link and revoking viewing access preserve received notes.</p>`
       },
       {
         id: "vision-pro", title: "Vision Pro rehearsal JSON", status: "sourced",
