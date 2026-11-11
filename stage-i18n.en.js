@@ -628,3 +628,46 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "舞台袖と寸法に合わせて照明を組み直します。番号は変えません。明かりは変更後に確認してください。": "Lighting will be rebuilt for the stage wings and dimensions. Numbers stay unchanged. Check the lighting afterwards.",
   "舞台袖と寸法に合わせて配置します。番号は変えません。": "Placed to fit the stage wings and dimensions, keeping fixture numbers."
 });
+
+// ALT-PRESENT S1: local presentation, never meeting transport.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "発表用の表示": "Presentation view",
+  "Zoom・Meetなどの画面共有でお使いください。γから映像・音声・ポインタは送信されません。": "Use screen sharing in Zoom, Meet or a similar tool. Gamma does not transmit video, audio or pointer positions.",
+  "案内を閉じる": "Close guide"
+});
+// ALT_GRID_S2: local plan-view display only.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "呼び名の格子": "Call grid",
+  "舞台を6×6に区切ります。下手からA〜F、手前から奥へ1〜6。この端末の画面だけに表示します。": "Divide the stage into 6×6 cells: A–F from audience left to right, 1–6 from downstage to upstage. Shown only on this device's screen.",
+  "呼び名の格子を表示しました。": "Call grid shown.",
+  "呼び名の格子を隠しました。": "Call grid hidden."
+});
+// ALT_QLINK_S3: explicit publication and manual viewing only.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "閲覧リンクを公開": "Publish a viewing link",
+  "Qシートの閲覧": "View Q sheet",
+  "公開する部署": "Department to publish",
+  "公開": "Publish",
+  "公開し直す": "Publish again",
+  "リンクを失効": "Revoke link",
+  "リンクを写す": "Copy link",
+  "閲覧リンク": "Viewing link",
+  "読み直す": "Reload",
+  "公開日時": "Published at",
+  "最後に読み込んだ日時": "Last loaded at",
+  "公開された写しです。更新は「読み直す」を押したときだけ取り込みます。": "This is a published copy. Updates are loaded only when you press Reload.",
+  "選んだ部署の写しを公開します。リンクを知る人が閲覧できます。自分のメール・LINEでリンクを渡してください。相手への通知や自動の読み直しはありません。": "Publish a copy for the selected department. Anyone with the link can read it. Pass the link using your own email or LINE. There are no notifications or automatic reloads.",
+  "閲覧リンクが見つからないか、失効しています。": "The viewing link was not found or has been revoked.",
+  "この閲覧リンクは期限切れです。": "This viewing link has expired.",
+  "読み込めませんでした。「読み直す」で再試行してください。": "Could not load the sheet. Press Reload to try again.",
+  "閲覧リンクの公開は編集できる主催者だけが行えます。": "Only an organiser with editing access can publish a viewing link.",
+  "ショーが切り替わりました。欄を開き直してください。": "The show has changed. Reopen this panel.",
+  "Qシートの項目か容量が上限を超えています。公開内容を確認してください。": "The Q sheet has invalid fields or exceeds a limit. Check the content before publishing.",
+  "閲覧リンクの保管上限に達しました。": "The viewing-link storage limit has been reached.",
+  "閲覧リンクの公開はγ専用ホストで使えます。": "Viewing links can be published on Gamma's dedicated host.",
+  "発行済みのリンクがあります。欄を開き直してください。": "A link has already been issued. Reopen this panel.",
+  "操作できませんでした。接続とログインを確認し、欄を開き直してください。": "The action failed. Check your connection and sign-in, then reopen this panel.",
+  "公開しました。変更は自動では公開されません。": "Published. Changes are not published automatically.",
+  "閲覧リンクを失効しました。": "The viewing link has been revoked.",
+  "リンクを写しました。自分のメール・LINEで渡してください。": "Link copied. Pass it using your own email or LINE."
+});

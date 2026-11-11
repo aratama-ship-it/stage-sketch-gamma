@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.13";
+  const GAMMA_APP_VERSION = "v0.4.14";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2713,6 +2713,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let intentHatchPattern = null;
   // 正面図の全画面表示中か。説明の帯を出すかどうかの目印
   let presenting = false;
+  // ALT-PRESENT S1: transient device-only display; never put in state/prefs.
+  let audiencePresenting = false;
+  const audienceFixtureLabels = new WeakMap();
+  const audienceCaptionScale = 1.4;
+  const audienceNumberScale = 1.75;
   // Only this device's display; never part of state/prefs or a session document.
   let fieldMode = false;
   let fieldRunQuiet = false;
@@ -2828,7 +2833,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-10`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-11`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -4571,6 +4576,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     frontBorder: "劇場設定の天井・前一文字幕で設定した幕を、正面図に重ねます。",
     frontLightIntent: "光の意図を作図用の印として重ねます。",
     frontFloorGrid: "正面図の床グリッドを出したり隠したりします。",
+    planCallGrid: "舞台を6×6に区切ります。下手からA〜F、手前から奥へ1〜6。この端末の画面だけに表示します。",
     planLights: "平面図の照明の円と灯体を出したり隠したりします。",
     planRoutesCast: "演者の動線と、入り・はけの自動の線を出したり隠したりします。",
     planRoutesLight: "照明の動線を出したり隠したりします。",
@@ -5124,6 +5130,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     { key: "panelAsk", panel: "ask", label: "AI指示", def: true,
       hint: "AI指示" },
   ];
+  const planCallGridToggle = document.getElementById("stage-plan-call-grid");
   let prefs = {};
   try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {}; } catch (_) { prefs = {}; }
   // Store the skin as a device preference; venue surface colors adapt during drawing.
@@ -8518,7 +8525,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261104-v043&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261111-v0414&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -19437,6 +19444,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function drawLightCueOverlayPlan(target, L) {
+    if (audiencePresenting) audienceFixtureLabels.set(target, []);
     const model = lightCueOverlayForLayout(L);
     if (!model) return;
     /* 台数が多いときは狙い先の線を省く。位置と点灯だけでも要るものは分かる。 */
@@ -19459,6 +19467,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     model.fixtures.forEach((fixture) => {
       const at = place(fixture.u, fixture.v, L);
+      if (audiencePresenting) audienceFixtureLabels.get(target).push({ id: fixture.id, x: at.x, y: at.y });
       target.globalAlpha = lightCueAlpha(fixture);
 
       // 狙っている場所。止まった絵なので、動く光は「動く範囲」を出す
@@ -19523,6 +19532,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
    *   ここで描くのは「灯体の位置」と「そこから狙い先へ引いた線」だけ＝図であって、
    *   光った絵ではない。レーザーとカッターを普通の光に見せてしまうのが一番まずい。 */
   function drawLightCueOverlayFront(target, L) {
+    if (audiencePresenting) audienceFixtureLabels.set(target, []);
     const model = lightCueOverlayForLayout(L);
     if (!model) return;
     /* 光だまりを出している間は、その中心へ向かう作図用の直線を重ねない。
@@ -19552,6 +19562,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     model.fixtures.forEach((fixture) => {
       const at = raise(fixture.u, fixture.v, fixture.h);
+      if (audiencePresenting) audienceFixtureLabels.get(target).push({ id: fixture.id, x: at.x, y: at.y });
       if (drawAim && fixture.aim) {
         const aim = raise(fixture.aim.a.u, fixture.aim.a.v, fixture.aim.a.hM);
         target.strokeStyle = fixture.color;
@@ -19960,6 +19971,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!reuseStatic) {
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
+    // ALT_GRID_S2: only the live plan, below fixtures/pieces. Thumbnails, image
+    // export, ZIP and print all render without this screen-only layer.
+    if (window.STAGE_CALL_GRID?.visible({ prefs, plan: L.plan,
+      live: showSelection && target === planCtx, paper: printPaperSurface,
+      readOnly: STUDY_READ_ONLY, phone: phoneViewerActive })) {
+      window.STAGE_CALL_GRID.draw(target, L, { place, outline: venueOutlineOf(L.venue, L.size),
+        background: stageFloorFill(L, "#241d18"), zoom: zs.z });
+    }
     }
     frameCost?.end(phase); phase = frameCost?.begin("stage.layer.lighting.underlay");
     if (!reuseStatic) {
@@ -20101,6 +20120,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!L.plan) drawFrontBorderCurtain(target, L);
 
     frameCost?.end(phase); phase = frameCost?.begin("stage.layer.labels");
+    if (audiencePresenting && showSelection) drawAudienceFixtureNumbers(target);
     let visibleNameTags = [];
     if (!pitchStyle && (state.showNames || state.showSetNames || state.showLightNames)) {
       visibleNameTags = pieceNameTags(target, shown, L);
@@ -20273,6 +20293,27 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   /* 絵の下側に敷く説明の帯。暗い舞台の絵の上でも読めるよう、
      字の下だけを薄く落とす（絵全体を曇らせない）。 */
+  function drawAudienceFixtureNumbers(target) {
+    const fixtures = new Map((state.project.lightingDesign?.rig?.fixtures || []).map(f => [f.id, f]));
+    target.save();
+    target.globalAlpha = 1;
+    target.font = `600 ${12 * audienceNumberScale}px system-ui, sans-serif`;
+    target.textAlign = "center";
+    target.textBaseline = "bottom";
+    target.lineJoin = "round";
+    target.lineWidth = 4;
+    target.strokeStyle = "#201b16";
+    target.fillStyle = "#f0e7d6";
+    for (const label of audienceFixtureLabels.get(target) || []) {
+      const number = fixtures.get(label.id)?.no;
+      if (number === undefined || number === null) continue;
+      const text = String(number);
+      target.strokeText(text, label.x, label.y - 8);
+      target.fillText(text, label.x, label.y - 8);
+    }
+    target.restore();
+  }
+
   function drawSceneCaption(target) {
     if (!featureOn("presentCaption")) return;
     const scene = sc();
@@ -20286,8 +20327,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const captionSizes = { small: 15, medium: 19, large: 25 };
     const captionSize = ["small", "medium", "large"].includes(prefs.presentCaptionSize)
       ? prefs.presentCaptionSize : "medium";
-    const size = captionSizes[captionSize];
-    const kick = Math.floor(size * 0.62);
+    const size = captionSizes[captionSize] * (audiencePresenting ? audienceCaptionScale : 1);
+    const kick = Math.floor(size * (audiencePresenting ? 0.8 : 0.62));
     target.save();
     /* 説明の帯は絵の一部ではないので、拡大・移動には付き合わせない。
        付き合わせると、二本指で寄せたときに字だけ巨大になって枠から出る。 */
@@ -20301,7 +20342,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const scrim = target.createLinearGradient(0, H - boxH - 40, 0, H);
     scrim.addColorStop(0, "rgba(0,0,0,0)");
     scrim.addColorStop(1, "rgba(0,0,0,0.78)");
-    target.fillStyle = scrim;
+    target.fillStyle = audiencePresenting ? "#201b16" : scrim;
     target.fillRect(0, H - boxH - 40, W, boxH + 40);
     target.textAlign = "left";
     target.textBaseline = "alphabetic";
@@ -20309,7 +20350,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // 影を先に置く。明るい背景のシーンでも字が沈まない
       target.fillStyle = "rgba(0,0,0,0.55)";
       target.fillText(line, x + 1, y + 1);
-      target.fillStyle = "rgba(244,238,226,0.96)";
+      target.fillStyle = audiencePresenting ? "#f0e7d6" : "rgba(244,238,226,0.96)";
       target.fillText(line, x, y);
     };
     const bottom = H - 22;
@@ -20319,7 +20360,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       target.fillStyle = "rgba(0,0,0,0.55)";
       target.fillText(title, pad + 1, bottom - (lines.length - 1) * lineH - lineH + 5);
       // シーン名は本文より一段落として、説明の方を主にする
-      target.fillStyle = "rgba(214,190,132,0.86)";
+      target.fillStyle = audiencePresenting ? "#d6be84" : "rgba(214,190,132,0.86)";
       target.fillText(title, pad, bottom - (lines.length - 1) * lineH - lineH + 4);
     }
     target.restore();
@@ -33422,6 +33463,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     applyPanelVisibility();
     syncPanelLayoutControl();
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
+    const audienceEntry = document.getElementById("stage-audience-present");
+    if (audienceEntry) audienceEntry.hidden = !audiencePresentationAllowed();
     syncStageLightToggles();
     syncMultiSelectionControls();
     const performanceAreaTool = document.querySelector('[data-stage-tool="idleArea"]');
@@ -33493,11 +33536,15 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function prepareFullscreenView() {
-    sceneAlternatives?.adopted(state.project);
+    if (!audiencePresenting) sceneAlternatives?.adopted(state.project);
     if (fullscreenHome) return;
     const view = document.getElementById("view-stage");
     fullscreenHome = {
-      focus: document.activeElement, view, inert: view ? view.inert : false, nodes: [],
+      // WebKit does not focus a clicked button; return focus to the presentation entry that opened the view.
+      focus: document.activeElement && document.activeElement !== document.body ? document.activeElement
+        : (audiencePresenting ? document.getElementById("stage-audience-present") : document.activeElement),
+      view, inert: view ? view.inert : false, nodes: [],
+      audienceZoom: audiencePresenting ? { front: { ...zoomState.front }, plan: { ...zoomState.plan } } : null,
       tablet: tabletUi ? { hidden: tabletUi.drawer.hidden, groupId: tabletUi.groupId, pageIndex: tabletUi.pageIndex } : null,
     };
     const move = (node, host) => {
@@ -33546,6 +33593,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         syncTabletWorkspace();
       }
     }
+    if (saved.audienceZoom) {
+      Object.assign(zoomState.front, saved.audienceZoom.front);
+      Object.assign(zoomState.plan, saved.audienceZoom.plan);
+    }
+    setAudiencePresentation(false);
     presenting = false;
     pseudoPresenting = false;
     document.body.classList.remove("stage-fullscreen", "stage-pseudo-present");
@@ -33572,7 +33624,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     finishFullscreenView();
   }
 
-  function startPresentation() {
+  function startPresentation(audience = false) {
+    if (audience && !audiencePresentationAllowed()) return;
+    setAudiencePresentation(audience);
     prepareFullscreenView();
     const cv = document.documentElement;
     if (!cv || !cv.requestFullscreen) {
@@ -33601,6 +33655,46 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     } finally {
       fullscreenTransitionPending = false;
     }
+  }
+
+  /* ALT-PRESENT S1. No network, recorder, project writes or preference saves. */
+  function audiencePresentationAllowed() {
+    return !fieldMode && !STUDY_READ_ONLY && !phoneViewerActive
+      && window.GAMMA_EDITION !== "field" && window.GAMMA_EDITION !== "study"
+      && !document.documentElement.classList.contains("stage-phone-viewer")
+      && !document.body.classList.contains("stage-session-guest")
+      && featureOn("presentation");
+  }
+  function hideAudiencePointer() {
+    const pointer = document.getElementById("stage-audience-pointer");
+    if (!pointer) return;
+    pointer.hidden = true;
+    pointer.style.removeProperty("left");
+    pointer.style.removeProperty("top");
+  }
+  function setAudiencePresentation(active) {
+    audiencePresenting = Boolean(active);
+    document.body.classList.toggle("stage-audience-present", audiencePresenting);
+    document.getElementById("stage-audience-present")?.setAttribute("aria-pressed", String(audiencePresenting));
+    const guide = document.getElementById("stage-audience-guide");
+    // Dismissal lasts for this opening of the app only. Nothing is stored.
+    if (guide) guide.hidden = !audiencePresenting || guide.dataset.dismissed === "true";
+    hideAudiencePointer();
+  }
+  function moveAudiencePointer(event) {
+    if (!audiencePresenting || document.hidden || event.isPrimary === false) return;
+    if (event.target.closest?.("button, aside, #stage-audience-guide")) { hideAudiencePointer(); return; }
+    const pointer = document.getElementById("stage-audience-pointer");
+    if (!pointer) return;
+    pointer.style.left = `${event.clientX}px`;
+    pointer.style.top = `${event.clientY}px`;
+    pointer.hidden = false;
+  }
+  async function startAudiencePresentation() {
+    if (presenting || fullscreenTransitionPending || fullscreenModalOpen() || !audiencePresentationAllowed()) return;
+    fullscreenTransitionPending = true;
+    try { await startPresentation(true); }
+    finally { fullscreenTransitionPending = false; }
   }
 
   /* ---------- 現場モード（表示だけ・保存と同期のガードには使わない） ---------- */
@@ -40426,6 +40520,10 @@ document.addEventListener("keydown", function (event) {
         else { label.dataset.unavailableReason = "この劇場には前一文字幕がありません"; label.title = label.dataset.unavailableReason; }
       }
     }
+    if (planCallGridToggle) {
+      planCallGridToggle.checked = window.STAGE_CALL_GRID?.enabled(prefs) || false;
+      planCallGridToggle.closest("label").hidden = STUDY_READ_ONLY || phoneViewerActive;
+    }
     if (els.frontFloorGrid) els.frontFloorGrid.checked = state.showFrontFloorGrid;
     if (els.showFlown) els.showFlown.checked = state.showFlown;
     if (els.frontLights) els.frontLights.checked = state.showLightsFront;
@@ -42422,6 +42520,14 @@ document.addEventListener("keydown", function (event) {
       render();
       persistSoon();
       announce(e.target.checked ? "前一文字幕を正面図に出しました。" : "前一文字幕を正面図から隠しました。");
+    });
+  }
+  if (planCallGridToggle) {
+    planCallGridToggle.addEventListener("change", (e) => {
+      prefs.planCallGrid = e.target.checked;
+      savePrefs();
+      render();
+      announce(prefs.planCallGrid ? "呼び名の格子を表示しました。" : "呼び名の格子を隠しました。");
     });
   }
   if (els.frontFloorGrid) {
@@ -46151,6 +46257,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     choices: () => window.SHOSAI_CUE_SHEET?.listSheets(state.project, { tx }) || [],
     readOnly: () => contractReadOnly() || STUDY_READ_ONLY || guestSessionActive(),
     selection: () => viewingCueSheet ? { ...viewingCueSheet } : null,
+    publicationContext() {
+      if (!this.available() || this.readOnly()) return null;
+      return { showId: state.project.id };
+    },
+    publicationSnapshot(department) {
+      if (!this.available() || this.readOnly()) return null;
+      return { showId: state.project.id, sheet: window.STAGE_Q_LINK_MODEL.fromSheet(selectedCueSheet("department", department), lang) };
+    },
     mount(target) {
       const ownedFrame=document.getElementById("gamma-run-of-show-frame")?.contentDocument?.getElementById("cue-sheet-frame");
       if (!target || target.id !== "gamma-cuesheet-workspace" || target.ownerDocument.defaultView !== ownedFrame?.contentWindow || !els.cueSheetModal) return false;
@@ -46632,6 +46746,20 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   if (els.aboutClose) els.aboutClose.addEventListener("click", closeAbout);
   if (els.aboutBackdrop) els.aboutBackdrop.addEventListener("click", closeAbout);
   if (els.presentBtn) els.presentBtn.addEventListener("click", toggleStageFullscreen);
+  document.getElementById("stage-audience-present")?.addEventListener("click", startAudiencePresentation);
+  document.getElementById("stage-audience-guide-close")?.addEventListener("click", () => {
+    const guide = document.getElementById("stage-audience-guide");
+    guide.hidden = true;
+    guide.dataset.dismissed = "true";
+    els.presentClose.focus({ preventScroll: true });
+  });
+  els.presentOverlay?.addEventListener("pointermove", moveAudiencePointer, { passive: true });
+  els.presentOverlay?.addEventListener("pointerdown", moveAudiencePointer, { passive: true });
+  els.presentOverlay?.addEventListener("pointerup", event => { if (event.pointerType !== "mouse") hideAudiencePointer(); }, { passive: true });
+  els.presentOverlay?.addEventListener("pointercancel", hideAudiencePointer);
+  els.presentOverlay?.addEventListener("pointerleave", hideAudiencePointer);
+  document.addEventListener("visibilitychange", hideAudiencePointer);
+  window.addEventListener("blur", hideAudiencePointer);
   document.addEventListener("pointerdown", (event) => {
     if (els.panelLayoutMenu && !els.panelLayoutMenu.hidden
       && !els.panelLayoutControl?.contains(event.target)) closePanelLayoutMenu();
@@ -49087,7 +49215,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     isEnglish() { return languageValue(() => true, () => false); },
   });
-  window.SHOSAI_STAGE_CUE_SHEET_HOST = contractBridge(window.SHOSAI_STAGE_CUE_SHEET_HOST, ["open", "close", "printOpened", "available", "choices", "readOnly", "selection", "mount", "show", "refresh"]);
+  window.SHOSAI_STAGE_CUE_SHEET_HOST = contractBridge(window.SHOSAI_STAGE_CUE_SHEET_HOST, ["open", "close", "printOpened", "available", "choices", "readOnly", "selection", "publicationContext", "publicationSnapshot", "mount", "show", "refresh"]);
   window.STAGE_SCENE_ALTERNATIVES_HOST = contractBridge(window.STAGE_SCENE_ALTERNATIVES_HOST, ["context", "compare"]);
   window.GAMMA_STAGE_EDIT = contractBridge(window.GAMMA_STAGE_EDIT, ["context","currentContext","previewDirections","previewOperations"]);
   window.GAMMA_FORMATION_HOST = contractBridge(window.GAMMA_FORMATION_HOST, ["availability", "context"]);
@@ -49408,7 +49536,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261110-v0413', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261111-v0414', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

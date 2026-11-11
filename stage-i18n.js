@@ -32,6 +32,12 @@
 
   const TEXT = {
 
+    "全画面表示の隣に「発表用の表示」を追加しました。発表中だけ、説明の文字を1.4倍にし、照明の番号を大きくし、その端末の中だけに太いポインタと会議で見やすい配色を出します。映像・音声・ポインタは送信されないので、Zoom・Meetなどの画面共有でお使いください。終えると元の画面に戻ります。": "Added a \"Presentation view\" next to full screen. While presenting, explanatory text is 1.4x larger, lighting numbers are bigger, and a thick pointer and a meeting-friendly colour scheme appear on that device only. No video, audio, or pointer is sent, so please use screen sharing in Zoom, Meet, or similar. Ending it restores the previous screen.",
+
+    "平面図の表示の切り替えに「呼び名の格子」(初期はオフ)を追加しました。本舞台の床を6×6に分け、客席から見て下手前をA1、上手奥をF6と呼べます。オン・オフはその端末の表示の設定だけで、ショーのデータ・書き出し・印刷には入りません。": "Added a \"Call-name grid\" (off by default) to the plan-view display switch. It divides the main stage floor into 6×6, so you can call the downstage-left corner as seen from the audience A1 and the upstage-right corner F6. On/off is a display setting for that device only and is not included in show data, exports, or printing.",
+
+    "Qシートに「閲覧リンクを公開」を追加しました。部署を1つ選んで公開し、できたリンクを主催者がメールやLINEで渡すと、相手は読むだけで開けます。公開し直した内容は、相手が「読み直す」を押したときに反映されます。期限を選べて、失効もできます(相手がすでに読み込んだ内容や印刷した紙は残ります)。": "Added \"Publish view link\" to the Q-sheet. Choose one department and publish, then the organizer hands the link over by email or LINE, and the recipient can open it for reading only. Re-published content reaches the recipient only when they press \"Reload\". You can choose an expiry and revoke the link (content the recipient has already loaded or printed remains).",
+
     "会議用のリアルタイム共有・Qシートのゲスト表示・演者からのメモ送信を止めました(データは消していません)。入口を押すと理由が表示されます。接続中の会議があった場合は、その場で終了します。主催者は、受信していたメモと画像をZIPで書き出せます。受け取ったメモの書き出しは、この版の公開から30日間できます(期限の日時は共有の窓に表示します)。": "Stopped conference real-time sharing, Q-sheet guest viewing, and performer-note sending (no data was deleted). Opening these entry points now shows the reason. Any meeting already connected ends immediately. Organizers can export received notes and images as a ZIP. You can export received notes for 30 days after this release is published (the exact deadline is shown in the share window).",
 
     "かんたん照明の標準セットを、プロセニアム以外のシアター型(客席が一方向)の劇場でも使えるようにしました。プロセニアムの48灯は変わりません。灯数は実際の左右の袖で決まります(両袖あり48・片袖だけ44・袖なし40)。袖が無いと「横から照らす」は選べません。袖の灯体を使う明かりがあるショーを袖の無い劇場へ替えようとすると、替える前に止めて知らせます。説明書の照明の章を更新しました。AI相談役(共有Worker)が照明の全種類を受け付けるようになりました。劇場の選択肢から4種類(歌舞伎の舞台・ホテルの宴会場・シャピトー・ドーム)を外しました(データは消しません。既存のショーはそのまま開けます)。保存の形・読み込み・音楽・共有の処理は変わりません。": "The simple-lighting standard rig now works at theatre-type venues (audience on one side) beyond the proscenium. The proscenium's 48 fixtures are unchanged. Fixture count now depends on the actual wings (48 with both wings, 44 with one wing, 40 with none). \"Side lighting\" can't be selected where there are no wings. Switching a show with wing-fixture lighting (cues, groups, or alternates) to a wingless theatre is blocked with a notice before the switch happens. Updated the lighting chapter of the manual. The AI advisor (shared Worker) now accepts every lighting type. Removed 4 theatre choices (kabuki stage, hotel banquet hall, chapiteau, dome) from the picker (data isn't deleted; existing shows still open as before). Save format, loading, audio, and sharing are unchanged.",
@@ -7163,4 +7169,46 @@ Object.assign(window.SHOSAI_I18N.text, {
 Object.assign(window.SHOSAI_I18N.text, {
   "文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。オーナーには届きません。": "Text, strokes and pinned notes are saved in this browser and do not sync to other devices. They are not sent to the owner.",
   "線もシーンごとに、このブラウザへ保存します。自分だけのメモです。": "Strokes are saved in this browser for each scene. These notes stay private."
+});
+
+// ALT-PRESENT S1: local presentation, never meeting transport.
+Object.assign(window.SHOSAI_I18N.text, {
+  "発表用の表示": "Presentation view",
+  "Zoom・Meetなどの画面共有でお使いください。γから映像・音声・ポインタは送信されません。": "Use screen sharing in Zoom, Meet or a similar tool. Gamma does not transmit video, audio or pointer positions.",
+  "案内を閉じる": "Close guide"
+});
+// ALT_GRID_S2: local plan-view display only.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "呼び名の格子": "Call grid",
+  "舞台を6×6に区切ります。下手からA〜F、手前から奥へ1〜6。この端末の画面だけに表示します。": "Divide the stage into 6×6 cells: A–F from audience left to right, 1–6 from downstage to upstage. Shown only on this device's screen.",
+  "呼び名の格子を表示しました。": "Call grid shown.",
+  "呼び名の格子を隠しました。": "Call grid hidden."
+});
+// ALT_QLINK_S3: runtime English dictionary.
+Object.assign(window.SHOSAI_I18N.text, {
+  "閲覧リンクを公開": "Publish a viewing link",
+  "Qシートの閲覧": "View Q sheet",
+  "公開する部署": "Department to publish",
+  "公開": "Publish",
+  "公開し直す": "Publish again",
+  "リンクを失効": "Revoke link",
+  "リンクを写す": "Copy link",
+  "閲覧リンク": "Viewing link",
+  "公開日時": "Published at",
+  "最後に読み込んだ日時": "Last loaded at",
+  "公開された写しです。更新は「読み直す」を押したときだけ取り込みます。": "This is a published copy. Updates are loaded only when you press Reload.",
+  "選んだ部署の写しを公開します。リンクを知る人が閲覧できます。自分のメール・LINEでリンクを渡してください。相手への通知や自動の読み直しはありません。": "Publish a copy for the selected department. Anyone with the link can read it. Pass the link using your own email or LINE. There are no notifications or automatic reloads.",
+  "閲覧リンクが見つからないか、失効しています。": "The viewing link was not found or has been revoked.",
+  "この閲覧リンクは期限切れです。": "This viewing link has expired.",
+  "読み込めませんでした。「読み直す」で再試行してください。": "Could not load the sheet. Press Reload to try again.",
+  "閲覧リンクの公開は編集できる主催者だけが行えます。": "Only an organiser with editing access can publish a viewing link.",
+  "ショーが切り替わりました。欄を開き直してください。": "The show has changed. Reopen this panel.",
+  "Qシートの項目か容量が上限を超えています。公開内容を確認してください。": "The Q sheet has invalid fields or exceeds a limit. Check the content before publishing.",
+  "閲覧リンクの保管上限に達しました。": "The viewing-link storage limit has been reached.",
+  "閲覧リンクの公開はγ専用ホストで使えます。": "Viewing links can be published on Gamma's dedicated host.",
+  "発行済みのリンクがあります。欄を開き直してください。": "A link has already been issued. Reopen this panel.",
+  "操作できませんでした。接続とログインを確認し、欄を開き直してください。": "The action failed. Check your connection and sign-in, then reopen this panel.",
+  "公開しました。変更は自動では公開されません。": "Published. Changes are not published automatically.",
+  "閲覧リンクを失効しました。": "The viewing link has been revoked.",
+  "リンクを写しました。自分のメール・LINEで渡してください。": "Link copied. Pass it using your own email or LINE."
 });

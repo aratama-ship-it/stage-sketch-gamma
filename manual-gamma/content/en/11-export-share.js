@@ -61,9 +61,14 @@ ${fig("release401-previous-shows", "Previous shows on Mac: select an earlier sho
         html: `
 ${note("Use the Gamma sharing host", "GitHub Pages serves static files and cannot run the sharing server. For sharing, <a href=\"https://stage-sketch-gamma-share.juggler-arata.workers.dev/stage.html\" target=\"_blank\" rel=\"noopener noreferrer\">open the Gamma sharing editor</a>. Shows saved on Pages do not appear there automatically: export the show as JSON on Pages, then import it in the sharing editor. The original remains on Pages.", true)}
 <p>Use ${ui("Share")} in the header to issue a ${ui("Performer link")} for performers to review the show at their own pace. Send links only to intended recipients.</p>
+<h4>Department Q-sheet viewing link</h4>
+<p>On Gamma's dedicated host, open ${ui("Publish a viewing link")} in the Q sheet, choose a department and expiry (no expiry or a date and time), and press ${ui("Publish")}. Only a copy of that department's table is published; the saved show stays unchanged. Anyone with the link can view it without signing in. Use ${ui("Copy link")} and pass the link using your own email or LINE.</p>
+<p>After editing, press ${ui("Publish again")} to replace the copy at the same link. Readers receive the latest copy only when they press ${ui("Reload")}. The page shows publication and last-loaded times. There are no notifications, recipient lists, comments, posts or automatic reloads. ${ui("Revoke link")} stops future access; it cannot retract printed copies or content already open on a reader's screen. Revoke an expired link before publishing a new one.</p>
+<p>Each copy is limited to 96 KiB, 1,000 rows and 2,000 characters per cell. An over-limit copy is refused and the previously published copy is kept. Publication is unavailable on static hosting and in the Mac app. Existing Q-sheet printing, CSV, distribution copies and cue-reply imports remain available.</p>
 <h4>Meetings, guest Q sheets and note submission discontinued</h4>
 <p>Real-time meeting sharing and guest Q-sheet viewing have been discontinued. Starting, resuming and inviting people to meetings are unavailable. Normal Q-sheet creation, viewing, CSV export and printing remain available.</p>
 <p>Sending notes to the owner has also stopped. Performer-link viewing and personal notes remain available. Older Mac versions may show connection errors.</p>
+<p>To show scenes during a meeting, use ${ref("fullscreen", "Presentation view")} with screen sharing in Zoom, Meet or a similar tool. Gamma does not transmit video, audio or pointer positions.</p>
 <h4>Export received notes and images as a ZIP</h4>
 <p>Sign in to the sharing host with the editor account, open ${ui("Share")} and press ${ui("Export received notes")}. This exports received notes from all saved links, including revoked and expired viewing links. Extract the ZIP and open index.html to read the show, scene, name, date, text and images. notes.json keeps the original information and the images folder contains JPEG files.</p>
 <p>If any image cannot be retrieved, no ZIP is downloaded and the missing images are listed. The screen shows the deadline in Japan time. The export period lasts 30 days from the day the button is made available and users are notified. An unset deadline is shown explicitly. Stored data is not deleted after the period ends.</p>
@@ -119,9 +124,18 @@ ${steps([
       },
       {
         id: "fullscreen", title: "Full screen (F) — for showing", status: "sourced",
-        keywords: ["full screen", "presentation", "show", "present", "f", "esc", "caption", "text size", "swap", "x", "thumbnail", "projector"],
+        keywords: ["Presentation view", "Zoom", "Meet", "screen sharing", "fixture number", "pointer", "full screen", "presentation", "show", "present", "f", "esc", "caption", "text size", "swap", "x", "thumbnail", "projector"],
         html: `
+<p>Turn on ${ui("Call grid")} in the plan-view display controls to divide the main stage into 6×6 cells and refer to a position aloud, such as “number 12 in C3”. It is off by default and remembered only on this device. Names stay attached to the stage when zooming, panning or showing it full screen. The axes stay fixed for circular stages and surrounding seating, with lines clipped to the floor. Wings and stage extensions, front and 3D views, show files, images, ZIPs and printouts do not include it. Use it while sharing your screen through your own meeting tool; Stage Sketch does not send video, audio or pointers.</p>
+${table(["Name", "Direction (as seen by the audience)"], [
+  ["A → F", "Audience left (stage right / 下手) → audience right (stage left / 上手)"],
+  ["1 → 6", "Downstage (near the audience) → upstage"],
+  ["A1 / F6", "Downstage audience-left cell / upstage audience-right cell in the main-stage rectangle"]
+])}
+
 <p>${ui("Full screen")} (${kbd("F")}) fills the screen with the drawing — for a monitor or projector in the rehearsal room.</p>
+<p>${ui("Presentation view")} beside ${ui("Full screen")} enlarges scene descriptions and fixture numbers and adds a bold pointer on this device. Share the screen using your meeting tool; Gamma sends nothing. The guide can be closed.</p>
+<p>Use the existing arrows or arrow keys to step scenes. ${kbd("Esc")}, ${ui("Exit full screen")} or leaving browser full screen restores the original view, zoom and panels. Lighting colours, levels and show data stay unchanged. Presentation view is unavailable in Field mode, the phone viewer and read-only study views. Ordinary full screen remains available.</p>
 ${fig("20-fullscreen", "Full screen. Arrow keys step through scenes; the small window at the bottom right swaps front and plan.", "Full-screen view")}
 <ul>
 <li>${kbd("↑")}${kbd("↓")} step scenes. ${kbd("X")}, the swap icon at the top right, or the small window at the bottom right swaps front and plan. ${kbd("F")} or ${kbd("Esc")} returns.</li>

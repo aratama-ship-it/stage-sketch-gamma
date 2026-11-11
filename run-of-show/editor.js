@@ -1313,7 +1313,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     cueFrame.addEventListener("load",()=>{
       const doc=cueFrame.contentDocument;if(cueMounted||!doc?.getElementById("gamma-cuesheet-workspace"))return;
       for(const sheet of parent.document.querySelectorAll('link[rel="stylesheet"]')){
-        if(!/\/(?:style|gamma|gamma-ui|gamma-ui-tokens)\.css(?:\?|$)/.test(sheet.href))continue;
+        if(!/\/(?:style|gamma|gamma-ui|gamma-ui-tokens|stage-q-link)\.css(?:\?|$)/.test(sheet.href))continue;
         const link=doc.createElement("link");link.rel="stylesheet";link.href=sheet.href;doc.head.append(link);
       }
       const style=doc.createElement("style");style.textContent="html,body{height:100%;margin:0;padding:0;overflow:hidden}#gamma-cuesheet-workspace{height:100%;padding:0}#stage-cue-sheet-back{display:none}#gamma-cuesheet-workspace .stage-modal-body{padding:12px}#gamma-cuesheet-workspace .stage-cue-sheet-view-bar{flex-wrap:wrap}";doc.head.append(style);

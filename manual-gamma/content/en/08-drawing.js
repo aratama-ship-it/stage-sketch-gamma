@@ -85,6 +85,13 @@ ${steps([
         id: "view-toggles", title: "Display switches (name tags, floor grid, front border, house depth, costume)", status: "sourced",
         keywords: ["display", "switch", "names", "tags", "performer names", "set names", "light name", "grid", "floor grid", "front border", "house depth", "costume off", "hide", "invisible"],
         html: `
+<p>Turn on ${ui("Call grid")} in the plan-view display controls to divide the main stage into 6×6 cells and refer to a position aloud, such as “number 12 in C3”. It is off by default and remembered only on this device. Names stay attached to the stage when zooming, panning or showing it full screen. The axes stay fixed for circular stages and surrounding seating, with lines clipped to the floor. Wings and stage extensions, front and 3D views, show files, images, ZIPs and printouts do not include it. Use it while sharing your screen through your own meeting tool; Stage Sketch does not send video, audio or pointers.</p>
+${table(["Name", "Direction (as seen by the audience)"], [
+  ["A → F", "Audience left (stage right / 下手) → audience right (stage left / 上手)"],
+  ["1 → 6", "Downstage (near the audience) → upstage"],
+  ["A1 / F6", "Downstage audience-left cell / upstage audience-right cell in the main-stage rectangle"]
+])}
+
 ${table(["Switch", "Where", "Meaning"], [
   [ui("Performer names") + " / " + ui("Set names"), "Top-left row", "Show name tags on the drawing"],
   [ui("Light name"), "Top right of the front view", "Show light piece names"],

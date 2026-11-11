@@ -103,6 +103,7 @@ ${note("Not on iPad or iPhone", "The panel switches are a computer-screen featur
         id: "tools", title: "Tools on the drawing (top-left row and top-right of each view)", status: "verified",
         keywords: ["tools", "icons", "move", "arrow", "lighting effects", "work lights", "performer names", "set names", "zoom", "front", "plan", "both", "swap"],
         html: `
+<p>The plan-view display controls include ${ui("Call grid")}. See ${ref("view-toggles", "Part 8, Display switches")} for its 6×6 axes and use.</p>
 <p>The row at the top left is the tool in your hand. What a drag does depends on it.</p>
 ${table(["Icon", "Name", "Key", "What it does"], [
   ["✥", ui("Move objects"), kbd("V"), "Drag pieces. In front and plan views, drag empty space to select in a box or " + kbd("Shift") + "-click to select several (" + ref("formation", "Part 4, 4-12") + ")"],

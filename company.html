@@ -2,12 +2,12 @@
 <!-- Generated from stage.html by build-editions.mjs (company). Do not edit; edit stage.html and run node build-editions.mjs. -->
 <html lang="ja">
 <head>
-<script src="stage-runtime.js?v=20261104-v043"></script>
+<script src="stage-runtime.js?v=20261111-v0414"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Company | Stage Sketch Gamma Company</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.13">
+<meta name="stage-sketch-gamma-version" content="v0.4.14">
 <meta name="gamma-edition" content="company">
   <script src="gamma-editions.js?v=20261029-v0394"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,7 +25,7 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20261105-v045">
-<link rel="stylesheet" href="gamma.css?v=20261107-v048">
+<link rel="stylesheet" href="gamma.css?v=20261111-v0414">
 <link rel="stylesheet" href="stage-welcome.css?v=20261016-v0373">
 <link rel="stylesheet" href="gamma-mobile.css?v=20261103-v041">
 <script src="gamma-light-model.js?v=20261107-v049"></script>
@@ -39,6 +39,7 @@
 <link rel="stylesheet" href="stage-venue-viewpoints.css?v=20261015-v0368">
 <link rel="stylesheet" href="stage-run-of-show.css?v=20261009-v0337">
 <link rel="stylesheet" href="stage-timecode.css?v=20261015-v0371">
+<link rel="stylesheet" href="stage-q-link.css?v=20261111-v0414">
 <link rel="stylesheet" href="stage-show-overview.css?v=20261009-v0337">
 </head>
 <body class="is-standalone">
@@ -102,7 +103,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.13</span>
+                <span class="stage-app-version">0.4.14</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -194,6 +195,7 @@
 
           <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
           <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
+          <button type="button" class="stage-lang" id="stage-audience-present" aria-pressed="false" title="発表用の表示">発表用の表示</button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
                   data-tablet-icon="▤" aria-label="Qシート"
                   aria-haspopup="dialog" aria-controls="stage-cue-sheet-modal">
@@ -995,6 +997,12 @@
                   <button type="button" class="stage-canvas-tool is-icon" id="stage-plan-note"
                           data-tool-tip="note" data-tool-key="N"
                           title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planCallGrid"
+                         title="舞台を6×6に区切ります。下手からA〜F、手前から奥へ1〜6。この端末の画面だけに表示します。" aria-label="呼び名の格子">
+                    <input type="checkbox" id="stage-plan-call-grid">
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M2 2h12v12H2zM6 2v12M10 2v12M2 6h12M2 10h12"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">呼び名の格子</span>
+                  </label>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="planLights"
                          aria-label="平面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-lights" checked>
@@ -2081,6 +2089,7 @@
     <button type="button" class="stage-modal-close" id="stage-cue-sheet-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-cue-sheet-body">
+    <details id="q-owner" class="q-owner"><summary>閲覧リンクを公開</summary><div id="q-owner-controls"></div></details>
     <div id="stage-cue-sheet-list"></div>
     <div id="stage-cue-sheet-view" hidden>
       <div class="stage-cue-sheet-view-bar">
@@ -2892,13 +2901,15 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261110-v0413">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261111-v0414">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0413-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0413-title">v0.4.13</h3><time datetime="2026-11-10">2026-11-10</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0414-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0414-title">v0.4.14</h3><time datetime="2026-11-11">2026-11-11</time></header>
       <ul>
-        <li>会議用のリアルタイム共有・Qシートのゲスト表示・演者からのメモ送信を止めました(データは消していません)。入口を押すと理由が表示されます。接続中の会議があった場合は、その場で終了します。主催者は、受信していたメモと画像をZIPで書き出せます。受け取ったメモの書き出しは、この版の公開から30日間できます(期限の日時は共有の窓に表示します)。</li>
+        <li>全画面表示の隣に「発表用の表示」を追加しました。発表中だけ、説明の文字を1.4倍にし、照明の番号を大きくし、その端末の中だけに太いポインタと会議で見やすい配色を出します。映像・音声・ポインタは送信されないので、Zoom・Meetなどの画面共有でお使いください。終えると元の画面に戻ります。</li>
+        <li>平面図の表示の切り替えに「呼び名の格子」(初期はオフ)を追加しました。本舞台の床を6×6に分け、客席から見て下手前をA1、上手奥をF6と呼べます。オン・オフはその端末の表示の設定だけで、ショーのデータ・書き出し・印刷には入りません。</li>
+        <li>Qシートに「閲覧リンクを公開」を追加しました。部署を1つ選んで公開し、できたリンクを主催者がメールやLINEで渡すと、相手は読むだけで開けます。公開し直した内容は、相手が「読み直す」を押したときに反映されます。期限を選べて、失効もできます(相手がすでに読み込んだ内容や印刷した紙は残ります)。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3830,6 +3841,11 @@
     <div class="stage-field-actions"><button type="button" id="stage-field-go" data-no-i18n>GO</button><button type="button" id="stage-field-scene-next">次のシーンへ</button><button type="button" id="stage-field-cue-next">次のキューへ</button></div>
   </section>
   <div class="stage-present-canvas" id="stage-present-canvas"></div>
+  <div id="stage-audience-pointer" aria-hidden="true" hidden></div>
+  <aside id="stage-audience-guide" hidden>
+    <p>Zoom・Meetなどの画面共有でお使いください。γから映像・音声・ポインタは送信されません。</p>
+    <button type="button" id="stage-audience-guide-close">案内を閉じる</button>
+  </aside>
   <button type="button" class="stage-present-mini" id="stage-present-mini" data-tip-key="X" data-tip-description="正面図と平面図を入れ替えます" data-stage-shortcut-action="view.swap" data-stage-shortcut-title="正面と平面を入れ替える（{key}）" title="正面と平面を入れ替える（X）" aria-label="正面と平面を入れ替える" aria-keyshortcuts="X">
     <span class="stage-present-mini-bar"><span id="stage-present-mini-label">平面図</span><span class="stage-present-mini-shortcut" aria-hidden="true">⇄ <kbd class="stage-tip-key" data-stage-shortcut-display-for="view.swap">X</kbd></span></span>
     <span class="stage-present-mini-view" id="stage-present-mini-view" aria-hidden="true" inert></span>
@@ -3854,7 +3870,7 @@
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261110-v0413"></script>
+<script src="stage-samples/catalog.js?v=20261111-v0414"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3870,7 +3886,7 @@
 <script src="stage-storage-recovery.js?v=20261020-v0382"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261110-v0413" data-manual-content="manual-gamma/manual-content.js?v=20261110-v0413"></script>
+<script src="manual-gamma/manual-meta.js?v=20261111-v0414" data-manual-content="manual-gamma/manual-content.js?v=20261111-v0414"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3887,6 +3903,8 @@
 <script src="stage-data-safety.js?v=20261001-release69"></script>
 <script src="stage-time-domain.js?v=20261013-v0359"></script>
 <script src="stage-timecode.js?v=20261015-v0371"></script>
+<script src="stage-q-link-model.js?v=20261111-v0414"></script>
+<script src="stage-q-link-owner.js?v=20261111-v0414"></script>
 <script src="stage-cue-sheet.js?v=20261105-v046"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
@@ -3909,7 +3927,7 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261110-v0413"></script>
+<script src="stage-language-loader.js?v=20261111-v0414"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
 <script src="stage-metrics.js?v=20261020-v0380"></script>
@@ -3919,15 +3937,16 @@
 <script src="stage-project-bridge.js?v=20261109-v0411"></script>
 <script src="stage-project-library.js?v=20261103-v040"></script>
 <script src="stage-element-refs.js?v=20261104-v043"></script>
-<script src="stage-sketch.js?v=20261110-v0413"></script>
+<script src="stage-call-grid.js?v=20261111-v0414"></script>
+<script src="stage-sketch.js?v=20261111-v0414"></script>
 <script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
-<script src="gamma-formation.js?v=20261109-v0411"></script>
+<script src="gamma-formation.js?v=20261111-v0414"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
 <script src="stage-script-editor.js?v=20261025-v0386"></script>
     <script src="stage-light-schedule.js?v=20261013-v0359"></script>
     <script src="stage-timeline.js?v=20261109-v0411"></script>
 <script src="stage-session.js?v=20261110-v0413"></script>
-<script src="stage-study-export.js"></script>
+<script src="stage-study-export.js?v=20261111-v0414"></script>
 <script src="stage-study-owner.js?v=20261110-v0413"></script>
 <script src="stage-usage.js?v=20261015-v0368"></script>
 <script src="stage-venue-underlay.js?v=20261006-v0312"></script>
@@ -3938,9 +3957,9 @@
 <script src="stage-field-run-package.js?v=20261020-v0380"></script>
 <script src="stage-field-run-transport.js?v=20261016-v0372"></script>
 <script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261110-v0413"></script>
-<script src="stage-run-of-show-pane.js?v=20261109-v0411"></script>
-<script src="gamma-workspace.js?v=20261110-v0413"></script>
+<script src="stage-field-run-console.js?v=20261111-v0414"></script>
+<script src="stage-run-of-show-pane.js?v=20261111-v0414"></script>
+<script src="gamma-workspace.js?v=20261111-v0414"></script>
 <script src="gamma-feature-search.js?v=20261030-v0395"></script>
 <script src="gamma-mobile.js?v=20261030-v0395"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>
