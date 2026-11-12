@@ -1,4 +1,5 @@
-/* F-12: try one row, then hide TC, then use two rows. View settings only. */
+/* F-12: try one row, then hide TC, then hide the presentation-view icon, then use two rows
+ * (two rows bring the icon back). View settings only. Owner decision L1, 2026-11-12. */
 (() => {
   'use strict';
   const head = document.querySelector('.stage-sketch-head');
@@ -7,14 +8,15 @@
   function fit() {
     scheduled = 0;
     if (document.documentElement.matches('.stage-pwa-tablet,.stage-phone-viewer')) {
-      head.classList.remove('gamma-header-fitted','gamma-header-no-tc','gamma-header-two-rows');
+      head.classList.remove('gamma-header-fitted','gamma-header-no-tc','gamma-header-no-audience','gamma-header-two-rows');
       return;
     }
     head.classList.add('gamma-header-fitted');
-    head.classList.remove('gamma-header-no-tc','gamma-header-two-rows');
+    head.classList.remove('gamma-header-no-tc','gamma-header-no-audience','gamma-header-two-rows');
     const overflow = () => head.scrollWidth > head.clientWidth + 1;
     if (overflow()) head.classList.add('gamma-header-no-tc');
-    if (overflow()) head.classList.add('gamma-header-two-rows');
+    if (overflow()) head.classList.add('gamma-header-no-audience');
+    if (overflow()) { head.classList.remove('gamma-header-no-audience'); head.classList.add('gamma-header-two-rows'); }
   }
   function queue() { if (!scheduled) scheduled = requestAnimationFrame(fit); }
   new ResizeObserver(queue).observe(head);

@@ -48,6 +48,7 @@
     return { ...api.buildReply(parts), estimate };
   }
   function downloadReply(result, api, doc = root.document, urls = root.URL) {
+    if (root.GAMMA_BROWSER_PREVIEW?.active) { root.GAMMA_BROWSER_PREVIEW.showGuide(); return false; }
     const blob = new Blob([result.text], { type: api.MIME_TYPE });
     const url = urls.createObjectURL(blob), anchor = doc.createElement('a');
     anchor.href = url; anchor.download = api.replyFileName(result.reply);
@@ -88,6 +89,7 @@
       statusKey = errorKeys[statusCode] || 'replyInvalidData'; prepared = null; sync();
     }
     $('study-reply-open').onclick = async () => {
+      if (root.GAMMA_BROWSER_PREVIEW?.active) { root.GAMMA_BROWSER_PREVIEW.showGuide(); return; }
       if (!available() || dialog.open) return;
       const current = ++serial; saved = false; statusKey = 'replyPreparing'; statusCode = ''; size = '';
       source = prepared = suggestion = null; checks = []; reasons = []; list.replaceChildren();

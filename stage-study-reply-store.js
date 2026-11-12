@@ -5,9 +5,13 @@
   const DB = 'gamma:study-replies-v1';
   const LIMITS = Object.freeze({ count: 100, bytes: 64 * 1024 * 1024 });
   const error = code => Object.assign(new Error(code), { code });
-  function repository(indexedDB = root.indexedDB) {
+  function requireStorage() {
+    if (root.GAMMA_BROWSER_PREVIEW?.active) throw error('PREVIEW_NO_SAVE');
+  }
+  function repository(indexedDB = root.GAMMA_BROWSER_PREVIEW?.active ? undefined : root.indexedDB) {
     function open() {
       return new Promise((resolve, reject) => {
+        requireStorage();
         if (!indexedDB) return reject(error('storage-unavailable'));
         let request, settled = false;
         try { request = indexedDB.open(DB, 1); } catch { reject(error('storage-unavailable')); return; }
@@ -66,6 +70,7 @@
   }
   function create({ repo = repository(), codec = root.SHOSAI_STUDY_REPLY, now = () => new Date().toISOString() } = {}) {
     async function importFile(file) {
+      if (root.GAMMA_BROWSER_PREVIEW?.active) return { ok: false, code: 'PREVIEW_NO_SAVE' };
       if (!codec || !file || !Number.isSafeInteger(file.size) || file.size < 0) return { ok: false, code: 'input-type' };
       if (file.size > codec.LIMITS.bytes) return { ok: false, code: 'file-too-large' };
       let raw;
@@ -89,15 +94,16 @@
         }
         return results;
       },
-      list: () => repo.list(),
+      list: () => root.GAMMA_BROWSER_PREVIEW?.active ? Promise.reject(error('PREVIEW_NO_SAVE')) : repo.list(),
       async read(key) {
+        requireStorage();
         const raw = await repo.get(key), checked = codec.validateStudyReply(raw);
         if (!checked.ok) throw error('storage-failed');
         const identity = await codec.replyImportKey(checked.reply);
         if (!identity.ok || identity.key !== key) throw error('storage-failed');
         return checked.reply;
       },
-      remove: key => repo.remove(key),
+      remove: key => root.GAMMA_BROWSER_PREVIEW?.active ? Promise.reject(error('PREVIEW_NO_SAVE')) : repo.remove(key),
     });
   }
   function rows(entries, { name = '', scene = '', show = '', currentShowId = '', sort = 'importedAt' } = {}) {

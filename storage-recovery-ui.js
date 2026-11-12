@@ -1,5 +1,14 @@
 (function () {
   "use strict";
+  if (window.GAMMA_BROWSER_PREVIEW?.active) {
+    // No reads, migration, export or cleanup of the pre-existing device store.
+    for (const href of ['style.css?v=20261112-v0417', 'gamma.css?v=20261112-v0417']) {
+      const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
+      document.head.append(link);
+    }
+    window.GAMMA_BROWSER_PREVIEW.showGuide();
+    return;
+  }
   const $ = id => document.getElementById(id);
   const lang = window.SHOSAI_LANGUAGE_LOADER?.initialLanguage?.() || window.localStorage.getItem("gamma:shosai-stage-lang") || "ja";
   document.documentElement.lang = lang;

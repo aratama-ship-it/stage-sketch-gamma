@@ -1,6 +1,9 @@
 (function(root){
   'use strict';
   if(!root.document||!root.GAMMA_LICENSE_MODEL)return;
+  // Recovery loads edition policy only to isolate a Pages preview before any
+  // storage access. It is not an editor and must not register a license device.
+  if(/\/storage-recovery\.html$/.test(root.location?.pathname||''))return;
   const config=root.GAMMA_LICENSE_CONFIG||{required:false,keys:{},issuer:''};
   const store={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
   let access=null;
@@ -88,11 +91,14 @@
   }
   function observeIdentity(identity){
     const mode=identity?.license?.mode;
-    if(mode==='unavailable'){lastError='license-unavailable';access.deny(lastError);}
+    // Provider/config outages cannot revoke a previously verified offline grant.
+    // A client without the required trust configuration still fails closed.
+    if(mode==='unavailable'){lastError='license-unavailable';if(config.required)access.networkFailure();else access.deny(lastError);}
     if(mode==='required'&&!config.required){lastError='license-unavailable';access.deny(lastError);}
   }
   function message(){const r=access.read();return tx(messages[lastError]||messages[r.error]||messages[r.state]||messages.default);}
-  function render(){if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';}
+  function render(){if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';
+    ui.eye.setAttribute('aria-label',tx(ui.password.type==='password'?'パスワードを表示':'パスワードを隠す'));}
   function mount(){
     const parent=document.querySelector('#stage-prefs-main');if(!parent||ui)return;
     const box=document.createElement('section');box.id='stage-license-settings';box.className='stage-pref-group';box.setAttribute('data-contract-recovery','');box.setAttribute('data-no-i18n','');
@@ -106,6 +112,15 @@
     const user=field('お名前','text','username'),pass=field('パスワード','password','password');user.el.autocomplete='username';pass.el.autocomplete='current-password';
     function button(source,handler){const el=document.createElement('button');el.type='button';el.className='btn-quiet';text(el,source);el.addEventListener('click',handler);return el;}
     const signIn=button('ログインして契約を確認',()=>login.requestSubmit());
+    const eye=button('',()=>{
+      const visible=pass.el.type==='password';pass.el.type=visible?'text':'password';
+      eye.setAttribute('aria-pressed',String(visible));eye.setAttribute('aria-label',tx(visible?'パスワードを隠す':'パスワードを表示'));
+    });
+    translated.delete(eye);eye.setAttribute('aria-label',tx('パスワードを表示'));eye.setAttribute('aria-pressed','false');
+    // The shared icon rule fixes its box with !important; override its local token.
+    eye.style.cssText='--gamma-icon-box:var(--ctrl-lg,44px);display:inline-flex;align-items:center;justify-content:center;min-width:var(--ctrl-lg,44px);min-height:var(--ctrl-lg,44px)';
+    eye.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    pass.label.append(eye);
     login.append(user.label,pass.label,signIn);login.addEventListener('submit',async event=>{
       event.preventDefault();const credentials={user:user.el.value,pass:pass.el.value};pass.el.value='';signIn.disabled=true;
       try{await request('login',credentials);await renew({explicit:true});}catch(_){lastError='authentication';render();}finally{credentials.pass='';signIn.disabled=false;}
@@ -124,7 +139,20 @@
           const remove=button('この端末登録を解除',async()=>{try{await request('revoke',{device:item.id});if(item.id===access.device){lastError='revoked';access.deny('revoked');}await list();render();}catch(_){lastError='default';render();}});row.append(name,remove);devices.append(row);}
       }catch(e){lastError=messages[e.message]?e.message:'default';render();}
     }
-    details.append(login,check,button('登録端末を確認',list),devices,admin);box.append(heading,status,date,details);parent.append(box);ui={status,date};render();
+    details.append(login);
+    // A fixed external HTTPS entry, without a token, Cookie or credentials in
+    // its URL. The existing Mac navigation policy opens HTTPS in the browser.
+    try {
+      const url=new URL(config.issuer);
+      if(url.protocol==='https:'&&!url.username&&!url.password&&!url.search&&!url.hash&&['','/'].includes(url.pathname)&&(!url.port||url.port==='443')
+        && !['localhost','127.0.0.1','[::1]'].includes(url.hostname)&&!url.hostname.endsWith('.localhost')){
+        url.pathname='/account-forgot';
+        const forgot=text(document.createElement('a'),'パスワードを忘れた方');forgot.href=url.href;forgot.target='_blank';forgot.rel='noopener noreferrer';
+        forgot.className='btn-quiet';forgot.style.cssText='display:inline-flex;align-items:center;min-height:var(--ctrl-lg,44px)';
+        details.append(forgot);
+      }
+    }catch(_){/* No unconfigured or loopback recovery destination. */}
+    details.append(check,button('登録端末を確認',list),devices,admin);box.append(heading,status,date,details);parent.append(box);ui={status,date,eye,password:pass.el};render();
   }
   root.GAMMA_LICENSE=Object.freeze({read,decision:()=>access?.decision()||{allowed:!config.required},remaining:()=>access?.remaining()??null,needsCheck:()=>access?.needsCheck()??true,initialize,renew,observeIdentity,message,mount});
   root.addEventListener('pagehide',()=>access?.checkpoint());

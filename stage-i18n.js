@@ -32,6 +32,11 @@
 
   const TEXT = {
 
+    "ヘッダーが1段に収まらない画面幅(1280〜1440ほど)で2段に折れていた不具合を直しました。「発表用の表示」は、全画面の隣の小さなアイコンのボタンになりました。幅が足りないときは入口が一時的に隠れ(ウインドウを広げるか縮小すると戻ります)、隠れているときに発表を終えると全画面のボタンへ移ります。": "Fixed the header wrapping to two rows at screen widths where it did not fit on one (around 1280–1440 px). \"Presentation view\" is now a small icon button next to full screen. When the width is too narrow its entry is hidden temporarily (widen or shrink the window to bring it back), and if you finish presenting while it is hidden, focus moves to the full-screen button.",
+    "有料版の期限が切れて閲覧と書き出しだけになっているとき、書き出しのあとに出る知らせ(未接続の音源は含まれません、など)の「×」が押せず、知らせが設定を覆ったままになる不具合を直しました。": "Fixed a problem where, after a paid term has expired and only viewing and export remain, the \"×\" on the notice shown after exporting (for example \"audio not connected is not included\") could not be pressed, leaving the notice covering the settings.",
+
+    "説明書の体験版の説明に、相談の回数の枠と、受け取った返答・以前の保存は体験版では扱えないことを書き足しました。": "The manual's trial-version section now describes the daily limit on consultations and states that received replies and earlier saves cannot be handled in the trial version.",
+
     "かんたん照明の正面ビューで、作業灯をつけたまま舞台タブと同じ順に重ねて表示するようにしました(明かりが先、そのあとに装置。紗幕は舞台の奥行きの順)。": "In the Simple lighting front view with the work light on, items now stack in the same order as the Stage tab (lights first, then pieces; scrims in stage-depth order).",
 
     "進行表の印刷で、スタイルの読み込みを最大20秒待つようにしました。読み込めない場合や20秒を過ぎた場合は印刷の窓を閉じ、いつものスタイル読み込みのメッセージを表示します。印刷の窓を自分で閉じたときは、そこで止まります。": "Printing the run of show now waits up to 20 seconds for its styles to load. If they fail to load or the time runs out, the print window is closed and the usual style-loading message is shown. If you close the print window yourself, it simply stops there.",
@@ -6273,6 +6278,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.placeholder": "Example: Ideas to fill the transition in act two?",
   "assist.send": "Send",
   "assist.context": "Share the current scene title and head count",
+  "assist.trialAllowance": "Trial consultation allows 5 requests per day.",
+  "assist.trialDaily": "You have used today’s 5 requests. Please return after midnight Japan time.",
+  "assist.trialGlobalDaily": "Today’s trial consultation capacity is full. Please return after midnight Japan time.",
+  "assist.trialPaid": "Paid plans include more consultation requests per day.",
   "assist.remaining": "{n} left today",
   "assist.trialNotice": "This is a trial feature and may end without notice.",
   "assist.notice": "Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
@@ -7297,4 +7306,20 @@ Object.assign(window.SHOSAI_I18N.text, {
   "端末内の保管について": "About device storage",
   "返答はこの端末だけに保管し、サーバーには送りません。上限は100件・合計64 MiBです。ブラウザのデータを消すと返答も消えるため、受け取ったファイルは残してください。": "Replies stay on this device and are never sent to the server. The limit is 100 files / 64 MiB total. Clearing browser data also removes replies, so keep the received files.",
   "演者用リンクを管理": "Manage performer links"
+});
+
+// P3: English bootstrap is the actual English language-loader entry.
+Object.assign(window.SHOSAI_I18N_PACKS.en.text, {
+  "体験版（保存なし）": "Preview (no saving)",
+  "保存と書き出しは有料版で使えます": "Saving and exporting are available with a paid plan",
+  "体験版のままでも、この窓を閉じれば続けて試せます。ブラウザを閉じると、いまの作品は消えます。": "You can close this window and keep trying the preview. Your current work will disappear when you close the browser.",
+  "料金を見る": "View pricing",
+  "体験を続ける": "Continue preview",
+  "{date} から、ブラウザの体験版では保存できなくなります。いま保存している作品は、それまでに『書き出し』で控えを残してください。": "From {date}, saving will no longer be available in the browser preview. Before then, use Export to back up your saved work.",
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS.en.text, {
+  "パスワードを表示": "Show password",
+  "パスワードを隠す": "Hide password",
+  "パスワードを忘れた方": "Forgot your password?"
 });

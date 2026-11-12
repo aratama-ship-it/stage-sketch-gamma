@@ -36,6 +36,28 @@
     });
   }
 
+  // The preview retains playable audio only for this document. Never open or
+  // migrate either real audio DB, even when one already exists at this origin.
+  if (window.GAMMA_BROWSER_PREVIEW?.active) {
+    const tracks=new Map();
+    window.GAMMA_BROWSER_PREVIEW.onDispose?.(() => tracks.clear());
+    const put=async(id,blob)=>{
+      if(!validTrackId(id)||!(blob instanceof Blob))throw new TypeError('Invalid preview audio');
+      tracks.set(id,blob);return true;
+    };
+    window.SHOSAI_STAGE_AUDIO_STORE=Object.freeze({validTrackId,put,
+      putIfAbsent:async(id,blob)=>{if(!validTrackId(id)||!(blob instanceof Blob))throw new TypeError('Invalid preview audio');if(tracks.has(id))return false;return put(id,blob);},
+      get:async id=>tracks.get(id)||null,peek:async id=>tracks.get(id)||null,
+      remove:async id=>tracks.delete(id),removeSelected:async(ids,{guard=()=>false}={})=>{
+        if(!Array.isArray(ids)||ids.some(id=>!validTrackId(id)))throw new TypeError('Invalid trackId');
+        if(ids.length&&!guard())throw Error('preview-audio-guard');
+        let count=0,bytes=0;for(const id of ids){const blob=tracks.get(id);if(blob){count++;bytes+=blob.size;tracks.delete(id);}}return {count,bytes};
+      },
+      listKeys:async()=>[...tracks.keys()],pruneExcept:async()=>0,
+    });
+    return;
+  }
+
   function withStore(mode, operation, dbName = DB_NAME) {
     return openDb(dbName).then((db) => new Promise((resolve, reject) => {
       const tx = db.transaction(STORE, mode);

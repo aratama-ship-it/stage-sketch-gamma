@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.16";
+  const GAMMA_APP_VERSION = "v0.4.17";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -128,6 +128,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     ? window.STAGE_PROJECT_BRIDGE?.create(window) : null;
   const nativeInitialOpen = nativeBridgeCandidate ? await nativeBridgeCandidate.initialOpen : null;
   const nativeProject = nativeInitialOpen !== null ? nativeBridgeCandidate : null;
+  const browserPreview = window.GAMMA_BROWSER_PREVIEW?.active === true && !nativeProject
+    ? window.GAMMA_BROWSER_PREVIEW : null;
   const pendingLateAudio = new Map(); // review R6: new audio whose confirmation timed out; completed when the shell confirms late
 
   const devResetTriggered = (function devResetTrigger() {
@@ -210,7 +212,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   const largeReadOnly = document.documentElement?.hasAttribute?.("data-study-renderer") === true;
   let largeProjectStorage = null;
-  if (!largeReadOnly && !nativeProject) {
+  if (!largeReadOnly && !nativeProject && !browserPreview) {
     try {
       if (typeof window.indexedDB?.open === "function") {
       if (!window.STAGE_LARGE_PROJECT_STORE) throw new Error("大容量保存の更新ファイルが未読込です");
@@ -582,12 +584,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const CONTRACT_PLAN_REQUIRED = "この契約では共有と演者用リンクの発行を使えません。StudioまたはCompanyの契約が必要です。保存済みリンクの一覧・メモ・回収・無効化は使えます。";
   let contractUiReady = false, contractTimer = null;
   const contractDocuments = new Set(), contractControlState = new Map();
-  const trialEnabled = window.GAMMA_EDITIONS?.browserTrialApplies?.({
-    enabled:window.GAMMA_EDITIONS.RELEASE_FEATURES.browserTrial, hostname:window.location.hostname,
-    pathname:window.location.pathname, native:Boolean(nativeProject || window.STAGE_RUNTIME?.isMac?.()), study:STUDY_READ_ONLY,
-  }) === true;
   const contractAccess = window.GAMMA_EDITIONS?.createContractAccess?.({
-    trial:{enabled:trialEnabled, storage:{getItem:key => window.localStorage.getItem(key), setItem:(key,value) => window.localStorage.setItem(key,value)}},
     changed: () => {
     clearTimeout(contractTimer);
     // Schedule only the known contract boundary. This is not an offline grace period.
@@ -606,14 +603,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
   function contractBoundaryRemaining() {
     if (licenseEnforced()) return window.GAMMA_LICENSE.remaining();
-    const remaining = contractAccess.remaining();
-    // Update the rounded day label at its next boundary as well as at expiry.
-    return remaining !== null && contractAccess.read().source === "trial"
-      ? Math.min(remaining, remaining % 86400000 || 86400000) : remaining;
+    return contractAccess.remaining();
   }
-  function licenseEnforced() { return window.GAMMA_LICENSE && window.GAMMA_LICENSE.read().state !== "legacy"; }
-  function contractReadOnly() { return licenseEnforced() ? !window.GAMMA_LICENSE.decision().allowed : contractAccess?.decision().allowed === false; }
+  function licenseEnforced() { return !browserPreview && window.GAMMA_LICENSE && window.GAMMA_LICENSE.read().state !== "legacy"; }
+  function contractReadOnly() { if (browserPreview) return false; return licenseEnforced() ? !window.GAMMA_LICENSE.decision().allowed : contractAccess?.decision().allowed === false; }
   function readContract() {
+    if (browserPreview) return {source:'browser-preview',state:'active',plan:null,until:null};
     if (!licenseEnforced()) return contractAccess?.read() || {state:"unknown", plan:null};
     const value = window.GAMMA_LICENSE.read();
     return {...value, licenseState:value.state, state:window.GAMMA_LICENSE.decision().allowed ? "active" : "expired"};
@@ -627,20 +622,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
   function requireContractEdit() { if (contractReadOnly()) throw new Error(contractMessage()); }
   function contractMessage(feature = "edit") {
+    if (browserPreview) return tx(browserPreview.message);
     if (licenseEnforced() && contractReadOnly()) return window.GAMMA_LICENSE.message();
-    const value = contractAccess?.read();
-    if (value?.source === "trial") return trialMessage(value);
     return tx(contractAccess?.decision(feature).reason === "plan-required" ? CONTRACT_PLAN_REQUIRED : CONTRACT_EXPIRED);
-  }
-  function trialMessage(value) {
-    const messages = {
-      ready:"「体験を始める」から7日間（168時間）、登録なしで使えます。期限後は閲覧と書き出しだけになり、ショーは削除しません。",
-      active:"期限: {date}。期限後は閲覧と書き出しだけになります。ショーは削除しません。ファイルに控えを残してください。",
-      expired:"7日間の体験が終了しました。閲覧と書き出しは使えます。編集・共有・演者用リンクの発行は停止中です。ショーと期限前の入力は残しています。",
-      "clock-rollback":"時計が前回の記録より戻っています。端末の日時を確認してください。閲覧と書き出しは使えます。体験期間は延長しません。",
-      storage:"体験の開始記録を確認・保存できません。閲覧と書き出しは使えます。ショーは削除しません。ファイルに控えを残してください。",
-    };
-    return tx(messages[value.trialState] || messages.storage).replace("{date}", value.untilMs === null ? "" : new Date(value.untilMs).toLocaleString(document.documentElement.lang || "ja"));
   }
   window.GAMMA_CONTRACT = Object.freeze({
     read: readContract,
@@ -648,6 +632,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     expire: () => contractAccess?.expire(),
     restrictSharing: () => contractAccess?.restrictSharing(),
     decision: feature => {
+      if (browserPreview) return browserPreview.decision(feature);
       if (contractReadOnly()) return {allowed:false,reason:"plan-expired"};
       if (licenseEnforced()) return !feature || feature === "edit" ? {allowed:true} : window.GAMMA_EDITIONS.featureDecision({plan:window.GAMMA_LICENSE.read().plan}, feature, 0);
       return contractAccess?.decision(feature) || {allowed:true};
@@ -667,12 +652,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (value.licenseState === "licensed" && value.user && signedInUser !== value.user) {
       signedInUser = value.user; updateWhoamiBadge();
     }
-    const trial = value.source === "trial";
-    const trialLabel = !trial ? "" : value.trialState === "active" ? tx("体験: 残り{days}日").replace("{days}", Math.ceil(value.remainingMs / 86400000))
-      : tx(value.trialState === "ready" ? "7日間の体験" : "体験: 閲覧と書き出し");
+    const preview = value.source === "browser-preview";
     const label = (window.GAMMA_EDITION || "studio").replace(/^./, c => c.toUpperCase());
     const text = label + (value.plan ? " · " + tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) : "")
-      + (trial ? " · " + trialLabel : expired ? " · " + tx("契約期限切れ") : "");
+      + (preview ? " · " + tx(browserPreview.label) : expired ? " · " + tx("契約期限切れ") : "");
     let edition = document.getElementById("stage-contract-edition");
     const badge = document.getElementById("stage-session-whoami");
     if (!edition && badge?.parentElement) {
@@ -680,7 +663,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       edition.className = "stage-session-whoami"; edition.setAttribute("data-no-i18n", ""); badge.before(edition);
     }
     if (edition) {
-      edition.textContent = trial ? trialLabel : value.plan ? tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) + (expired ? " · " + tx("契約期限切れ") : "") : expired ? tx("契約期限切れ") : "";
+      edition.textContent = preview ? "" : value.plan ? tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) + (expired ? " · " + tx("契約期限切れ") : "") : expired ? tx("契約期限切れ") : "";
       edition.title = text; edition.hidden = !edition.textContent;
     }
     let notice = document.getElementById("stage-contract-status");
@@ -693,15 +676,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (notice) {
       let message = notice.querySelector("[data-contract-message]");
       if (!message) { message = document.createElement("span"); message.setAttribute("data-contract-message", ""); notice.replaceChildren(message); }
-      notice.hidden = !expired && !trial;
-      message.textContent = trial ? trialMessage(value) : expired ? contractMessage() : "";
-      let start = notice.querySelector("#stage-trial-start");
-      if (!start && trial) {
-        start = document.createElement("button"); start.id = "stage-trial-start"; start.type = "button";
-        start.className = "btn-quiet"; start.setAttribute("data-contract-view", "");
-        start.addEventListener("click", () => { contractAccess.startTrial(); checkContractBoundary(); }); notice.append(start);
-      }
-      if (start) { start.hidden = !trial || value.trialState !== "ready"; start.textContent = tx("体験を始める"); }
+      notice.hidden = !expired;
+      message.textContent = expired ? contractMessage() : "";
+
     }
     document.documentElement.dataset.gammaContractState = value.state;
     if (expired) {
@@ -743,7 +720,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       '#stage-timeline-play', '#stage-timeline-stop', '#stage-timeline-audio-volume', '#stage-timeline-volume', '#stage-header-volume-btn',
       '#paper-export', '#export-document', '#print-sample', '#scene-prev', '#scene-next', '#t-play',
       '#stage-play', '#stage-stop', '#gamma-information-toggle', '#stage-manual-open',
-      '#stage-show-save-export', '#stage-export-close', '#stage-export-backdrop'
+      '#stage-show-save-export', '#stage-export-close', '#stage-export-backdrop',
+      // The export/import notice (importFailureNotice) must stay dismissable after the
+      // paid period ends; otherwise it covers the settings it points to (V0417 bin5).
+      '#stage-import-notice'
     ].join(',')));
   }
   function decorateContractControls(expired = contractReadOnly(), roots = contractDocuments) {
@@ -935,6 +915,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
 
   async function downloadBlob(blob, filename) {
+    if (browserPreview) { browserPreview.showGuide(); return false; }
     if (STUDY_READ_ONLY) return false;
     const nativeDecision = prepareNativeDownloadDecision();
     const url = URL.createObjectURL(blob);
@@ -961,6 +942,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function saveProjectBlob(blob, filename) {
+    if (browserPreview) { browserPreview.showGuide(); return false; }
     if (STUDY_READ_ONLY) return false;
     const bridge = window.stageSketchBridge;
     if ((bridge && typeof bridge.onDownloadDestinationDecision === "function")
@@ -1031,6 +1013,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return normaliseProjectExportFilename(stem).replace(/\.stagesketch$/i,"")+".stageproj.zip";
   }
   async function saveProjectPackageBlob(blob, filename, handle = null) {
+    if (browserPreview) { browserPreview.showGuide(); return false; }
     if(!handle)return downloadBlob(blob,filename);
     const stream=await handle.createWritable();let closed=false;
     try{await stream.write(blob);await stream.close();closed=true;}finally{if(!closed)try{await stream.abort();}catch(_) {}}
@@ -2796,9 +2779,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const SHOWS_KEY = "shosai-stage-shows-v1";
   const NEW_SHOW_RETURN_KEY = "gamma:new-show-return-v1";
   const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
-    backup: nativeProject ? null : (window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null), onCorrupt: raw => markShelfCorrupt(raw),
+    backup: nativeProject || browserPreview ? null : (window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null), onCorrupt: raw => markShelfCorrupt(raw),
     maintain: () => storageMaintenance?.maintain({force:true}) });
-  const storageRecovery = !nativeProject && !STUDY_READ_ONLY && window.STAGE_STORAGE_RECOVERY
+  const storageRecovery = !nativeProject && !browserPreview && !STUDY_READ_ONLY && window.STAGE_STORAGE_RECOVERY
     ? window.STAGE_STORAGE_RECOVERY.create({storage:rawStorage, vault:window.STAGE_STORAGE_RECOVERY.createVault(window.indexedDB)}) : null;
   const storageMaintenance = storageRecovery && window.STAGE_STORAGE_HYGIENE
     ? window.STAGE_STORAGE_HYGIENE.create({storage:rawStorage, recovery:storageRecovery, onReport:renderStorageHealth,
@@ -2894,7 +2877,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let contractRefreshPending = false;
   async function refreshContractIdentity() {
     contractAccess?.read();
-    if (trialEnabled) { contractAccess.checkpoint(); checkContractBoundary(); }
     if (licenseEnforced()) {
       window.GAMMA_LICENSE.read();
       if (window.GAMMA_LICENSE.needsCheck()) await window.GAMMA_LICENSE.renew();
@@ -2911,10 +2893,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     finally { contractRefreshPending = false; }
   }
   window.addEventListener("focus", refreshContractIdentity);
-  window.addEventListener("pagehide", () => contractAccess?.checkpoint());
-  window.addEventListener("storage", event => {
-    if (trialEnabled && (event.key === null || event.key === window.GAMMA_EDITIONS.TRIAL_STORAGE_KEY)) checkContractBoundary();
-  });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) void refreshContractIdentity(); });
   if (nativeProject) void refreshContractIdentity();
   /* 舞台に置ける駒の型。★舞台セットの種類（SET_KINDS）を足したら、
@@ -4678,7 +4656,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let launchBackupWarningOpen = false;
 
   function shouldShowLaunchBackupWarning() {
-    return standaloneStagePage
+    return !browserPreview && standaloneStagePage
       && Boolean(document.querySelector(".stage-beta"))
       && signedInUser !== MANAGED_BACKUP_WARNING_EXEMPT_USER;
   }
@@ -7402,7 +7380,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const workFolderImports = new WeakMap();
   function activeWorkFolder() { return workFolderSession?.active && workFolderSession.projectId === state.project.id ? workFolderSession : null; }
   function workFolderEligible() {
-    return !nativeProject && !desktopShell && !STUDY_READ_ONLY && !contractReadOnly() && !guestSessionActive()
+    return !browserPreview && !nativeProject && !desktopShell && !STUDY_READ_ONLY && !contractReadOnly() && !guestSessionActive()
       && !phoneViewerActive && !resetInProgress && !alternativesStorageBlocked && !shelfCorrupt;
   }
   function detachWorkFolder() {
@@ -8525,7 +8503,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261112-v0416&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261112-v0417&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11139,11 +11117,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function setShowSavedStatus(title) {
+    if (browserPreview) { setSaveStatus(tx(browserPreview.message), "warn"); return; }
     setSaveStatus(tx("「{title}」を保存しました。").replace("{title}", () => title), "saved");
     if (els.saveStatus) els.saveStatus.dataset.savedShowTitle = title;
   }
 
   function saveLocationMessage(status) {
+    if (browserPreview) return tx(browserPreview.message);
     const messages = {
       browser: "描いたものはこの端末のブラウザにだけ保存されます。設定や容量で消えることがあるので、区切りごとに「書き出す」からファイルへ控えを取ってください。",
       unconfirmed: "Mac のプロジェクトへの保存状態を確認できません。「保存」で保存先と結果を確認してください。",
@@ -11311,6 +11291,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       || (alternativesStorageBlocked ? "WRITE_FAILED" : shelfCorrupt ? "CORRUPT_COLLECTION" : null);
   }
   async function saveCurrentShow() {
+    if (browserPreview) { browserPreview.showGuide(); return {ok:false,error:{code:'PREVIEW_NO_SAVE'}}; }
     if (contractReadOnly()) { await flushAutosave(); return {ok:!autosaveFailed}; }
     const failed = code => {
       const result = {ok:false, error:{code}};
@@ -11366,6 +11347,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return finish(result);
   }
   async function flushAutosave() {
+    if (browserPreview) { clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveTimer = null; saveMaxTimer = null; autosaveRequested = false; return; }
     if (typeof nativeProject !== "undefined" && nativeProject) {
       if (contractReadOnly() && !autosaveRequested) return;
       clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null;
@@ -11455,6 +11437,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     syncRunOfShow();
     runOfShowRevision++;
     window.dispatchEvent(new Event("stage-run-of-show-change"));
+    if (browserPreview) {
+      if (contractUiReady) browserPreview.markChanged();
+      setSaveStatus(tx(browserPreview.message), "warn");
+      return;
+    }
     if (STUDY_READ_ONLY || nativeProject?.readOnly) return;
     if (resetInProgress) return;
     if (alternativesStorageBlocked) {
@@ -33497,7 +33484,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     fullscreenHome = null;
     syncCanvasResolution();
     render();
-    if (saved.focus && saved.focus.isConnected) saved.focus.focus({ preventScroll: true });
+    // The header fit (L1) may hide the presentation-view icon while presenting; never focus a hidden control.
+    const shown = node => node && node.isConnected && node.getClientRects().length > 0;
+    const focusBack = shown(saved.focus) ? saved.focus : (saved.focus && shown(els.presentBtn) ? els.presentBtn : null);
+    if (focusBack) focusBack.focus({ preventScroll: true });
     announce("全画面表示を終了しました。");
   }
 
@@ -35330,6 +35320,7 @@ ${propsPlotHtml}
     if(ok)tab.location.replace(link.href);else tab.close();
   });
   function exportProject() {
+    if (browserPreview) { browserPreview.showGuide(); return false; }
     openProjectExportName();
   }
 
@@ -35842,6 +35833,7 @@ ${propsPlotHtml}
     return carry;
   }
   async function exportProjectPackage(includeVenue, filename, options = {}) {
+    if (browserPreview) { browserPreview.showGuide(); return false; }
     try {
       // Runtime edits are trusted after the load check; their digest is refreshed
       // with the persisted project at serialization. Recheck ownership/stamps now.
@@ -46846,7 +46838,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
          （2026-09-03 実測。resize を投げると 734px に直った）。 */
       syncCanvasResolution();
       requestAnimationFrame(syncCanvasResolution);
-      setSaveStatus(loaded.restored
+      setSaveStatus(browserPreview ? tx(browserPreview.message) : loaded.restored
         ? "この端末に保存した前回のスケッチを開きました。"
         : "変更はこの端末のブラウザ内へ自動保存します。");
       if (!STUDY_READ_ONLY && storageMaintenance && !storagePressure) {
@@ -46914,7 +46906,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       try { await largeProjectStorage?.flush(); } catch (error) { alternativesStorageBlocked = true; reportProjectStoreFailure({error:{code:error.code || "WRITE_FAILED"}}); }
       // 初回描画と保存の初期化を終えてから。失敗は黙って次の起動へ回す。
       if (!nativeProject) setTimeout(() => { deliverBundledSampleBackfills(pendingBlocked).catch(() => {}); }, 1500);
-      if (!nativeProject) storageBand = createStorageBand();
+      if (!nativeProject && !browserPreview) storageBand = createStorageBand();
       if (typeof nativeProject !== "undefined" && nativeProject) {
         window.addEventListener("stageSketchProject:audioConfirmedLate", event => {
           // review R6: the shell answered after the page gave up waiting. A new track is completed now; otherwise the user is told.
@@ -47305,10 +47297,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   function stageEditReasons(ignorePending = false, mode = "newAlternative") {
     const reasons = [];
     if (contractReadOnly()) reasons.push("contract-read-only");
+    if (typeof browserPreview !== "undefined" && browserPreview) reasons.push("preview-no-save");
     if (STUDY_READ_ONLY || nativeProject?.readOnly) reasons.push("read-only");
     if (nativeProject) reasons.push("native");
     if (mode !== "current" && (!editionAllows("sceneAlternatives") || !sceneAlternatives)) reasons.push("lite");
-    if (mode === "current" && (typeof trialEnabled !== "undefined" && trialEnabled)) reasons.push("trial");
     const hooks = window.SHOSAI_STAGE_SESSION_HOOKS;
     if (guestSessionActive() || hooks?.role?.() || hooks?.guestView?.()) reasons.push("shared");
     if (phoneViewerActive || window.matchMedia?.("(max-width:680px)").matches) reasons.push("phone");
@@ -49131,7 +49123,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   sceneLocationReady = true;
   function fileAutosaveContext() {
     return {projectId:state.project.id, platform:nativeProject ? "native" : "browser",
-      editable:!STUDY_READ_ONLY, native:Boolean(nativeProject),
+      editable:!STUDY_READ_ONLY && !browserPreview, native:Boolean(nativeProject),
       legacyShell:Boolean(desktopShell || window.webkit?.messageHandlers?.gammaProject || window.stageSketchBridge || window.stageSketchNative),
       guest:guestSessionActive(), readOnly:Boolean(STUDY_READ_ONLY || nativeProject?.readOnly),
       viewer:Boolean(phoneViewerActive), hold:Boolean(resetInProgress || alternativesStorageBlocked || shelfCorrupt || nativeProject?.saveNoticeState === "hold"),
@@ -49141,6 +49133,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (fileAutosaveUi) { fileAutosaveUi.refresh(); fileAutosaveUi.render(); return; }
     const container = document.getElementById("stage-file-autosave");
     if (!container) return;
+    if (browserPreview) { container.hidden = false; return; }
     const c = fileAutosaveContext();
     container.hidden = Boolean(!c.editable || c.native || c.legacyShell || c.guest || c.readOnly || c.viewer || c.hold);
     const summary = container.querySelector("summary");
@@ -49186,6 +49179,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   const loadDeferredScript = createDeferredScriptLoader();
   let fileAutosaveLoad = null;
   function loadFileAutosaveUi() {
+    if (browserPreview) return Promise.resolve(null);
     if (fileAutosaveUi) return Promise.resolve(fileAutosaveUi);
     if (fileAutosaveLoad) return fileAutosaveLoad;
     fileAutosaveLoad = (async () => {
@@ -49318,6 +49312,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
   let workFolderLoad=null;
   function loadWorkFolder(){
+    if (browserPreview) return Promise.resolve(null);
     if(workFolderUi)return Promise.resolve(workFolderUi);
     if(workFolderLoad)return workFolderLoad;
     workFolderLoad=(async()=>{
@@ -49331,6 +49326,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   if(workContainer){
     const syncWorkEntry=()=>{
       if(workFolderUi){workFolderUi.render();return;}
+      if(browserPreview){workContainer.hidden=false;return;}
       workContainer.hidden=!workFolderEligible() || typeof window.showDirectoryPicker!=='function' || !navigator.locks?.request;
       workContainer.querySelector('summary').textContent=driveText('work.title');
     };
@@ -49419,15 +49415,17 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   function syncDriveBackupEntry(){
     if(driveBackupUi){void driveBackupUi.refresh();return;}
     if(!driveEntry)return;
+    if(browserPreview){driveEntry.hidden=false;return;}
     const c=driveBackupContext();driveEntry.hidden=Boolean(!c.editable || c.guest || c.readOnly || c.viewer);
     driveEntry.querySelector('summary').textContent=driveText('drive.title');
     try{if(!nativeProject && c.editable && !c.guest && !c.readOnly && !c.viewer && !c.hold && Object.keys(JSON.parse(localStorage.getItem('gamma:drive-backup:selected-v1')||'{}')).length)void loadDriveBackup();}catch(_){}
   }
   function loadDriveBackup(){
+    if (browserPreview) return Promise.resolve(null);
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261111-v0415', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261112-v0417', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

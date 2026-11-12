@@ -17,6 +17,17 @@
     const plan = root.GAMMA_EDITIONS?.normalizePlan(identity?.plan);
     return !native && !!identity?.user && identity.state === 'active' && root.GAMMA_EDITIONS?.PLAN_RIGHTS[plan]?.assist === true;
   }
+  // P3A owns preview eligibility; require its active session and the independent OFF switch.
+  function trialEligible() {
+    return !isNative() && root.GAMMA_BROWSER_PREVIEW?.active === true
+      && root.GAMMA_EDITIONS?.RELEASE_FEATURES.assistTrial === true
+      && root.location?.origin === 'https://aratama-ship-it.github.io';
+  }
+  function assistTransport() {
+    return trialEligible()
+      ? {url:'https://app.stagesketch.app/assist/trial',credentials:'omit'}
+      : {url:'/assist/chat',credentials:'same-origin'};
+  }
   function requestHistory(history, text) {
     const messages = history.slice(-12).map(m => ({role:m.role,text:[...m.text].slice(0,400).join('')}));
     messages.push({role:'user',text});
@@ -192,7 +203,7 @@
     if(kind==='field'&&!['level','colour','aim','beam','gobo','shutter'].includes(key))return null;
     return {doc,tab,kind,key,selector:kind==='field'?`#insp [data-assist-field="${key}"]`:kind==='panel'?`section.stage-panel[data-panel="${key}"]`:'#'+key};
   }
-  const model = {isNative, eligible, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps, resolveLight2Op};
+  const model = {isNative, eligible, trialEligible, assistTransport, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps, resolveLight2Op};
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   if (!root.document) return;
   const panel = document.querySelector('[data-panel="assist"]');
@@ -208,6 +219,7 @@
   panel.hidden = true;
   panel.dataset.assistAvailable = 'false';
   if (isNative()) { removePanel(); return; }
+  const trial = trialEligible();
   panel.innerHTML = `<div class="stage-panel-body">
               <form class="assist-form" data-assist="form" autocomplete="off">
                 <textarea data-assist="input" rows="3" maxlength="400" autocomplete="off" data-1p-ignore></textarea>
@@ -252,6 +264,9 @@
   const figure = $('figure');
   if (ASSIST_FIGURE_SVG) figure.innerHTML = ASSIST_FIGURE_SVG.replace(/<style>[\s\S]*?<\/style>/g, '');
   else figure.remove();
+  const trialPaid = document.createElement('p');
+  trialPaid.className='assist-notice'; trialPaid.dataset.assist='trialPaid'; trialPaid.hidden=true;
+  if (trial) $('footer').append(trialPaid);
   const svg = figure.querySelector('svg');
   svg?.classList.add('assist-character');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -496,7 +511,9 @@
     panel.dataset.title = t('title');
     const title = panel.querySelector('.stage-panel-title'); if (title) title.textContent = t('title');
     $('input').placeholder = t('placeholder'); $('input').setAttribute('aria-label',t('input'));
-    $('remaining').textContent = remaining === null ? '' : t('remaining',{n:remaining});
+    $('remaining').textContent = remaining === null ? (trial ? t('trialAllowance') : '') : t('remaining',{n:remaining});
+    trialPaid.hidden = !trial || remaining !== 0;
+    trialPaid.textContent = trialPaid.hidden ? '' : t('trialPaid');
     $('status').textContent = statusKey ? t(statusKey,{n:seconds}) : '';
     for (const ref of panel.querySelectorAll('[data-ref-kind]')) {
       if (ref.dataset.refKind !== 'manual') ref.textContent = t(ref.dataset.refKind === 'scene' ? 'refScene' : ref.dataset.refKind === 'work' ? 'refWork' : 'refShosai',{label:ref.dataset.refLabel,source:ref.dataset.refSource});
@@ -507,7 +524,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261111-v0415';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261112-v0417';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;
@@ -548,11 +565,12 @@
     if (!scene) throw new Error('scene unavailable');
     return {sceneTitle:[...String(scene.title || '')].slice(0,400).join(''),castCount:(scene.pieces || []).filter(p => p.type === 'performer').length};
   }
-  const currentOps=root.GAMMA_ASSIST_OPS?.attach({panel,t,send,isBusy:()=>busy||ended,buildEditSnapshot,resolveEditOps,sceneContext,addMessage});
+  const currentOps=trial ? null : root.GAMMA_ASSIST_OPS?.attach({panel,t,send,isBusy:()=>busy||ended,buildEditSnapshot,resolveEditOps,sceneContext,addMessage});
   organizeModes();
   function editContext() {try{return root.GAMMA_STAGE_EDIT?.context();}catch{return null;}}
   function refreshEditAvailability() {
     refreshLightAvailability(); currentOps?.refresh();
+    if(trial){$('draft').hidden=true;$('draft').disabled=true;$('draftReason').hidden=true;return;}
     if(busy||ended){$('draft').disabled=true;return;}
     const c=editContext(),reasons=c?.reasons||['unavailable'];editAllowed=!!c?.editable;
     $('draft').disabled=busy||ended||!c?.editable||!$('input').value.trim();
@@ -566,6 +584,7 @@
   function lightReasons(){try{return root.GAMMA_LIGHT_HOST?.assistReasons?.()||['unavailable'];}catch{return ['unavailable'];}}
   function lightReasonKey(reasons){const map={'detail-required':'light2.detailOnly','fixed-color':'light2.fixedColor','audience-required':'light2.audienceRequired',shared:'lightShared',lite:'lightLite',unapplied:'lightUnapplied','common-rig-required':'lightCommon','proscenium-required':'lightTheatre',stale:'lightStale','changed-elsewhere':'lightStale','read-only':'lightReadOnly','contract-read-only':'lightReadOnly',playing:'lightPlaying',preview:'lightPlaying',rehearsal:'lightRehearsal',field:'lightField'};return reasons.map(r=>map[r]).find(Boolean)||'lightBlocked';}
   function refreshLightAvailability(){
+    if(trial){for(const node of [$('lighting'),$('lightReason'),light2Button,light2Reason,light2ScopeLabel])node.hidden=true;$('lighting').disabled=true;light2Button.disabled=true;return;}
     const reasons=lightReasons();
     try {if(lightAPI()){const s=lightFrame().contentWindow.GAMMA_LIGHT_EDITOR.status();if(s.active)reasons.push(...lightAPI().context().reasons);else if(s.dirty||s.hasUnappliedDrafts)reasons.push('unapplied');}}catch{reasons.push('unavailable');}
     $('lighting').disabled=busy||ended||reasons.length>0||!$('input').value.trim();
@@ -691,6 +710,7 @@
     const quickMode=extension?.isMode(mode),docsMode=docs?.isMode(mode), batchMode=mode==='batchCheck';
     const text = batchMode ? t('batch.prompt') : quickMode ? extension.text(mode,$('input').value) : checkScene ? sceneCheckText(t('checkPrompt'),$('input').value) : $('input').value.trim();
     if (busy || ended || !text || [...text].length > 400) return;
+    if (trial && (editing || lighting || operating)) return;
     if(operating&&!currentOps?.allowed()){currentOps?.refresh();return;}
     if(editing&&!editContext()?.editable){refreshEditAvailability();return;}
     stopGuidance();cancelDraft();
@@ -717,10 +737,13 @@
       if(batchMode){const prepared=await batch?.prepare();if(!prepared){statusKey='';restingState();return;}Object.assign(payload,prepared);}
       if(quickMode)Object.assign(payload,await extension.prepare(mode));
       if (!batchMode && !quickMode && !reviewLight && $('context').checked) payload.context=sceneContext();
-      const response=await fetch('/assist/chat',{method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const transport=assistTransport();
+      const response=await fetch(transport.url,{method:'POST',credentials:transport.credentials,cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const data=await response.json();
       if (!response.ok) {
-        const keys={'ended':'ended','user-daily':'daily','global-daily':'daily','quota-month':'monthly','upstream-busy':'busy','authentication':'auth','plan-required':'auth'};
+        const keys={'trial-user-daily':'trialDaily','trial-global-daily':'trialGlobalDaily','ended':'ended','user-daily':'daily','global-daily':'daily','quota-month':'monthly','upstream-busy':'busy','authentication':'auth','plan-required':'auth'};
+        if(trial && Number.isInteger(data.remaining))remaining=data.remaining;
+        if(trial && data.reason==='trial-user-daily')remaining=0;
         statusKey=keys[data.reason] || 'unavailable';
         ended=[404,429,503].includes(response.status); if (ended) setState('off');
         throw new Error('response');
@@ -739,11 +762,11 @@
       if(quickMode)extension.after(mode,reply.text);
       if(lighting){const changes=panel.querySelector('[data-assist=lightChanges]');if(changes)$('log').append(changes);}
       if(operating&&data.ops?.length)currentOps.show(data.ops,draft,data.rejected);
-      if(!quickMode&&!operating&&!editing&&!lighting&&reply.destination)startGuidance(reply.destination);
+      if(!trial&&!quickMode&&!operating&&!editing&&!lighting&&reply.destination)startGuidance(reply.destination);
       if(editing&&data.ops?.length)showDraft(data.ops,draft,data.rejected);
       else if(editing&&data.rejected?.length)addMessage('assistant',t('draftRejected',{n:data.rejected.length}));
       }
-      remaining=data.remaining; if(!batchMode)$('input').value=''; statusKey=''; setState('talking');
+      remaining=data.remaining; if(!batchMode)$('input').value=''; statusKey=trial&&remaining===0?'trialDaily':''; if(trial&&remaining===0)ended=true; setState('talking');
       talkTimer=setTimeout(restingState,3000);
     } catch {
       if(batchMode)batch?.failure();
@@ -804,6 +827,15 @@
   import('./gamma-assist-quick.js').then(m=>{quick=m.mount({panel,t,send,buildSceneSnapshot,bridge:()=>root.SHOSAI_STAGE_SESSION_BRIDGE});organizeModes();connectModeSummaries();relabel();}).catch(()=>{});
   relabel(); paint();
   (async () => {
+    // Trial never probes paid identity and never mounts the optional persistent archive.
+    if (trial) {
+      try {
+        await ensureCopy();
+        panel.dataset.assistAvailable='true'; panel.hidden=false;
+        root.dispatchEvent(new CustomEvent('gamma-assist-availability'));
+      } catch { removePanel(); }
+      return;
+    }
     // Static Pages editions have no Worker: never probe paid identity there (trial contract).
     if (/(^|\.)github\.io$/i.test(root.location?.hostname || '')) {removePanel(); return;}
     try {

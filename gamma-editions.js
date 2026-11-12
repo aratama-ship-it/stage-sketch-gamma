@@ -1,3 +1,178 @@
+// BEGIN GENERATED BROWSER PREVIEW (node tools/build-browser-preview.mjs)
+/* Pages-only, volatile preview. It never reads, migrates or clears stored shows.
+ * Derived from account candidate d453ba4e; output controls remain clickable. */
+(function(root){
+  'use strict';
+  const LABEL='体験版（保存なし）';
+  const TITLE='保存と書き出しは有料版で使えます';
+  const MESSAGE='体験版のままでも、この窓を閉じれば続けて試せます。ブラウザを閉じると、いまの作品は消えます。';
+  const NOTICE='{date} から、ブラウザの体験版では保存できなくなります。いま保存している作品は、それまでに『書き出し』で控えを残してください。';
+  const PRICING='https://stagesketch.app/#start';
+  function applies({enabled,hostname,pathname,native=false,study=false}={}) {
+    return enabled===true&&!native&&!study&&hostname==='aratama-ship-it.github.io'
+      && /^\/stage-sketch-gamma\/(?:stage|run|company)\.html$/.test(pathname||'');
+  }
+  function memoryStorage() {
+    const values=new Map();
+    const api={getItem:key=>values.get(String(key))??null,setItem:(key,value)=>{values.set(String(key),String(value));},
+      removeItem:key=>{values.delete(String(key));},clear:()=>values.clear(),key:index=>[...values.keys()][index]??null};
+    Object.defineProperty(api,'length',{configurable:true,get:()=>values.size});
+    return new Proxy(api,{
+      ownKeys:()=>[...values.keys()],getOwnPropertyDescriptor:(_o,key)=>values.has(key)?{configurable:true,enumerable:true,value:values.get(key),writable:true}:Reflect.getOwnPropertyDescriptor(api,key),
+      get:(o,key)=>key in o?Reflect.get(o,key):typeof key==='string'?values.get(key):undefined,
+      set:(_o,key,value)=>{values.set(String(key),String(value));return true;},
+      deleteProperty:(_o,key)=>{values.delete(String(key));return true;},
+    });
+  }
+  const tx=(win,s)=>win.SHOSAI_STAGE_I18N_MODEL?.text(win.document.documentElement.lang||'ja',s)||s;
+  function ready(win,fn){if(win.document.readyState==='loading')win.document.addEventListener('DOMContentLoaded',fn,{once:true});else fn();}
+  function element(doc,tag,attrs={},text=''){
+    const el=doc.createElement(tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);el.textContent=text;return el;
+  }
+  // Explicit output intent plus a fallback for dynamically created controls.
+  // Local editing commits (cue/audio details, presets) remain usable in memory.
+  function outputControl(el){
+    if(!el)return false;
+    if(el.closest?.('[data-preview-ui]'))return false;
+    if(el.closest?.('#stage-drive-backup,#stage-work-folder,#stage-file-autosave'))return true;
+    const id=el.id||'';
+    if(id==='stage-storage-band-backup'||id==='study-replies-open'||id==='study-reply-open')return true;
+    if(id==='tc-save')return false; // Commit a timecode edit in the current in-memory show.
+    if(/(?:close|cancel|backdrop|tab|scope|view|include|name|detail-save|rig-save|recovery)/.test(id))return false;
+    return /(?:^|-)(?:save|export|print|pdf|download)(?:-|$)/.test(id)
+      || /(?:^|\s)(?:export|print|download)(?:-|\s|$)/.test(el.getAttribute?.('data-action')||'');
+  }
+  function createSession({pricingUrl=PRICING}={}){
+    const storage=memoryStorage(),sessionStorage=memoryStorage(),installed=new WeakSet(),cleanups=new Set();
+    let dirty=false,interacted=false,owner=null,ui=null,returnFocus=null,closed=false;
+    function closeGuide(){if(!ui)return;ui.modal.close();ui.modal.hidden=true;ui.backdrop.hidden=true;owner.GAMMA_UI?.layers.sync();returnFocus?.focus?.();}
+    function render(){
+      if(!owner)return;
+      const doc=owner.document,label=doc.getElementById('gamma-browser-preview-label');
+      if(label)label.textContent=tx(owner,LABEL);
+      if(!ui)return;
+      ui.title.textContent=tx(owner,TITLE);ui.body.textContent=tx(owner,MESSAGE);
+      ui.pricing.textContent=tx(owner,'料金を見る');ui.resume.textContent=tx(owner,'体験を続ける');
+    }
+    function showGuide(){
+      if(closed||!owner?.document.body)return false;
+      const doc=owner.document;
+      if(!ui){
+        // The common layer manager treats .stage-modal-backdrop as a sibling
+        // of a div dialog; this backdrop belongs inside the native dialog.
+        const backdrop=element(doc,'div',{id:'gamma-preview-backdrop',class:'gamma-preview-backdrop','data-preview-ui':''});
+        const modal=element(doc,'dialog',{id:'gamma-preview-guide',role:'dialog','aria-modal':'true','aria-labelledby':'gamma-preview-title','aria-describedby':'gamma-preview-body','data-no-i18n':'','data-preview-ui':''});
+        const panel=element(doc,'section',{class:'gamma-preview-panel gamma-preview-guide'});
+        const head=element(doc,'header',{class:'stage-modal-head'}),title=element(doc,'h2',{id:'gamma-preview-title'});
+        const bodyWrap=element(doc,'div',{class:'stage-modal-body'}),body=element(doc,'p',{id:'gamma-preview-body'}),actions=element(doc,'div',{class:'gamma-preview-actions'});
+        const pricing=element(doc,'a',{href:pricingUrl,target:'_blank',rel:'noopener',class:'btn-quiet'});
+        const resume=element(doc,'button',{type:'button',class:'btn-quiet',id:'gamma-preview-continue'});
+        head.append(title);actions.append(pricing,resume);bodyWrap.append(body,actions);panel.append(head,bodyWrap);modal.append(backdrop,panel);doc.body.append(modal);
+        ui={backdrop,modal,title,body,pricing,resume};
+        resume.addEventListener('click',closeGuide);backdrop.addEventListener('click',closeGuide);
+        modal.addEventListener('cancel',event=>{event.preventDefault();closeGuide();});
+        doc.addEventListener('keydown',event=>{
+          if(modal.hidden)return;
+          if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();closeGuide();}
+          if(event.key==='Tab'){
+            if(event.shiftKey&&doc.activeElement===pricing){event.preventDefault();resume.focus();}
+            else if(!event.shiftKey&&doc.activeElement===resume){event.preventDefault();pricing.focus();}
+          }
+        },true);
+      }
+      if(!ui.modal.hidden&&ui.modal.dataset.previewOpened==='true')return false;
+      returnFocus=doc.activeElement;render();ui.modal.hidden=false;ui.backdrop.hidden=false;ui.modal.showModal();ui.modal.dataset.previewOpened='true';owner.GAMMA_UI?.layers.sync();ui.resume.focus();return true;
+    }
+    const session={active:true,ready:true,storage,sessionStorage,message:LABEL,label:LABEL,
+      markChanged:()=>{if(interacted&&!closed)dirty=true;},dirty:()=>dirty,showGuide,closeGuide,
+      onDispose:fn=>cleanups.add(fn),
+      decision:(feature='edit')=>({allowed:['edit','view'].includes(feature),reason:'preview-no-save'}),
+      install(win){
+        if(installed.has(win))return session;
+        for(const name of ['localStorage','sessionStorage','indexedDB','showSaveFilePicker','showDirectoryPicker','print']){
+          const d=Object.getOwnPropertyDescriptor(win,name);if(d&&d.configurable===false)throw Error('preview-isolation-unavailable');
+        }
+        Object.defineProperties(win,{
+          localStorage:{configurable:true,value:storage},sessionStorage:{configurable:true,value:sessionStorage},
+          indexedDB:{configurable:true,value:undefined},showSaveFilePicker:{configurable:true,value:undefined},
+          showDirectoryPicker:{configurable:true,value:undefined},print:{configurable:true,value:()=>{showGuide();return false;}},
+        });
+        installed.add(win);win.GAMMA_BROWSER_PREVIEW=session;
+        // Browser-menu printing does not invoke window.print or a keyboard
+        // listener. Keep show content out of its print rendering too.
+        win.document.documentElement.setAttribute('data-gamma-browser-preview','true');
+        const printStyle=element(win.document,'style',{id:'gamma-preview-print-guard'},
+          '@media print { html[data-gamma-browser-preview="true"] body { display:none !important; } }');
+        win.document.head.append(printStyle);
+        const recovery=url=>/(?:^|\/)storage-recovery\.html(?:[?#]|$)/.test(String(url||''));
+        const blocked=link=>link?.hasAttribute?.('download')||/^(?:blob:|data:)/.test(link?.href||'')||recovery(link?.href);
+        const anchor=win.HTMLAnchorElement?.prototype;
+        if(anchor){const click=anchor.click;anchor.click=function(){if(blocked(this)){showGuide();return;}return click.call(this);};}
+        const stop=event=>{event.preventDefault();event.stopImmediatePropagation();showGuide();};
+        win.document.addEventListener('click',event=>{
+          if(blocked(event.target?.closest?.('a'))||outputControl(event.target?.closest?.('button,input,a,summary')))stop(event);
+        },true);
+        win.document.addEventListener('submit',event=>{if(outputControl(event.target))stop(event);},true);
+        win.document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&['s','p'].includes(event.key?.toLowerCase()))stop(event);},true);
+        if(typeof win.open==='function'){
+          const open=win.open;
+          win.open=function(url,...args){
+            // Ordinary documentation links remain available. Empty/Blob/data
+            // print windows and generated output never reach the native API.
+            if(recovery(url)||!/^(?:https?:\/\/|(?:\.\/)?manual(?:-gamma)?\/)/i.test(String(url||''))){showGuide();return null;}
+            return open.call(win,url,...args);
+          };
+        }
+        for(const type of ['input','change','pointerdown','keydown'])win.document.addEventListener(type,()=>{interacted=true;},true);
+        if(win.top===win){
+          owner=win;
+          win.addEventListener?.('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
+          win.addEventListener?.('pagehide',()=>{closed=true;dirty=false;storage.clear();sessionStorage.clear();for(const fn of cleanups)fn();});
+          win.addEventListener?.('pageshow',event=>{if(event.persisted)win.location.reload();});
+          ready(win,()=>{
+            const parent=win.document.body;
+            if(parent&&!win.document.getElementById('gamma-browser-preview-label'))parent.append(element(win.document,'span',{id:'gamma-browser-preview-label',class:'gamma-preview-label','data-no-i18n':''},tx(win,LABEL)));
+            if(win.MutationObserver)new win.MutationObserver(render).observe(win.document.documentElement,{attributes:true,attributeFilter:['lang']});
+          });
+        }
+        return session;
+      },
+    };
+    return Object.freeze(session);
+  }
+  function mountNotice(win,date){
+    if(!date||win.GAMMA_BROWSER_PREVIEW?.active)return;
+    const key='gamma:preview-notice-dismissed:'+date;
+    try{if(win.localStorage.getItem(key)==='1')return;}catch(_){}
+    ready(win,()=>{
+      const doc=win.document;if(doc.getElementById('gamma-preview-notice'))return;
+      const notice=element(doc,'div',{id:'gamma-preview-notice',class:'gamma-preview-notice','data-no-i18n':''}),message=element(doc,'span'),close=element(doc,'button',{type:'button',class:'btn-quiet'});
+      const render=()=>{message.textContent=tx(win,NOTICE).replace('{date}',date);close.textContent=tx(win,'この知らせを閉じる');};
+      render();notice.append(message,close);doc.body.prepend(notice);
+      close.addEventListener('click',()=>{notice.hidden=true;try{win.localStorage.setItem(key,'1');}catch(_){}});
+      if(win.MutationObserver)new win.MutationObserver(render).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
+    });
+  }
+  function initialize(win){
+    if(!win.document)return;
+    const config=win.GAMMA_EDITIONS;
+    const target={enabled:true,hostname:win.location?.hostname,pathname:win.location?.pathname,
+      native:Boolean(win.STAGE_RUNTIME?.isMac?.()||win.webkit?.messageHandlers?.gammaProject||win.stageSketchBridge||win.stageSketchNative),
+      study:win.document.documentElement?.hasAttribute?.('data-study-renderer')===true};
+    // Recovery is another entry into the same Pages storage. Isolate it before
+    // the language loader or recovery UI can read any persistent store.
+    const recovery=target.pathname==='/stage-sketch-gamma/storage-recovery.html';
+    if(recovery)target.pathname='/stage-sketch-gamma/stage.html';
+    if(!applies(target))return;
+    if(config?.RELEASE_FEATURES.browserPreview===true){
+      if(!win.GAMMA_BROWSER_PREVIEW?.active)createSession({pricingUrl:config.PREVIEW_PRICING_URL||PRICING}).install(win);
+    }else if(!recovery)mountNotice(win,config?.PREVIEW_NOTICE_FROM);
+  }
+  const api=Object.freeze({LABEL,TITLE,MESSAGE,NOTICE,applies,memoryStorage,createSession,initialize,outputControl});
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  root.GAMMA_BROWSER_PREVIEW_MODEL=api;
+})(globalThis);
+// END GENERATED BROWSER PREVIEW
 /* Edition scope shared by the builder and browser. */
 (function (root) {
   "use strict";
@@ -42,80 +217,13 @@
     if (reason !== 'plan-expired' && plan && Object.hasOwn(PLAN_RIGHTS[plan], feature) && PLAN_RIGHTS[plan][feature]) return {allowed:true};
     return {allowed:false, reason, feature, plan, until:entitlement?.until ?? null};
   }
-  const TRIAL_DURATION_MS = 168 * 3600 * 1000;
-  const TRIAL_STORAGE_KEY = 'gamma:trial-period:v1';
-  function browserTrialApplies({enabled, hostname, pathname, native = false, study = false} = {}) {
-    return enabled === true && !native && !study && hostname === 'aratama-ship-it.github.io'
-      && typeof pathname === 'string' && pathname.startsWith('/stage-sketch-gamma/');
-  }
-  // A local period, not another editing guard or a paid licence. No show data,
-  // credentials, reset API, query parameter or production test-clock hook.
-  function createTrialPeriod({storage, wallNow, elapsedNow}) {
-    let record = null, lost = false, error = '', anchor = 0, elapsed = elapsedNow();
-    // The absolute clock catches suspension; elapsed time prevents a live
-    // rollback from extending the period. Do not count clock correction twice.
-    const now = () => Math.max(wallNow(), anchor + Math.max(0, elapsedNow() - elapsed));
-    function sync() {
-      try {
-        const raw = storage.getItem(TRIAL_STORAGE_KEY);
-        if (raw === null) { if (record) lost = true; return; }
-        const next = JSON.parse(raw);
-        if (!next || next.v !== 1 || ![next.startedAt, next.observed, next.wall].every(Number.isSafeInteger)
-          || next.startedAt <= 0 || next.startedAt > 8640000000000000 - TRIAL_DURATION_MS
-          || next.observed < next.startedAt || next.wall < next.startedAt || typeof next.expired !== 'boolean') throw Error('record');
-        const merged = record ? {v:1, startedAt:Math.min(record.startedAt, next.startedAt),
-          observed:Math.max(record.observed, next.observed), wall:Math.max(record.wall, next.wall), expired:record.expired || next.expired} : next;
-        // Never lose elapsed progress when another tab checkpoints its record.
-        anchor = Math.max(now(), merged.observed); elapsed = elapsedNow();
-        record = merged;
-      } catch (_) { error = 'storage'; }
-    }
-    function persist() {
-      if (!record || lost || error) return false;
-      record.observed = Math.floor(now()); record.wall = Math.max(record.wall, Math.floor(wallNow()));
-      try { storage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(record)); return true; }
-      catch (_) { error = 'storage'; return false; }
-    }
-    function read() {
-      sync();
-      if (record && now() >= record.startedAt + TRIAL_DURATION_MS && !record.expired) { record.expired = true; persist(); }
-      const trialState = lost || error ? 'storage' : !record ? 'ready' : record.expired ? 'expired'
-        : wallNow() < record.wall ? 'clock-rollback' : 'active';
-      const untilMs = record ? record.startedAt + TRIAL_DURATION_MS : null;
-      return {trialState, trialStartedAt:record?.startedAt ?? null, untilMs,
-        remainingMs:trialState === 'active' ? Math.max(0, untilMs - now()) : null};
-    }
-    return Object.freeze({read,
-      start() {
-        const before = read();
-        if (before.trialState !== 'ready') return false;
-        const startedAt = Math.floor(wallNow());
-        if (!Number.isSafeInteger(startedAt) || startedAt <= 0 || startedAt > 8640000000000000 - TRIAL_DURATION_MS) return false;
-        record = {v:1, startedAt, observed:startedAt, wall:startedAt, expired:false};
-        anchor = startedAt; elapsed = elapsedNow();
-        return persist() && read().trialState === 'active';
-      },
-      checkpoint() { read(); return persist(); },
-    });
-  }
-  // Runtime contract evidence plus the explicitly enabled Pages trial. Signed
+  // Runtime paid contract evidence. Signed
   // monthly licences still take priority at the existing GAMMA_CONTRACT facade.
   // Legacy whoami and a failed request never manufacture an expired contract.
-  function createContractAccess({wallNow = () => Date.now(), elapsedNow = () => globalThis.performance?.now?.() ?? Date.now(), changed = () => {}, trial = {enabled:false}} = {}) {
+  function createContractAccess({wallNow = () => Date.now(), elapsedNow = () => globalThis.performance?.now?.() ?? Date.now(), changed = () => {}} = {}) {
     let identity = null, wall = 0, elapsed = 0, server = 0, expired = false, sharingDenied = false;
-    const period = trial.enabled === true ? createTrialPeriod({storage:trial.storage, wallNow, elapsedNow}) : null;
-    let trialSignature = '';
     const now = () => server + Math.max(0, wallNow() - wall, elapsedNow() - elapsed);
     const read = () => {
-      if (!identity && period && !expired) {
-        const value = period.read();
-        const result = Object.freeze({...value, source:'trial', plan:null,
-          until:value.untilMs === null ? null : new Date(value.untilMs).toISOString(),
-          state:!expired && value.trialState === 'active' ? 'active' : 'expired'});
-        const signature = value.trialState + ':' + Math.ceil((value.remainingMs || 0) / 86400000);
-        if (signature !== trialSignature) { trialSignature = signature; changed(result); }
-        return result;
-      }
       const wasExpired = expired;
       if (identity?.untilMs != null && now() >= identity.untilMs) expired = true;
       const value = Object.freeze({plan:identity?.displayPlan ?? null, until:identity?.until ?? null,
@@ -125,8 +233,6 @@
     };
     return Object.freeze({
       read,
-      startTrial() { const started = !identity && period?.start() === true; read(); return started; },
-      checkpoint() { return period?.checkpoint() ?? false; },
       update(value) {
         if (!value || typeof value.user !== 'string' || !value.user.trim()) return false;
         // A legacy response cannot erase a deadline already learned for this user.
@@ -146,7 +252,6 @@
       decision(feature = 'edit') {
         const value = read();
         if (expired) return {allowed:false, reason:'plan-expired'};
-        if (value.source === 'trial' && value.trialState !== 'active') return {allowed:false, reason:'trial-' + value.trialState};
         if (value.state === 'expired') return {allowed:false, reason:'plan-expired'};
         if (feature !== 'edit' && sharingDenied) return {allowed:false, reason:'plan-required'};
         // Unknown means the pre-contract editor (Pages, old Worker or old Mac).
@@ -154,14 +259,16 @@
         if (!identity || feature === 'edit') return {allowed:true};
         return featureDecision(identity, feature, now());
       },
-      remaining() { const value = read(); return value.source === 'trial' ? value.remainingMs : expired || identity?.untilMs == null ? null : Math.max(0, identity.untilMs - now()); },
+      remaining() { read(); return expired || identity?.untilMs == null ? null : Math.max(0, identity.untilMs - now()); },
     });
   }
   // 2026-10-15: count-based timeline UI is held for release. Restore this one
   // flag to true to expose the retained switch, count ruler and editing tools.
   // This is presentation policy; never use it to normalize saved show values.
   // POLICY_CURRENT §2: enable only with the first paid release, on Pages only.
-  const RELEASE_FEATURES = Object.freeze({countTimeline:false,browserTrial:false});
+  const RELEASE_FEATURES = Object.freeze({countTimeline:false,browserPreview:false,assistTrial:false});
+  const PREVIEW_NOTICE_FROM = '';
+  const PREVIEW_PRICING_URL = 'https://stagesketch.app/#start';
   const ALL_TABS = Object.freeze(["normal","venue-setup","light-placement","light-design","script","3d","run-of-show","rehearsal"]);
   const ALL_ON = Object.freeze({idleAreas:true,arrowTool:true,memoTool:true,penTool:true,lightRender:true,fpv:true,timeline:true,audio:true,cues:true,share:true,cueSheet:true,venueLighting:true,scriptEditor:true,formations:true,sceneAlternatives:true,routeTool:true,machinery:true});
   const common = {tabs:ALL_TABS,dropScripts:[],dropStyles:[],features:ALL_ON,hiddenPanels:[]};
@@ -172,11 +279,13 @@
     dropStyles:["stage-script-editor.css","stage-vox-panel.css","gamma-formation.css"],
     features:Object.freeze(Object.fromEntries(Object.keys(ALL_ON).map(k=>[k,false]))),hiddenPanels:["music","light","vox","alternatives","machinery","rigs"]})});
   const TAB_BUTTON_IDS = Object.freeze({normal:"stage-workspace-normal","venue-setup":"gamma-venue","light-placement":"gamma-placement","light-design":"gamma-design",script:"gamma-script","3d":"stage-freecam-open",cuesheet:"gamma-cuesheet","run-of-show":"gamma-run-of-show",rehearsal:"gamma-rehearsal"});
-  const api = Object.freeze({PLANS,PLAN_ALIASES,PLAN_RIGHTS,normalizePlan,parseUntil,entitlementState,featureDecision,createContractAccess,browserTrialApplies,TRIAL_DURATION_MS,TRIAL_STORAGE_KEY,EDITIONS,TAB_BUTTON_IDS,ALL_TABS,RELEASE_FEATURES,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
+  const api = Object.freeze({PLANS,PLAN_ALIASES,PLAN_RIGHTS,normalizePlan,parseUntil,entitlementState,featureDecision,createContractAccess,EDITIONS,TAB_BUTTON_IDS,ALL_TABS,RELEASE_FEATURES,PREVIEW_NOTICE_FROM,PREVIEW_PRICING_URL,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
   if(typeof module!=="undefined" && module.exports) module.exports=api;
   root.GAMMA_EDITIONS=api;
-  if(root.document){const key=api.detect(root.document);
-    if(key === "lite") { try { if(!localStorage.getItem("gamma:shosai-stage-lang")) { const lang=localStorage.getItem("gamma:run:language"); if(["ja","en"].includes(lang)) localStorage.setItem("gamma:shosai-stage-lang",lang); } } catch (_) {} }
+  if(root.document){
+    root.GAMMA_BROWSER_PREVIEW_MODEL?.initialize(root);
+    const key=api.detect(root.document);
+    if(key === "lite" && !root.GAMMA_BROWSER_PREVIEW?.active) { try { if(!localStorage.getItem("gamma:shosai-stage-lang")) { const lang=localStorage.getItem("gamma:run:language"); if(["ja","en"].includes(lang)) localStorage.setItem("gamma:shosai-stage-lang",lang); } } catch (_) {} }
     root.GAMMA_EDITION=key;root.GAMMA_EDITION_FEATURES=EDITIONS[key].features;root.document.documentElement.dataset.gammaEdition=key;}
 })(typeof globalThis!=="undefined"?globalThis:this);
 // BEGIN GENERATED MONTHLY LICENSE (node tools/build-license-browser.mjs)
@@ -277,6 +386,9 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
 (function(root){
   'use strict';
   if(!root.document||!root.GAMMA_LICENSE_MODEL)return;
+  // Recovery loads edition policy only to isolate a Pages preview before any
+  // storage access. It is not an editor and must not register a license device.
+  if(/\/storage-recovery\.html$/.test(root.location?.pathname||''))return;
   const config=root.GAMMA_LICENSE_CONFIG||{required:false,keys:{},issuer:''};
   const store={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
   let access=null;
@@ -364,11 +476,14 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
   }
   function observeIdentity(identity){
     const mode=identity?.license?.mode;
-    if(mode==='unavailable'){lastError='license-unavailable';access.deny(lastError);}
+    // Provider/config outages cannot revoke a previously verified offline grant.
+    // A client without the required trust configuration still fails closed.
+    if(mode==='unavailable'){lastError='license-unavailable';if(config.required)access.networkFailure();else access.deny(lastError);}
     if(mode==='required'&&!config.required){lastError='license-unavailable';access.deny(lastError);}
   }
   function message(){const r=access.read();return tx(messages[lastError]||messages[r.error]||messages[r.state]||messages.default);}
-  function render(){if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';}
+  function render(){if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';
+    ui.eye.setAttribute('aria-label',tx(ui.password.type==='password'?'パスワードを表示':'パスワードを隠す'));}
   function mount(){
     const parent=document.querySelector('#stage-prefs-main');if(!parent||ui)return;
     const box=document.createElement('section');box.id='stage-license-settings';box.className='stage-pref-group';box.setAttribute('data-contract-recovery','');box.setAttribute('data-no-i18n','');
@@ -382,6 +497,15 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
     const user=field('お名前','text','username'),pass=field('パスワード','password','password');user.el.autocomplete='username';pass.el.autocomplete='current-password';
     function button(source,handler){const el=document.createElement('button');el.type='button';el.className='btn-quiet';text(el,source);el.addEventListener('click',handler);return el;}
     const signIn=button('ログインして契約を確認',()=>login.requestSubmit());
+    const eye=button('',()=>{
+      const visible=pass.el.type==='password';pass.el.type=visible?'text':'password';
+      eye.setAttribute('aria-pressed',String(visible));eye.setAttribute('aria-label',tx(visible?'パスワードを隠す':'パスワードを表示'));
+    });
+    translated.delete(eye);eye.setAttribute('aria-label',tx('パスワードを表示'));eye.setAttribute('aria-pressed','false');
+    // The shared icon rule fixes its box with !important; override its local token.
+    eye.style.cssText='--gamma-icon-box:var(--ctrl-lg,44px);display:inline-flex;align-items:center;justify-content:center;min-width:var(--ctrl-lg,44px);min-height:var(--ctrl-lg,44px)';
+    eye.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    pass.label.append(eye);
     login.append(user.label,pass.label,signIn);login.addEventListener('submit',async event=>{
       event.preventDefault();const credentials={user:user.el.value,pass:pass.el.value};pass.el.value='';signIn.disabled=true;
       try{await request('login',credentials);await renew({explicit:true});}catch(_){lastError='authentication';render();}finally{credentials.pass='';signIn.disabled=false;}
@@ -400,7 +524,20 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
           const remove=button('この端末登録を解除',async()=>{try{await request('revoke',{device:item.id});if(item.id===access.device){lastError='revoked';access.deny('revoked');}await list();render();}catch(_){lastError='default';render();}});row.append(name,remove);devices.append(row);}
       }catch(e){lastError=messages[e.message]?e.message:'default';render();}
     }
-    details.append(login,check,button('登録端末を確認',list),devices,admin);box.append(heading,status,date,details);parent.append(box);ui={status,date};render();
+    details.append(login);
+    // A fixed external HTTPS entry, without a token, Cookie or credentials in
+    // its URL. The existing Mac navigation policy opens HTTPS in the browser.
+    try {
+      const url=new URL(config.issuer);
+      if(url.protocol==='https:'&&!url.username&&!url.password&&!url.search&&!url.hash&&['','/'].includes(url.pathname)&&(!url.port||url.port==='443')
+        && !['localhost','127.0.0.1','[::1]'].includes(url.hostname)&&!url.hostname.endsWith('.localhost')){
+        url.pathname='/account-forgot';
+        const forgot=text(document.createElement('a'),'パスワードを忘れた方');forgot.href=url.href;forgot.target='_blank';forgot.rel='noopener noreferrer';
+        forgot.className='btn-quiet';forgot.style.cssText='display:inline-flex;align-items:center;min-height:var(--ctrl-lg,44px)';
+        details.append(forgot);
+      }
+    }catch(_){/* No unconfigured or loopback recovery destination. */}
+    details.append(check,button('登録端末を確認',list),devices,admin);box.append(heading,status,date,details);parent.append(box);ui={status,date,eye,password:pass.el};render();
   }
   root.GAMMA_LICENSE=Object.freeze({read,decision:()=>access?.decision()||{allowed:!config.required},remaining:()=>access?.remaining()??null,needsCheck:()=>access?.needsCheck()??true,initialize,renew,observeIdentity,message,mount});
   root.addEventListener('pagehide',()=>access?.checkpoint());

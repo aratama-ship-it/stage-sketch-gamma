@@ -1362,7 +1362,9 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
       });
       syncCueSkin();finishCueOpen();
     });
-    cueFrame.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><section id="gamma-cuesheet-workspace" aria-label="Qシート"></section></body></html>';
+    const previewGuard=window.GAMMA_BROWSER_PREVIEW?.active
+      ? '<script>parent.GAMMA_BROWSER_PREVIEW.install(window);<\/script>' : '';
+    cueFrame.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+previewGuard+'</head><body><section id="gamma-cuesheet-workspace" aria-label="Qシート"></section></body></html>';
   }
   function showCueSheet(kind,key){
     if(!cueHost?.available?.()||lite||runOnly)return false;

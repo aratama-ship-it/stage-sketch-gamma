@@ -102,6 +102,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.placeholder": "Example: Ideas to fill the transition in act two?",
   "assist.send": "Send",
   "assist.context": "Share the current scene title and head count",
+  "assist.trialAllowance": "Trial consultation allows 5 requests per day.",
+  "assist.trialDaily": "You have used today’s 5 requests. Please return after midnight Japan time.",
+  "assist.trialGlobalDaily": "Today’s trial consultation capacity is full. Please return after midnight Japan time.",
+  "assist.trialPaid": "Paid plans include more consultation requests per day.",
   "assist.remaining": "{n} left today",
   "assist.trialNotice": "This is a trial feature and may end without notice.",
   "assist.notice": "Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
@@ -670,6 +674,24 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "公開しました。変更は自動では公開されません。": "Published. Changes are not published automatically.",
   "閲覧リンクを失効しました。": "The viewing link has been revoked.",
   "リンクを写しました。自分のメール・LINEで渡してください。": "Link copied. Pass it using your own email or LINE."
+});
+
+/* P3A provisional preview copy; owner review pending. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "体験版（保存なし）": "Preview (no saving)",
+  "保存と書き出しは有料版で使えます": "Saving and exporting are available with a paid plan",
+  "体験版のままでも、この窓を閉じれば続けて試せます。ブラウザを閉じると、いまの作品は消えます。": "You can close this window and keep trying the preview. Your current work will disappear when you close the browser.",
+  "料金を見る": "View pricing",
+  "体験を続ける": "Continue preview",
+  "{date} から、ブラウザの体験版では保存できなくなります。いま保存している作品は、それまでに『書き出し』で控えを残してください。": "From {date}, saving will no longer be available in the browser preview. Before then, use Export to back up your saved work.",
+  "この知らせを閉じる": "Dismiss this notice"
+});
+
+/* P3C: monthly-license sign-in controls. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "パスワードを表示": "Show password",
+  "パスワードを隠す": "Hide password",
+  "パスワードを忘れた方": "Forgot your password?"
 });
 // ALT_REPLY_IMPORT_S5: device-only reply storage and viewing.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {

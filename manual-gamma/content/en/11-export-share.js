@@ -21,6 +21,8 @@
         id: "export", title: "Export, save and print (images, projects, Q sheets and run of show, theatre)", status: "sourced",
         keywords: ["image", "export", "PNG", "JPEG", "PDF", "project", "print", "front", "plan", "section"],
         html: `
+<p>When the screen says “Preview (no saving)”, you can try the browser edition without registration or a time limit. Saving and all image, print/PDF and show-file exports require a paid plan. Clicking an output control opens one explanation; close it with Continue preview, Escape or the backdrop. Your work disappears when you close the browser. Previously saved work is neither read nor deleted. Storage recovery and Received replies open the same explanation; stored replies are neither read nor deleted. Reply-file importing, saving and exporting are also unavailable in the preview. If a change notice appears, export backups before the date shown.</p>
+<p>When trial consultation is available, you can ask up to 5 questions a day, with a separate total capacity of 200 requests across the trial edition. Counts reset at midnight Japan time. A sent request counts even if the reply fails or a previous answer is reused. Trial consultation does not create alternative or lighting drafts or perform operations. Trial consultation remains disabled in v0.4.17.</p>
 <p>Open ${ui("Export, save and print")} with the paper icon. Choose ${ui("Images and print")}, ${ui("Save project")}, ${ui("Q sheets and run of show")} or ${ui("Theatre")}. Use Save project for the audio-inclusive file and Images and print to share diagrams.</p>
 <p>Choose the view and scenes from the two side-by-side dropdowns. Defaults are Front and Current scene. There is no purpose or pitch selector; images retain the drawing.</p>
 ${table(["Action", "Result"], [
@@ -147,6 +149,7 @@ ${table(["Name", "Direction (as seen by the audience)"], [
 
 <p>${ui("Full screen")} (${kbd("F")}) fills the screen with the drawing — for a monitor or projector in the rehearsal room.</p>
 <p>${ui("Presentation view")} beside ${ui("Full screen")} enlarges scene descriptions and fixture numbers and adds a bold pointer on this device. Share the screen using your meeting tool; Gamma sends nothing. The guide can be closed.</p>
+<p>${ui("Presentation view")} is the icon beside Full screen. When the header is too narrow (for example the Lighting design view at about 1440px wide) it is hidden; widen the window a little or zoom the browser out and it returns beside Full screen.</p>
 <p>Use the existing arrows or arrow keys to step scenes. ${kbd("Esc")}, ${ui("Exit full screen")} or leaving browser full screen restores the original view, zoom and panels. Lighting colours, levels and show data stay unchanged. Presentation view is unavailable in Field mode, the phone viewer and read-only study views. Ordinary full screen remains available.</p>
 ${fig("20-fullscreen", "Full screen. Arrow keys step through scenes; the small window at the bottom right swaps front and plan.", "Full-screen view")}
 <ul>

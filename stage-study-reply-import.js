@@ -6,6 +6,10 @@
   }
   const entry = document.getElementById('study-replies-open');
   if (!entry) return;
+  if (window.GAMMA_BROWSER_PREVIEW?.active) {
+    entry.addEventListener('click', () => window.GAMMA_BROWSER_PREVIEW.showGuide());
+    return;
+  }
   const model = window.SHOSAI_STUDY_REPLY_STORE;
   const store = model.create();
   const labels = new Map();

@@ -1709,6 +1709,8 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted .stage
   display:flex; flex:0 0 auto; margin-left:auto; min-width:max-content; align-items:flex-end; gap:calc(var(--gamma-gap) * .75);
 }
 .gamma-header-fitted.gamma-header-no-tc .stage-show-elapsed-group { display:none; }
+/* L1（本人 2026-11-12）: 入りきらないときだけ、2 段にする前に発表用の表示のアイコンを隠す（全画面 ⛶ は残る）。 */
+.gamma-header-fitted.gamma-header-no-audience #stage-audience-present { display:none !important; }
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head.gamma-header-fitted.gamma-header-two-rows { flex-wrap:wrap; }
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-header-two-rows .stage-header-actions-row { flex-basis:100%; justify-content:flex-end; }
 @media(max-width:720px) {
@@ -2177,4 +2179,19 @@ body.stage-field-mode #stage-audience-present,
 body.stage-session-guest #stage-audience-present,
 body[data-gamma-edition="study"] #stage-audience-present,
 body[data-gamma-edition="field"] #stage-audience-present { display: none !important; }
-#stage-audience-present { min-width: 44px; min-height: 44px; }
+/* 2026-11-12 本人決定 A: 発表用の表示は全画面の隣の 34px のアイコン（.stage-present-icon と同じ当たり判定）。文字のボタンだと 1440px 前後でヘッダーが 2 段になった。 */
+
+/* P3A: reuse the editor modal and theme tokens; no separate preview palette. */
+#gamma-preview-guide { position:fixed; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:0; border:0; background:transparent; color:inherit; }
+#gamma-preview-guide[hidden], #gamma-preview-guide:not([open]) { display:none !important; }
+#gamma-preview-guide::backdrop { background:transparent; }
+.gamma-preview-guide { --preview-hit:44px; --preview-gap:12px; z-index:10001; }
+#gamma-preview-backdrop { z-index:10000; }
+.gamma-preview-guide .stage-modal-body { display:block; }
+.gamma-preview-actions { display:flex; flex-wrap:wrap; gap:var(--preview-gap); justify-content:flex-end; }
+.gamma-preview-actions > :is(a,button) { min-height:var(--preview-hit); display:inline-flex; align-items:center; justify-content:center; font:inherit; }
+.gamma-preview-notice { display:flex; align-items:center; gap:12px; padding:8px 16px; color:var(--milk); background:var(--desk-2); }
+.gamma-preview-notice > span { flex:1; }
+.gamma-preview-notice > button { min-height:44px; flex-shrink:0; }
+.gamma-preview-notice[hidden] { display:none; }
+#gamma-browser-preview-label { position:fixed; right:12px; bottom:12px; z-index:9999; pointer-events:none; padding:4px 8px; font-size:12px; color:var(--milk); background:var(--desk-2); }

@@ -105,6 +105,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "assist.placeholder": "例: 2幕の転換、間を持たせるアイデアは？",
   "assist.send": "送る",
   "assist.context": "いまのシーン名と人数を伝える",
+  "assist.trialAllowance": "体験版の相談は1日5回までです。",
+  "assist.trialDaily": "今日の5回は使い切りました。日本時間0時からまたどうぞ。",
+  "assist.trialGlobalDaily": "体験版全体の今日の相談枠が満杯です。日本時間0時からまたどうぞ。",
+  "assist.trialPaid": "有料版では、1日に相談できる回数が増えます。",
   "assist.remaining": "今日はあと {n} 回",
   "assist.trialNotice": "試験中の機能です。予告なく終わることがあります。",
   "assist.notice": "入力した文は返答のためだけに外部の AI（Anthropic）へ送られ、舞台スケッチには保存されません。個人情報や機密情報は入力しないでください。返答の正確さは保証されません。",
@@ -1056,6 +1060,24 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "公開しました。変更は自動では公開されません。": "公開しました。変更は自動では公開されません。",
   "閲覧リンクを失効しました。": "閲覧リンクを失効しました。",
   "リンクを写しました。自分のメール・LINEで渡してください。": "リンクを写しました。自分のメール・LINEで渡してください。"
+});
+
+/* P3A provisional preview copy; owner review pending. */
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "体験版（保存なし）": "体験版（保存なし）",
+  "保存と書き出しは有料版で使えます": "保存と書き出しは有料版で使えます",
+  "体験版のままでも、この窓を閉じれば続けて試せます。ブラウザを閉じると、いまの作品は消えます。": "体験版のままでも、この窓を閉じれば続けて試せます。ブラウザを閉じると、いまの作品は消えます。",
+  "料金を見る": "料金を見る",
+  "体験を続ける": "体験を続ける",
+  "{date} から、ブラウザの体験版では保存できなくなります。いま保存している作品は、それまでに『書き出し』で控えを残してください。": "{date} から、ブラウザの体験版では保存できなくなります。いま保存している作品は、それまでに『書き出し』で控えを残してください。",
+  "この知らせを閉じる": "この知らせを閉じる"
+});
+
+/* P3C: monthly-license sign-in controls. */
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "パスワードを表示": "パスワードを表示",
+  "パスワードを隠す": "パスワードを隠す",
+  "パスワードを忘れた方": "パスワードを忘れた方"
 });
 // ALT_REPLY_IMPORT_S5: device-only reply storage and viewing.
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {

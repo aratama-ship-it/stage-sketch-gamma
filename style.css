@@ -11457,14 +11457,14 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
 
 /* ★案内の暗幕（59）より上に置く。下に置くと、姿勢の窓のように
    案内の途中で開く窓が暗幕ごしになって、絵柄が読めなくなる。 */
-.stage-modal-backdrop {
+.stage-modal-backdrop, .gamma-preview-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(var(--stage-ui-scrim-rgb, 8, 7, 6), 0.72);
   z-index: 70;
 }
 
-.stage-modal {
+.stage-modal, .gamma-preview-panel {
   position: fixed;
   top: 50%;
   left: 50%;

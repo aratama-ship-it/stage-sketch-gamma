@@ -5,7 +5,7 @@
  const DB='gamma:work-folder-handles-v1',STORE='folders';
  const fault=code=>Object.assign(Error(code),{code});
  const check=condition=>{if(!condition)throw fault('context-changed');};
- function eligible(env=root){return env.isSecureContext===true && typeof env.showDirectoryPicker==='function' && typeof env.navigator?.locks?.request==='function' && !!env.crypto?.subtle && typeof env.crypto?.randomUUID==='function' && !env.webkit?.messageHandlers?.gammaProject && !env.stageSketchBridge && !env.stageSketchNative && !(env.navigator?.maxTouchPoints>1 && /Mac|iPad|iPhone/.test(env.navigator?.platform||''));}
+ function eligible(env=root){return !env.GAMMA_BROWSER_PREVIEW?.active && env.isSecureContext===true && typeof env.showDirectoryPicker==='function' && typeof env.navigator?.locks?.request==='function' && !!env.crypto?.subtle && typeof env.crypto?.randomUUID==='function' && !env.webkit?.messageHandlers?.gammaProject && !env.stageSketchBridge && !env.stageSketchNative && !(env.navigator?.maxTouchPoints>1 && /Mac|iPad|iPhone/.test(env.navigator?.platform||''));}
  function repository(indexedDB=root.indexedDB){
   async function run(mode,fn){
    if(!indexedDB)throw fault('database-unavailable');
@@ -23,13 +23,14 @@
  function create({env=root,fileApi,repo=repository(env.indexedDB),onState=()=>{},assertFile=async()=>{},assertFolder=async()=>{}}){
   let folder=null;
   const emit=value=>{try{onState(value);}catch(_){}return value;};
-  async function permission(handle){if(await handle.queryPermission({mode:'readwrite'})!=='granted')throw fault('permission-required');}
+  const allow=()=>{if(env.GAMMA_BROWSER_PREVIEW?.active)throw fault('preview-no-save');};
+  async function permission(handle){allow();if(await handle.queryPermission({mode:'readwrite'})!=='granted')throw fault('permission-required');}
   async function register(handle){
-   if(/\.stageproj$/i.test(handle.name)||handle.name==='StageSketchBackups')throw fault('reserved-destination');
+   allow();if(/\.stageproj$/i.test(handle.name)||handle.name==='StageSketchBackups')throw fault('reserved-destination');
    await permission(handle);await assertFolder(handle);
    return env.navigator.locks.request('gamma:work-folder:catalog',async()=>{
-    const records=await repo.all();for(const record of records)if(await handle.isSameEntry(record.handle))return record;
-    const record={id:env.crypto.randomUUID(),handle};await repo.put(record);return record;
+    allow();const records=await repo.all();for(const record of records)if(await handle.isSameEntry(record.handle))return record;
+    const record={id:env.crypto.randomUUID(),handle};allow();await repo.put(record);return record;
    });
   }
   async function chooseFromGesture(){
@@ -64,7 +65,7 @@
    let tracks=new Map(audio.map(a=>[a.trackId,{...a}]));
    const allowedOffline=new Set((validate(text).project.audioTracks||[]).map(t=>t.id).filter(id=>!tracks.has(id)));
    let isCurrent=()=>true,canWrite=()=>true;
-   const current=()=>!closed&&isCurrent();
+   const current=()=>!env.GAMMA_BROWSER_PREVIEW?.active&&!closed&&isCurrent();
    const publish=state=>emit({state,folder:selected.handle.name,name,projectId,code:stopped,dirty,pending:jobs>0});
    const assert=()=>check(current());
    let currentCarry=carry;
@@ -78,6 +79,7 @@
     async putAudio(id,blob){assert();check(canWrite());if(!(blob instanceof Blob)||blob.size>fileApi.LIMIT.file)throw fault('package-too-large');tracks.set(id,{trackId:id,blob,originalName:blob.name||id});audioRevision++;api.markDirty();return true;},
     async removeAudio(id){assert();check(canWrite());tracks.delete(id);audioRevision++;api.markDirty();return true;},
     save(nextText,{carry:nextCarry=api.carry,guard=()=>true}={}){
+     if(env.GAMMA_BROWSER_PREVIEW?.active)return Promise.reject(fault("preview-no-save"));
      const doc=validate(nextText);if(doc.project.id!==projectId)return Promise.reject(fault('context-changed'));
      if(stopped)return Promise.reject(fault(stopped));
      const snapshot=new Map(tracks),version=dirtyVersion;jobs++;dirty=true;

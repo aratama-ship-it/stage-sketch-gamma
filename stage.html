@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="stage-bundle-head-runtime.d223b8f8635c68715f910c4a13783baf94d5c4d39d74cf5d252478b2ee9dcd59.js"></script>
+<script src="stage-bundle-head-runtime.07a73a1b039405285f6e307ad1db3d93c6555d21dc21cd695ab42c171c3c1cbb.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.16">
+<meta name="stage-sketch-gamma-version" content="v0.4.17">
 <meta name="gamma-edition" content="studio">
-  <script src="stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js"></script>
+  <script src="stage-bundle-head-edition.2feba7f49bbb2e6c36b5871bf8191f706a9dc9827cefabc385dcce799c16d6d2.js"></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -16,14 +16,14 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="stage-bundle-base.168d63e431506821de3de5ff59c372ce0bd26b0d4441da7211aa9d4e423e7d12.css">
+<link rel="stylesheet" href="stage-bundle-base.2a35128f82497ce859165c82bb119b55fdeec6f12897d473ae564a78c1c55a06.css">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="stage-bundle-head-before-light.5aa044fc16b811658fb3b8dd08424b5ab8bfaf5a334f83046d6d4fbcb43a7357.css">
+<link rel="stylesheet" href="stage-bundle-head-before-light.cf70007d85ca68b140d16f52f188adec7632b9e607cd994678b1d6f194fafb1b.css">
 <script src="stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js"></script>
 <link rel="stylesheet" href="stage-bundle-head-after-light.2aee0cec84100bd7150b77d0a9ec62bbaa04f4d7775d22b1f11e6c7907c82dae.css">
 </head>
@@ -88,7 +88,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.16</span>
+                <span class="stage-app-version">0.4.17</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -180,7 +180,7 @@
 
           <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
           <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
-          <button type="button" class="stage-lang" id="stage-audience-present" aria-pressed="false" title="発表用の表示">発表用の表示</button>
+          <button type="button" class="stage-lang stage-present-icon stage-audience-icon" id="stage-audience-present" aria-pressed="false" aria-label="発表用の表示"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1"/><path d="M5.5 13.5h5M8 11v2.5M8 8.6V5.2M6.3 6.8 8 5.1l1.7 1.7"/></svg></span></button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
                   data-tablet-icon="▤" aria-label="Qシート"
                   aria-haspopup="dialog" aria-controls="stage-cue-sheet-modal">
@@ -2889,14 +2889,15 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0416">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0417">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0416-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0416-title">v0.4.16</h3><time datetime="2026-11-12">2026-11-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0417-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0417-title">v0.4.17</h3><time datetime="2026-11-12">2026-11-12</time></header>
       <ul>
-        <li>かんたん照明の正面ビューで、作業灯をつけたまま舞台タブと同じ順に重ねて表示するようにしました(明かりが先、そのあとに装置。紗幕は舞台の奥行きの順)。</li>
-        <li>進行表の印刷で、スタイルの読み込みを最大20秒待つようにしました。読み込めない場合や20秒を過ぎた場合は印刷の窓を閉じ、いつものスタイル読み込みのメッセージを表示します。印刷の窓を自分で閉じたときは、そこで止まります。</li>
+        <li>ヘッダーが1段に収まらない画面幅(1280〜1440ほど)で2段に折れていた不具合を直しました。「発表用の表示」は、全画面の隣の小さなアイコンのボタンになりました。幅が足りないときは入口が一時的に隠れ(ウインドウを広げるか縮小すると戻ります)、隠れているときに発表を終えると全画面のボタンへ移ります。</li>
+        <li>有料版の期限が切れて閲覧と書き出しだけになっているとき、書き出しのあとに出る知らせ(未接続の音源は含まれません、など)の「×」が押せず、知らせが設定を覆ったままになる不具合を直しました。</li>
+        <li>説明書の体験版の説明に、相談の回数の枠と、受け取った返答・以前の保存は体験版では扱えないことを書き足しました。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3852,16 +3853,16 @@
   </button>
 </div>
 
-<script src="stage-bundle-body-before-manual.0d130d463d03cdfc9a45d7ca9551fe27b1c0a8b379405283c94713611b99a580.js"></script>
-<script src="stage-bundle-manual-meta.b6c1dca72bb7fe4dce98ff0498e56bb21ce922f93fe79263959bc8f2f7e9edfd.js" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0416"></script>
+<script src="stage-bundle-body-before-manual.46dc79e4b7b6b16936fe7a72597dc2532b1120959fb3e23967917a6839f4688d.js"></script>
+<script src="stage-bundle-manual-meta.369a3ee98e1743750b6cf0bd327c469848ad70610fc05d85c7dd92d3d4c90efc.js" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0417"></script>
 <script src="stage-bundle-body-before-language-1.85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908.js"></script>
 <script src="stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js"></script>
 <script src="stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js"></script>
-<script src="stage-bundle-language-loader.910b0f849e1819aecaffac5f7dbaae55024a08031f144295a40e3af8c613f8a4.js"></script>
-<script src="stage-bundle-body-after-language.f2859126c45ee8c0ab152cbb78cbf38318e88033f5248ede4098bcaefe7f3fab.js"></script>
+<script src="stage-bundle-language-loader.c339230b6c8f75981f64c49607beaf67ef3e8610a4ed0d5440143b2e490ab6c7.js"></script>
+<script src="stage-bundle-body-after-language.990e0c9a6a8f55d960d53388a279aa94d01e80816368102877ca27ff68d7b2b5.js"></script>
 <link rel="stylesheet" href="stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css">
-<script src="stage-bundle-body-after-field-css-1.6322acf4c44a9b9e6d5e0558c7cd8948350e41125c898a1c51c41656b3282931.js"></script>
+<script src="stage-bundle-body-after-field-css-1.97647938c4ad21c3327808afca386c36be65936cafcc6fb82f21a3f1d7bc43d8.js"></script>
 <script src="stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js"></script>
-<script src="stage-bundle-body-after-field-css-3.29f90e4c8931a578617511ca3a9b4fc5e1020fd8a681411c7f322fffabb58ac4.js"></script>
+<script src="stage-bundle-body-after-field-css-3.1a5def92e3b6eddc827cdeb64a7bc839eaa1d47e533eee9e2f8c5bdc891045b9.js"></script>
 </body>
 </html>

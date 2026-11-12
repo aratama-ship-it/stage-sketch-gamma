@@ -18,6 +18,7 @@
       status=Object.freeze({...(['queued','saving','stopped'].includes(state)?status:{}),state,code,...extra});try{onState(status);}catch(_){}return status;
     }
     function context(){
+      if(env.GAMMA_BROWSER_PREVIEW?.active)return null;
       const c=host.context();
       if(!c || typeof c.projectId!=='string' || !c.projectId || typeof c.token!=='string' || !c.token
         || c.editable!==true || c.guest || c.readOnly || c.viewer || c.hold || c.native || c.legacyShell) return null;

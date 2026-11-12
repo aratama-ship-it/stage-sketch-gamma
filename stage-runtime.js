@@ -1,3 +1,17 @@
+/* A preview's embedded documents share only its volatile in-memory store. This
+ * runs before child scripts; ordinary/native/study documents do nothing here. */
+(function(root){
+  try {
+    // Opaque rehearsal srcdoc documents must never probe parent capabilities.
+    if(root.origin==='null'||root.location?.origin==='null')return;
+    if(root.parent!==root&&root.parent.GAMMA_BROWSER_PREVIEW?.active)
+      root.parent.GAMMA_BROWSER_PREVIEW.install(root);
+  } catch(error) {
+    // Cross-origin viewers have no parent capability. An explicitly requested
+    // preview isolation failure is fatal; never silently use saved data.
+    if(error?.message==='preview-isolation-unavailable')throw error;
+  }
+})(window);
 /* Non-privileged platform metadata. Never use this as permission to save or export. */
 (function (root) {
   'use strict';
