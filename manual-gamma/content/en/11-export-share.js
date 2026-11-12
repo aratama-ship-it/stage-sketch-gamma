@@ -7,6 +7,17 @@
     lead: "Ways to take your drawings into the rehearsal room or a meeting.",
     sections: [
       {
+        id: "reply-import", title: "Importing and reading received replies", status: "sourced",
+        keywords: ["Received replies", "Reply files", "Import", "LINE", "email", "sticky notes", "device storage", "Earlier received notes"],
+        html: `
+<p>Save a performer reply file (JSON) received through LINE or email, then choose ${ui("Share")} → ${ui("Received replies")} → ${ui("Import reply files")}. You can select several files at once. In the Mac app, use the same in-app button; Finder double-click and ⌘O do not open reply files.</p>
+<p>${ui("Reply files")} lists the display name, scene, published revision, creation time and import time. Filter by name, scene or show, and choose a sort order. Replies to another show have a separate heading and label. The same ID and content is treated as already imported; different content with the same ID is kept separately. A rejected file does not stop the remaining files.</p>
+<p>Select a row to read its text and view strokes and sticky notes on the front and plan diagrams included in that reply. You do not need a matching published revision on your device. If an image cannot be displayed, annotations and text remain visible. Full sticky-note text is also listed below the diagrams. This view is read-only; it does not overlay or write into your current show.</p>
+<p>Original reply files stay on this device and are never sent to Gamma’s server. Browser and Mac storage are separate and do not synchronise. Each file may be up to 8 MiB; storage is limited to 100 files and 64 MiB total. At the limit, new imports stop without automatically deleting old replies. A failed save is not reported as imported. Keep the received files as backups: clearing browser data also removes stored replies.</p>
+<p>${ui("Delete reply")} asks for confirmation, then removes every scene in that reply file from this device. It does not change your show or Q-sheet reply history.</p>
+<p>${ui("Earlier received notes")} is a separate list. Notes received before submission stopped are not moved into the new store. ${ui("Go to earlier note exports")} leads to the sharing host’s existing deadline and ZIP export. Local reply operations do not read the sharing server. Press ${ui("Manage performer links")} to retrieve link controls and earlier notes.</p>`
+      },
+      {
         id: "export", title: "Export, save and print (images, projects, Q sheets and run of show, theatre)", status: "sourced",
         keywords: ["image", "export", "PNG", "JPEG", "PDF", "project", "print", "front", "plan", "section"],
         html: `
@@ -70,11 +81,11 @@ ${note("Use the Gamma sharing host", "GitHub Pages serves static files and canno
 <p>Sending notes to the owner has also stopped. Performer-link viewing and personal notes remain available. Older Mac versions may show connection errors.</p>
 <p>To show scenes during a meeting, use ${ref("fullscreen", "Presentation view")} with screen sharing in Zoom, Meet or a similar tool. Gamma does not transmit video, audio or pointer positions.</p>
 <h4>Export received notes and images as a ZIP</h4>
-<p>Sign in to the sharing host with the editor account, open ${ui("Share")} and press ${ui("Export received notes")}. This exports received notes from all saved links, including revoked and expired viewing links. Extract the ZIP and open index.html to read the show, scene, name, date, text and images. notes.json keeps the original information and the images folder contains JPEG files.</p>
+<p>Sign in to the sharing host with the editor account, open ${ui("Share")} → ${ui("Received replies")} → ${ui("Go to earlier note exports")} and press ${ui("Export received notes")}. This exports received notes from all saved links, including revoked and expired viewing links. Extract the ZIP and open index.html to read the show, scene, name, date, text and images. notes.json keeps the original information and the images folder contains JPEG files.</p>
 <p>If any image cannot be retrieved, no ZIP is downloaded and the missing images are listed. The screen shows the deadline in Japan time. The export period lasts 30 days from the day the button is made available and users are notified. An unset deadline is shown explicitly. Stored data is not deleted after the period ends.</p>
 <h4>Performer links — publish a snapshot for later review</h4>
 ${steps([
-  "The editor opens the show and presses " + ui("Create a link for this show") + " under " + ui("Share") + " → " + ui("Performer link") + ". This publishes the selected scenes as they are at that moment.",
+  "The editor opens the show and presses " + ui("Create a link for this show") + " under " + ui("Share") + " → " + ui("Manage performer links") + ". This publishes the selected scenes as they are at that moment.",
   "Use " + ui("Copy link") + " to copy the viewing link and send it to performers. Use " + ui("Open viewer") + " to check the published content yourself.",
   "After editing the show, press " + ui("Update published content") + ". The same link is updated; received notes and earlier stage views are kept. Working changes are not published automatically.",
   "To stop access, press " + ui("Revoke link") + ". Viewing and note submission through that link stop, while received notes are kept."
@@ -87,6 +98,7 @@ ${steps([
 <li>Write ${ui("My notes")} for each scene, draw strokes and pin notes on the diagrams. Notes made without sign-in are saved on that device; notes made while signed in to a performer account sync to the account.</li>
 <li>Sending notes to the owner is discontinued. Personal notes stay private.</li>
 </ul>
+<p>Save current notes and diagrams as a reply file and hand it over yourself via LINE or email. Load published updates with a button. See ${ref("study-reply", "Reply files and manual loading")}.</p>
 <h4>Annotation pages on iPad</h4>
 <p>Open a performer link on iPad to draw or type over the diagrams. Pinch with two fingers to zoom in or out while annotating.</p>
 <p>Open ${ui("Notes / share")} to duplicate the current page, add a blank page or rename it. Pages belong to individual scenes; use the page selector at the top to switch between them. Duplication includes annotations from the Front, Plan and Both views. Each copy can then be edited independently.</p>
@@ -141,6 +153,21 @@ ${fig("20-fullscreen", "Full screen. Arrow keys step through scenes; the small w
 <li>${kbd("↑")}${kbd("↓")} step scenes. ${kbd("X")}, the swap icon at the top right, or the small window at the bottom right swaps front and plan. ${kbd("F")} or ${kbd("Esc")} returns.</li>
 <li>${ui("Full-screen caption")} in Settings (on by default) shows the scene name and description under the picture, in small, medium or large text.</li>
 </ul>`
+      },
+      {
+        id: "study-reply", title: "Performer reply files and loading the latest publication", status: "sourced",
+        keywords: ["save reply file", "load latest", "performer link", "LINE", "email", "8 MiB", "earlier notes"],
+        html: `
+<p>Save selected current notes and front/plan diagrams locally (8 MiB maximum), then hand the file over yourself. Earlier notes must be copied forward first. ${ui("Load latest")} checks updates and revocation only when pressed; opening the link also checks. There is no background or resume check. A known expiry still stops viewing.</p>
+<h4>Save and hand over a reply file</h4>
+<p>In My notes, choose ${ui("Save reply file")}, enter a display name (up to 100 characters) and select scenes. On a phone, open ${ui("Save reply file")} inside Notes. Scenes with current text, strokes or pinned notes are selected initially. No sign-in is required.</p>
+<p>Choose ${ui("Check file size")} to prepare the diagrams, then ${ui("Save file")} to download the JSON. The limit is 8 MiB. If it is too large, review the suggested scenes and make your own selection. Strokes and notes are never silently removed. Check the saved file, then hand it to the organiser yourself via LINE or email. Gamma sends neither the reply nor a notification. If you cancel saving, save again.</p>
+<p>The file contains only current notes for the selected scenes and front/plan images from the publication you are viewing. Earlier notes and other people's notes are excluded. To return an earlier note, use ${ui("Earlier scene notes and copying")} to copy it to a current scene, check its position, then save. The iPad's separate drawing pages are not part of this reply.</p>
+<h4>Load latest</h4>
+<p>On desktop, ${ui("Load latest")} is in My notes. On a phone, it is in the scene navigation band at the top, visible in portrait and landscape without opening a collapsed panel. The hint and loading status appear in the same band.</p>
+<p>Published content is checked when you open the link or press ${ui("Load latest")}. There is no five-second check, automatic reload on return, or automatic new-version notification. The same revision shows ${ui("You are up to date.")}; a newer revision is loaded. Notes on changed diagrams move to Earlier notes and can be copied forward. Notes on identical diagrams stay current.</p>
+<p>This action also checks revocation and sign-in expiry and retrieves personal notes from another device. A known link deadline still stops viewing locally without a click. Device saving for anonymous notes and personal-note sync triggered by signed-in editing remain unchanged.</p>
+`
       }
     ]
   });

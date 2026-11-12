@@ -507,7 +507,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261111-v0414';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261111-v0415';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;

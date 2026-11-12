@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="stage-bundle-head-runtime.508b44b7dcbea3609c02d6160e4a8c351f32253f82493e7a46e1be38d5e67cbb.js"></script>
+<script src="stage-bundle-head-runtime.d223b8f8635c68715f910c4a13783baf94d5c4d39d74cf5d252478b2ee9dcd59.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.14">
+<meta name="stage-sketch-gamma-version" content="v0.4.16">
 <meta name="gamma-edition" content="studio">
   <script src="stage-bundle-head-edition.42226fe03682c01918ea270809b252b56fbceaf23f3e440b9e3063ee3199f51b.js"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -88,7 +88,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.14</span>
+                <span class="stage-app-version">0.4.16</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2144,6 +2144,9 @@
         <button type="button" class="stage-minor-action" id="stage-session-reconnect" disabled aria-describedby="stage-share-realtime-hint" hidden></button>
       </div>
     </section>
+    <section class="stage-share-channel stage-share-replies" data-no-i18n>
+      <button type="button" class="btn-quiet" id="study-replies-open" aria-haspopup="dialog" aria-controls="study-replies-dialog">受け取った返答</button>
+    </section>
     <section class="stage-share-channel stage-share-study" aria-labelledby="stage-share-study-title" data-no-i18n>
       <div class="stage-share-channel-head">
         <h3 id="stage-share-study-title">演者用リンク</h3>
@@ -2886,15 +2889,14 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261111-v0414">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0416">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0414-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0414-title">v0.4.14</h3><time datetime="2026-11-11">2026-11-11</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0416-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0416-title">v0.4.16</h3><time datetime="2026-11-12">2026-11-12</time></header>
       <ul>
-        <li>全画面表示の隣に「発表用の表示」を追加しました。発表中だけ、説明の文字を1.4倍にし、照明の番号を大きくし、その端末の中だけに太いポインタと会議で見やすい配色を出します。映像・音声・ポインタは送信されないので、Zoom・Meetなどの画面共有でお使いください。終えると元の画面に戻ります。</li>
-        <li>平面図の表示の切り替えに「呼び名の格子」(初期はオフ)を追加しました。本舞台の床を6×6に分け、客席から見て下手前をA1、上手奥をF6と呼べます。オン・オフはその端末の表示の設定だけで、ショーのデータ・書き出し・印刷には入りません。</li>
-        <li>Qシートに「閲覧リンクを公開」を追加しました。部署を1つ選んで公開し、できたリンクを主催者がメールやLINEで渡すと、相手は読むだけで開けます。公開し直した内容は、相手が「読み直す」を押したときに反映されます。期限を選べて、失効もできます(相手がすでに読み込んだ内容や印刷した紙は残ります)。</li>
+        <li>かんたん照明の正面ビューで、作業灯をつけたまま舞台タブと同じ順に重ねて表示するようにしました(明かりが先、そのあとに装置。紗幕は舞台の奥行きの順)。</li>
+        <li>進行表の印刷で、スタイルの読み込みを最大20秒待つようにしました。読み込めない場合や20秒を過ぎた場合は印刷の窓を閉じ、いつものスタイル読み込みのメッセージを表示します。印刷の窓を自分で閉じたときは、そこで止まります。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3850,15 +3852,15 @@
   </button>
 </div>
 
-<script src="stage-bundle-body-before-manual.0fcf01bfc68de5a4e9b19cae483812b6eb7b60b0890111784c4670392d1d0d13.js"></script>
-<script src="stage-bundle-manual-meta.450d6d2447596d314978c729f01070001afb3c400ef1365d1a7278dc39a9a352.js" data-manual-content="manual-gamma/manual-content.js?v=20261111-v0414"></script>
+<script src="stage-bundle-body-before-manual.0d130d463d03cdfc9a45d7ca9551fe27b1c0a8b379405283c94713611b99a580.js"></script>
+<script src="stage-bundle-manual-meta.b6c1dca72bb7fe4dce98ff0498e56bb21ce922f93fe79263959bc8f2f7e9edfd.js" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0416"></script>
 <script src="stage-bundle-body-before-language-1.85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908.js"></script>
 <script src="stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js"></script>
 <script src="stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js"></script>
-<script src="stage-bundle-language-loader.e322d8fa26845cbd222e3f0a46a95eb3d34dffd7d79d1b7335add9a31a319ffa.js"></script>
-<script src="stage-bundle-body-after-language.28d52eefdbf3145a8d59725404fd50bd2a2b7e6c61f9a2a3d48352d4a8831d94.js"></script>
+<script src="stage-bundle-language-loader.910b0f849e1819aecaffac5f7dbaae55024a08031f144295a40e3af8c613f8a4.js"></script>
+<script src="stage-bundle-body-after-language.f2859126c45ee8c0ab152cbb78cbf38318e88033f5248ede4098bcaefe7f3fab.js"></script>
 <link rel="stylesheet" href="stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css">
-<script src="stage-bundle-body-after-field-css-1.b93b25ba2ce33f4d032c6047b9e47316769b7152b456c116a4cedae263ab92bf.js"></script>
+<script src="stage-bundle-body-after-field-css-1.6322acf4c44a9b9e6d5e0558c7cd8948350e41125c898a1c51c41656b3282931.js"></script>
 <script src="stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js"></script>
 <script src="stage-bundle-body-after-field-css-3.29f90e4c8931a578617511ca3a9b4fc5e1020fd8a681411c7f322fffabb58ac4.js"></script>
 </body>

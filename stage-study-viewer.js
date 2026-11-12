@@ -3,6 +3,38 @@
   const $ = id => document.getElementById(id);
   const NOTES_DISCONTINUED = true;
   const dictionary = {
+    replyOpen: ["返答ファイルを保存", "Save reply file"],
+    refresh: ["最新を読み込む", "Load latest"],
+    refreshHint: ["図が更新されると、今のメモは『以前のメモ』へ移ります。", "When the diagram changes, current notes move to Earlier notes."],
+    refreshCurrent: ["最新です。", "You are up to date."],
+    refreshLoaded: ["最新の公開内容を読み込みました。", "Latest published content loaded."],
+    replyHint: ["選んだシーンの今のメモと図を保存します。以前のメモは『引き継ぎ』で今のシーンへ写してから保存してください。", "Save current notes and diagrams for the selected scenes. To return earlier notes, use Copying to copy them to a current scene first."],
+    replyName: ["表示名（返答ファイルに入ります・100字まで）", "Display name (included in the reply file; up to 100 characters)"],
+    replyScenes: ["返すシーン", "Scenes to return"],
+    replyPrepare: ["大きさを確認", "Check file size"],
+    replyDownload: ["ファイルを保存", "Save file"],
+    replyPreparing: ["図とファイルの大きさを確認しています…", "Preparing diagrams and checking file size…"],
+    replyReady: ["保存できます。", "Ready to save."],
+    replySaved: ["保存操作を行いました。このファイルを LINE やメールで主催者に渡してください。γ からは送られません。保存先でファイルを確認してください。", "The save action has started. Check the file in your downloads, then give it to the organiser via LINE or email. Gamma does not send it."],
+    replyTooLarge: ["8 MiB を超えています。返すシーンを選び直してください。メモは削っていません。", "The file exceeds 8 MiB. Choose fewer scenes. No notes have been removed."],
+    replySuggestion: ["外す候補：", "Suggested scenes to leave out:"],
+    replyUseSuggestion: ["この案で選び直す", "Apply this selection"],
+    replyNameRequired: ["表示名を100字以内で入力してください。", "Enter a display name of up to 100 characters."],
+    replyInvalidText: ["表示名やメモの文字数・形式を確認してください。", "Check the length and format of the name and notes."],
+    replyInvalidCount: ["シーンを1つ以上選んでください。線・点・付箋の数も上限内である必要があります。", "Select at least one scene. Strokes, points and pinned notes must also be within their limits."],
+    replyWrongDiagram: ["メモと図の対応を確認できません。以前のメモは引き継いでから保存してください。", "The note cannot be matched to its diagram. Copy earlier notes to a current scene before saving."],
+    replyHistoryFull: ["履歴が上限に達しています。以前のメモを確認し、別のシーンへ引き継いでください。", "Note history is full. Review earlier notes and copy them to another scene."],
+    replyCapture: ["図を取得できませんでした。表示を確認して、もう一度お試しください。", "Could not capture the diagram. Check the view and try again."],
+    replyImage: ["図の画像の大きさ・形式が返答に対応していません。", "The diagram image size or format is not supported in a reply."],
+    replyCoordinates: ["線・付箋の位置が返答の範囲や精度に合いません。", "Stroke or pinned-note positions exceed the allowed range or precision."],
+    replyStyle: ["図の種類・付箋の形や色が返答に対応していません。", "The view, note shape or colour is not supported in a reply."],
+    replyCrypto: ["この環境では返答の識別子を安全に作れません。", "This environment cannot securely create a reply identifier."],
+    replyInvalidData: ["返答のデータを読み取れません。メモは保持しています。", "Reply data could not be read. Your notes are kept."],
+    replyFormat: ["返答の形式または版に対応していません。", "This reply format or version is not supported."],
+    replyFields: ["返答に必要な項目がないか、対応していない項目があります。", "Required reply fields are missing or unsupported fields are present."],
+    replyId: ["返答・ショー・シーン・付箋の識別子が不正か重複しています。", "A reply, show, scene or pinned-note identifier is invalid or duplicated."],
+    replyDate: ["返答の作成日時が不正です。端末の日時を確認してください。", "The reply creation date is invalid. Check the device date and time."],
+
     discontinued: ['オーナーへのメモ送信は、提供を停止しました。自分用メモは引き続き使えます。', 'Sending notes to the owner has been discontinued. You can still use personal notes.'],
     panelWidth: ['右パネルの幅', 'Right panel width'],
     panelResizeHint: ['ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す。', 'Drag to resize. Use Left/Right arrows to adjust; double-click or press Enter to reset.'],
@@ -119,6 +151,18 @@
   let privateStore = null, account = null, connectionId = '', legacyStore = null;
   let draft = null, dirty = false, saveTimer = null, saveState = '', lastScene = '', captureWait = null;
   const continuity = window.SHOSAI_STUDY_CONTINUITY; let historyUI = null, historyBlocked = false;
+  let replyUI = null, replyWait = null, refreshState = '';
+  function replyFrameRequest(action, sceneId = scenes[at]?.id) {
+    return new Promise((resolve, reject) => {
+      if (!live || !frameReady || replyWait) { reject(new Error('capture-cancelled')); return; }
+      const requestId = crypto.randomUUID(), revision = data.revision;
+      const timer = setTimeout(() => { replyWait = null; reject(new Error('capture-timeout')); }, 10000);
+      replyWait = { requestId, sceneId, revision,
+        resolve(value) { clearTimeout(timer); replyWait = null; resolve(value); },
+        reject(code = 'capture-cancelled') { clearTimeout(timer); replyWait = null; reject(new Error(code)); } };
+      post({ action, requestId, sceneId, revision });
+    });
+  }
   const currentInk = () => historyBlocked ? [] : draft?.strokes || [];
   const currentStickies = () => historyBlocked ? [] : draft?.stickies || [];
   function savePrivate() {
@@ -295,6 +339,8 @@
     }
     if (frame) frame.title = t('both');
     historyUI?.relabel();
+    replyUI?.relabel();
+    $('study-refresh-status').textContent = refreshState ? t(refreshState) : '';
     $('study-library-link').href = '/study?lang=' + lang;
     $('study-product-link').href = 'https://aratama-ship-it.github.io/stage-sketch-gamma/' + (lang === 'en' ? '?lang=en' : '');
     syncScene(); syncPrivate(); syncPanelWidth();
@@ -375,6 +421,8 @@
   }
   function syncScene() {
     syncPen();
+    $('study-refresh').disabled = !live || pendingNote || checking;
+    $('study-reply-open').disabled = !live || pendingNote || checking || historyBlocked;
     $('study-note-fields').disabled = !live || pendingNote;
     $('study-view').disabled = $('study-stop').disabled = !live || pendingNote;
     $('study-language').disabled = pendingNote;
@@ -407,6 +455,7 @@
         $('study-expiry-draft-text').value = $('study-note').value;
       }
     } else if (state !== 'loading' && state !== 'network') expiryClock.stop();
+    replyWait?.reject(); replyUI?.cancel();
     savePrivate(); historyUI?.close(); captureWait?.reject();
     live = false; replaying = false; pageState = state; $('study-workspace').hidden = true; $('study-note-fields').disabled = true;
     $('study-pen-confirm').hidden = true;
@@ -425,15 +474,9 @@
     if (!response.ok) throw Object.assign(new Error(result.error || 'network'), { status: response.status });
     return result;
   }
-  const STUDY_ACTIVE_MS = 120000, STUDY_IDLE_CHECK_MS = 30000;
-  let lastActivity = Date.now(), lastCheck = 0;
-  function markActivity() { lastActivity = Date.now(); }
-  for (const type of ['pointerdown', 'pointerover', 'keydown', 'wheel', 'touchstart']) document.addEventListener(type, markActivity, { capture: true, passive: true });
-  // 図の枠（iframe）の中の操作は外へ届かない。枠の上に乗ったとき（pointerover）と、入力が枠へ移ったとき（blur）で数える。
-  window.addEventListener('blur', markActivity);
   async function load() {
     if (expireLocally()) return;
-    markActivity(); const current = ++epoch; live = false; conceal('loading'); $('study-retry').hidden = true;
+    const current = ++epoch; live = false; conceal('loading'); $('study-retry').hidden = true;
     try {
       await loadStudyLanguage(lang); if (current !== epoch || expireLocally()) return; relabel();
       const me = await accountRequest('/study/api/me'); if (current !== epoch) return;
@@ -476,11 +519,11 @@
       window.dispatchEvent(new CustomEvent('stage-study-loaded', { detail: { project: result.document.project, scenes } })); at = Math.max(0, scenes.findIndex(s => s.id === lastScene)); restorePrivate();
       $('study-title').textContent = result.document.project.title; $('study-title').hidden = false;
       $('study-scenes').replaceChildren(...scenes.map((scene, i) => { const el = document.createElement('option'); el.value = scene.id; el.textContent = `${i + 1}. ${scene.title}`; return el; }));
-      $('study-name-field').hidden = Boolean(result.displayName); $('study-verified-name').hidden = !result.displayName;
+      $('study-name-field').hidden = true; $('study-verified-name').hidden = true;
       $('study-verified-name').textContent = result.displayName || '';
-      $('study-name').required = !result.displayName;
+      $('study-name').required = false;
       if (!frame) {
-        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261111-v0414-' + (lang === 'en' ? 'en' : 'ja');
+        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261112-v0416-' + (lang === 'en' ? 'en' : 'ja');
         $('study-frame-host').replaceChildren(frame);
       } else if (frameReady) { frame.title = t('both'); loadFrame(); }
       $('study-workspace').hidden = false;
@@ -489,6 +532,11 @@
   }
   window.addEventListener('message', event => {
     if (!frame || event.source !== frame.contentWindow || event.origin !== 'null' || event.data?.channel !== 'stage-study') return;
+    if (replyWait && event.data.requestId === replyWait.requestId) {
+      if (event.data.action === 'reply-error') replyWait.reject(event.data.code);
+      else if (['reply-settled', 'reply-background'].includes(event.data.action)
+        && event.data.sceneId === replyWait.sceneId && event.data.revision === replyWait.revision) replyWait.resolve(event.data.backgrounds);
+    }
     if (event.data.action === 'ready') { frameReady = true; if (data) loadFrame(); }
     if (event.data.action === 'ink' && data && event.data.revision === data.revision && event.data.sceneId === scenes[at]?.id) {
       if (pendingNote) return;
@@ -521,22 +569,32 @@
     }
     if (event.data.action === 'error') conceal('network');
   });
-  // 公開内容の確認と自分用メモの同期は、開いた直後・内容が変わった直後・画面を操作した直後の2分間は5秒ごと。
-  // 何も起きない間は30秒ごとに間引く。無料プランは枠を超えると止まり、演者も持ち主も使えなくなるため（2026-10-06）。
+  // Only an explicit click checks publication, revocation and remote personal notes.
+  // The known expiry still uses its independent local deadline timer.
   async function check() {
     if (expireLocally() || !live || checking || pendingNote || document.hidden) return;
-    const now = Date.now(); if (now - lastActivity > STUDY_ACTIVE_MS && now - lastCheck < STUDY_IDLE_CHECK_MS) return;
-    lastCheck = now;
-    checking = true; const current = epoch;
+    checking = true; refreshState = 'loading'; relabel(); const current = epoch;
     try {
+      await replyFrameRequest('reply-settle');
+      if (current !== epoch || expireLocally()) return;
+      savePrivate();
+      pendingNote = true; syncScene();
       const result = await request('/status');
       if (current !== epoch) return;
       expiryClock.remember(result.expiresAt); if (current !== epoch || expireLocally()) return;
-      if (result.revision !== data.revision) { noteState = 'changed'; markActivity(); await load(); }
-      else if (!dirty) await privateStore?.poll(scenes[at].id);
+      if (result.revision !== data.revision) { refreshState = 'refreshLoaded'; await load(); }
+      else {
+        if (!dirty) {
+          await privateStore?.poll(scenes[at].id);
+          if (current !== epoch || !live || !data) return;
+          restorePrivate();
+        }
+        refreshState = 'refreshCurrent';
+      }
     } catch (error) { if (current === epoch) { epoch++; conceal(availabilityState(error)); } }
-    finally { checking = false; }
+    finally { checking = false; pendingNote = false; if (data && frameReady) loadFrame(); relabel(); }
   }
+  $('study-refresh').onclick = check;
   function select(index) { if (!live || pendingNote) return; savePrivate(); at = Math.max(0, Math.min(scenes.length - 1, index)); restorePrivate(); noteState = ''; $('study-note-status').textContent = NOTES_DISCONTINUED ? t('discontinued') : ''; replaying = false; penLimit = ''; $('study-pen-confirm').hidden = true; post({ action: 'scene', sceneId: scenes[at].id, strokes: currentInk(), stickies: currentStickies() }); syncScene(); }
   $('study-prev').onclick = () => select(at - 1); $('study-next').onclick = () => select(at + 1);
   $('study-scenes').onchange = event => select(scenes.findIndex(s => s.id === event.target.value));
@@ -654,11 +712,11 @@
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); select(at - 1); }
   });
   window.addEventListener('offline', () => { epoch++; conceal('network'); });
-  const resume = () => { if (!expireLocally()) void load(); };
-  window.addEventListener('online', resume);
-  document.addEventListener('visibilitychange', () => { if (expireLocally()) return; if (document.hidden) { epoch++; conceal('loading'); } else resume(); });
-  window.addEventListener('pagehide', () => { if (!expireLocally()) { epoch++; conceal('loading'); } });
-  window.addEventListener('pageshow', event => { if (event.persisted) resume(); });
+  // Keep the displayed publication when switching apps; returning never fetches it.
+  // A known deadline still conceals it, even after a suspended timer resumes.
+  document.addEventListener('visibilitychange', () => { if (!expireLocally() && document.hidden) savePrivate(); });
+  window.addEventListener('pagehide', () => { if (!expireLocally()) savePrivate(); });
+  window.addEventListener('pageshow', () => { expireLocally(); });
   window.addEventListener('hashchange', () => { savePrivate(); conceal('loading'); token = location.hash.slice(1); expiryClock.reset(); $('study-expiry-draft')?.remove(); expiryDraftRecovery = null; pageState = 'loading'; privateStore?.close(); privateStore = null; connectionId = ''; legacyStore = null; draft = null; lastScene = ''; load(); });
   historyUI = window.SHOSAI_STUDY_HISTORY_UI({
     state: () => ({ lang, token, data, scenes, sceneId: scenes[at]?.id, store: privateStore }), request,
@@ -670,5 +728,14 @@
       return ok;
     },
   });
-  setInterval(check, 5000); relabel(); load();
+  replyUI = window.SHOSAI_STUDY_REPLY_SAVE.mount({ t,
+    available: () => !expireLocally() && live && !historyBlocked && !checking,
+    settle: () => replyFrameRequest('reply-settle'),
+    capture: sceneId => replyFrameRequest('reply-background', sceneId),
+    snapshot: () => ({ showId: data.document.project.id, showTitle: data.document.project.title,
+      scenes: window.SHOSAI_STUDY_REPLY_SAVE.currentScenes({ data, scenes, entries: privateStore.list(),
+        currentId: scenes[at].id, currentDraft: { ...draft, text: $('study-note').value }, token, continuity }) }),
+    lock(value) { pendingNote = value; replaying = false; if (!value) { replyWait?.reject(); post({ action: 'reply-cancel' }); if (data && live) loadFrame(); } syncScene(); },
+  });
+  relabel(); load();
 })();

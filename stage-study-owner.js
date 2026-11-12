@@ -7,7 +7,7 @@
   }
   const bridge = window.SHOSAI_STAGE_STUDY_OWNER;
   if (!bridge) return;
-  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=20261027-v0390'; document.head.append(css);
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=20261111-v0415'; document.head.append(css);
   const en = () => bridge.isEnglish();
   const t = (ja, english) => {
     const language = document.documentElement.lang || (en() ? 'en' : 'ja');
@@ -65,7 +65,7 @@
   };
   relabel(); new MutationObserver(() => {
     relabel();
-    if (entryTarget.childElementCount) openInlineOwnerControls();
+    if (controls) openInlineOwnerControls(); else offerOwnerControls();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   let link = null, showId = '', generation = 0, busy = false, savedLinks = [];
   let expiringLinks = false, expiryInput = null, expiryTimer = null, unverifiedIssue = null;
@@ -120,7 +120,7 @@
   let ownerService = null;
   async function hasOwnerService() {
     if (ownerService !== null) return ownerService;
-    if (/(^|\.)github\.io$/i.test(location.hostname)) return false;
+    if (window.webkit?.messageHandlers?.gammaProject || /(^|\.)github\.io$/i.test(location.hostname)) return false;
     try {
       const response = await fetch('/whoami', {credentials:'same-origin', cache:'no-store', signal:AbortSignal.timeout(15000)});
       // Only a definite "no Worker here" answer is remembered (review R5-01): 404/405/410 or a non-JSON success.
@@ -582,5 +582,16 @@
   });
   window.addEventListener('pageshow', reviewExpiry);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) reviewExpiry(); });
-  document.addEventListener('shosai:share-open', openInlineOwnerControls);
+  function offerOwnerControls() {
+    // Opening local replies must not probe /whoami or fetch server notes.
+    generation++; clearTimeout(expiryTimer); clearTimeout(exportTimer); busy = false;
+    controls = null; exportButton = null; link = null;
+    if (window.webkit?.messageHandlers?.gammaProject || /(^|\.)github\.io$/i.test(location.hostname)) {
+      entryTarget.replaceChildren(); return;
+    }
+    const manage = button(exportText('演者用リンクを管理'), openInlineOwnerControls);
+    manage.id = 'study-owner-manage'; entryTarget.replaceChildren(manage);
+  }
+  document.addEventListener('shosai:share-open', offerOwnerControls);
+  document.addEventListener('shosai:study-owner-open', openInlineOwnerControls);
 })();

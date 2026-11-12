@@ -2749,7 +2749,7 @@
     const emitters = receiver ? receiver.compile(receiverBeams(), { goboById: E.goboById }) : null;
     const shadeBox = receiver ? (point, normal, color) => receiver.materialColor(color, receiver.sample(emitters, point, normal, state.play.t)) : null;
     const view = o.yawDeg === -90 ? "shimote" : o.yawDeg === 90 ? "kamite" : "front";
-    const pieces = E.orderStagePieces(piecesOf(), view);
+    const pieces = o.orderPieces ? o.orderPieces(piecesOf()) : E.orderStagePieces(piecesOf(), view);
     const entries = pieces.map((pc, index) => [pc, index]), byId = new Map();
     for (const entry of entries) {
       const id = entry[0].id;
@@ -4243,12 +4243,14 @@
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
     drawLasers(fctx, P, "front3d"); drawMirrorBalls(fctx, P, "front3d");
     } finally { if(sharedFront) fctx.restore(); }
-    // Match drawStage's scrim order: work lights on => in front of beams;
-    // work lights off => below the dark sheet and its subsequent light overlay.
-    const deferredCurtains = [];
-    drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
-      ...(sharedFront ? { paintCurtain: (ctx, id) => showOn("blackout")
-        ? sharedFront.paintCurtain(ctx, id) : deferredCurtains.push(id) } : {}) });
+    // The shared work-light view follows drawStage: all light first, then
+    // pieces (including scrims) in stage depth order. Keep blackout and the
+    // standalone/detail paths below on their existing ordering.
+    const sharedWorkLight = sharedFront && !showOn("blackout");
+    const paintPieces = () => drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
+      ...(sharedFront ? { paintCurtain: (ctx, id) => sharedFront.paintCurtain(ctx, id) } : {}),
+      ...(sharedWorkLight ? { orderPieces: sharedFront.orderPieces } : {}) });
+    if (!sharedWorkLight) paintPieces();
     // 奥バトンは3Dの照明見え方には不要なので描かず、ほかのバトンも名称・高さは注記しない。
     if(!simple) state.rig.trusses.filter((t) => t.label !== "奥バトン").forEach((t) => { const a = at(0, t.v, t.h), b = at(1, t.v, t.h); const sel = state.selTruss === t.id && state.mode === "place";
       fctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.lineWidth = sel ? 5 : 3; fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); });
@@ -4310,7 +4312,7 @@
     compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v,
       ...(sharedFront ? { skipBorders: true, curtainVisible: sharedFront.curtainVisible } : {}) });
     } finally { if(sharedFront) fctx.restore(); }
-    for (const id of deferredCurtains) sharedFront.paintCurtain(fctx, id);
+    if (sharedWorkLight) paintPieces();
     if(simple && !sharedFront) drawBordersUp(fctx,P,d);
     if (showOn("fixtures")) redrawFixtureInfo3D(fctx, P, { hideFront: fctx.canvas === secF });
     if(sharedFront) {

@@ -117,6 +117,13 @@
       clear() { cancel(); strokes = []; render(); emit(); },
       resize: layout,
       snapshot: () => clone(strokes),
+      finish() {
+        if (draft) { const { view, points } = draft; strokes.push({ view, points }); draft = null; render(); emit(); }
+      },
+      annotationSize(view) {
+        const style = getComputedStyle(layers[view]);
+        return { annotationWidth: parseFloat(style.width), annotationHeight: parseFloat(style.height) };
+      },
       capture,
     });
   };

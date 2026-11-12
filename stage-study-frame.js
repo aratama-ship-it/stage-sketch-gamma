@@ -38,10 +38,68 @@
     }, selected(id, focus) {
       window.parent.postMessage({ channel: 'stage-study', action: 'sticky-selected', sceneId, revision, id, focus }, location.origin);
     } });
+    let replyGeneration = 0, replyRestore = null, replyDocument = null;
+    const painted = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const replyPost = value => window.parent.postMessage({ channel: 'stage-study', ...value }, location.origin);
+    async function replyPhotos(id) {
+      const project = replyDocument?.project, scene = project?.scenes.find(s => s.kind === 'scene' && s.id === id);
+      if (!scene) throw new Error('capture-cancelled');
+      const ids = [scene.photo?.id, ...(scene.pieces || []).map(piece => piece.imageId)].filter(Boolean);
+      await Promise.all([...new Set(ids)].map(async id => {
+        const src = project.photos?.[id];
+        // Published photos are embedded. Never fetch a URL as a side effect of saving.
+        if (typeof src !== 'string' || !src.startsWith('data:image/')) throw new Error('image-type');
+        const image = new Image(); image.src = src;
+        await image.decode(); if (!image.naturalWidth) throw new Error('capture-failed');
+      }));
+      if (document.fonts) await document.fonts.ready;
+    }
+    function restoreReply() {
+      if (!replyRestore) return;
+      document.body.dataset.view = replyRestore.view; engine.scene(sceneId); engine.resize(); pen.resize(); sticky.resize();
+      replyRestore = null;
+    }
+    async function replyBackground(message) {
+      const generation = ++replyGeneration, originalScene = sceneId, originalRevision = revision;
+      restoreReply();
+      try {
+        if (!sceneId || message.revision !== revision) throw new Error('capture-cancelled');
+        const originalSizes = Object.fromEntries(['front', 'plan'].map(view => [view, pen.annotationSize(view)]));
+        replyRestore = { view: document.body.dataset.view };
+        // Make both annotation areas measurable. The output is never cropped or annotated.
+        document.body.dataset.view = 'both'; engine.stop(); engine.scene(message.sceneId); engine.resize();
+        await replyPhotos(message.sceneId); if (generation !== replyGeneration) return;
+        engine.scene(message.sceneId);
+        await painted(); if (generation !== replyGeneration) return;
+        pen.resize(); sticky.resize();
+        const backgrounds = Object.fromEntries(pen.capture('both', () => {}, (_view, output) => output, () => false).map(screen => {
+          const size = originalSizes[screen.view];
+          const dimensions = size.annotationWidth > 0 && size.annotationHeight > 0 ? size : pen.annotationSize(screen.view);
+          if (!(dimensions.annotationWidth > 0 && dimensions.annotationHeight > 0)) throw new Error('capture-failed');
+          return [screen.view, { dataUrl: screen.dataUrl, ...dimensions }];
+        }));
+        restoreReply();
+        replyPost({ action: 'reply-background', requestId: message.requestId, sceneId: message.sceneId, revision, backgrounds });
+      } catch (error) {
+        if (generation === replyGeneration) { restoreReply(); replyPost({ action: 'reply-error', requestId: message.requestId, code: error.message }); }
+      } finally {
+        if (generation === replyGeneration && (sceneId !== originalScene || revision !== originalRevision)) restoreReply();
+      }
+    }
     window.addEventListener('message', event => {
       if (event.source !== window.parent || event.origin !== location.origin || !event.data || event.data.channel !== 'stage-study') return;
       const message = event.data;
       try {
+        if (['load', 'clear', 'reply-cancel'].includes(message.action)) { replyGeneration++; restoreReply(); }
+        if (message.action === 'load') replyDocument = message.document;
+        if (message.action === 'clear') replyDocument = null;
+        if (message.action === 'reply-cancel') return;
+        if (message.action === 'reply-settle') {
+          pen.finish(); sticky.configure({ editable: false, enabled: false }); pen.mode(false);
+          engine.stop(); engine.scene(sceneId);
+          replyPost({ action: 'reply-settled', requestId: message.requestId, sceneId, revision }); return;
+        }
+        if (message.action === 'reply-background') { void replyBackground(message); return; }
         if (message.action === 'load') { document.body.classList.toggle('viewer-tablet-sheet', Boolean(message.tabletSheet)); canAnnotate = Boolean(message.annotationsEditable); engine.load(message.document, message.lang); sceneId = message.sceneId; revision = message.revision; engine.scene(sceneId); pen.load(message.strokes); pen.mode(message.penEnabled); sticky.load(message.stickies); sticky.configure({ editable: canAnnotate && !message.penEnabled, enabled: Boolean(message.stickyEnabled), lang: message.lang }); }
         else if (message.action === 'scene') { sceneId = message.sceneId; engine.scene(sceneId); pen.load(message.strokes); pen.show(true); sticky.load(message.stickies); sticky.show(true); }
         else if (message.action === 'light') { engine.light(message.mode); }

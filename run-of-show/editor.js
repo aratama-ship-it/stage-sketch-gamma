@@ -888,15 +888,48 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     if(cueView){if(cueHost.selection()?.kind==='handover'){cueFrame.contentDocument.getElementById('stage-cue-sheet-view-print').click();return true;}return cuePaper?.print();}
     if(!paperEditor.finish()||!infoValid())return false;
     const printWindow=reservedWindow||window.open('','_blank');if(!printWindow)throw Error(uiText('印刷画面を開けませんでした。'));
-    const snapshot=await buildPrintSnapshot();
-    const doc=printWindow.document;doc.open();doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body class="pages-ready"><div id="preview"><div class="doc-frame"><div id="page-output"></div></div></div></body></html>');doc.close();
-    doc.documentElement.dataset.gammaPrintOrientation=snapshot.orientation;
-    const loads=[];for(const sheet of document.querySelectorAll('link[rel=stylesheet]')){const link=doc.createElement('link');link.rel='stylesheet';link.href=sheet.href;loads.push(new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=()=>reject(Error(uiText('印刷用のスタイルを読み込めませんでした。')));}));doc.head.append(link);}
-    const pageRule=doc.createElement('style');pageRule.textContent='@page{size:A4 '+snapshot.orientation+';margin:0} #page-output{transform:none!important;margin:0!important} .doc-frame{border:0!important;padding:0!important} [data-screen-only]{display:none!important}';doc.head.append(pageRule);
-    doc.documentElement.style.cssText=snapshot.styles;doc.documentElement.style.setProperty('--page-scale','1');doc.title=snapshot.title;
-    doc.getElementById('page-output').append(snapshot.pages);
-    await Promise.all(loads);await doc.fonts?.ready;await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;})));
-    printWindow.focus();printWindow.print();return true;
+    // Provisional: measure normal CSS loading in both browsers before release.
+    const PRINT_STYLE_TIMEOUT_MS=20000;
+    let ended=false;
+    const isEnded=()=>{if(printWindow.closed)ended=true;return ended;};
+    try{
+      if(isEnded())return false;
+      const snapshot=await buildPrintSnapshot();
+      if(isEnded())return false;
+      const doc=printWindow.document;doc.open();doc.write('<!doctype html><html><head><meta charset="utf-8"><title></title></head><body class="pages-ready"><div id="preview"><div class="doc-frame"><div id="page-output"></div></div></div></body></html>');doc.close();
+      doc.documentElement.dataset.gammaPrintOrientation=snapshot.orientation;
+      doc.documentElement.style.cssText=snapshot.styles;doc.documentElement.style.setProperty('--page-scale','1');doc.title=snapshot.title;
+      doc.getElementById('page-output').append(snapshot.pages);
+      // Keep stylesheet order ahead of the page overrides, but attach handlers
+      // to the whole set before inserting any link (including cached sheets).
+      await new Promise((resolve,reject)=>{
+        const links=[...document.querySelectorAll('link[rel=stylesheet]')].map(sheet=>{const link=doc.createElement('link');link.rel='stylesheet';link.href=sheet.href;return link;});
+        const pending=new Set(links);let settled=false,timer=null;
+        const finish=error=>{
+          if(settled)return;settled=true;
+          if(timer!==null)clearTimeout(timer);
+          for(const link of links){link.onload=null;link.onerror=null;}
+          if(isEnded()){resolve();return;} // A closed popup cancels even on CSS error or timeout.
+          if(error){ended=true;reject(error);}else resolve();
+        };
+        const fail=()=>{const error=Error(uiText('印刷用のスタイルを読み込めませんでした。'));error.code='PRINT_STYLE_LOAD_FAILED';finish(error);};
+        if(!links.length){finish();return;}
+        for(const link of links){link.onload=()=>{if(pending.delete(link)&&!pending.size)finish();};link.onerror=fail;}
+        timer=setTimeout(fail,PRINT_STYLE_TIMEOUT_MS);
+        try{for(const link of links){if(settled)break;doc.head.append(link);}}catch(error){finish(error);}
+      });
+      if(isEnded())return false;
+      const pageRule=doc.createElement('style');pageRule.textContent='@page{size:A4 '+snapshot.orientation+';margin:0} #page-output{transform:none!important;margin:0!important} .doc-frame{border:0!important;padding:0!important} [data-screen-only]{display:none!important}';doc.head.append(pageRule);
+      await doc.fonts?.ready;
+      if(isEnded())return false;
+      await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;})));
+      if(isEnded())return false;
+      printWindow.focus();
+      if(isEnded())return false;
+      ended=true;printWindow.print();return true;
+    }catch(error){
+      ended=true;if(!printWindow.closed)printWindow.close();throw error;
+    }finally{ended=true;}
   }
   function freshId(prefix){if(nextId>Number.MAX_SAFE_INTEGER-10000)nextId=1;let value;do{value=`${prefix}-${nextId++}`;}while(items.some(x=>x.id===value||x.sceneId===value));return value;}
   function markDirty(){
