@@ -40,7 +40,7 @@
     }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261112-v0417';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261112-v0418';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
     printRunOfShow(win){
       if(pendingPrint)return Promise.reject(Error(text('印刷用ページを準備しています…')));
       return new Promise((resolve,reject)=>{pendingCueSheet=null;pendingPrint={win,resolve,reject};this.open();syncLoading();});

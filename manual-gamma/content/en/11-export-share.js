@@ -7,7 +7,7 @@
     lead: "Ways to take your drawings into the rehearsal room or a meeting.",
     sections: [
       {
-        id: "reply-import", title: "Importing and reading received replies", status: "sourced",
+        id: "reply-import", editions: ["studio", "company"], title: "Importing and reading received replies", status: "sourced",
         keywords: ["Received replies", "Reply files", "Import", "LINE", "email", "sticky notes", "device storage", "Earlier received notes"],
         html: `
 <p>Save a performer reply file (JSON) received through LINE or email, then choose ${ui("Share")} → ${ui("Received replies")} → ${ui("Import reply files")}. You can select several files at once. In the Mac app, use the same in-app button; Finder double-click and ⌘O do not open reply files.</p>
@@ -69,11 +69,13 @@ ${fig("release401-previous-shows", "Previous shows on Mac: select an earlier sho
 `
       },
       {
-        id: "share", title: "Sharing (performer links and received notes)", status: "sourced",
+        id: "share", editions: ["studio", "company"], title: "Sharing (performer links and received notes)", status: "sourced",
         keywords: ["share", "sharing", "live", "meeting", "session", "invite", "url", "link", "performer link", "viewer", "guest", "host", "laser pointer", "cannot connect", "not working", "json", "migration", "sign in", "login", "google", "phone", "line rehearsal", "personal notes", "update published content", "revoke link"],
         html: `
 ${note("Use the Gamma sharing host", "GitHub Pages serves static files and cannot run the sharing server. For sharing, <a href=\"https://stage-sketch-gamma-share.juggler-arata.workers.dev/stage.html\" target=\"_blank\" rel=\"noopener noreferrer\">open the Gamma sharing editor</a>. Shows saved on Pages do not appear there automatically: export the show as JSON on Pages, then import it in the sharing editor. The original remains on Pages.", true)}
 <p>Use ${ui("Share")} in the header to issue a ${ui("Performer link")} for performers to review the show at their own pace. Send links only to intended recipients.</p>
+<h4>Checking the issuing service</h4>
+<p>Performer and department Q viewers show “Issued through Stage Sketch” only on the official URL (app.stagesketch.app), when the server confirms that the link is registered and valid at the time shown. Open “Verification details” for the check time. This does not verify the individual publisher or the accuracy of the work. Old URLs remain readable without this indication; an unavailable check alone does not mean a link is counterfeit. A connection failure, expiry or revocation clears the indication. It appears on screen only, never in print.</p>
 <h4>Department Q-sheet viewing link</h4>
 <p>On Gamma's dedicated host, open ${ui("Publish a viewing link")} in the Q sheet, choose a department and expiry (no expiry or a date and time), and press ${ui("Publish")}. Only a copy of that department's table is published; the saved show stays unchanged. Anyone with the link can view it without signing in. Use ${ui("Copy link")} and pass the link using your own email or LINE.</p>
 <p>After editing, press ${ui("Publish again")} to replace the copy at the same link. Readers receive the latest copy only when they press ${ui("Reload")}. The page shows publication and last-loaded times. There are no notifications, recipient lists, comments, posts or automatic reloads. ${ui("Revoke link")} stops future access; it cannot retract printed copies or content already open on a reader's screen. Revoke an expired link before publishing a new one.</p>
@@ -113,7 +115,7 @@ ${fig("release044-ipad-pages", "iPad annotation pages: duplicate, name and switc
 <p>Each account can keep links for up to 10 shows. Earlier stage views are kept up to 50 revisions / 32 MiB; updates stop at the limit. Links with received notes cannot have their notes or saved data deleted, or be reissued after revocation. Updating the same link and revoking viewing access preserve received notes.</p>`
       },
       {
-        id: "vision-pro", title: "Vision Pro rehearsal JSON", status: "sourced",
+        id: "vision-pro", editions: ["studio", "company"], title: "Vision Pro rehearsal JSON", status: "sourced",
         keywords: ["vision pro", "rehearsal", "json", "export", "check", "audio", "demo soundtrack", "proscenium", "not converted"],
         html: `
 <p>${ui("Vision Pro rehearsal JSON")} in the ${ui("Sharing")} window exports JSON for the rehearsal app. Before exporting it checks scenes, performers, times and the venue type.</p>
@@ -158,7 +160,7 @@ ${fig("20-fullscreen", "Full screen. Arrow keys step through scenes; the small w
 </ul>`
       },
       {
-        id: "study-reply", title: "Performer reply files and loading the latest publication", status: "sourced",
+        id: "study-reply", editions: ["studio", "company"], title: "Performer reply files and loading the latest publication", status: "sourced",
         keywords: ["save reply file", "load latest", "performer link", "LINE", "email", "8 MiB", "earlier notes"],
         html: `
 <p>Save selected current notes and front/plan diagrams locally (8 MiB maximum), then hand the file over yourself. Earlier notes must be copied forward first. ${ui("Load latest")} checks updates and revocation only when pressed; opening the link also checks. There is no background or resume check. A known expiry still stops viewing.</p>

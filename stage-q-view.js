@@ -8,10 +8,12 @@
   document.title = t('Qシートの閲覧');
   const $ = id => document.getElementById(id), token = location.hash.slice(1);
   const date = value => new Date(value).toLocaleString(language);
+  const issuance = window.GAMMA_LINK_ISSUANCE?.create({ prefix: 'q', kind: 'q', language: () => language });
   let busy = false;
   async function load() {
     if (busy) return;
-    if (!/^[a-f0-9]{48}$/.test(token)) { $('q-status').textContent = t('閲覧リンクが見つからないか、失効しています。'); $('q-status').dataset.error = 'true'; return; }
+    if (!/^[a-f0-9]{48}$/.test(token)) { issuance?.set('hidden'); $('q-status').textContent = t('閲覧リンクが見つからないか、失効しています。'); $('q-status').dataset.error = 'true'; return; }
+    issuance?.set('checking');
     busy = true; $('q-reload').disabled = true; $('q-status').textContent = t('読み込み中…'); delete $('q-status').dataset.error;
     try {
       const response = await fetch('/q/api/view/' + token, {method:'GET',credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(15000)});
@@ -24,14 +26,17 @@
       $('q-paper').querySelector('.cue-sheet-stamp').textContent = sheet.versionLabel + ' · ' + value.revision;
       $('q-published').textContent = date(value.publishedAt); $('q-loaded').textContent = date(new Date());
       $('q-expiry').textContent = value.expiresAt ? date(value.expiresAt) : t('期限なし');
+      issuance?.accept(value);
       $('q-status').textContent = ''; $('q-print').disabled = false; $('q-paper').dataset.revision = String(value.revision);
     } catch (error) {
       const unavailable = error.status === 404;
+      issuance?.set(unavailable || error.status === 401 ? 'hidden' : 'network');
       if (unavailable) { $('q-paper').replaceChildren(); $('q-print').disabled = true; }
       $('q-status').textContent = t(error.message === 'link-expired' ? 'この閲覧リンクは期限切れです。' : unavailable ? '閲覧リンクが見つからないか、失効しています。' : '読み込めませんでした。「読み直す」で再試行してください。');
       $('q-status').dataset.error = 'true';
     } finally { busy = false; $('q-reload').disabled = false; }
   }
+  window.addEventListener('offline', () => issuance?.set('network'));
   $('q-reload').addEventListener('click',load);
   $('q-print').addEventListener('click',() => window.print());
   // One initial read. No interval, focus/visibility/pageshow handler or push connection.

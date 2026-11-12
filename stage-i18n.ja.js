@@ -38,6 +38,13 @@ window.SHOSAI_DOWNLOAD_GATE_COPY["ja"] = { unlocked: "合言葉を確認しま�
 // B68 A4-13: download-page display copy; gate behaviour is unchanged.
 window.SHOSAI_DOWNLOAD = window.SHOSAI_DOWNLOAD || {};
 window.SHOSAI_DOWNLOAD["ja"] = {
+  "subscriberDownload": "ログインした契約者の方はこちら",
+  "subscriberNote": "Mac版は、期限内のStudio・Company契約または関係者ライセンスで利用できます。リンク先でログインしてダウンロードしてください。",
+  "previousPublicVersions": "以前の版（公開のまま）",
+  "subscriberStep": "ログインしたStudio・Company契約者向けのリンクから最新のzipをダウンロードします。",
+  "subscriberAuthenticity": "ダウンロード先が舞台スケッチの公式サイト（app.stagesketch.app）であることを確認してください。",
+  "subscriberVersionFallback": "契約者向けリンクから最新版をダウンロードできます。",
+
   "title": "舞台スケッチγ Mac版をダウンロード",
   "versionFallback": "最新版は GitHub Releases でご確認ください。",
   "version": "Mac版 最新 {version}",
@@ -1125,4 +1132,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "端末内の保管について": "端末内の保管について",
   "返答はこの端末だけに保管し、サーバーには送りません。上限は100件・合計64 MiBです。ブラウザのデータを消すと返答も消えるため、受け取ったファイルは残してください。": "返答はこの端末だけに保管し、サーバーには送りません。上限は100件・合計64 MiBです。ブラウザのデータを消すと返答も消えるため、受け取ったファイルは残してください。",
   "演者用リンクを管理": "演者用リンクを管理"
+});
+
+// COND10: server-confirmed link issuance (screen only).
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "linkIssuance.verified": "舞台スケッチから発行",
+  "linkIssuance.details": "確認内容",
+  "linkIssuance.checks": "公式ホスト上で、このリンクの登録と確認時点の有効性をサーバーで確認しました。",
+  "linkIssuance.time": "確認日時：{time}",
+  "linkIssuance.checking": "発行元を確認しています…",
+  "linkIssuance.unconfirmed": "発行元を確認できません。",
+  "linkIssuance.network": "通信できないため、発行元を確認できません。",
+  "linkIssuance.legacy-host": "旧URLで開いています。この画面では正規発行の確認を表示できません。",
+  "linkIssuance.unverified-host": "このホストでは正規発行を確認できません。"
 });

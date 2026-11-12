@@ -1,0 +1,13 @@
+/* Existing viewer tokens; see docs/LINK_ISSUANCE_DESIGN.md. */
+.link-issuance, .link-issuer-status, .link-issuer-details { --issuer-gap: 8px; --issuer-small: 14px; --issuer-hit: 44px; font: var(--issuer-small)/1.6 var(--sans); color: inherit; overflow-wrap: anywhere; }
+.link-issuance { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--issuer-gap); flex: 0 0 auto; }
+.link-issuance .link-issuer-status { margin: 0; }
+.link-issuer-details { min-width: 0; }
+.link-issuer-details summary { cursor: pointer; min-height: var(--issuer-hit); align-content: center; }
+.link-issuer-details > p { margin: var(--issuer-gap) 0; }
+.link-issuer-details summary:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.link-issuer-status[hidden], .link-issuer-details[hidden] { display: none !important; }
+.study-tablet .link-issuance { padding-inline: var(--study-s3); }
+.study-phone .study-shell > .link-issuance { display: none; }
+.study-phone .phone-scenes > .link-issuer-status { grid-column: 1 / -1; grid-row: 4; margin: 0; padding: var(--study-s1) var(--study-s2); background: var(--study-bg); color: var(--study-ink); }
+@media print { .link-issuance, .link-issuer-status, .link-issuer-details { display: none !important; } }

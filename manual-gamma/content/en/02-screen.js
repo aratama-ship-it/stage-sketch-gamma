@@ -7,7 +7,7 @@
     lead: "Where everything is. Come back here whenever you are lost.",
     sections: [
       {
-        id: "header", title: "The header", status: "verified",
+        id: "header", editions: ["studio", "company"], title: "The header", status: "verified",
         keywords: ["header", "top bar", "icons", "undo", "redo", "mistake", "settings", "gear", "feedback", "ai", "full screen", "bell", "notifications", "share", "print", "volume", "elapsed time", "TC", "timecode"],
         html: `
 <p>When standard popup windows overlap, the window behind is dimmed and cannot be used until the front window closes. Press Escape or click the front window’s backdrop to close that window and return to the previous one. Unfinished input stays in place.</p>
@@ -33,7 +33,7 @@ ${table(["Where", "Name", "What it does"], [
 <p>In the Mac app, ${ui("Edit")} → ${ui("Undo")} and redo follow the current editor: text while typing, stage edits on Stage, lighting drafts in Equipment placement or Light design, the theatre draft in Theatre settings, or marks on a rehearsal drawing. Each reverses the same single action as the keyboard and on-screen controls. If that editor has no history, the command does not switch to another editor's history. While a confirmation is open, it does not undo edits behind the window (a confirmation's text field keeps its own text editing history).</p>`
       },
       {
-        id: "tabs", title: "The seven tabs (number keys 1–7)", status: "verified",
+        id: "tabs", editions: ["studio", "company"], title: "The seven tabs (number keys 1–7)", status: "verified",
         keywords: ["tabs", "switch", "stage", "theatre settings", "equipment placement", "light design", "lines", "3d", "Q sheets", "number keys", "mode"],
         html: `
 ${table(["Tab", "Key", "What it is for", "Part"], [
@@ -67,7 +67,7 @@ ${fig("release401-stage", "The default two-column layout: show and scene lists o
 </ul>`
       },
       {
-        id: "panels", title: "The panels, and showing or hiding them", status: "sourced",
+        id: "panels", editions: ["studio", "company"], title: "The panels, and showing or hiding them", status: "sourced",
         keywords: ["panels", "list", "show", "hide", "missing", "disappeared", "music", "backdrop", "alternatives", "dialogue cues", "second seat", "ai instructions", "on", "off"],
         html: `
 <p>A first-time desk does not show every tool. Saved sets, backdrop, alternatives, dialogue cues and second seat are “show it when you need it” panels and start hidden. Show them with ${ui("Panels")} at the end of the Stage toolbar or the same item in Settings. <strong>This setting belongs to the device, not the show.</strong></p>
@@ -100,7 +100,7 @@ ${note("Not on iPad or iPhone", "The panel switches are a computer-screen featur
 <p><strong>A single click</strong> on a name in a list opens its detail window (not a double click). To select the piece on stage instead, press the mark at the left of the row.</p>`
       },
       {
-        id: "tools", title: "Tools on the drawing (top-left row and top-right of each view)", status: "verified",
+        id: "tools", editions: ["studio", "company"], title: "Tools on the drawing (top-left row and top-right of each view)", status: "verified",
         keywords: ["tools", "icons", "move", "arrow", "lighting effects", "work lights", "performer names", "set names", "zoom", "front", "plan", "both", "swap"],
         html: `
 <p>The plan-view display controls include ${ui("Call grid")}. See ${ref("view-toggles", "Part 8, Display switches")} for its 6×6 axes and use.</p>
@@ -146,6 +146,7 @@ ${table(["Key", "What it does"], [
       },
       {
   "id": "release059-02-screen",
+  "editions": ["studio", "company"],
   "title": "v0.3.60",
   "status": "sourced",
   "keywords": [

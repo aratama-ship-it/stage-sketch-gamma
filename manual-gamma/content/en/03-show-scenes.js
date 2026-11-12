@@ -112,7 +112,7 @@ ${fig("10-section-B", "The bar above the drawing: previous and ⊞ on the left, 
 </ul>`
       },
       {
-        id: "alternatives", title: "Alternatives (A–D) — make and compare versions", status: "sourced",
+        id: "alternatives", editions: ["studio", "company"], title: "Alternatives (A–D) — make and compare versions", status: "sourced",
         keywords: ["alternatives", "version a", "version b", "compare", "adopt", "variation", "options", "switch"],
         html: `
 <p>Show the ${ui("Alternatives")} panel from ${ui("Panels")} and it appears in the right column. Save alternatives A–D for the current scene, switch between them to compare, and adopt one. Alternatives are saved with the show and included in exports.</p>

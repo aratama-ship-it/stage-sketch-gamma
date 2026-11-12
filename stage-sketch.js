@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.17";
+  const GAMMA_APP_VERSION = "v0.4.18";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -8503,7 +8503,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261112-v0417&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261112-v0418&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -25412,7 +25412,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         remove.type = "button";
         remove.className = "stage-cast-remove";
         remove.innerHTML = squareGlyphSvg("close");
-        remove.setAttribute("aria-label", `${info.title}を消す`);
+        remove.setAttribute("aria-label", tx("{name}を消す").replace("{name}", () => info.title));
         remove.disabled = info.id === state.project.id;
         remove.addEventListener("click", () => deleteShow(info.id));
         row.append(remove);
@@ -25547,7 +25547,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       download.href = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("github.io")
         ? "./download/?lang=" + encodeURIComponent(lang) : "https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=" + encodeURIComponent(lang);
       const manualLang = lang === "ja" ? "ja" : "en";
-      install.href = "./manual-gamma/?lang=" + manualLang + "#browser-storage";
+      const installHref = "./manual-gamma/?lang=" + manualLang + "#browser-storage";
+      install.href = window.GAMMA_MANUAL_SCOPE?.withEdition?.(installHref) ?? installHref;
       if (layoutLaneSaveUnconfirmed) {
         band.classList.remove("is-folded", "is-protected");
         byId("band-lead").textContent = tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。");
@@ -26878,29 +26879,29 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       swap.type = "button";
       swap.className = "stage-cast-status is-off";
       swap.textContent = "置き換え";
-      swap.title = "いまのシーンの装置を、この型にそっくり入れ替えます";
+      swap.title = tx("いまのシーンの装置を、この型にそっくり入れ替えます");
       swap.addEventListener("click", () => applyRig(rig.id, "replace"));
 
       const plus = document.createElement("button");
       plus.type = "button";
       plus.className = "stage-cast-status is-off";
       plus.textContent = "足す";
-      plus.title = "いまのシーンへ、この型の装置を足します";
+      plus.title = tx("いまのシーンへ、この型の装置を足します");
       plus.addEventListener("click", () => applyRig(rig.id, "add"));
 
       const update = document.createElement("button");
       update.type = "button";
       update.className = "stage-cast-profile";
       update.textContent = "↺";
-      update.title = "いまの並びで、この型を上書きします";
-      update.setAttribute("aria-label", `${rig.name}をいまの並びで上書き`);
+      update.title = tx("いまの並びで、この型を上書きします");
+      update.setAttribute("aria-label", tx("{name}をいまの並びで上書き").replace("{name}", () => rig.name));
       update.addEventListener("click", () => overwriteRig(rig.id));
 
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "stage-cast-remove";
       remove.innerHTML = squareGlyphSvg("close");
-      remove.setAttribute("aria-label", `${rig.name}を消す`);
+      remove.setAttribute("aria-label", tx("{name}を消す").replace("{name}", () => rig.name));
       remove.addEventListener("click", () => removeRig(rig.id));
 
       foot.append(count, swap, plus, update, remove);
@@ -32693,7 +32694,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const gamma = content.edition === "gamma" && content.booklet;
     const appVersion = (document.querySelector('meta[name="stage-sketch-gamma-version"]') || {}).content || "";
     const query = `?lang=${lang === "ja" ? "ja" : "en"}${gamma && appVersion ? `&app=${encodeURIComponent(appVersion)}` : ""}`;
-    return `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
+    const href = `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
+    return gamma ? (window.GAMMA_MANUAL_SCOPE?.withEdition?.(href) ?? href) : href;
   }
 
   function syncNativeGuideUrl() {
@@ -32714,6 +32716,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const link = document.getElementById("stage-native-download");
     const badge = document.getElementById("stage-native-version");
     const note = document.getElementById("stage-native-note");
+    // The public guide survives missing/offline feeds and the end of public zips.
+    link.href = document.getElementById("stage-native-install-guide").href;
     fetch("native-latest.json", { cache: "no-store" })
       .then((response) => {
         if (!response.ok) throw new Error("native-latest fetch failed");
@@ -32723,7 +32727,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         if (typeof latest.version !== "string" || !/^\d+(?:\.\d+)*$/.test(latest.version)) throw new Error("native-latest version invalid");
         badge.textContent = latest.version;
         badge.hidden = false;
-        if (typeof latest.zip === "string" && latest.zip.startsWith("https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/")) link.href = latest.zip;
+        const prefix = "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v" + latest.version + "/";
+        // Reject stale versions and untrusted paths; subscriber releases use the guide.
+        if (latest.subscriberDownloadEnabled !== true && typeof latest.zip === "string"
+            && latest.zip === prefix + "stage-sketch-gamma-mac-" + latest.version + ".zip") link.href = latest.zip;
       })
       .catch(() => { note.hidden = false; });
   }
@@ -32813,7 +32820,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const en = languageValue(() => true, () => false);
     let ids;
     try {
-      ids = window.MANUAL_FIND(query, en ? "en" : "ja");
+      ids = window.MANUAL_FIND(query, en ? "en" : "ja", window.GAMMA_MANUAL_SCOPE?.current?.());
     } catch (_) {
       showManualHelpNote("冊子を読み込めませんでした。ページを再読み込みしてください。", false);
       return;
@@ -33092,7 +33099,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   /* クイックガイドはγ冊子の「はじめの90秒」へ。β冊子のファイルは保持する。 */
   function openQuickGuide() {
     void window.SHOSAI_STAGE_OFFLINE?.ensureGroup('manual', {notify:false});
-    window.open(lang === "ja" ? "manual-gamma/index.html#first-90-seconds" : "manual-gamma/index.html?lang=en#first-90-seconds", "_blank", "noopener");
+    window.open(manualBookletUrl("first-90-seconds"), "_blank", "noopener");
   }
 
   function openAbout() {
@@ -44326,7 +44333,7 @@ document.addEventListener("keydown", function (event) {
     box.hidden = !isScrimPiece(piece);
     const surfaces = roomSurfaces(piece);
     button.disabled = !surfaces;
-    button.title = surfaces ? "" : sx("正面を向いた紗幕と背景の壁、客席側の見る位置が必要です。", "A front-facing scrim, a backdrop wall and a viewpoint in the house are required.");
+    button.title = surfaces ? "" : tx("正面を向いた紗幕と背景の壁、客席側の見る位置が必要です。");
     if (!surfaces || box.dataset.piece !== piece.id) {
       document.getElementById("stage-room-options").hidden = true;
       box.dataset.piece = piece?.id || "";
@@ -49425,7 +49432,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261112-v0417', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261112-v0418', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

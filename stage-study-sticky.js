@@ -29,7 +29,13 @@
     let notes = [], enabled = false, editable = false, visible = true, lang = 'ja', picked = '', drag = null, editor = null, sequence = 0;
     const pendingText = new Map();
     const layers = {}, buttons = new Map(), measure = document.createElement('canvas').getContext('2d');
-    const label = () => lang === 'en' ? 'Note' : 'メモ';
+    function stickyText(ja, en) {
+      const code = lang;
+      if (code === 'ja') return ja;
+      if (code === 'en') return en;
+      return window.SHOSAI_I18N_PACKS?.[code]?.text?.[ja.replaceAll('場面', 'シーン')] || en;
+    }
+    const label = () => stickyText('メモ', 'Note');
     for (const [view, canvas] of Object.entries(canvases)) {
       const layer = document.createElement('div'); layer.className = 'study-sticky-layer'; layer.dataset.stickyView = view;
       canvas.parentElement.append(layer); layers[view] = layer;
@@ -96,7 +102,7 @@
         button.querySelector('.study-sticky-resize').hidden = !editable || !visible;
         button.setAttribute('aria-label', `${label()}: ${note.text || label()}`);
         button.setAttribute('aria-pressed', String(picked === note.id)); button.tabIndex = editable && visible ? 0 : -1;
-        button.title = lang === 'en' ? 'Double-click or press Enter to type · Drag or use arrow keys to move' : 'ダブルクリックまたはEnterで入力・ドラッグまたは矢印キーで移動';
+        button.title = stickyText('ダブルクリックまたはEnterで入力・ドラッグまたは矢印キーで移動', 'Double-click or press Enter to type · Drag or use arrow keys to move');
         Object.assign(button.style, { left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px', visibility: editor?.id === note.id ? 'hidden' : '', pointerEvents: editable && visible ? 'auto' : 'none' });
       }
       if (editor) {
@@ -147,13 +153,13 @@
       const note = notes.find(n => n.id === id); if (!note || !editable || !visible) return;
       const root = document.createElement('div'); root.className = 'study-sticky-inline';
       const input = document.createElement('textarea'); input.className = 'study-sticky-inline-text'; input.maxLength = MAX_TEXT; input.value = note.text;
-      input.setAttribute('aria-label', lang === 'en' ? 'Edit note on diagram' : '図上のメモを入力');
+      input.setAttribute('aria-label', stickyText('図上のメモを入力', 'Edit note on diagram'));
       const footer = document.createElement('div'), count = document.createElement('span'), done = document.createElement('button');
       footer.className = 'study-sticky-inline-footer'; count.id = 'study-sticky-inline-count'; input.setAttribute('aria-describedby', count.id);
-      done.type = 'button'; done.className = 'study-sticky-inline-done'; done.title = lang === 'en' ? 'Finish editing · Esc or Ctrl/⌘+Enter' : '入力を終える・Esc または Ctrl/⌘+Enter';
+      done.type = 'button'; done.className = 'study-sticky-inline-done'; done.title = stickyText('入力を終える・Esc または Ctrl/⌘+Enter', 'Finish editing · Esc or Ctrl/⌘+Enter');
       const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('viewBox', '0 0 16 16'); icon.setAttribute('aria-hidden', 'true');
       const path = document.createElementNS(icon.namespaceURI, 'path'); path.setAttribute('d', 'm3 8 3 3 7-7'); icon.append(path);
-      done.append(icon, document.createTextNode(lang === 'en' ? 'Done' : '完了')); footer.append(count, done); root.append(input, footer);
+      done.append(icon, document.createTextNode(stickyText('完了', 'Done'))); footer.append(count, done); root.append(input, footer);
       layers[note.view].append(root); editor = { root, input, count, done, id, composing: false };
       pick(id); input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length);
     }

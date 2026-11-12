@@ -7,7 +7,7 @@
     lead: "Set the rig in Theatre design → Equipment placement. Lighting opens in Simple, where positions combine their roles. Use Detail for finer changes.",
     sections: [
       {
-        id: "light-layers", title: "The two working layers (equipment placement / light design), and the disabled “light pieces”", status: "verified",
+        id: "light-layers", editions: ["studio", "company"], title: "The two working layers (equipment placement / light design), and the disabled “light pieces”", status: "verified",
         keywords: ["lighting", "light", "lamp", "fixture", "difference", "layers", "where", "equipment placement", "light design", "piece", "lx", "cue", "lights panel", "hidden", "disabled", "legacy", "beta"],
         html: `
 ${table(["Layer", "Where", "What it decides", "Best for"], [
@@ -21,7 +21,7 @@ ${note("The Lights panel is hidden", "The " + ui("Lights") + " panel that used t
 ${fig("67-light-design-rj", "Light design in the sample “Romeo and Juliet” (scene 1-3): fixed fixtures on four battens, beams in the front view.", "Romeo and Juliet light design")}`
       },
       {
-        id: "light-pieces", title: "Old beta “light pieces” (cannot be placed new in Gamma — for reference)", status: "sourced",
+        id: "light-pieces", editions: ["studio", "company"], title: "Old beta “light pieces” (cannot be placed new in Gamma — for reference)", status: "sourced",
         keywords: ["light piece", "overhead", "side light", "front light", "floor light", "diameter", "intensity", "target height", "fixture height", "depth", "across", "light routes", "add", "lights panel", "hidden", "disabled", "legacy", "beta"],
         html: `
 ${note("You cannot place new ones in Gamma", "The " + ui("Lights") + " panel on the Stage tab is always hidden, and there is no way to add a light piece in Gamma today (" + ref("light-layers", "7-1") + "). This page is for reference, to understand the old data that stays inside a show imported from the beta. To make new lighting, use " + ui("Equipment placement") + " then " + ui("Light design") + ".", true)}
@@ -35,7 +35,7 @@ ${table(["Kind", "From where", "Use"], [
 <p>A piece held a diameter, light intensity, across position, depth, fixture height and target height (floor / body); moving-light pieces had routes, and pieces in the same group moved together. When you import a beta show, this lighting is converted automatically into equipment placement and LX cues (${ref("light-legacy", "7-8")}). The old data stays inside the show after conversion but is never drawn in Gamma's views.</p>`
       },
       {
-        id: "light-render", title: "Lighting effects (C) and work lights (G) — pools, beams, darkness, costume tint", status: "verified",
+        id: "light-render", editions: ["studio", "company"], title: "Lighting effects (C) and work lights (G) — pools, beams, darkness, costume tint", status: "verified",
         keywords: ["lighting effects", "light pool", "beam", "work lights", "darken", "how the light looks", "slow", "heavy", "c", "g", "tint", "haze", "fog", "smoke"],
         html: `
 <p>How much of the scene's lighting is drawn in the Stage tab's front view and plan is chosen in Settings under ${ui("How the light looks")}, in four steps (default ${ui("Off (simple marks)")}). The lower steps make drawing heavier.</p>
@@ -53,7 +53,7 @@ ${grid([
 <p>Haze is one value per scene, set with the haze control in Light design. It is fixed in the world, so it stays in place as you move around in 3D.</p>`
       },
       {
-        id: "placement", title: "Theatre design → Equipment placement (tab 2) — hanging fixtures on battens", status: "verified",
+        id: "placement", editions: ["studio", "company"], title: "Theatre design → Equipment placement (tab 2) — hanging fixtures on battens", status: "verified",
         keywords: ["equipment placement", "batten", "hang", "fixture", "stand", "boom", "number", "type", "height", "depth", "space evenly", "mirror", "copy to opposite side", "group", "border", "cyclorama", "front light", "floor", "side light", "1000 mm", "side view"],
         html: `
 <p>${ui("Theatre design")} → ${ui("Equipment placement")} has display switches along the top (equipment, number, movement range, grid, border, legs), ${ui("Add equipment")} and ${ui("Equipment")} on the left, ${ui("Plan view")} in the middle, three elevations below (stage right, front, stage left) and ${ui("Selected equipment")} on the right.</p>
@@ -76,7 +76,7 @@ ${fig("31-tab-placement", "Equipment placement (older tab layout; now open Theat
 <p>Reading the numbers (the testing ground's rig as an example): L01… are fixed fixtures, M05… moving heads, marks like ◆16 are stands or floor units, LT4 and MT3 are on the upstage truss, L11 and L12 are booms in the wings, and L09 and M10 are front-of-house.</p>`
       },
       {
-        id: "light-design", title: "Lighting (tab 3) — Simple and detailed LX cues", status: "verified",
+        id: "light-design", editions: ["studio", "company"], title: "Lighting (tab 3) — Simple and detailed LX cues", status: "verified",
         keywords: ["light design", "lx cue", "cue", "colour", "level", "direction", "spread", "type", "adjust", "moving head", "sweep", "circle", "strobe", "chase", "laser", "cyclorama", "haze", "gobo", "pattern", "shutter", "solo", "copy", "paste", "follow scene", "fixed light", "warning"],
         html: `
 <h4>Start with a lighting function in Simple</h4><p>The standard set supports front-facing venues and stages without a defined audience layout: 48 fixtures with both wings, 40 without wings, or 44 with one wing. Omitted fixture numbers remain gaps. Side lighting is disabled without wings and shows the reason. Three-sided, two-sided and surrounding seating are not supported yet. If a cue uses wing fixtures, Apply is disabled for a venue without those wings. Both the lighting note and status show why; the original venue and cues are kept. Choosing a venue with those wings enables Apply again.</p><p>The standard set with both wings has 48 fixtures. Each batten has four spots and four washes. Front lighting uses four moving washes. Downstage and upstage floor groups each have four washes and two moving spots. Two lasers, two follow spots, the mirror ball and its pin, four side lights and two cyclorama units remain. Four fixed LED PAR washes (50°), two high in each wing, form separate High side, stage right / stage left positions. They offer Light the floor and Side light; set their fixed aim in Rig layout. These four additions stay off when an old show is migrated. Strobe uses flashing spots and washes; UV cannot be newly selected. Opening an old standard 26-, 44- or 46-fixture show creates a new version and keeps the original as a backup. Migration waits while a lighting draft exists. UV and the old left/right floor lights go dark, and front lighting and strobe appearance change. An already active spot takes priority over a strobe at the same position. Check affected layers in Detail. Older releases can open the new version in Detail, but their Simple lighting does not support the new rig.</p><p>Switching cues or scenes with an unsaved preview opens a warning and stops navigation. Save or undo first. The top bar shows both scene and cue numbers and names. The scene name is shortened first when space is limited.</p><p>Use All, Light people, Colour the stage, Outline &amp; shadow or Effects above the lighting types to filter the buttons. Hiding the selected type keeps its selection and preview lighting. All restores the 13 choices. The filter is not saved in the show and returns to All on reload.</p><p>Light the floor offers ten areas: all, left/right halves, downstage/upstage halves, centre and four corners. Left and right are viewed from the audience (right is stage left). Moving heads aim into the area; new front-of-house moving washes aim into the selected area. Legacy fixed units still select lights by their fixed aim, disabling unavailable areas. Moving-head floor, background and backlight layers offer Parallel or Cross. Legacy Upstage wash and Downstage wash appear as floor areas and retain their resolved lights until edited. Choose a type to preview it, adjust colour or level, then use Save LX cues to save.</p><p>The shared top bar provides Save LX cue and Play lighting, marked with a fixture icon. The neighbouring play triangle runs the timeline. Use Detail in the top bar to change modes. Types, positions and layers appear in the right column. Browsing functions and positions does not change lighting. Hover or focus a position to temporarily show the fixture body outlines in the preview, even when unlit or behind a curtain. The outlines disappear when you leave the position.</p><p>Lighting normally opens in Simple. A supported rig preset is required. On an unsupported rig, click the grey Simple button. The confirmation explains why the standard set is needed. Change creates a new version and opens Simple; Cancel leaves the show unchanged. The source stays available. The new version retains cue IDs, names and timing, but its lighting needs setting again.</p><p>Click Adjust or the layer title to open its controls directly below the row. Click again to close; only one layer opens at a time. Fixture beam spread (°) replaces the visible diameter control while saved sizes are retained. Fixture count offers 2 or 6 lights, capped by the position: pin spots default to 2 and other types to 6. Old layers retain their original lights. New lasers use both standard-set fixtures; Sides selects one. Old position 1/2 layers retain that single source. Laser spread is a fan angle, so its separate label remains.</p>
@@ -118,7 +118,7 @@ ${table(["Kind", "What it covers", "Try it in"], [
 ${vid("lighting-cue-apply", "In F-1, create an LX cue in Lighting Design and apply it to the show.")}`
       },
       {
-        id: "lx-apply", title: "Applying LX cues (to the show, backups, other tabs)", status: "sourced",
+        id: "lx-apply", editions: ["studio", "company"], title: "Applying LX cues (to the show, backups, other tabs)", status: "sourced",
         keywords: ["apply", "send to show", "apply lx cues", "save", "backup", "export", "import", "unapplied", "another tab", "overwrite", "lost", "design name", "create new"],
         html: `
 <p>Changes made in Light design <strong>do not reach the show until you press ${ui("Save LX cues")}</strong>. The status line tells you where you are:</p>
@@ -143,7 +143,7 @@ ${steps([
 <p><strong>Do not re-save a v0.3.82 show in Mac version 0.3.81 or earlier.</strong> The older app rewrites fixed-light settings (colour, target and extra fields). Update the Mac app to 0.3.82 before saving. See ${ref("prefs-overview", "Part 12, 12-1")} for checking the save location and status.</p>`
       },
       {
-        id: "light-presets", title: "Lighting equipment presets (rigs to suit a venue type)", status: "sourced",
+        id: "light-presets", editions: ["studio", "company"], title: "Lighting equipment presets (rigs to suit a venue type)", status: "sourced",
         keywords: ["preset", "rig", "basic", "proscenium", "small", "medium", "large", "common 24-light set", "simple", "fitted to the theatre", "by purpose", "install", "all off", "bring in", "does not fit"],
         html: `
 <p>${ui("Presets")} in ${ui("Equipment placement")} places a rig in one go. The window has two headings.</p>
@@ -156,7 +156,7 @@ ${steps([
 <p>Preset fixture positions are a conceptual rig, not a check of a real venue's hanging positions, circuits or safety.</p>`
       },
       {
-        id: "light-legacy", title: "Bringing in lighting from the old beta", status: "sourced",
+        id: "light-legacy", editions: ["studio", "company"], title: "Bringing in lighting from the old beta", status: "sourced",
         keywords: ["old version", "beta", "β", "lighting", "import", "convert", "migrate", "cannot import", "warning", "invalid show id"],
         html: `
 <p>Importing a beta show (with lights from the old lights panel) with ${ui("Import show")} keeps the original and opens a new show with the lights converted to equipment placement and LX cues (v0.2.1). If the old data had no real hanging positions, check the conversion warnings (for example, four registered lights may become 45 placements).</p>
@@ -164,6 +164,7 @@ ${steps([
       },
       {
   "id": "release058-07-lighting",
+  "editions": ["studio", "company"],
   "title": "v0.3.58",
   "status": "sourced",
   "keywords": [
@@ -174,6 +175,7 @@ ${steps([
 },
       {
   "id": "release059-07-lighting",
+  "editions": ["studio", "company"],
   "title": "v0.3.60",
   "status": "sourced",
   "keywords": [

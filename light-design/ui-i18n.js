@@ -262,7 +262,11 @@
     }
     const language=parentRoot.lang || 'ja';
     const settingsMapLink=document.getElementById('settings-map-link');
-    if(settingsMapLink)settingsMapLink.href='../manual-gamma/index.html?lang='+(language==='ja'?'ja':'en')+'#settings-map';
+    if(settingsMapLink) {
+      const href='../manual-gamma/index.html?lang='+(language==='ja'?'ja':'en')+'#settings-map';
+      const scope=window.parent.GAMMA_MANUAL_SCOPE;
+      settingsMapLink.href=scope ? scope.withEdition(href) : href;
+    }
     for (const button of document.querySelectorAll('[data-fixed-conflict-scenes]')) {
       const label = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
       if (button.textContent !== label) button.textContent = label;

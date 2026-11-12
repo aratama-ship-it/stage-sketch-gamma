@@ -24,7 +24,7 @@ ${steps([
 <p>When printed, the contents and search box disappear and each part starts on a new page, giving a paper booklet (your browser's print dialog can save it as a PDF). The <strong>日本語</strong> button in the contents switches to the Japanese edition.</p>`
       },
       {
-        id: "about-gamma", title: "What Stage Sketch Gamma is", status: "sourced",
+        id: "about-gamma", editions: ["studio", "company"], title: "What Stage Sketch Gamma is", status: "sourced",
         keywords: ["gamma", "γ", "beta", "β", "difference", "free", "test version", "overview", "what is this", "features"],
         html: `
 <p>Stage Sketch draws one moment of a show two ways at once: the ${ui("Front view")}, as the house sees it, and the ${ui("Plan view")}, from directly above. Place performers and objects, light them, draw route arrows and line up scenes, and the flow of a show gathers into one sketchbook.</p>

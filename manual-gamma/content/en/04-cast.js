@@ -139,7 +139,7 @@ ${table(["Item", "Meaning"], [
 <p>Try it in: A-1 (both kinds of lock).</p>`
       },
       {
-        id: "formation", title: "Selecting several and formations (2–20 people, 190 patterns)", status: "verified",
+        id: "formation", editions: ["studio", "company"], title: "Selecting several and formations (2–20 people, 190 patterns)", status: "verified",
         keywords: ["formation", "arrange", "line up", "align", "multiple selection", "select several", "drag box", "shift", "pattern", "diamond", "staggered", "line", "triangle", "circle"],
         html: `
 <p>In the plan, drag a box from an empty spot, or ${kbd("Shift")}-click pieces, to select several performers. The bottom of ${ui("Selection")} then offers ${ui("Formation")}.</p>

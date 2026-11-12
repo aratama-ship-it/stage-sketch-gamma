@@ -66,6 +66,7 @@
     },
     {
       "id": "new-039-fixtures",
+      "editions": ["studio", "company"],
       "title": "灯体の番号・名前と機材一覧",
       "status": "sourced",
       "keywords": [
@@ -106,6 +107,7 @@
     },
     {
       "id": "new-03-field",
+      "editions": ["studio", "company"],
       "title": "リハーサルと転換の目安",
       "status": "sourced",
       "keywords": [
@@ -131,6 +133,7 @@
     },
     {
       "id": "new-03-handover",
+      "editions": ["studio", "company"],
       "title": "Qシートと引き継ぎパック",
       "status": "sourced",
       "keywords": [
@@ -143,6 +146,7 @@
     },
     {
       "id": "new-03-scrim",
+      "editions": ["studio", "company"],
       "title": "紗幕・舞台機構・部屋の枠線",
       "status": "sourced",
       "keywords": [
@@ -156,6 +160,7 @@
     },
     {
       "id": "new-03-lighting",
+      "editions": ["studio", "company"],
       "title": "灯体の調整と照明の時間",
       "status": "sourced",
       "keywords": [
@@ -210,6 +215,7 @@
     },
     {
       "id": "new-03-loading",
+      "editions": ["studio", "company"],
       "title": "必要なときに読み込む",
       "status": "sourced",
       "keywords": [
@@ -225,6 +231,7 @@
     },
     {
       "id": "new-03-ipad",
+      "editions": ["studio", "company"],
       "title": "iPadの演者用リンクへの書き込み",
       "status": "sourced",
       "keywords": [
@@ -238,6 +245,7 @@
     },
     {
       "id": "new-03-compatibility",
+      "editions": ["studio", "company"],
       "title": "別案と保存済みデータを保つ",
       "status": "sourced",
       "keywords": [
@@ -252,6 +260,7 @@
     },
     {
       "id": "new-03-timeline",
+      "editions": ["studio", "company"],
       "title": "タイムコードと音源の入口",
       "status": "sourced",
       "keywords": [
@@ -291,6 +300,7 @@
     },
     {
       "id": "new-03-viewer",
+      "editions": ["studio", "company"],
       "title": "演者用リンクで動きを確認",
       "status": "sourced",
       "keywords": [
@@ -303,6 +313,7 @@
     },
     {
       "id": "new-03-idle",
+      "editions": ["studio", "company"],
       "title": "待機モーションと演目の範囲",
       "status": "sourced",
       "keywords": [
@@ -328,6 +339,7 @@
     },
     {
       "id": "new-03-workspace",
+      "editions": ["studio", "company"],
       "title": "図の見比べと端末の描画設定",
       "status": "sourced",
       "keywords": [
@@ -350,7 +362,7 @@
     lead: "",
     sections: [
       {
-        id: "shortcut-table", title: "ショートカット一覧（既定のキー）", status: "verified",
+        id: "shortcut-table", editions: ["studio", "company"], title: "ショートカット一覧（既定のキー）", status: "verified",
         keywords: ["ショートカット", "キー", "一覧", "キーボード", "既定", "割り当て"],
         html: `
 <p>既定のキーです。環境設定の${ui("ショートカット一覧")}で、行を押して変えられます（${ref("shortcuts", "2-7")}）。WindowsとLinuxでは ⌘ を Ctrl に読み替えます。</p>
@@ -412,7 +424,7 @@ ${table(["キー", "はたらき"], [
 </dl>`
       },
       {
-        id: "test-show-scenes", title: "「テスト: 全機能の試験場」の全シーン", status: "verified",
+        id: "test-show-scenes", editions: ["studio", "company"], title: "「テスト: 全機能の試験場」の全シーン", status: "verified",
         keywords: ["試験場", "シーン", "一覧", "A-1", "B-1", "C-1", "D-1", "E-1", "F-1", "G-1", "H-1", "I-1", "J-1", "テスト"],
         html: `
 <p>一覧の左の番号はアプリが付ける番号（セクション-シーン）、右の名前の頭（A-1 など）がこの冊子で使うシーン番号です。試験場 v45（v0.3.22）の並びです。シーンのメモは要点だけ（120字まで）で、操作と合格の目安は<b>確認手順の一覧</b>（<code>stage-samples/feature-test-checklist.html</code>）にあります。</p>
@@ -446,7 +458,7 @@ ${table(["一覧の章", "試せること", "開くシーン"], [
 <p>試験場は、ショー一覧から消してページを読み直せば元の状態で戻ってきます。自由に壊して試してください。</p>`
       },
       {
-        id: "release-history", title: "更新履歴の要約（公開版 v0.2.34 まで）", status: "sourced",
+        id: "release-history", editions: ["studio", "company"], title: "更新履歴の要約（公開版 v0.2.34 まで）", status: "sourced",
         keywords: ["更新", "アップデート", "履歴", "バージョン", "新しい", "変わった", "リリース", "v0.2"],
         html: `
 <p>アプリのベルの印（通知・アップデート履歴）にある公開済みの記録を、冊子の節と結び付けて短くまとめたものです。正確な文言はアプリの履歴を見てください。</p>

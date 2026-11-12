@@ -1,12 +1,18 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive"><title>Qシート</title>
 <link rel="stylesheet" href="style.css?v=20261112-v0417"><link rel="stylesheet" href="stage-q-link.css?v=20261111-v0414">
+<link rel="stylesheet" href="/gamma-link-issuance.css">
 <script defer src="stage-i18n.js"></script><script defer src="stage-i18n.ja.js"></script><script defer src="stage-i18n.ko.js"></script><script defer src="stage-i18n.zh-Hans.js"></script><script defer src="stage-i18n.zh-Hant.js"></script>
+<script defer src="/gamma-link-issuer.js?v=20261112-v0418"></script><script defer src="/gamma-link-issuance.js"></script>
 <script defer src="stage-cue-sheet.js?v=20261105-v046"></script><script defer src="stage-q-link-model.js?v=20261111-v0414"></script><script defer src="stage-q-view.js"></script></head>
 <body class="q-view"><main>
 <header class="q-controls"><h1 data-q-text="Qシートの閲覧">Qシートの閲覧</h1><button type="button" id="q-reload" data-q-text="読み直す">読み直す</button><button type="button" id="q-print" data-q-text="印刷" disabled>印刷</button></header>
 <p data-q-text="公開された写しです。更新は「読み直す」を押したときだけ取り込みます。">公開された写しです。更新は「読み直す」を押したときだけ取り込みます。</p>
 <p id="q-status" role="status" aria-live="polite"></p>
 <dl class="q-dates"><dt data-q-text="公開日時">公開日時</dt><dd id="q-published">—</dd><dt data-q-text="最後に読み込んだ日時">最後に読み込んだ日時</dt><dd id="q-loaded">—</dd><dt data-q-text="リンクの期限">リンクの期限</dt><dd id="q-expiry">—</dd></dl>
+<section class="link-issuance">
+<p id="q-issuer-status" class="link-issuer-status" role="status" aria-live="polite" hidden></p>
+<details id="q-issuer-details" class="link-issuer-details" hidden><summary id="q-issuer-summary"></summary><p id="q-issuer-checks"></p><p id="q-issuer-time"></p></details>
+</section>
 <div id="q-paper" class="is-viewing-sheet"></div>
 </main></body></html>

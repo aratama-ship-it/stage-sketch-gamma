@@ -1,0 +1,39 @@
+{
+  "version": 3,
+  "sources": [
+    "manual-gamma/edition-scope.js"
+  ],
+  "sourcesContent": [
+    "/* One edition filter for the booklet, its search index and app help. */\n(function (root) {\n  'use strict';\n  const normalize = value => ['lite', 'studio', 'company'].includes(value) ? value : null;\n  const current = (w = root) => normalize(w?.GAMMA_EDITION)\n    || normalize(w?.document?.querySelector('meta[name=\"gamma-edition\"]')?.content);\n  const includes = (section, edition) => !normalize(edition) || !section.editions || section.editions.includes(edition);\n  function chaptersFor(chapters, edition) {\n    const hidden = new Set(chapters.flatMap(ch => ch.sections)\n      .filter(s => !includes(s, edition)).map(s => s.id));\n    // Keep the authored words, but do not offer navigation to a filtered section.\n    // Unknown anchors are left intact so the booklet link check can reject them.\n    const visibleLinks = html => html?.replace(/<a\\b[^>]*\\bhref=[\"']#([^\"']+)[\"'][^>]*>([\\s\\S]*?)<\\/a>/g,\n      (anchor, id, label) => hidden.has(id) ? label : anchor);\n    return chapters.map(ch => ({ ...ch, sections: ch.sections\n      .map((s, i) => ({ ...s, html: visibleLinks(s.html), number: s.number || ch.short + '-' + (i + 1) }))\n      .filter(s => includes(s, edition)) })).filter(ch => ch.sections.length);\n  }\n  function withEdition(href, edition = current()) {\n    if (!normalize(edition)) return href;\n    const [pathAndQuery, hash] = href.split('#'), [path, query] = pathAndQuery.split('?');\n    const params = new URLSearchParams(query); params.set('edition', edition);\n    return path + '?' + params.toString() + (hash === undefined ? '' : '#' + hash);\n  }\n  const api = Object.freeze({ normalize, current, includes, chaptersFor, withEdition });\n  if (typeof module === 'object' && module.exports) module.exports = api;\n  if (root) root.GAMMA_MANUAL_SCOPE = api;\n})(typeof window === 'undefined' ? null : window);\n"
+  ],
+  "names": [
+    "root",
+    "normalize",
+    "value",
+    "current",
+    "w",
+    "includes",
+    "section",
+    "edition",
+    "chaptersFor",
+    "chapters",
+    "hidden",
+    "ch",
+    "s",
+    "visibleLinks",
+    "html",
+    "anchor",
+    "id",
+    "label",
+    "i",
+    "withEdition",
+    "href",
+    "pathAndQuery",
+    "hash",
+    "path",
+    "query",
+    "params",
+    "api"
+  ],
+  "mappings": ";CACC,SAAUA,EAAM,CACf,aACA,MAAMC,EAAYC,GAAS,CAAC,OAAQ,SAAU,SAAS,EAAE,SAASA,CAAK,EAAIA,EAAQ,KAC7EC,EAAU,CAACC,EAAIJ,IAASC,EAAUG,GAAG,aAAa,GACnDH,EAAUG,GAAG,UAAU,cAAc,4BAA4B,GAAG,OAAO,EAC1EC,EAAW,CAACC,EAASC,IAAY,CAACN,EAAUM,CAAO,GAAK,CAACD,EAAQ,UAAYA,EAAQ,SAAS,SAASC,CAAO,EACpH,SAASC,EAAYC,EAAUF,EAAS,CACtC,MAAMG,EAAS,IAAI,IAAID,EAAS,QAAQE,GAAMA,EAAG,QAAQ,EACtD,OAAOC,GAAK,CAACP,EAASO,EAAGL,CAAO,CAAC,EAAE,IAAIK,GAAKA,EAAE,EAAE,CAAC,EAG9CC,EAAeC,GAAQA,GAAM,QAAQ,0DACzC,CAACC,EAAQC,EAAIC,IAAUP,EAAO,IAAIM,CAAE,EAAIC,EAAQF,CAAM,EACxD,OAAON,EAAS,IAAIE,IAAO,CAAE,GAAGA,EAAI,SAAUA,EAAG,SAC9C,IAAI,CAACC,EAAGM,KAAO,CAAE,GAAGN,EAAG,KAAMC,EAAaD,EAAE,IAAI,EAAG,OAAQA,EAAE,QAAUD,EAAG,MAAQ,KAAOO,EAAI,EAAG,EAAE,EAClG,OAAON,GAAKP,EAASO,EAAGL,CAAO,CAAC,CAAE,EAAE,EAAE,OAAOI,GAAMA,EAAG,SAAS,MAAM,CAC1E,CACA,SAASQ,EAAYC,EAAMb,EAAUJ,EAAQ,EAAG,CAC9C,GAAI,CAACF,EAAUM,CAAO,EAAG,OAAOa,EAChC,KAAM,CAACC,EAAcC,CAAI,EAAIF,EAAK,MAAM,GAAG,EAAG,CAACG,EAAMC,CAAK,EAAIH,EAAa,MAAM,GAAG,EAC9EI,EAAS,IAAI,gBAAgBD,CAAK,EAAG,OAAAC,EAAO,IAAI,UAAWlB,CAAO,EACjEgB,EAAO,IAAME,EAAO,SAAS,GAAKH,IAAS,OAAY,GAAK,IAAMA,EAC3E,CACA,MAAMI,EAAM,OAAO,OAAO,CAAE,UAAAzB,EAAW,QAAAE,EAAS,SAAAE,EAAU,YAAAG,EAAa,YAAAW,CAAY,CAAC,EAChF,OAAO,QAAW,UAAY,OAAO,UAAS,OAAO,QAAUO,GAC/D1B,IAAMA,EAAK,mBAAqB0B,EACtC,GAAG,OAAO,OAAW,IAAc,KAAO,MAAM"
+}

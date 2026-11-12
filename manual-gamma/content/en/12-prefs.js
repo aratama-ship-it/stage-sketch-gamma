@@ -68,7 +68,7 @@ ${table(["Setting", "Default", "Meaning"], [
 <p>Both are saved with the current show and included in exports. They are separate from each scene's “time moving to the next scene” on the timeline (${ref("transition", "Part 3, 3-6")}).</p>`
       },
       {
-        id: "features", title: "Features (list and defaults)", status: "verified",
+        id: "features", editions: ["studio", "company"], title: "Features (list and defaults)", status: "verified",
         keywords: ["features", "on", "off", "default", "full-screen caption", "subtitle", "transition load", "crossing", "rigging", "house depth", "simplify", "icon tips", "beside", "spike", "props plot", "costume", "arrow keys", "smooth", "speech bubble", "vertical", "how the light looks", "text size"],
         html: `
 <p>The items under ${ui("Features")} in Gamma v0.2.16 and their values on first launch:</p>

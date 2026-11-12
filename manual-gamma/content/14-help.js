@@ -7,7 +7,7 @@
     lead: "症状の言葉で検索窓に入れても、この部の項目が当たります。",
     sections: [
       {
-        id: "faq", title: "よくある症状と対処", status: "sourced",
+        id: "faq", editions: ["studio", "company"], title: "よくある症状と対処", status: "sourced",
         keywords: ["FAQ", "質問", "動かない", "おかしい", "見当たらない", "消えた", "出てこない", "押せない", "古い", "反映されない", "音が出ない", "照明が出ない", "重い", "遅い", "固まる", "タブが開かない", "劇場を決めて", "帯が消えない"],
         html: `
 <dl class="m-faq">

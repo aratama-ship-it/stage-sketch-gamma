@@ -112,7 +112,7 @@ ${fig("10-section-B", "図の上の帯。左に前のシーンと ⊞、中央�
 </ul>`
       },
       {
-        id: "alternatives", title: "別案（A〜D）を作って比べる", status: "sourced",
+        id: "alternatives", editions: ["studio", "company"], title: "別案（A〜D）を作って比べる", status: "sourced",
         keywords: ["別案", "A案", "B案", "比べる", "採用", "バリエーション", "候補", "切り替え"],
         html: `
 <p>${ui("パネルのオン/オフ")}で${ui("別案")}を出すと、右列に別案の欄が出ます。いまのシーンにA〜Dの別案を保存し、切り替えて比べ、採用できます。別案は保存データとしてショーに入り、書き出しにも乗ります。</p>

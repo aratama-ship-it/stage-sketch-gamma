@@ -7,7 +7,12 @@
     const phone = document.body.classList.contains('viewer-phone');
     let fullFit = false; const stageFill = view => (view === 'front' && phone) || fullFit ? 1 : .8; const defaultZoom = view => phone && view === 'plan' && !fullFit ? 1.2 : 1;
     let language = 'ja', gesture = null, penOn = false, stickyOn = false, suppressed = false, selectedSeat = 'center';
-    const text = (ja, en) => language === 'en' ? en : ja;
+    function text(ja, en) {
+      const code = language;
+      if (code === 'ja') return ja;
+      if (code === 'en') return en;
+      return window.SHOSAI_I18N_PACKS?.[code]?.text?.[ja.replaceAll('場面', 'シーン')] || en;
+    }
     const make = (tag, className) => Object.assign(document.createElement(tag), { className });
     for (const [view, canvas] of Object.entries(canvases)) {
       const drawing = canvas.parentElement;
@@ -47,7 +52,7 @@
       }
     }
     function relabel(lang) {
-      language = lang === 'en' ? 'en' : 'ja';
+      language = lang;
       views.front.label.textContent = text('正面', 'Front'); views.plan.label.textContent = text('平面', 'Plan');
       const state = engine.camera();
       views.front.seat.replaceChildren(...state.seats.map(s => Object.assign(document.createElement('option'), { value: s.id, textContent: s.label })));

@@ -1155,7 +1155,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261112-v0417'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261112-v0418'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           if(next==='light-design')frame.contentWindow.GAMMA_SIMPLE_LIGHT_UI?.defaultMode?.();
@@ -1492,7 +1492,7 @@
   ops.src = 'gamma-assist-ops.js?v=20261031-v0396';
   ops.onload = ops.onerror = () => {
     const script = document.createElement('script');
-    script.src = 'gamma-assist.js?v=20261112-v0417';
+    script.src = 'gamma-assist.js?v=20261112-v0418';
     document.body.append(script);
   };
   const extension = document.createElement('script');

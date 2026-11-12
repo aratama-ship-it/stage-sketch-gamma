@@ -7,7 +7,7 @@
     lead: "The moving parts of a stage. Each holds values per scene and moves during transitions.",
     sections: [
       {
-        id: "machinery-kinds", title: "The five kinds and their values", status: "verified",
+        id: "machinery-kinds", editions: ["studio", "company"], title: "The five kinds and their values", status: "verified",
         keywords: ["stage machinery", "machinery", "lift", "trap", "revolve", "turntable", "rotate", "deck", "tilt", "rake", "curtain", "scrim", "traveller", "drop", "cyclorama", "water", "pool", "water level", "raise", "lower"],
         html: `
 <p>Add scrim and Add lift sit side by side at the same height as the other add rows. They wrap to separate rows only when the labels no longer fit.</p>
@@ -25,7 +25,7 @@ ${fig("11-D-machinery", "Test scene D-2 (moving deck) in plan. Performers stand 
 <p>Try it in: D-1 (lift and revolve), D-2 (moving deck, water and pool floor), D-3 (six curtains, scrim transparency).</p>`
       },
       {
-        id: "scrim", title: "Scrims, and projecting pictures and words onto surfaces", status: "sourced",
+        id: "scrim", editions: ["studio", "company"], title: "Scrims, and projecting pictures and words onto surfaces", status: "sourced",
         keywords: ["scrim", "gauze", "see-through", "semi-transparent", "projection", "project", "screen", "video", "image", "photo", "surface", "wall", "layer"],
         html: `
 <p>Set a curtain's kind to <strong>scrim</strong> and its ${ui("Sheer")} value runs from a surface showing a picture (near 0%) to one you see through to the stage behind (near 100%). Give it different values in different scenes and the transition plays the change from picture to window.</p>
@@ -33,7 +33,7 @@ ${fig("11-D-machinery", "Test scene D-2 (moving deck) in plan. Performers stand 
 <p>Front view, plan and 3D all agree. Try it in: G-5 (scrim showing a picture) → G-6 (picture fades as the scrim turns see-through).</p>`
       },
       {
-        id: "machinery-transition", title: "Moving it in transitions (turn, rise, open)", status: "sourced",
+        id: "machinery-transition", editions: ["studio", "company"], title: "Moving it in transitions (turn, rise, open)", status: "sourced",
         keywords: ["transition", "move", "turn", "rise", "lower", "open", "close", "animation", "speed", "seconds"],
         html: `
 <p>Machinery values belong to each scene. If a revolve is at 0° in one scene and 40° in the next, pressing ${ui("Next scene")} (${kbd("↓")}) turns it through 40°, and the pieces on it turn too. Lift height, curtain opening and water level work the same way. With transition animation switched off in Settings, the change is instant.</p>
@@ -41,7 +41,7 @@ ${fig("11-D-machinery", "Test scene D-2 (moving deck) in plan. Performers stand 
 ${vid("machinery-revolve", "Test scenes C-7 → D-1 → D-2 → D-3 in the full-screen front view: a lift rises carrying a performer, a deck tilts and a curtain comes in.")}`
       },
       {
-        id: "machinery-panel", title: "The Stage machinery panel (check and adjust)", status: "sourced",
+        id: "machinery-panel", editions: ["studio", "company"], title: "The Stage machinery panel (check and adjust)", status: "sourced",
         keywords: ["machinery panel", "panel", "list", "place scrim", "place stage lift", "check", "values"],
         html: `
 <p>The ${ui("Stage machinery")} panel on the Stage tab lists the machinery built into the theatre. Use ${ui("Add scrim")} or ${ui("Add stage lift")} to add them, and switch them on or off per scene in the list. Here you check and adjust the current scene's values (height, angle, opening, level). Selecting machinery on the drawing shows the same fields in ${ui("Selection")}.</p>

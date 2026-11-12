@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
 <link rel="stylesheet" href="/study-assets/style.css?v=20261112-v0417"><link rel="stylesheet" href="/stage-study.css?v=20261111-v0415"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
-<script src="/stage-study-sticky.js?v=20261111-v0415"></script><script src="/stage-study-pen.js?v=20261111-v0415"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=20261111-v0415"></script></head>
+<script src="/stage-study-sticky.js?v=20261112-v0418"></script><script src="/stage-study-pen.js?v=20261111-v0415"></script><script src="/stage-study-navigation.js?v=20261112-v0418"></script><script src="/stage-study-frame.js?v=20261111-v0415"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
 <div id="study-legacy" hidden inert aria-hidden="true"><main id="view-stage" class="view">
@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.17</span>
+                <span class="stage-app-version">0.4.18</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2803,15 +2803,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0417">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0418">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0417-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0417-title">v0.4.17</h3><time datetime="2026-11-12">2026-11-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0418-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0418-title">v0.4.18</h3><time datetime="2026-11-12">2026-11-12</time></header>
       <ul>
-        <li>ヘッダーが1段に収まらない画面幅(1280〜1440ほど)で2段に折れていた不具合を直しました。「発表用の表示」は、全画面の隣の小さなアイコンのボタンになりました。幅が足りないときは入口が一時的に隠れ(ウインドウを広げるか縮小すると戻ります)、隠れているときに発表を終えると全画面のボタンへ移ります。</li>
-        <li>有料版の期限が切れて閲覧と書き出しだけになっているとき、書き出しのあとに出る知らせ(未接続の音源は含まれません、など)の「×」が押せず、知らせが設定を覆ったままになる不具合を直しました。</li>
-        <li>説明書の体験版の説明に、相談の回数の枠と、受け取った返答・以前の保存は体験版では扱えないことを書き足しました。</li>
+        <li>演者リンクとQシートの閲覧リンクを新しく作ると、どこで作っても https://app.stagesketch.app のアドレスになるようにしました。これまでに作ったリンクは、今までどおり開けます。</li>
+        <li>舞台スケッチのサーバーで確かめられたリンクを開いたときは、閲覧の画面に「舞台スケッチから発行」と確認の内容を表示します。そのリンクが確認した時点で有効であることを示すもので、内容の正しさや今後も有効であることを保証するものではありません。</li>
+        <li>環境設定で利用の計測をオフにしたとき、開いているページの中でも Cloudflare Web Analytics の送信を止めるようにしました。オフにする前に送った分は取り消しません。</li>
+        <li>アプリから開いた説明書は、使っている版（Lite／Studio／Company）で使える節だけを本文・目次・検索・印刷に出すようにしました。説明書を直接開いたときは、今までどおりすべての節が出ます。</li>
+        <li>英語・韓国語・中国語の画面で日本語のまま残っていたボタンの説明や読み上げの名前を訳しました。演者リンクの閲覧の画面（付箋・前後のシーン・線の本数・公開の更新など）も、韓国語・中国語で表示されるようになりました。</li>
+        <li>環境設定の「Mac版をダウンロード」のリンクは、通常は入手の案内のページを開きます。最新版の情報が取得でき、配布ファイルのアドレスが正式な形のときだけ、配布ファイルを直接開きます。</li>
+        <li>有料版の準備として、アカウントと支払い・契約者向けのMac版の配布・関係者ライセンスの管理・共有データの控えと期限後の整理の仕組みが入っています。どれも切ってあり、この版では使えるようになっていません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3764,7 +3768,7 @@
     <span>全画面を終了</span><kbd data-no-i18n>Esc</kbd>
   </button>
 </div></div>
-<script src="/study-assets/stage-runtime.js?v=20261112-v0417"></script>
+<script src="/study-assets/stage-runtime.js?v=20261112-v0418"></script>
 <script src="/study-assets/gamma-light-model.js?v=20261107-v049"></script>
 <script src="/study-assets/stage-venues.js?v=20261109-v0412"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
@@ -3783,11 +3787,11 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261104-v044"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261112-v0417"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261112-v0418"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-element-refs.js?v=20261104-v043"></script>
 <script src="/study-assets/stage-plan-fit.js?v=20261112-v0416"></script>
-<script src="/study-assets/stage-sketch.js?v=20261112-v0417"></script>
+<script src="/study-assets/stage-sketch.js?v=20261112-v0418"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261109-v0411"></script>
 </body></html>

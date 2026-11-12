@@ -133,7 +133,7 @@
     return error.status === 401 ? 'loginRequired' : error.status === 404 ? error.message === 'link-expired' ? 'expired' : 'unavailable' : 'network';
   }
   function studyText(language, row, packs) {
-    return packs?.[language]?.text?.[row[0]] || row[language === 'en' ? 1 : 0];
+    return packs?.[language]?.text?.[row[0]] || row[language === 'ja' ? 0 : 1];
   }
   function studyLanguage(code) {
     if (/^ja/i.test(code)) return 'ja';
@@ -182,7 +182,7 @@
     const conflict = privateStore?.conflict(scenes[at]?.id);
     $('study-conflict').hidden = !conflict;
     $('study-conflict-remote').value = conflict?.entry?.text || '';
-    $('study-conflict-strokes').textContent = conflict ? `${lang === 'en' ? 'Strokes' : '線'}: ${conflict.entry?.strokes?.length || 0} · ${lang === 'en' ? 'Pinned notes' : '図上メモ'}: ${conflict.entry?.stickies?.length || 0}` : '';
+    $('study-conflict-strokes').textContent = conflict ? `${binaryText('線', 'Strokes')}: ${conflict.entry?.strokes?.length || 0} · ${binaryText('図上メモ', 'Pinned notes')}: ${conflict.entry?.stickies?.length || 0}` : '';
     const legacy = legacyStore?.get(scenes[at]?.id);
     $('study-import').hidden = !legacy || !!draft?.text || !!draft?.strokes?.length || !!draft?.stickies?.length;
     $('study-note-count').textContent = `${$('study-note').value.length} / 2000`;
@@ -208,16 +208,24 @@
       post({ action: 'capture', requestId });
     });
   }
+  function binaryText(ja, en) {
+    const code = lang;
+    if (code === 'ja') return ja;
+    if (code === 'en') return en;
+    return window.SHOSAI_I18N_PACKS?.[code]?.text?.[ja.replaceAll('場面', 'シーン')] || en;
+  }
   const deviceText = {
     personal: ['文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。オーナーには届きません。', 'Text, strokes and pinned notes are saved in this browser and do not sync to other devices. They are not sent to the owner.'],
     penHint: ['線もシーンごとに、このブラウザへ保存します。自分だけのメモです。', 'Strokes are saved in this browser for each scene. These notes stay private.'],
   };
-  const t = key => studyText(lang, !account && deviceText[key] || dictionary[key], window.SHOSAI_I18N_PACKS);
-  // The Viewer previously used only its ja/en pairs. Reuse the permitted locale
-  // packs for other languages; ja/en retain the existing source/fallback copy.
+  // The phone's “Draw” shares this Japanese key; keep the viewer's “Drawing tools”.
+  const t = key => key === 'drawingTools' ? binaryText(...dictionary[key])
+    : studyText(lang, !account && deviceText[key] || dictionary[key], window.SHOSAI_I18N_PACKS);
+  // Issuance copy uses the shared packs in every language. Existing Viewer
+  // labels retain their ja/en fallback if a pack cannot be loaded.
   const localeLoads = new Map();
   function loadStudyLanguage(code) {
-    if (code === 'ja' || code === 'en' || window.SHOSAI_I18N_PACKS?.[code]?.text) return Promise.resolve();
+    if (window.SHOSAI_I18N_PACKS?.[code]?.text?.['linkIssuance.verified']) return Promise.resolve();
     window.SHOSAI_I18N_PACKS ||= {};
     if (!localeLoads.has(code)) localeLoads.set(code, new Promise(resolve => {
       const script = document.createElement('script'); script.src = '/study-assets/stage-i18n.' + code + '.js';
@@ -225,6 +233,7 @@
     }));
     return localeLoads.get(code);
   }
+  const issuance = window.GAMMA_LINK_ISSUANCE?.create({ prefix: 'study', kind: 'study', language: () => lang });
   const expiryClock = createExpiryTimer({ now: () => Date.now(), set: (fn, ms) => setTimeout(fn, ms), clear: id => clearTimeout(id),
     onExpire: () => { if (pageState !== 'expired') { epoch++; conceal('expired'); } } });
   function expireLocally() {
@@ -312,11 +321,12 @@
   }
   const syncPanelWidth = initPanelWidth();
   function relabel() {
+    issuance?.render();
     document.documentElement.lang = lang; $('study-language').value = lang;
     document.querySelectorAll('[data-text]').forEach(el => { el.textContent = t(el.dataset.text); });
     document.querySelectorAll('[data-label]').forEach(el => { const label = t(el.dataset.label); el.setAttribute('aria-label', label); el.title = label; });
-    $('study-prev').setAttribute('aria-label', lang === 'en' ? 'Previous scene' : '前のシーン');
-    $('study-next').setAttribute('aria-label', lang === 'en' ? 'Next scene' : '次のシーン');
+    $('study-prev').setAttribute('aria-label', binaryText('前のシーン', 'Previous scene'));
+    $('study-next').setAttribute('aria-label', binaryText('次のシーン', 'Next scene'));
     $('study-status').textContent = t(pageState);
     if (pageState === 'expired' && expiryDraftRecovery) $('study-status').append(expiryDraftRecovery);
     $('study-send').disabled = NOTES_DISCONTINUED || pendingNote;
@@ -332,10 +342,10 @@
       if (failed) expiryDraftRecovery.open = true;
     }
     $('study-change-summary').hidden = !data?.changes;
-    if (data?.changes) { const c = data.changes; $('study-change-summary').textContent = lang === 'en' ? `Since the previous publication: ${c.added} added, ${c.removed} removed, ${c.changed} changed scenes. Earlier notes are kept in Earlier scene notes and copying.` : `前の公開版から：追加 ${c.added}シーン・削除 ${c.removed}シーン・図の変更 ${c.changed}シーン。以前のメモは「以前のシーンのメモ・引き継ぎ」で確認できます。`; }
+    if (data?.changes) { const c = data.changes; $('study-change-summary').textContent = binaryText('前の公開版から：追加 {added}シーン・削除 {removed}シーン・図の変更 {changed}シーン。以前のメモは「以前のシーンのメモ・引き継ぎ」で確認できます。', 'Since the previous publication: {added} added, {removed} removed, {changed} changed scenes. Earlier notes are kept in Earlier scene notes and copying.').replace(/\{(added|removed|changed)\}/g, (_, key) => c[key]); }
     if (data) {
-      const version = document.createElement('span'); version.style.whiteSpace = 'nowrap'; version.textContent = `${lang === 'en' ? 'Revision' : '公開版'} ${data.revision}`;
-      $('study-stamp').replaceChildren(`${lang === 'en' ? 'Updated' : '公開更新'}: ${new Date(data.updatedAt).toLocaleString(lang === 'en' ? 'en-GB' : 'ja-JP')} · `, version);
+      const version = document.createElement('span'); version.style.whiteSpace = 'nowrap'; version.textContent = `${binaryText('公開版', 'Revision')} ${data.revision}`;
+      $('study-stamp').replaceChildren(`${binaryText('公開更新', 'Updated')}: ${new Date(data.updatedAt).toLocaleString(lang === 'en' ? 'en-GB' : lang === 'ja' ? 'ja-JP' : lang)} · `, version);
     }
     if (frame) frame.title = t('both');
     historyUI?.relabel();
@@ -400,7 +410,7 @@
     const count = currentInk().length;
     $('study-pen').disabled = !live || pendingNote || historyBlocked; $('study-pen').setAttribute('aria-pressed', String(penEnabled));
     $('study-pen-undo').disabled = $('study-pen-clear').disabled = !live || pendingNote || !count;
-    $('study-pen-status').textContent = replaying ? t('penReplay') : `${t(penEnabled ? 'penOn' : 'penOff')} · ${lang === 'en' ? `${count} strokes` : `線 ${count}本`}${penLimit ? ' · ' + t(penLimit === 'points' ? 'penLong' : 'penLimit') : ''}`;
+    $('study-pen-status').textContent = replaying ? t('penReplay') : `${t(penEnabled ? 'penOn' : 'penOff')} · ${binaryText('線 {count}本', '{count} strokes').replace('{count}', () => count)}${penLimit ? ' · ' + t(penLimit === 'points' ? 'penLong' : 'penLimit') : ''}`;
   }
   function setPen(value) {
     penEnabled = Boolean(value); replaying = false; penLimit = '';
@@ -432,12 +442,13 @@
     $('study-scene-heading').textContent = `${at + 1} / ${scenes.length} · ${scene.title}`;
     $('study-prev').disabled = at === 0 || pendingNote; $('study-next').disabled = at === scenes.length - 1 || pendingNote;
     $('study-scenes').disabled = pendingNote;
-    $('study-note-scene').textContent = `${lang === 'en' ? 'Scene' : '対象シーン'}: ${scene.title}`;
+    $('study-note-scene').textContent = `${binaryText('対象シーン', 'Scene')}: ${scene.title}`;
     $('study-scene-note').textContent = scene.note || '';
     $('study-replay').disabled = !live || pendingNote || at === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
     notifyReaderState();
   }
   function conceal(state) {
+    issuance?.set(state === 'loading' ? 'checking' : state === 'network' ? 'network' : 'hidden');
     if (state === 'expired') {
       $('study-scenes').replaceChildren(); $('study-scene-heading').textContent = ''; $('study-scene-note').textContent = '';
       // Close sync BEFORE persisting a draft: put() may otherwise queue a PUT.
@@ -515,6 +526,7 @@
       }
       }
       if (current !== epoch || expireLocally()) return;
+      issuance?.accept(result);
       data = result; scenes = result.document.project.scenes.filter(s => s.kind === 'scene');
       window.dispatchEvent(new CustomEvent('stage-study-loaded', { detail: { project: result.document.project, scenes } })); at = Math.max(0, scenes.findIndex(s => s.id === lastScene)); restorePrivate();
       $('study-title').textContent = result.document.project.title; $('study-title').hidden = false;
@@ -523,7 +535,7 @@
       $('study-verified-name').textContent = result.displayName || '';
       $('study-name').required = false;
       if (!frame) {
-        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261112-v0417-' + (lang === 'en' ? 'en' : 'ja');
+        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261112-v0418-' + (lang === 'en' ? 'en' : 'ja');
         $('study-frame-host').replaceChildren(frame);
       } else if (frameReady) { frame.title = t('both'); loadFrame(); }
       $('study-workspace').hidden = false;
@@ -573,6 +585,7 @@
   // The known expiry still uses its independent local deadline timer.
   async function check() {
     if (expireLocally() || !live || checking || pendingNote || document.hidden) return;
+    issuance?.set('checking');
     checking = true; refreshState = 'loading'; relabel(); const current = epoch;
     try {
       await replyFrameRequest('reply-settle');
@@ -584,6 +597,7 @@
       expiryClock.remember(result.expiresAt); if (current !== epoch || expireLocally()) return;
       if (result.revision !== data.revision) { refreshState = 'refreshLoaded'; await load(); }
       else {
+        issuance?.accept(result);
         if (!dirty) {
           await privateStore?.poll(scenes[at].id);
           if (current !== epoch || !live || !data) return;

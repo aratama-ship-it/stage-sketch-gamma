@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="stage-bundle-head-runtime.07a73a1b039405285f6e307ad1db3d93c6555d21dc21cd695ab42c171c3c1cbb.js"></script>
+<script src="stage-bundle-head-runtime.b28cc071214d9f374e69856802797b64290be3c1e21d5022edc2c9dd92d6a162.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.17">
+<meta name="stage-sketch-gamma-version" content="v0.4.18">
 <meta name="gamma-edition" content="studio">
-  <script src="stage-bundle-head-edition.2feba7f49bbb2e6c36b5871bf8191f706a9dc9827cefabc385dcce799c16d6d2.js"></script>
+  <script src="stage-bundle-head-edition.6c6900895c06b84f27d08139b5e4e7ccd593121a91537fbdfacb5032e3c9b418.js"></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -88,7 +88,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.17</span>
+                <span class="stage-app-version">0.4.18</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2663,7 +2663,7 @@
        <p class="stage-pref-hint">最新のMac版アプリをダウンロードして、いま使っているアプリと入れ替えます。入れ替え方は導入手順にあります。</p>
        <p class="stage-pref-hint" id="stage-native-note" hidden>最新版の情報を取得できませんでした。ダウンロードページから確認できます。</p>
        <div class="stage-prefs-links" aria-label="Mac版アプリ">
-         <a class="stage-about-link stage-native-primary" id="stage-native-download" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
+         <a class="stage-about-link stage-native-primary" id="stage-native-download" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
          <a class="stage-about-link" id="stage-native-install-guide" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">導入手順を見る</a>
        </div>
      </div>
@@ -2889,15 +2889,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0417">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0418">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0417-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0417-title">v0.4.17</h3><time datetime="2026-11-12">2026-11-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0418-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0418-title">v0.4.18</h3><time datetime="2026-11-12">2026-11-12</time></header>
       <ul>
-        <li>ヘッダーが1段に収まらない画面幅(1280〜1440ほど)で2段に折れていた不具合を直しました。「発表用の表示」は、全画面の隣の小さなアイコンのボタンになりました。幅が足りないときは入口が一時的に隠れ(ウインドウを広げるか縮小すると戻ります)、隠れているときに発表を終えると全画面のボタンへ移ります。</li>
-        <li>有料版の期限が切れて閲覧と書き出しだけになっているとき、書き出しのあとに出る知らせ(未接続の音源は含まれません、など)の「×」が押せず、知らせが設定を覆ったままになる不具合を直しました。</li>
-        <li>説明書の体験版の説明に、相談の回数の枠と、受け取った返答・以前の保存は体験版では扱えないことを書き足しました。</li>
+        <li>演者リンクとQシートの閲覧リンクを新しく作ると、どこで作っても https://app.stagesketch.app のアドレスになるようにしました。これまでに作ったリンクは、今までどおり開けます。</li>
+        <li>舞台スケッチのサーバーで確かめられたリンクを開いたときは、閲覧の画面に「舞台スケッチから発行」と確認の内容を表示します。そのリンクが確認した時点で有効であることを示すもので、内容の正しさや今後も有効であることを保証するものではありません。</li>
+        <li>環境設定で利用の計測をオフにしたとき、開いているページの中でも Cloudflare Web Analytics の送信を止めるようにしました。オフにする前に送った分は取り消しません。</li>
+        <li>アプリから開いた説明書は、使っている版（Lite／Studio／Company）で使える節だけを本文・目次・検索・印刷に出すようにしました。説明書を直接開いたときは、今までどおりすべての節が出ます。</li>
+        <li>英語・韓国語・中国語の画面で日本語のまま残っていたボタンの説明や読み上げの名前を訳しました。演者リンクの閲覧の画面（付箋・前後のシーン・線の本数・公開の更新など）も、韓国語・中国語で表示されるようになりました。</li>
+        <li>環境設定の「Mac版をダウンロード」のリンクは、通常は入手の案内のページを開きます。最新版の情報が取得でき、配布ファイルのアドレスが正式な形のときだけ、配布ファイルを直接開きます。</li>
+        <li>有料版の準備として、アカウントと支払い・契約者向けのMac版の配布・関係者ライセンスの管理・共有データの控えと期限後の整理の仕組みが入っています。どれも切ってあり、この版では使えるようになっていません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3853,16 +3857,17 @@
   </button>
 </div>
 
-<script src="stage-bundle-body-before-manual.46dc79e4b7b6b16936fe7a72597dc2532b1120959fb3e23967917a6839f4688d.js"></script>
-<script src="stage-bundle-manual-meta.369a3ee98e1743750b6cf0bd327c469848ad70610fc05d85c7dd92d3d4c90efc.js" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0417"></script>
-<script src="stage-bundle-body-before-language-1.85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908.js"></script>
+<script src="stage-bundle-body-before-manual.348cc4c8860699703261b846ea6b7ba70829b5d8a83cff67ae7dfe5606b92e0f.js"></script>
+<script src="stage-bundle-manual-scope.0537abee0b7acb692a76a4ed031825da3d1dc47c68cd17fe0346015a0099b5c3.js"></script>
+<script src="stage-bundle-manual-meta.100aa63b4afd10d762d65d9d4743f2209f1f0492ebc8b63318a56236d097954e.js" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0418"></script>
+<script src="stage-bundle-body-before-language-1.e457b22dd71688ef40b9577945e71f4fd22dbddcdb044b455270a97bf1c80be6.js"></script>
 <script src="stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js"></script>
 <script src="stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js"></script>
-<script src="stage-bundle-language-loader.c339230b6c8f75981f64c49607beaf67ef3e8610a4ed0d5440143b2e490ab6c7.js"></script>
-<script src="stage-bundle-body-after-language.990e0c9a6a8f55d960d53388a279aa94d01e80816368102877ca27ff68d7b2b5.js"></script>
+<script src="stage-bundle-language-loader.6983c97d523b9947d105f197652274a12eb9f8168bc99557755bb7e2b2758f55.js"></script>
+<script src="stage-bundle-body-after-language.4fa5caa700714bba4868f881ff2661c6572fbbf45d6c0b51d579a9ef36358150.js"></script>
 <link rel="stylesheet" href="stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css">
-<script src="stage-bundle-body-after-field-css-1.97647938c4ad21c3327808afca386c36be65936cafcc6fb82f21a3f1d7bc43d8.js"></script>
+<script src="stage-bundle-body-after-field-css-1.35e1a3409ff07ed9ee493f58aff9fc800a42294249f2a8da48c3a20df2539f88.js"></script>
 <script src="stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js"></script>
-<script src="stage-bundle-body-after-field-css-3.1a5def92e3b6eddc827cdeb64a7bc839eaa1d47e533eee9e2f8c5bdc891045b9.js"></script>
+<script src="stage-bundle-body-after-field-css-3.4c28a0710d579a17625cbe6022f8269e87c85718efe5bf992634fb4470090e40.js"></script>
 </body>
 </html>

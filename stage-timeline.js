@@ -3424,7 +3424,7 @@
       if (boundaryWarning) block.classList.add("has-speed-advice");
       block.textContent = "→";
       if (boundaryWarning) block.textContent = `⚠ ${block.textContent}`;
-      block.title = `${boundaries.incoming.section.title || tx("前のセクション")} → ${timeline.source === "show" ? tx("ショー全体") : timeline.sectionTitle}（0.00の前）`;
+      block.title = `${boundaries.incoming.section.title || tx("前のセクション")} → ${timeline.source === "show" ? tx("ショー全体") : timeline.sectionTitle}${tx("（0.00の前）")}`;
       block.setAttribute("role", "img");
       if (boundaryAdvice.length) block.title += `\n${boundaryAdvice.map(feasibilityText).join("\n")}`;
       block.setAttribute("aria-label", block.title);

@@ -433,7 +433,16 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
   let pending=null,initialization=null,ui=null,lastError='';
   async function request(action,body={}){
     const native=root.stageSketchBridge?.licenseRequest;
-    if(typeof native==='function'){const result=await native({action,...body});if(result?.error&&action!=='cached')throw Error(result.error);return result;}
+    if(typeof native==='function'){
+      const result=await native({action,...body});
+      if(result?.error&&action!=='cached') {
+        const error=Error(result.error);
+        // Only the native explicit mark is a confirmed expiry; a 503 body never is.
+        error.confirmedExpiry=action==='activate'&&result.error==='renewal-required'&&result.confirmedExpiry===true;
+        error.account=result.account;throw error;
+      }
+      return result;
+    }
     // Browser licensing is same-origin. Pages never sends credentials elsewhere.
     if(action==='login'){
       const res=await fetch('/sign-in',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({user:body.user,pass:body.pass,next:'/whoami'})});
@@ -442,7 +451,12 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
     try{
       const res=await fetch('/license/'+action,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body),signal:controller.signal});
-      const value=await res.json();if(!res.ok||value.error)throw Error(value.error||'license-unavailable');return value;
+      const value=await res.json();
+      if(!res.ok||value.error) {
+        const error=Error(value.error||'license-unavailable');
+        error.confirmedExpiry=action==='activate'&&res.status===403&&value.error==='renewal-required';error.account=value.account;throw error;
+      }
+      return value;
     }finally{clearTimeout(timer);}
   }
   async function renew({explicit=false}={}){
@@ -460,7 +474,10 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
         const result=await request('activate',{device:access.device,nonce,label:root.STAGE_RUNTIME?.isMac?.()?'Mac':'Web'});
         if(!result?.token)throw Error(result?.error||'license-unavailable');
         const ok=await access.accept(result,{nonce});lastError=ok?'':access.read().error;return ok;
-      }catch(error){lastError=messages[error.message]?error.message:'default';access.networkFailure();return false;}
+      }catch(error){lastError=messages[error.message]?error.message:'default';
+        // Persist the denial only on the cached grant of the same account.
+        const own=error.confirmedExpiry&&(!read().user||error.account===read().user);
+        if(own)access.deny('renewal-required');else access.networkFailure();return false;}
       finally{pending=null;render();}
     })();return pending;
   }
@@ -476,6 +493,10 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
   }
   function observeIdentity(identity){
     const mode=identity?.license?.mode;
+    // A stopped grant can have a still-valid offline signature. Recheck it
+    // through the licence endpoint rather than trusting an old whoami reply.
+    if(config.required&&mode==='required'&&identity.state==='expired'&&identity.user===read().user)
+      void renew({explicit:true});
     // Provider/config outages cannot revoke a previously verified offline grant.
     // A client without the required trust configuration still fails closed.
     if(mode==='unavailable'){lastError='license-unavailable';if(config.required)access.networkFailure();else access.deny(lastError);}

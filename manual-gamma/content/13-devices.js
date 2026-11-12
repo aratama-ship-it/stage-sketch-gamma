@@ -40,16 +40,16 @@ ${fig("release095-storage-band", "ブラウザ上部の保存データの忠告�
 <h4>Mac 版のメニューと言語</h4>
 <p>アプリのメニューと警告窓は、環境設定で選んだ表示言語に合わせます。「舞台スケッチγ」メニューの「設定…」（⌘,）で画面の環境設定を開けます。同じメニューから隠す（⌘H）・ほかを隠す（⌥⌘H）・すべてを表示・サービスを使えます。</p>
 <p>「ウインドウ」からしまう（⌘M）・拡大／縮小・すべてを手前に、「表示」から全画面表示（⌃⌘F）を選べます。「ヘルプ」→「舞台スケッチγ の使い方」は、このアプリに入っている冊子を別の窓に開きます。日本語以外の表示言語では英語の冊子を開きます。</p>
-<h4>Mac 版の入手と合言葉</h4>
+${window.MANUAL_SUBSCRIBER_DOWNLOADS ? `<h4>Mac版の入手</h4><p>Mac版は、期限内のStudio・Company契約または関係者ライセンスで利用できます。リンク先でログインしてダウンロードしてください。</p><p><a href="https://app.stagesketch.app/download/mac.zip" target="_blank" rel="noopener">ログインした契約者の方はこちら</a></p><p><a href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases" target="_blank" rel="noopener">以前の版（公開のまま）</a></p>` : `<h4>Mac 版の入手と合言葉</h4>
 <p>Mac 版のダウンロードには合言葉が必要です。アプリを案内した配布元へ確認し、次の導入手順のページで入力してください。合言葉はこの冊子には掲載していません。</p>
-<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=ja" target="_blank" rel="noopener">Mac 版の導入手順</a></p>
+<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=ja" target="_blank" rel="noopener">Mac 版の導入手順</a></p>`}
 <h4>Mac 版を初めて開く・更新後に警告が出たとき</h4>
 <p>対応環境：Appleシリコン搭載Mac・macOS 14以降。Intel搭載Macには対応していません。 この配布物はDeveloper IDで署名し、Appleの公証を受けています。「開発元を確認できない」警告を回避するための操作は通常不要です。</p>
-${steps(["GitHub Releasesから最新のzipをダウンロードします。", "zipを解凍します。", "「舞台スケッチγ.app」を「アプリケーション」フォルダまたはデスクトップに置きます。更新する場合は、使用中のアプリを終了してから新しいアプリで置き換えます。", "「舞台スケッチγ.app」をダブルクリックして開きます。"])}
+${steps([(window.MANUAL_SUBSCRIBER_DOWNLOADS ? "ログインしたStudio・Company契約者向けのリンクから最新のzipをダウンロードします。" : "GitHub Releasesから最新のzipをダウンロードします。"), "zipを解凍します。", "「舞台スケッチγ.app」を「アプリケーション」フォルダまたはデスクトップに置きます。更新する場合は、使用中のアプリを終了してから新しいアプリで置き換えます。", "「舞台スケッチγ.app」をダブルクリックして開きます。"])}
 <p>開発元を確認できないという警告が出た場合は、配布元とアプリの版を確認し、サポートへお問い合わせください。</p>}`
       },
       {
-        id: "device-table", title: "どの端末で、なにができるか（アプリ内の表）", status: "sourced",
+        id: "device-table", editions: ["studio", "company"], title: "どの端末で、なにができるか（アプリ内の表）", status: "sourced",
         keywords: ["端末", "違い", "対応", "できない", "iPad", "スマホ", "iPhone", "タブレット", "PC", "比較", "一覧", "見当たらない", "無い"],
         html: `
 <p>環境設定→${ui("端末による違い")}の表を写したものです。「●」はつくる・直せる、「○」は見る・限られる、「—」はこの版には入っていない、の意味です。</p>
@@ -76,14 +76,14 @@ ${fig("48-device-diff", "アプリ内の「端末による違い」。", "端末
 ${note("γの新しいタブはこの表に入っていません", "表はβ版の時からのものです。" + ui("劇場設計") + "・" + ui("機材配置") + "・" + ui("照明デザイン") + "・" + ui("セリフ") + "・" + ui("Qシート") + "はPC向けに作られており、iPadでの操作は確かめていません。「—」の機能が見当たらないのは故障ではなく、その端末には載せていないという意味です。共有はγ専用ホストから使います（" + ref("share", "第11部 11-4") + "）。")}`
       },
       {
-        id: "pc", title: "PC（すべての機能）", status: "verified",
+        id: "pc", editions: ["studio", "company"], title: "PC（すべての機能）", status: "verified",
         keywords: ["PC", "パソコン", "Mac", "Windows", "ブラウザ", "画面幅", "推奨"],
         html: `
 <p>γのすべての機能はPCの画面で使う前提で作られています。画面の幅は 1200px 以上が快適です（この冊子の図は 1440×900 で撮っています）。狭いと、ヘッダーの道具や欄が折り返します。</p>
 <p>キーボードのショートカットが使えるのもPCだけです（${ref("shortcut-table", "付録 A-1")}）。</p>`
       },
       {
-        id: "ipad", title: "iPad（ホーム画面に追加・稽古場で使う）", status: "unverified",
+        id: "ipad", editions: ["studio", "company"], title: "iPad（ホーム画面に追加・稽古場で使う）", status: "unverified",
         keywords: ["iPad", "タブレット", "ホーム画面", "追加", "PWA", "インストール", "オフライン", "電波", "指", "タッチ", "Safari"],
         html: `
 ${steps([

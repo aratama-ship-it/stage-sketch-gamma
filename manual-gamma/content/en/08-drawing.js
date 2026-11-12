@@ -7,7 +7,7 @@
     lead: "What placing pieces cannot say, you add on top of the drawing. It all stays in exported images.",
     sections: [
       {
-        id: "arrows", title: "Arrows (floor / air, one / both ends, thickness, clearing per view)", status: "verified",
+        id: "arrows", editions: ["studio", "company"], title: "Arrows (floor / air, one / both ends, thickness, clearing per view)", status: "verified",
         keywords: ["arrow", "draw", "clear", "floor", "air", "one end", "both ends", "thickness", "thin", "thick", "a", "direction", "movement", "indicate"],
         html: `
 <p>Take ${ui("Draw an arrow")} (${kbd("A")}) at the top left and a row of arrow settings appears at the top right of each view. Drag on the drawing to draw an arrow.</p>
@@ -23,7 +23,7 @@ ${table(["Setting", "Meaning"], [
 <p>Try it in: G-2 (floor, air, plan and double-headed arrows).</p>`
       },
       {
-        id: "notes", title: "Sticky notes and the pen", status: "sourced",
+        id: "notes", editions: ["studio", "company"], title: "Sticky notes and the pen", status: "sourced",
         keywords: ["sticky note", "note", "memo", "pin", "write", "comment", "annotation", "n", "pen", "freehand", "paint"],
         html: `
 <p>Press ${ui("Add a note")} (${kbd("N")}) at the top right of a view, then click an empty spot; a sticky note appears and you can type straight away. Put it beside a performer or on the floor — it stays in exported images. Notes belong to each view and each scene.</p>
@@ -31,7 +31,7 @@ ${fig("11-G-notes", "Sticky notes and pen strokes (G-1).", "Sticky note example"
 <p>The pen (freehand lines) is ${ui("Paint backdrop")} (${kbd("P")}) in the ${ui("Backdrop")} panel, drawing on the backdrop surface. ${ui("Erase backdrop")} (${kbd("Shift+E")}) erases. Colour and thickness come from ${ui("Brush colour")} and ${ui("Brush size")} (${ref("backdrop", "8-3")}).</p>`
       },
       {
-        id: "backdrop", title: "Backdrop (base colour, painting, photo, brightness)", status: "sourced",
+        id: "backdrop", editions: ["studio", "company"], title: "Backdrop (base colour, painting, photo, brightness)", status: "sourced",
         keywords: ["backdrop", "base colour", "paint", "colour", "photo", "image", "brightness", "erase", "cyclorama", "blackout", "edit backdrop", "p"],
         html: `
 <p>Show ${ui("Backdrop")} from ${ui("Panels")} to get the backdrop controls.</p>
@@ -63,7 +63,7 @@ ${table(["Item", "Meaning"], [
 <p>Text belongs to each scene and appears in the front view and 3D. Try it in: G-3.</p>`
       },
       {
-        id: "routes", title: "Routes (draw, draw from next, clear, crossing and rigging warnings)", status: "verified",
+        id: "routes", editions: ["studio", "company"], title: "Routes (draw, draw from next, clear, crossing and rigging warnings)", status: "verified",
         keywords: ["route", "path", "travel", "move", "walk", "draw route", "draw from next", "clear route", "crossing", "collision", "warning", "rigging", "r", "light routes", "set routes"],
         html: `
 <p>A route is a line in the plan saying where a piece goes in the next scene. It is different from an arrow (${ref("arrows", "8-1")}): during a transition, pieces actually travel along it.</p>
@@ -82,7 +82,7 @@ ${steps([
 <p>Try it in: G-5 → G-6 (the end of the routes).</p>`
       },
       {
-        id: "view-toggles", title: "Display switches (name tags, floor grid, front border, house depth, costume)", status: "sourced",
+        id: "view-toggles", editions: ["studio", "company"], title: "Display switches (name tags, floor grid, front border, house depth, costume)", status: "sourced",
         keywords: ["display", "switch", "names", "tags", "performer names", "set names", "light name", "grid", "floor grid", "front border", "house depth", "costume off", "hide", "invisible"],
         html: `
 <p>Turn on ${ui("Call grid")} in the plan-view display controls to divide the main stage into 6×6 cells and refer to a position aloud, such as “number 12 in C3”. It is off by default and remembered only on this device. Names stay attached to the stage when zooming, panning or showing it full screen. The axes stay fixed for circular stages and surrounding seating, with lines clipped to the floor. Wings and stage extensions, front and 3D views, show files, images, ZIPs and printouts do not include it. Use it while sharing your screen through your own meeting tool; Stage Sketch does not send video, audio or pointers.</p>

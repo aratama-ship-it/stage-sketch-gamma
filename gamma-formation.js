@@ -5,6 +5,7 @@
     return;
   }
   const host = window.GAMMA_FORMATION_HOST;
+  const tx = source => window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang || 'ja', source) || source;
   if (!host) return;
   let dialog = null, returnFocus = null;
   const buttons = [];
@@ -25,7 +26,7 @@
     }
     if (dialog.open) return;
     returnFocus = button;
-    const frame = document.createElement('iframe');frame.title = 'フォーメーションの選択と人物の入れ替え';frame.src = 'formation/presets/editor.html?v=20261112-v0417';
+    const frame = document.createElement('iframe');frame.title = 'フォーメーションの選択と人物の入れ替え';frame.src = 'formation/presets/editor.html?v=20261112-v0418';
     dialog.append(frame);dialog.showModal();
   }
   /* T-02（2026-09-18 本人要望）: 入口は「選んだもの」パネルの最下部だけにする。
@@ -56,7 +57,7 @@
     /* T-05（2026-09-18 本人要望）: 物が混ざった選択でも演者だけを対象にするので、
      * 「何人で組むのか」がボタンから読めるようにする（本人決定 (b)＝title 頼みにしない）。 */
     const label = status.enabled && status.count ? `フォーメーション（${status.count}人）` : 'フォーメーション';
-    for (const button of buttons) { button.hidden = !status.visible;button.disabled = !status.enabled;button.textContent = label;button.title = status.reason || '選んだ人物のフォーメーション'; }
+    for (const button of buttons) { button.hidden = !status.visible;button.disabled = !status.enabled;button.textContent = label;button.title = tx(status.reason || '選んだ人物のフォーメーション'); }
     // 押せないときだけ、その理由をボタンの下に出す。
     if (reasonNote) {
       const show = Boolean(status.visible && !status.enabled && status.reason);

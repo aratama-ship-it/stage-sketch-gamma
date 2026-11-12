@@ -7,7 +7,7 @@
     lead: "Typing a symptom into the search box also finds this part.",
     sections: [
       {
-        id: "faq", title: "Common symptoms and what to do", status: "sourced",
+        id: "faq", editions: ["studio", "company"], title: "Common symptoms and what to do", status: "sourced",
         keywords: ["faq", "question", "won't move", "strange", "missing", "disappeared", "not showing", "can't press", "old", "not applied", "no sound", "no light", "slow", "heavy", "frozen", "tabs closed", "band won't go away"],
         html: `
 <dl class="m-faq">

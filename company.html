@@ -2,14 +2,14 @@
 <!-- Generated from stage.html by build-editions.mjs (company). Do not edit; edit stage.html and run node build-editions.mjs. -->
 <html lang="ja">
 <head>
-<script src="stage-runtime.js?v=20261112-v0417"></script>
+<script src="stage-runtime.js?v=20261112-v0418"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Company | Stage Sketch Gamma Company</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.4.17">
+<meta name="stage-sketch-gamma-version" content="v0.4.18">
 <meta name="gamma-edition" content="company">
-  <script src="gamma-editions.js?v=20261112-v0417"></script>
+  <script src="gamma-editions.js?v=20261112-v0418"></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -103,7 +103,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.17</span>
+                <span class="stage-app-version">0.4.18</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2678,7 +2678,7 @@
        <p class="stage-pref-hint">最新のMac版アプリをダウンロードして、いま使っているアプリと入れ替えます。入れ替え方は導入手順にあります。</p>
        <p class="stage-pref-hint" id="stage-native-note" hidden>最新版の情報を取得できませんでした。ダウンロードページから確認できます。</p>
        <div class="stage-prefs-links" aria-label="Mac版アプリ">
-         <a class="stage-about-link stage-native-primary" id="stage-native-download" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
+         <a class="stage-about-link stage-native-primary" id="stage-native-download" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
          <a class="stage-about-link" id="stage-native-install-guide" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">導入手順を見る</a>
        </div>
      </div>
@@ -2904,15 +2904,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0417">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0418">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0417-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0417-title">v0.4.17</h3><time datetime="2026-11-12">2026-11-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0418-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0418-title">v0.4.18</h3><time datetime="2026-11-12">2026-11-12</time></header>
       <ul>
-        <li>ヘッダーが1段に収まらない画面幅(1280〜1440ほど)で2段に折れていた不具合を直しました。「発表用の表示」は、全画面の隣の小さなアイコンのボタンになりました。幅が足りないときは入口が一時的に隠れ(ウインドウを広げるか縮小すると戻ります)、隠れているときに発表を終えると全画面のボタンへ移ります。</li>
-        <li>有料版の期限が切れて閲覧と書き出しだけになっているとき、書き出しのあとに出る知らせ(未接続の音源は含まれません、など)の「×」が押せず、知らせが設定を覆ったままになる不具合を直しました。</li>
-        <li>説明書の体験版の説明に、相談の回数の枠と、受け取った返答・以前の保存は体験版では扱えないことを書き足しました。</li>
+        <li>演者リンクとQシートの閲覧リンクを新しく作ると、どこで作っても https://app.stagesketch.app のアドレスになるようにしました。これまでに作ったリンクは、今までどおり開けます。</li>
+        <li>舞台スケッチのサーバーで確かめられたリンクを開いたときは、閲覧の画面に「舞台スケッチから発行」と確認の内容を表示します。そのリンクが確認した時点で有効であることを示すもので、内容の正しさや今後も有効であることを保証するものではありません。</li>
+        <li>環境設定で利用の計測をオフにしたとき、開いているページの中でも Cloudflare Web Analytics の送信を止めるようにしました。オフにする前に送った分は取り消しません。</li>
+        <li>アプリから開いた説明書は、使っている版（Lite／Studio／Company）で使える節だけを本文・目次・検索・印刷に出すようにしました。説明書を直接開いたときは、今までどおりすべての節が出ます。</li>
+        <li>英語・韓国語・中国語の画面で日本語のまま残っていたボタンの説明や読み上げの名前を訳しました。演者リンクの閲覧の画面（付箋・前後のシーン・線の本数・公開の更新など）も、韓国語・中国語で表示されるようになりました。</li>
+        <li>環境設定の「Mac版をダウンロード」のリンクは、通常は入手の案内のページを開きます。最新版の情報が取得でき、配布ファイルのアドレスが正式な形のときだけ、配布ファイルを直接開きます。</li>
+        <li>有料版の準備として、アカウントと支払い・契約者向けのMac版の配布・関係者ライセンスの管理・共有データの控えと期限後の整理の仕組みが入っています。どれも切ってあり、この版では使えるようになっていません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3873,7 +3877,7 @@
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261112-v0417"></script>
+<script src="stage-samples/catalog.js?v=20261112-v0418"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3889,7 +3893,8 @@
 <script src="stage-storage-recovery.js?v=20261020-v0382"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261112-v0417" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0417"></script>
+<script src="manual-gamma/edition-scope.js?v=20261112-v0418"></script>
+<script src="manual-gamma/manual-meta.js?v=20261112-v0418" data-manual-content="manual-gamma/manual-content.js?v=20261112-v0418"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3907,7 +3912,8 @@
 <script src="stage-time-domain.js?v=20261013-v0359"></script>
 <script src="stage-timecode.js?v=20261015-v0371"></script>
 <script src="stage-q-link-model.js?v=20261111-v0414"></script>
-<script src="stage-q-link-owner.js?v=20261111-v0414"></script>
+<script src="gamma-link-issuer.js?v=20261112-v0418"></script>
+<script src="stage-q-link-owner.js?v=20261112-v0418"></script>
 <script src="stage-cue-sheet.js?v=20261105-v046"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
@@ -3930,10 +3936,10 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261112-v0417"></script>
+<script src="stage-language-loader.js?v=20261112-v0418"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
-<script src="stage-metrics.js?v=20261020-v0380"></script>
+<script src="stage-metrics.js?v=20261112-v0418"></script>
 <script src="stage-project-file.js?v=20261107-v049"></script>
 <script src="stage-welcome.js?v=20261025-v0387"></script>
 <script src="gamma-undo-owner.js?v=20261030-v0395"></script>
@@ -3942,21 +3948,21 @@
 <script src="stage-element-refs.js?v=20261104-v043"></script>
 <script src="stage-call-grid.js?v=20261111-v0414"></script>
 <script src="stage-plan-fit.js?v=20261112-v0416"></script>
-<script src="stage-sketch.js?v=20261112-v0417"></script>
-<script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
-<script src="gamma-formation.js?v=20261112-v0417"></script>
+<script src="stage-sketch.js?v=20261112-v0418"></script>
+<script src="stage-scene-alternatives-ui.js?v=20261112-v0418"></script>
+<script src="gamma-formation.js?v=20261112-v0418"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
 <script src="stage-script-editor.js?v=20261025-v0386"></script>
     <script src="stage-light-schedule.js?v=20261013-v0359"></script>
-    <script src="stage-timeline.js?v=20261109-v0411"></script>
+    <script src="stage-timeline.js?v=20261112-v0418"></script>
 <script src="stage-session.js?v=20261110-v0413"></script>
 <script src="stage-study-export.js?v=20261111-v0414"></script>
 <script src="stage-study-reply.js?v=20261111-v0415"></script>
 <script src="stage-study-reply-store.js?v=20261112-v0417"></script>
 <script src="stage-study-pen.js?v=20261111-v0415"></script>
-<script src="stage-study-sticky.js?v=20261111-v0415"></script>
+<script src="stage-study-sticky.js?v=20261112-v0418"></script>
 <script src="stage-study-reply-import.js?v=20261112-v0417"></script>
-<script src="stage-study-owner.js?v=20261111-v0415"></script>
+<script src="stage-study-owner.js?v=20261112-v0418"></script>
 <script src="stage-usage.js?v=20261015-v0368"></script>
 <script src="stage-venue-underlay.js?v=20261006-v0312"></script>
 <script src="stage-venue-editor.js?v=20261107-v048"></script>
@@ -3966,9 +3972,9 @@
 <script src="stage-field-run-package.js?v=20261020-v0380"></script>
 <script src="stage-field-run-transport.js?v=20261016-v0372"></script>
 <script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261112-v0417"></script>
-<script src="stage-run-of-show-pane.js?v=20261112-v0417"></script>
-<script src="gamma-workspace.js?v=20261112-v0417"></script>
+<script src="stage-field-run-console.js?v=20261112-v0418"></script>
+<script src="stage-run-of-show-pane.js?v=20261112-v0418"></script>
+<script src="gamma-workspace.js?v=20261112-v0418"></script>
 <script src="gamma-feature-search.js?v=20261030-v0395"></script>
 <script src="gamma-mobile.js?v=20261030-v0395"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>
@@ -3976,7 +3982,7 @@
 <script src="run-of-show/timing.js?v=20261010-v0338"></script>
 <script src="stage-show-overview.js?v=20261101-v0398"></script>
 <!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->
-<script src="stage-web-analytics.js?v=20261020-v0380"></script>
+<script src="stage-web-analytics.js?v=20261112-v0418"></script>
 <script src="gamma-header-fit.js?v=20261112-v0417"></script>
 <script src="gamma-appearance.js?v=20261109-v0411"></script>
 </body>

@@ -40,8 +40,8 @@
     },
     {
       "path": "tools/bundle-stage-plan.json",
-      "bytes": 5954,
-      "sha256": "2669344f32c554828325b23d37aec35eb7851c3bac8beae75e13d40677b73b1c"
+      "bytes": 6114,
+      "sha256": "a475c62a7b633dc44f6dbca5307511a1072779e8e10623412029cdd219c71066"
     },
     {
       "path": ".node-version",
@@ -52,21 +52,21 @@
   "inputs": [
     {
       "path": "stage-runtime.js",
-      "bytes": 20644,
-      "sha256": "9d96ec6fbf424fbc3196708a9ed8511b483f1bd4a1587bd5944eb3cec70943fc",
-      "url": "stage-runtime.js?v=20261112-v0417",
+      "bytes": 20802,
+      "sha256": "037eca63e7ad78c22beb424770c119ab7ad0d845dc7b0c72f41de40a952dd3c4",
+      "url": "stage-runtime.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-runtime.js?v=20261112-v0417"
+        "src": "stage-runtime.js?v=20261112-v0418"
       },
       "kind": "js"
     },
     {
       "path": "gamma-editions.js",
-      "bytes": 43100,
-      "sha256": "376f5bc539f7854d18e294d40f4585820e3e98f1486215050e38a0091a7b8832",
-      "url": "gamma-editions.js?v=20261112-v0417",
+      "bytes": 44089,
+      "sha256": "2441b225f7dc3b09b6d465f66f3db15fe73764d91e0e37d5e8ec5f7f362bfb9e",
+      "url": "gamma-editions.js?v=20261112-v0418",
       "attrs": {
-        "src": "gamma-editions.js?v=20261112-v0417"
+        "src": "gamma-editions.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -320,10 +320,10 @@
     {
       "path": "stage-samples/catalog.js",
       "bytes": 8438,
-      "sha256": "3cc22981a15548c1a78ca29bf1b263feec914b9211912f553a2a57fbaf0d58b3",
-      "url": "stage-samples/catalog.js?v=20261112-v0417",
+      "sha256": "8dc1604efb074a87b22a8befd7596eb4122a57280b0bc9ba6a3073861cda6921",
+      "url": "stage-samples/catalog.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-samples/catalog.js?v=20261112-v0417"
+        "src": "stage-samples/catalog.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -478,13 +478,23 @@
       "kind": "js"
     },
     {
+      "path": "manual-gamma/edition-scope.js",
+      "bytes": 1826,
+      "sha256": "90f26abcb3536d84837bea98aa2618168a439461ed8d0e34fbe428bd041afaae",
+      "url": "manual-gamma/edition-scope.js?v=20261112-v0418",
+      "attrs": {
+        "src": "manual-gamma/edition-scope.js?v=20261112-v0418"
+      },
+      "kind": "js"
+    },
+    {
       "path": "manual-gamma/manual-meta.js",
       "bytes": 513,
-      "sha256": "bf8f59389b6a2bc3b7be8f153e3c4ad7d856e15c70b3d2f9662338312769e4b7",
-      "url": "manual-gamma/manual-meta.js?v=20261112-v0417",
+      "sha256": "e7208c5d0c44f9350695f76b0476a386d770cb9923a9550c63c75a33149dba4f",
+      "url": "manual-gamma/manual-meta.js?v=20261112-v0418",
       "attrs": {
-        "src": "manual-gamma/manual-meta.js?v=20261112-v0417",
-        "data-manual-content": "manual-gamma/manual-content.js?v=20261112-v0417"
+        "src": "manual-gamma/manual-meta.js?v=20261112-v0418",
+        "data-manual-content": "manual-gamma/manual-content.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -659,12 +669,22 @@
       "kind": "js"
     },
     {
-      "path": "stage-q-link-owner.js",
-      "bytes": 9848,
-      "sha256": "f463fa64cd45051fdcc4a2fdb24575622f53143547e5acb3d2e7939af4c06dc2",
-      "url": "stage-q-link-owner.js?v=20261111-v0414",
+      "path": "gamma-link-issuer.js",
+      "bytes": 1037,
+      "sha256": "78eca0a079eb1994bd7a5e2d92b692d915b171854c163c17b930eee9edacf561",
+      "url": "gamma-link-issuer.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-q-link-owner.js?v=20261111-v0414"
+        "src": "gamma-link-issuer.js?v=20261112-v0418"
+      },
+      "kind": "js"
+    },
+    {
+      "path": "stage-q-link-owner.js",
+      "bytes": 9798,
+      "sha256": "7acdfa47c2006506e99177a7e3be295762882f25d247eed8af15534055099e77",
+      "url": "stage-q-link-owner.js?v=20261112-v0418",
+      "attrs": {
+        "src": "stage-q-link-owner.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -881,10 +901,10 @@
     {
       "path": "stage-language-loader.js",
       "bytes": 5009,
-      "sha256": "28ee1d60d471c4ed1371f08c41d89d9bc7451e21a30ee8e54cb857545b22a017",
-      "url": "stage-language-loader.js?v=20261112-v0417",
+      "sha256": "6ad1133530257a80242bdde2bb6ebd4590648863436a8b283f15a9c57cb2e727",
+      "url": "stage-language-loader.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-language-loader.js?v=20261112-v0417"
+        "src": "stage-language-loader.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -910,11 +930,11 @@
     },
     {
       "path": "stage-metrics.js",
-      "bytes": 10683,
-      "sha256": "cd80b721c773240f170b3a2b184aec910326eb301b5e8b2bb5d425fe2060c929",
-      "url": "stage-metrics.js?v=20261020-v0380",
+      "bytes": 10739,
+      "sha256": "f421e0004d33e12bb8578fd7a32c7e6b1876172b6d6a1624b8943339137c6b0a",
+      "url": "stage-metrics.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-metrics.js?v=20261020-v0380"
+        "src": "stage-metrics.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1000,31 +1020,31 @@
     },
     {
       "path": "stage-sketch.js",
-      "bytes": 2709222,
-      "sha256": "da242c6a14c07386044ee1c04cc723527bbd6f516b286443be3a6bb7dd2cb1be",
-      "url": "stage-sketch.js?v=20261112-v0417",
+      "bytes": 2709806,
+      "sha256": "f5ca4ddbfb867f366b5de192275f36cbb20e285115e86ff40d125d1dca11b0e6",
+      "url": "stage-sketch.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-sketch.js?v=20261112-v0417"
+        "src": "stage-sketch.js?v=20261112-v0418"
       },
       "kind": "js"
     },
     {
       "path": "stage-scene-alternatives-ui.js",
-      "bytes": 8523,
-      "sha256": "e3e84509bfbff97fb6d43ae01ec26f5ace3a267cc0a65e708226905015aee613",
-      "url": "stage-scene-alternatives-ui.js?v=20261009-v0337",
+      "bytes": 8572,
+      "sha256": "a637b0a3a27342feb77d06afa6cc4fc5bc76d7073ad4abe4d69adb228533ddfc",
+      "url": "stage-scene-alternatives-ui.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-scene-alternatives-ui.js?v=20261009-v0337"
+        "src": "stage-scene-alternatives-ui.js?v=20261112-v0418"
       },
       "kind": "js"
     },
     {
       "path": "gamma-formation.js",
-      "bytes": 4445,
-      "sha256": "9d4d62c5d24588263a869aeb7dd32ee392fca6c35610276a00cfc9f169e7efd9",
-      "url": "gamma-formation.js?v=20261112-v0417",
+      "bytes": 4567,
+      "sha256": "bea2a7df5d81f4461bb6293aba8c77b3338e49806faf56ce533b4469460168cb",
+      "url": "gamma-formation.js?v=20261112-v0418",
       "attrs": {
-        "src": "gamma-formation.js?v=20261112-v0417"
+        "src": "gamma-formation.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1060,11 +1080,11 @@
     },
     {
       "path": "stage-timeline.js",
-      "bytes": 304307,
-      "sha256": "6806a288e98d5e1c30ead93919828fed29e285cf4541fb08fe2e9ba762e02f01",
-      "url": "stage-timeline.js?v=20261109-v0411",
+      "bytes": 304316,
+      "sha256": "c4221dae32f6e01bd56e9053c76a9e251232b88329e7978dc69500353f119c0b",
+      "url": "stage-timeline.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-timeline.js?v=20261109-v0411"
+        "src": "stage-timeline.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1120,11 +1140,11 @@
     },
     {
       "path": "stage-study-sticky.js",
-      "bytes": 20766,
-      "sha256": "214b5c346faeb87ae7291f9cf3231dae7554a39e74c9eab6d5e0962b9dd26511",
-      "url": "stage-study-sticky.js?v=20261111-v0415",
+      "bytes": 20977,
+      "sha256": "d31a597be702c19d36a5b192c30862bc7f560a3587bf443b802bb5ce096b0bbb",
+      "url": "stage-study-sticky.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-study-sticky.js?v=20261111-v0415"
+        "src": "stage-study-sticky.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1140,11 +1160,11 @@
     },
     {
       "path": "stage-study-owner.js",
-      "bytes": 48948,
-      "sha256": "d59e4737d20428922a70b005d7b1c1a625bd664a05f1c90d5c113b16fa0f1c90",
-      "url": "stage-study-owner.js?v=20261111-v0415",
+      "bytes": 48915,
+      "sha256": "05aaaf3d4caff5f9c714274571ad0184b0e17f1a768e21e80c73ae2eca03efad",
+      "url": "stage-study-owner.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-study-owner.js?v=20261111-v0415"
+        "src": "stage-study-owner.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1242,30 +1262,30 @@
     {
       "path": "stage-field-run-console.js",
       "bytes": 76605,
-      "sha256": "c0f98592e8e106a26d9a26684bec7df2b2df7e19d8e7363dbec9ffaa2837a678",
-      "url": "stage-field-run-console.js?v=20261112-v0417",
+      "sha256": "c186f5f297c5e6a250c5d8455f72964ec23b5f6cff26a44ec976e12b9d334c7b",
+      "url": "stage-field-run-console.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-field-run-console.js?v=20261112-v0417"
+        "src": "stage-field-run-console.js?v=20261112-v0418"
       },
       "kind": "js"
     },
     {
       "path": "stage-run-of-show-pane.js",
       "bytes": 5001,
-      "sha256": "a066468117f2c954aa9ee68e2e950e2c203be6b0098f29b7c5e9a8f07ac9f717",
-      "url": "stage-run-of-show-pane.js?v=20261112-v0417",
+      "sha256": "4a8d2c738ccceb61b2caf8f0e05b2f148bbab817b867968749d2204943f3b632",
+      "url": "stage-run-of-show-pane.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-run-of-show-pane.js?v=20261112-v0417"
+        "src": "stage-run-of-show-pane.js?v=20261112-v0418"
       },
       "kind": "js"
     },
     {
       "path": "gamma-workspace.js",
       "bytes": 99906,
-      "sha256": "8ec9dabec51bbdfb1e22152bf0b653445a9279b3d138c5fdea5db8855980f8e5",
-      "url": "gamma-workspace.js?v=20261112-v0417",
+      "sha256": "02e9fe7583185a91566c463ebcdfd29bc7a3d953ead93f4daa776deaba54cac3",
+      "url": "gamma-workspace.js?v=20261112-v0418",
       "attrs": {
-        "src": "gamma-workspace.js?v=20261112-v0417"
+        "src": "gamma-workspace.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1331,11 +1351,11 @@
     },
     {
       "path": "stage-web-analytics.js",
-      "bytes": 1399,
-      "sha256": "d55eab3b52d022cf9dd8696c6b25d6776fc152927c659265b1318b9db6c7fb28",
-      "url": "stage-web-analytics.js?v=20261020-v0380",
+      "bytes": 3904,
+      "sha256": "d5f98f2e51b0be8e633eb22f56a1600087c57014c615dcf074163ca7065c811e",
+      "url": "stage-web-analytics.js?v=20261112-v0418",
       "attrs": {
-        "src": "stage-web-analytics.js?v=20261020-v0380"
+        "src": "stage-web-analytics.js?v=20261112-v0418"
       },
       "kind": "js"
     },
@@ -1363,42 +1383,42 @@
   "preservedEntries": [
     {
       "path": "company.html",
-      "bytes": 342998,
-      "sha256": "419bc6643d312bf674831e9adc819081336321a9fdb0cc4acd5babfd441b563d"
+      "bytes": 344295,
+      "sha256": "84bf359cd0932091f38f6aa8e92d4b78c0530ed87e437d9d9b3f562b432f65dc"
     },
     {
       "path": "run.html",
-      "bytes": 336925,
-      "sha256": "c5d0c2487079e64aa7795a9996aabaa059b34a023ab9e3d2e5afb91fd16f1f10"
+      "bytes": 338222,
+      "sha256": "4011bb9a3694c81bbc01cff3fd4a1615c2def365a28dbd0b473dc4be14609bec"
     },
     {
       "path": "field-frame.html",
-      "bytes": 333494,
-      "sha256": "df63c71514c87f3fc75c83fe1b63b8e6413fdbc5467e230306d8f4f46a98c5b0"
+      "bytes": 334665,
+      "sha256": "a12b25deadaf42b497d3454951ec69d651fe5c2af368936e64bb4a37939de5c4"
     },
     {
       "path": "study-frame.html",
-      "bytes": 330420,
-      "sha256": "26d044cd1a84b20f5064fd273b94b826a4ccbcf7eb34ca7742ffc9308aa1e03b"
+      "bytes": 331604,
+      "sha256": "164ec33919bb814993b708a23105e093286b4242df9e1fd172eb11bf3aa8c5c9"
     }
   ],
   "source": [
     {
       "path": "stage.html",
-      "bytes": 342863,
-      "sha256": "7a4fd75f825d19752cd636c94aea06d8a309acbb6afde66369aa0466f49a1534"
+      "bytes": 344160,
+      "sha256": "ac04850e3ef54da64e1dcc5d4829cca3cea3b976607e938e2bf6be40678e25f9"
     },
     {
       "path": "stage-sw.js",
-      "bytes": 31157,
-      "sha256": "852c7ce1cc25d0af9307802bc6ee9f56c7d3ce1876389fd833d728a027f7e5a7"
+      "bytes": 31333,
+      "sha256": "afb4c4a648a4c816fc92ce0de07c8be00e92215e6b686c95714246f76d33b741"
     }
   ],
   "outputs": [
     {
-      "path": "stage-bundle-head-runtime.07a73a1b039405285f6e307ad1db3d93c6555d21dc21cd695ab42c171c3c1cbb.js",
-      "bytes": 13697,
-      "sha256": "07a73a1b039405285f6e307ad1db3d93c6555d21dc21cd695ab42c171c3c1cbb",
+      "path": "stage-bundle-head-runtime.b28cc071214d9f374e69856802797b64290be3c1e21d5022edc2c9dd92d6a162.js",
+      "bytes": 13830,
+      "sha256": "b28cc071214d9f374e69856802797b64290be3c1e21d5022edc2c9dd92d6a162",
       "kind": "js",
       "group": "head-runtime",
       "strict": false,
@@ -1406,17 +1426,17 @@
         "stage-runtime.js"
       ],
       "map": {
-        "path": "stage-bundle-head-runtime.2fc1883a02ce0a442a10a4502f2db06c8b9dac84aaaafe9232dd295dccdfc942.js.map",
-        "bytes": 30787,
-        "sha256": "2fc1883a02ce0a442a10a4502f2db06c8b9dac84aaaafe9232dd295dccdfc942",
+        "path": "stage-bundle-head-runtime.9f5e64144c7566bdc84c9400d633c19aff5ce891039d5021767fbd41c65d3fb8.js.map",
+        "bytes": 30990,
+        "sha256": "9f5e64144c7566bdc84c9400d633c19aff5ce891039d5021767fbd41c65d3fb8",
         "included": true
       },
       "topNames": []
     },
     {
-      "path": "stage-bundle-head-edition.2feba7f49bbb2e6c36b5871bf8191f706a9dc9827cefabc385dcce799c16d6d2.js",
-      "bytes": 28758,
-      "sha256": "2feba7f49bbb2e6c36b5871bf8191f706a9dc9827cefabc385dcce799c16d6d2",
+      "path": "stage-bundle-head-edition.6c6900895c06b84f27d08139b5e4e7ccd593121a91537fbdfacb5032e3c9b418.js",
+      "bytes": 29151,
+      "sha256": "6c6900895c06b84f27d08139b5e4e7ccd593121a91537fbdfacb5032e3c9b418",
       "kind": "js",
       "group": "head-edition",
       "strict": false,
@@ -1424,9 +1444,9 @@
         "gamma-editions.js"
       ],
       "map": {
-        "path": "stage-bundle-head-edition.99666b49c48487e39c3f73061bf0e08501779668dd8a9ed6e20e3756c8ae4c0a.js.map",
-        "bytes": 77109,
-        "sha256": "99666b49c48487e39c3f73061bf0e08501779668dd8a9ed6e20e3756c8ae4c0a",
+        "path": "stage-bundle-head-edition.e14472f9b789d3c415ec6c428c61900489533c8a86afe6ce6bbd55cd22e026b8.js.map",
+        "bytes": 78538,
+        "sha256": "e14472f9b789d3c415ec6c428c61900489533c8a86afe6ce6bbd55cd22e026b8",
         "included": true
       },
       "topNames": []
@@ -1450,9 +1470,9 @@
       "topNames": []
     },
     {
-      "path": "stage-bundle-body-before-manual.46dc79e4b7b6b16936fe7a72597dc2532b1120959fb3e23967917a6839f4688d.js",
+      "path": "stage-bundle-body-before-manual.348cc4c8860699703261b846ea6b7ba70829b5d8a83cff67ae7dfe5606b92e0f.js",
       "bytes": 210155,
-      "sha256": "46dc79e4b7b6b16936fe7a72597dc2532b1120959fb3e23967917a6839f4688d",
+      "sha256": "348cc4c8860699703261b846ea6b7ba70829b5d8a83cff67ae7dfe5606b92e0f",
       "kind": "js",
       "group": "body-before-manual",
       "strict": false,
@@ -1480,17 +1500,35 @@
         "stage-storage-pressure.js"
       ],
       "map": {
-        "path": "stage-bundle-body-before-manual.62c716f82b08a821822f9bc94a600de9a191778407851cc995e99c7fd4d26c07.js.map",
+        "path": "stage-bundle-body-before-manual.53de23e895998accadfa5fdf5f1687c62f3edbaff9fb35de03ca2979bde6dbf5.js.map",
         "bytes": 702824,
-        "sha256": "62c716f82b08a821822f9bc94a600de9a191778407851cc995e99c7fd4d26c07",
+        "sha256": "53de23e895998accadfa5fdf5f1687c62f3edbaff9fb35de03ca2979bde6dbf5",
         "included": true
       },
       "topNames": []
     },
     {
-      "path": "stage-bundle-manual-meta.369a3ee98e1743750b6cf0bd327c469848ad70610fc05d85c7dd92d3d4c90efc.js",
+      "path": "stage-bundle-manual-scope.0537abee0b7acb692a76a4ed031825da3d1dc47c68cd17fe0346015a0099b5c3.js",
+      "bytes": 1088,
+      "sha256": "0537abee0b7acb692a76a4ed031825da3d1dc47c68cd17fe0346015a0099b5c3",
+      "kind": "js",
+      "group": "manual-scope",
+      "strict": false,
+      "members": [
+        "manual-gamma/edition-scope.js"
+      ],
+      "map": {
+        "path": "stage-bundle-manual-scope.c48beca50d3049ddcb430c83426dfcb1b6b419cb11b90f9b296a683850f8adcc.js.map",
+        "bytes": 3658,
+        "sha256": "c48beca50d3049ddcb430c83426dfcb1b6b419cb11b90f9b296a683850f8adcc",
+        "included": true
+      },
+      "topNames": []
+    },
+    {
+      "path": "stage-bundle-manual-meta.100aa63b4afd10d762d65d9d4743f2209f1f0492ebc8b63318a56236d097954e.js",
       "bytes": 234,
-      "sha256": "369a3ee98e1743750b6cf0bd327c469848ad70610fc05d85c7dd92d3d4c90efc",
+      "sha256": "100aa63b4afd10d762d65d9d4743f2209f1f0492ebc8b63318a56236d097954e",
       "kind": "js",
       "group": "manual-meta",
       "strict": false,
@@ -1498,17 +1536,17 @@
         "manual-gamma/manual-meta.js"
       ],
       "map": {
-        "path": "stage-bundle-manual-meta.7c3fe1824e8de558166dce9dd6713718806061f8f0365b5992c38939f5c31629.js.map",
+        "path": "stage-bundle-manual-meta.135a91ad856766ae59316df890faa27c0298f6df941adcf6a59350ed2512220c.js.map",
         "bytes": 735,
-        "sha256": "7c3fe1824e8de558166dce9dd6713718806061f8f0365b5992c38939f5c31629",
+        "sha256": "135a91ad856766ae59316df890faa27c0298f6df941adcf6a59350ed2512220c",
         "included": true
       },
       "topNames": []
     },
     {
-      "path": "stage-bundle-body-before-language-1.85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908.js",
-      "bytes": 522074,
-      "sha256": "85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908",
+      "path": "stage-bundle-body-before-language-1.e457b22dd71688ef40b9577945e71f4fd22dbddcdb044b455270a97bf1c80be6.js",
+      "bytes": 522597,
+      "sha256": "e457b22dd71688ef40b9577945e71f4fd22dbddcdb044b455270a97bf1c80be6",
       "kind": "js",
       "group": "body-before-language-1",
       "strict": false,
@@ -1530,6 +1568,7 @@
         "stage-time-domain.js",
         "stage-timecode.js",
         "stage-q-link-model.js",
+        "gamma-link-issuer.js",
         "stage-q-link-owner.js",
         "stage-cue-sheet.js",
         "docs/light-panel-migration-2026-09-13/light-panel-migration.js",
@@ -1549,9 +1588,9 @@
         "light-design/simple-lighting-model.js"
       ],
       "map": {
-        "path": "stage-bundle-body-before-language-1.a43c6d106d78f14ea61924a116d0d78ae5fcbf1c8665c7f133cec60bcff9ec48.js.map",
-        "bytes": 1695386,
-        "sha256": "a43c6d106d78f14ea61924a116d0d78ae5fcbf1c8665c7f133cec60bcff9ec48",
+        "path": "stage-bundle-body-before-language-1.9571045116fa1cb0492dee1b66c047059d4014fde67b2878514636cbed0dff92.js.map",
+        "bytes": 1697160,
+        "sha256": "9571045116fa1cb0492dee1b66c047059d4014fde67b2878514636cbed0dff92",
         "included": true
       },
       "topNames": [
@@ -1599,9 +1638,9 @@
       "topNames": []
     },
     {
-      "path": "stage-bundle-language-loader.c339230b6c8f75981f64c49607beaf67ef3e8610a4ed0d5440143b2e490ab6c7.js",
+      "path": "stage-bundle-language-loader.6983c97d523b9947d105f197652274a12eb9f8168bc99557755bb7e2b2758f55.js",
       "bytes": 2867,
-      "sha256": "c339230b6c8f75981f64c49607beaf67ef3e8610a4ed0d5440143b2e490ab6c7",
+      "sha256": "6983c97d523b9947d105f197652274a12eb9f8168bc99557755bb7e2b2758f55",
       "kind": "js",
       "group": "language-loader",
       "strict": false,
@@ -1609,17 +1648,17 @@
         "stage-language-loader.js"
       ],
       "map": {
-        "path": "stage-bundle-language-loader.4ed4f0c8faafc90a9500be5fb904a8c17e181b2fc7134f419dc7e5f5c0f61cd6.js.map",
+        "path": "stage-bundle-language-loader.e36c672e3d65b9c5510b544e81113cace371f2f1dd4aa54bba217929429eabd8.js.map",
         "bytes": 8806,
-        "sha256": "4ed4f0c8faafc90a9500be5fb904a8c17e181b2fc7134f419dc7e5f5c0f61cd6",
+        "sha256": "e36c672e3d65b9c5510b544e81113cace371f2f1dd4aa54bba217929429eabd8",
         "included": true
       },
       "topNames": []
     },
     {
-      "path": "stage-bundle-body-after-language.990e0c9a6a8f55d960d53388a279aa94d01e80816368102877ca27ff68d7b2b5.js",
-      "bytes": 1929342,
-      "sha256": "990e0c9a6a8f55d960d53388a279aa94d01e80816368102877ca27ff68d7b2b5",
+      "path": "stage-bundle-body-after-language.4fa5caa700714bba4868f881ff2661c6572fbbf45d6c0b51d579a9ef36358150.js",
+      "bytes": 1929810,
+      "sha256": "4fa5caa700714bba4868f881ff2661c6572fbbf45d6c0b51d579a9ef36358150",
       "kind": "js",
       "group": "body-after-language",
       "strict": false,
@@ -1655,9 +1694,9 @@
         "stage-venue-editor.js"
       ],
       "map": {
-        "path": "stage-bundle-body-after-language.beb0f030487842f4182addcd43dee829176bdbbaf7b55d75da8de6dbdead5e16.js.map",
-        "bytes": 6632710,
-        "sha256": "beb0f030487842f4182addcd43dee829176bdbbaf7b55d75da8de6dbdead5e16",
+        "path": "stage-bundle-body-after-language.e4becc4e500f536abf7e1e0322ac6f7dd221032f1b677c125d6fbb1f13a55d2e.js.map",
+        "bytes": 6634468,
+        "sha256": "e4becc4e500f536abf7e1e0322ac6f7dd221032f1b677c125d6fbb1f13a55d2e",
         "included": true
       },
       "topNames": [
@@ -1665,9 +1704,9 @@
       ]
     },
     {
-      "path": "stage-bundle-body-after-field-css-1.97647938c4ad21c3327808afca386c36be65936cafcc6fb82f21a3f1d7bc43d8.js",
+      "path": "stage-bundle-body-after-field-css-1.35e1a3409ff07ed9ee493f58aff9fc800a42294249f2a8da48c3a20df2539f88.js",
       "bytes": 216992,
-      "sha256": "97647938c4ad21c3327808afca386c36be65936cafcc6fb82f21a3f1d7bc43d8",
+      "sha256": "35e1a3409ff07ed9ee493f58aff9fc800a42294249f2a8da48c3a20df2539f88",
       "kind": "js",
       "group": "body-after-field-css-1",
       "strict": false,
@@ -1686,9 +1725,9 @@
         "stage-venue-viewpoints.js"
       ],
       "map": {
-        "path": "stage-bundle-body-after-field-css-1.66640259ef76666e648512de74d0ac102b5635aaa4adc5f798526c4c9e7fccf2.js.map",
+        "path": "stage-bundle-body-after-field-css-1.025b227060cbe678ff7dab337ea87a717432a6b5fbd287c8d104d1d76604fa50.js.map",
         "bytes": 631186,
-        "sha256": "66640259ef76666e648512de74d0ac102b5635aaa4adc5f798526c4c9e7fccf2",
+        "sha256": "025b227060cbe678ff7dab337ea87a717432a6b5fbd287c8d104d1d76604fa50",
         "included": true
       },
       "topNames": []
@@ -1712,9 +1751,9 @@
       "topNames": []
     },
     {
-      "path": "stage-bundle-body-after-field-css-3.1a5def92e3b6eddc827cdeb64a7bc839eaa1d47e533eee9e2f8c5bdc891045b9.js",
-      "bytes": 16225,
-      "sha256": "1a5def92e3b6eddc827cdeb64a7bc839eaa1d47e533eee9e2f8c5bdc891045b9",
+      "path": "stage-bundle-body-after-field-css-3.4c28a0710d579a17625cbe6022f8269e87c85718efe5bf992634fb4470090e40.js",
+      "bytes": 17391,
+      "sha256": "4c28a0710d579a17625cbe6022f8269e87c85718efe5bf992634fb4470090e40",
       "kind": "js",
       "group": "body-after-field-css-3",
       "strict": false,
@@ -1725,9 +1764,9 @@
         "gamma-appearance.js"
       ],
       "map": {
-        "path": "stage-bundle-body-after-field-css-3.08b041010b32c023588d9145723dbcedf62358bf1b7894410ddea3f0d97f9ce1.js.map",
-        "bytes": 42723,
-        "sha256": "08b041010b32c023588d9145723dbcedf62358bf1b7894410ddea3f0d97f9ce1",
+        "path": "stage-bundle-body-after-field-css-3.e5fde20a91e512939f535febaf9a5b311036557812953f9754a54cfee3674090.js.map",
+        "bytes": 47115,
+        "sha256": "e5fde20a91e512939f535febaf9a5b311036557812953f9754a54cfee3674090",
         "included": true
       },
       "topNames": []
@@ -1821,28 +1860,32 @@
   ],
   "replacements": [
     {
-      "before": "<script src=\"stage-runtime.js?v=20261112-v0417\"></script>",
-      "after": "<script src=\"stage-bundle-head-runtime.07a73a1b039405285f6e307ad1db3d93c6555d21dc21cd695ab42c171c3c1cbb.js\"></script>"
+      "before": "<script src=\"stage-runtime.js?v=20261112-v0418\"></script>",
+      "after": "<script src=\"stage-bundle-head-runtime.b28cc071214d9f374e69856802797b64290be3c1e21d5022edc2c9dd92d6a162.js\"></script>"
     },
     {
-      "before": "<script src=\"gamma-editions.js?v=20261112-v0417\"></script>",
-      "after": "<script src=\"stage-bundle-head-edition.2feba7f49bbb2e6c36b5871bf8191f706a9dc9827cefabc385dcce799c16d6d2.js\"></script>"
+      "before": "<script src=\"gamma-editions.js?v=20261112-v0418\"></script>",
+      "after": "<script src=\"stage-bundle-head-edition.6c6900895c06b84f27d08139b5e4e7ccd593121a91537fbdfacb5032e3c9b418.js\"></script>"
     },
     {
       "before": "<script src=\"gamma-light-model.js?v=20261107-v049\"></script>",
       "after": "<script src=\"stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-venues.js?v=20261109-v0412\"></script>\n<script src=\"stage-venue-lines.js?v=2026091992\"></script>\n<script src=\"stage-front-shape.js?v=2026092046\"></script>\n<script src=\"stage-venue-report.js?v=2026092047\"></script>\n<script src=\"stage-samples/index.js?v=20261013-v0360\"></script>\n<script src=\"stage-samples/catalog.js?v=20261112-v0417\"></script>\n<script src=\"stage-set-model.js?v=2026092354\"></script>\n<script src=\"stage-set-builder.js?v=20261009-v0337\"></script>\n<script src=\"stage-machinery.js?v=20261012-v0358\"></script>\n<script src=\"stage-virtual-room.js?v=20261009-v0337\"></script>\n<script src=\"stage-scrim.js?v=20261009-v0335\"></script>\n<script src=\"gamma-render-resolution.js?v=20261006-v0318\"></script>\n<script src=\"stage-first-person-loader.js?v=20261015-v0368\"></script>\n<script src=\"stage-fixture-body.js?v=20261031-v0396\"></script>\n<script src=\"stage-audio-store.js?v=20261112-v0417\"></script>\n<script src=\"stage-large-project-store.js?v=20261022-v0383\"></script>\n<script src=\"stage-project-backup-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-storage-codec.js?v=2026092523\"></script>\n<script src=\"stage-storage-recovery.js?v=20261020-v0382\"></script>\n<script src=\"stage-storage-hygiene.js?v=20261014-v0365\"></script>\n<script src=\"stage-storage-pressure.js?v=20260926-large39\"></script>",
-      "after": "<script src=\"stage-bundle-body-before-manual.46dc79e4b7b6b16936fe7a72597dc2532b1120959fb3e23967917a6839f4688d.js\"></script>"
+      "before": "<script src=\"stage-venues.js?v=20261109-v0412\"></script>\n<script src=\"stage-venue-lines.js?v=2026091992\"></script>\n<script src=\"stage-front-shape.js?v=2026092046\"></script>\n<script src=\"stage-venue-report.js?v=2026092047\"></script>\n<script src=\"stage-samples/index.js?v=20261013-v0360\"></script>\n<script src=\"stage-samples/catalog.js?v=20261112-v0418\"></script>\n<script src=\"stage-set-model.js?v=2026092354\"></script>\n<script src=\"stage-set-builder.js?v=20261009-v0337\"></script>\n<script src=\"stage-machinery.js?v=20261012-v0358\"></script>\n<script src=\"stage-virtual-room.js?v=20261009-v0337\"></script>\n<script src=\"stage-scrim.js?v=20261009-v0335\"></script>\n<script src=\"gamma-render-resolution.js?v=20261006-v0318\"></script>\n<script src=\"stage-first-person-loader.js?v=20261015-v0368\"></script>\n<script src=\"stage-fixture-body.js?v=20261031-v0396\"></script>\n<script src=\"stage-audio-store.js?v=20261112-v0417\"></script>\n<script src=\"stage-large-project-store.js?v=20261022-v0383\"></script>\n<script src=\"stage-project-backup-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-storage-codec.js?v=2026092523\"></script>\n<script src=\"stage-storage-recovery.js?v=20261020-v0382\"></script>\n<script src=\"stage-storage-hygiene.js?v=20261014-v0365\"></script>\n<script src=\"stage-storage-pressure.js?v=20260926-large39\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-manual.348cc4c8860699703261b846ea6b7ba70829b5d8a83cff67ae7dfe5606b92e0f.js\"></script>"
     },
     {
-      "before": "<script src=\"manual-gamma/manual-meta.js?v=20261112-v0417\" data-manual-content=\"manual-gamma/manual-content.js?v=20261112-v0417\"></script>",
-      "after": "<script src=\"stage-bundle-manual-meta.369a3ee98e1743750b6cf0bd327c469848ad70610fc05d85c7dd92d3d4c90efc.js\" data-manual-content=\"manual-gamma/manual-content.js?v=20261112-v0417\"></script>"
+      "before": "<script src=\"manual-gamma/edition-scope.js?v=20261112-v0418\"></script>",
+      "after": "<script src=\"stage-bundle-manual-scope.0537abee0b7acb692a76a4ed031825da3d1dc47c68cd17fe0346015a0099b5c3.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-pwa.js?v=20261020-v0380\"></script>\n<script src=\"stage-lighting-plans.js?v=20261005-beam99\"></script>\n<script src=\"stage-lighting-plan-overlay.js?v=20261005-batch98\"></script>\n<script src=\"light-design/rig-engine.js?v=20261109-v0412\"></script>\n<script src=\"light-design/laser-effects.js?v=20261005-batch98\"></script>\n<script src=\"stage-light-eval.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-receiver.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-render.js?v=20261105-v045\"></script>\n<script src=\"gamma-light-cue-overlay.js?v=20261105-v045\"></script>\n<script src=\"gamma-range-fields.js?v=20261014-v0361\"></script>\n<script src=\"gamma-number-scrub.js?v=2026091780\"></script>\n<script src=\"gamma-formation-presets.js?v=20261026-v0388\"></script>\n<script src=\"gamma-formation-model.js?v=20261026-v0388\"></script>\n<script src=\"stage-data-safety.js?v=20261001-release69\"></script>\n<script src=\"stage-time-domain.js?v=20261013-v0359\"></script>\n<script src=\"stage-timecode.js?v=20261015-v0371\"></script>\n<script src=\"stage-q-link-model.js?v=20261111-v0414\"></script>\n<script src=\"stage-q-link-owner.js?v=20261111-v0414\"></script>\n<script src=\"stage-cue-sheet.js?v=20261105-v046\"></script>\n<script src=\"docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113\"></script>\n<script src=\"stage-light-panel-import.js?v=2026092209\"></script>\n<script src=\"stage-scene-alternatives.js?v=20261031-v0396\"></script>\n<script src=\"stage-music-cues.js?v=20261015-v0371\"></script>\n<script src=\"stage-shortcuts.js?v=20261031-v0396\"></script>\n<!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->\n<script src=\"stage-reorder-motion.js?v=2026092420\"></script>\n<script src=\"stage-jog-reference.js?v=2026093003\"></script>\n<script src=\"stage-performer-motion.js?v=20261011-v0347\"></script>\n<script src=\"stage-idle-motion.js?v=20261014-v0362\"></script>\n<script src=\"stage-performer-contour.js?v=20261006-v0318\"></script>\n<script src=\"stage-performer-body.js?v=20261104-v043\"></script>\n<script src=\"gamma-ui.js?v=20261104-v044\"></script>\n<script src=\"stage-point-source.js?v=20260927-point43\"></script>\n<script src=\"stage-save-lifecycle.js?v=20260927-guard45\"></script>\n<script src=\"light-design/simple-lighting-model.js?v=20261109-v0412\"></script>",
-      "after": "<script src=\"stage-bundle-body-before-language-1.85c747b9e43e72bbe43524c5a4b0c481891f34046bd9cc2de4e12f26f0fd5908.js\"></script>"
+      "before": "<script src=\"manual-gamma/manual-meta.js?v=20261112-v0418\" data-manual-content=\"manual-gamma/manual-content.js?v=20261112-v0418\"></script>",
+      "after": "<script src=\"stage-bundle-manual-meta.100aa63b4afd10d762d65d9d4743f2209f1f0492ebc8b63318a56236d097954e.js\" data-manual-content=\"manual-gamma/manual-content.js?v=20261112-v0418\"></script>"
+    },
+    {
+      "before": "<script src=\"stage-pwa.js?v=20261020-v0380\"></script>\n<script src=\"stage-lighting-plans.js?v=20261005-beam99\"></script>\n<script src=\"stage-lighting-plan-overlay.js?v=20261005-batch98\"></script>\n<script src=\"light-design/rig-engine.js?v=20261109-v0412\"></script>\n<script src=\"light-design/laser-effects.js?v=20261005-batch98\"></script>\n<script src=\"stage-light-eval.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-receiver.js?v=20261004-receiver89\"></script>\n<script src=\"stage-light-render.js?v=20261105-v045\"></script>\n<script src=\"gamma-light-cue-overlay.js?v=20261105-v045\"></script>\n<script src=\"gamma-range-fields.js?v=20261014-v0361\"></script>\n<script src=\"gamma-number-scrub.js?v=2026091780\"></script>\n<script src=\"gamma-formation-presets.js?v=20261026-v0388\"></script>\n<script src=\"gamma-formation-model.js?v=20261026-v0388\"></script>\n<script src=\"stage-data-safety.js?v=20261001-release69\"></script>\n<script src=\"stage-time-domain.js?v=20261013-v0359\"></script>\n<script src=\"stage-timecode.js?v=20261015-v0371\"></script>\n<script src=\"stage-q-link-model.js?v=20261111-v0414\"></script>\n<script src=\"gamma-link-issuer.js?v=20261112-v0418\"></script>\n<script src=\"stage-q-link-owner.js?v=20261112-v0418\"></script>\n<script src=\"stage-cue-sheet.js?v=20261105-v046\"></script>\n<script src=\"docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113\"></script>\n<script src=\"stage-light-panel-import.js?v=2026092209\"></script>\n<script src=\"stage-scene-alternatives.js?v=20261031-v0396\"></script>\n<script src=\"stage-music-cues.js?v=20261015-v0371\"></script>\n<script src=\"stage-shortcuts.js?v=20261031-v0396\"></script>\n<!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->\n<script src=\"stage-reorder-motion.js?v=2026092420\"></script>\n<script src=\"stage-jog-reference.js?v=2026093003\"></script>\n<script src=\"stage-performer-motion.js?v=20261011-v0347\"></script>\n<script src=\"stage-idle-motion.js?v=20261014-v0362\"></script>\n<script src=\"stage-performer-contour.js?v=20261006-v0318\"></script>\n<script src=\"stage-performer-body.js?v=20261104-v043\"></script>\n<script src=\"gamma-ui.js?v=20261104-v044\"></script>\n<script src=\"stage-point-source.js?v=20260927-point43\"></script>\n<script src=\"stage-save-lifecycle.js?v=20260927-guard45\"></script>\n<script src=\"light-design/simple-lighting-model.js?v=20261109-v0412\"></script>",
+      "after": "<script src=\"stage-bundle-body-before-language-1.e457b22dd71688ef40b9577945e71f4fd22dbddcdb044b455270a97bf1c80be6.js\"></script>"
     },
     {
       "before": "<script src=\"stage-run-of-show-distribution.js?v=20261012-v0358\"></script>\n<script src=\"stage-run-of-show-files.js?v=20261012-v0358\"></script>",
@@ -1853,24 +1896,24 @@
       "after": "<script src=\"stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-language-loader.js?v=20261112-v0417\"></script>",
-      "after": "<script src=\"stage-bundle-language-loader.c339230b6c8f75981f64c49607beaf67ef3e8610a4ed0d5440143b2e490ab6c7.js\"></script>"
+      "before": "<script src=\"stage-language-loader.js?v=20261112-v0418\"></script>",
+      "after": "<script src=\"stage-bundle-language-loader.6983c97d523b9947d105f197652274a12eb9f8168bc99557755bb7e2b2758f55.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-reorder-warning.js?v=20261009-v0335\"></script>\n<script src=\"stage-venue-curtains.js?v=20261011-v0347\"></script>\n<script src=\"stage-metrics.js?v=20261020-v0380\"></script>\n<script src=\"stage-project-file.js?v=20261107-v049\"></script>\n<script src=\"stage-welcome.js?v=20261025-v0387\"></script>\n<script src=\"gamma-undo-owner.js?v=20261030-v0395\"></script>\n<script src=\"stage-project-bridge.js?v=20261109-v0411\"></script>\n<script src=\"stage-project-library.js?v=20261103-v040\"></script>\n<script src=\"stage-element-refs.js?v=20261104-v043\"></script>\n<script src=\"stage-call-grid.js?v=20261111-v0414\"></script>\n<script src=\"stage-plan-fit.js?v=20261112-v0416\"></script>\n<script src=\"stage-sketch.js?v=20261112-v0417\"></script>\n<script src=\"stage-scene-alternatives-ui.js?v=20261009-v0337\"></script>\n<script src=\"gamma-formation.js?v=20261112-v0417\"></script>\n<script src=\"stage-vox-panel.js?v=20261005-v030\"></script>\n<script src=\"stage-script-editor.js?v=20261025-v0386\"></script>\n    <script src=\"stage-light-schedule.js?v=20261013-v0359\"></script>\n    <script src=\"stage-timeline.js?v=20261109-v0411\"></script>\n<script src=\"stage-session.js?v=20261110-v0413\"></script>\n<script src=\"stage-study-export.js?v=20261111-v0414\"></script>\n<script src=\"stage-study-reply.js?v=20261111-v0415\"></script>\n<script src=\"stage-study-reply-store.js?v=20261112-v0417\"></script>\n<script src=\"stage-study-pen.js?v=20261111-v0415\"></script>\n<script src=\"stage-study-sticky.js?v=20261111-v0415\"></script>\n<script src=\"stage-study-reply-import.js?v=20261112-v0417\"></script>\n<script src=\"stage-study-owner.js?v=20261111-v0415\"></script>\n<script src=\"stage-usage.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-underlay.js?v=20261006-v0312\"></script>\n<script src=\"stage-venue-editor.js?v=20261107-v048\"></script>",
-      "after": "<script src=\"stage-bundle-body-after-language.990e0c9a6a8f55d960d53388a279aa94d01e80816368102877ca27ff68d7b2b5.js\"></script>"
+      "before": "<script src=\"stage-reorder-warning.js?v=20261009-v0335\"></script>\n<script src=\"stage-venue-curtains.js?v=20261011-v0347\"></script>\n<script src=\"stage-metrics.js?v=20261112-v0418\"></script>\n<script src=\"stage-project-file.js?v=20261107-v049\"></script>\n<script src=\"stage-welcome.js?v=20261025-v0387\"></script>\n<script src=\"gamma-undo-owner.js?v=20261030-v0395\"></script>\n<script src=\"stage-project-bridge.js?v=20261109-v0411\"></script>\n<script src=\"stage-project-library.js?v=20261103-v040\"></script>\n<script src=\"stage-element-refs.js?v=20261104-v043\"></script>\n<script src=\"stage-call-grid.js?v=20261111-v0414\"></script>\n<script src=\"stage-plan-fit.js?v=20261112-v0416\"></script>\n<script src=\"stage-sketch.js?v=20261112-v0418\"></script>\n<script src=\"stage-scene-alternatives-ui.js?v=20261112-v0418\"></script>\n<script src=\"gamma-formation.js?v=20261112-v0418\"></script>\n<script src=\"stage-vox-panel.js?v=20261005-v030\"></script>\n<script src=\"stage-script-editor.js?v=20261025-v0386\"></script>\n    <script src=\"stage-light-schedule.js?v=20261013-v0359\"></script>\n    <script src=\"stage-timeline.js?v=20261112-v0418\"></script>\n<script src=\"stage-session.js?v=20261110-v0413\"></script>\n<script src=\"stage-study-export.js?v=20261111-v0414\"></script>\n<script src=\"stage-study-reply.js?v=20261111-v0415\"></script>\n<script src=\"stage-study-reply-store.js?v=20261112-v0417\"></script>\n<script src=\"stage-study-pen.js?v=20261111-v0415\"></script>\n<script src=\"stage-study-sticky.js?v=20261112-v0418\"></script>\n<script src=\"stage-study-reply-import.js?v=20261112-v0417\"></script>\n<script src=\"stage-study-owner.js?v=20261112-v0418\"></script>\n<script src=\"stage-usage.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-underlay.js?v=20261006-v0312\"></script>\n<script src=\"stage-venue-editor.js?v=20261107-v048\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-language.4fa5caa700714bba4868f881ff2661c6572fbbf45d6c0b51d579a9ef36358150.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-field-run-model.js?v=20261016-v0373\"></script>\n<script src=\"stage-field-run-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-package.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-transport.js?v=20261016-v0372\"></script>\n<script src=\"stage-field-run-checkpoint.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-console.js?v=20261112-v0417\"></script>\n<script src=\"stage-run-of-show-pane.js?v=20261112-v0417\"></script>\n<script src=\"gamma-workspace.js?v=20261112-v0417\"></script>\n<script src=\"gamma-feature-search.js?v=20261030-v0395\"></script>\n<script src=\"gamma-mobile.js?v=20261030-v0395\"></script>\n<script src=\"stage-venue-preview.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-viewpoints.js?v=20261012-v0357\"></script>",
-      "after": "<script src=\"stage-bundle-body-after-field-css-1.97647938c4ad21c3327808afca386c36be65936cafcc6fb82f21a3f1d7bc43d8.js\"></script>"
+      "before": "<script src=\"stage-field-run-model.js?v=20261016-v0373\"></script>\n<script src=\"stage-field-run-store.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-package.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-transport.js?v=20261016-v0372\"></script>\n<script src=\"stage-field-run-checkpoint.js?v=20261020-v0380\"></script>\n<script src=\"stage-field-run-console.js?v=20261112-v0418\"></script>\n<script src=\"stage-run-of-show-pane.js?v=20261112-v0418\"></script>\n<script src=\"gamma-workspace.js?v=20261112-v0418\"></script>\n<script src=\"gamma-feature-search.js?v=20261030-v0395\"></script>\n<script src=\"gamma-mobile.js?v=20261030-v0395\"></script>\n<script src=\"stage-venue-preview.js?v=20261015-v0368\"></script>\n<script src=\"stage-venue-viewpoints.js?v=20261012-v0357\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-field-css-1.35e1a3409ff07ed9ee493f58aff9fc800a42294249f2a8da48c3a20df2539f88.js\"></script>"
     },
     {
       "before": "<script src=\"run-of-show/timing.js?v=20261010-v0338\"></script>",
       "after": "<script src=\"stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js\"></script>"
     },
     {
-      "before": "<script src=\"stage-show-overview.js?v=20261101-v0398\"></script>\n<!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->\n<script src=\"stage-web-analytics.js?v=20261020-v0380\"></script>\n<script src=\"gamma-header-fit.js?v=20261112-v0417\"></script>\n<script src=\"gamma-appearance.js?v=20261109-v0411\"></script>",
-      "after": "<script src=\"stage-bundle-body-after-field-css-3.1a5def92e3b6eddc827cdeb64a7bc839eaa1d47e533eee9e2f8c5bdc891045b9.js\"></script>"
+      "before": "<script src=\"stage-show-overview.js?v=20261101-v0398\"></script>\n<!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->\n<script src=\"stage-web-analytics.js?v=20261112-v0418\"></script>\n<script src=\"gamma-header-fit.js?v=20261112-v0417\"></script>\n<script src=\"gamma-appearance.js?v=20261109-v0411\"></script>",
+      "after": "<script src=\"stage-bundle-body-after-field-css-3.4c28a0710d579a17625cbe6022f8269e87c85718efe5bf992634fb4470090e40.js\"></script>"
     },
     {
       "before": "<link rel=\"stylesheet\" href=\"style.css?v=20261112-v0417\">",
@@ -1893,7 +1936,8 @@
     "./assets/brand/logo-jp-gamma-inline-white.svg",
     "./company.html",
     "./docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
-    "./field-frame.html?v=20261112-v0417",
+    "./download/subscriber-guidance.js",
+    "./field-frame.html?v=20261112-v0418",
     "./gamma-appearance.js?v=20261109-v0411",
     "./gamma-assist-check-core.js",
     "./gamma-assist-check.css",
@@ -1901,16 +1945,17 @@
     "./gamma-assist-ops.js?v=20261031-v0396",
     "./gamma-assist-ops2.js?v=20261031-v0396",
     "./gamma-assist.css?v=20261031-v0396",
-    "./gamma-assist.js?v=20261112-v0417",
-    "./gamma-editions.js?v=20261112-v0417",
+    "./gamma-assist.js?v=20261112-v0418",
+    "./gamma-editions.js?v=20261112-v0418",
     "./gamma-feature-search.js?v=20261030-v0395",
     "./gamma-formation-model.js?v=20261026-v0388",
     "./gamma-formation-presets.js?v=20261026-v0388",
     "./gamma-formation.css?v=20261015-v0368",
-    "./gamma-formation.js?v=20261112-v0417",
+    "./gamma-formation.js?v=20261112-v0418",
     "./gamma-header-fit.js?v=20261112-v0417",
     "./gamma-light-cue-overlay.js?v=20261105-v045",
     "./gamma-light-model.js?v=20261107-v049",
+    "./gamma-link-issuer.js?v=20261112-v0418",
     "./gamma-mobile.css?v=20261103-v041",
     "./gamma-mobile.js?v=20261030-v0395",
     "./gamma-number-scrub.js?v=2026091780",
@@ -1921,7 +1966,7 @@
     "./gamma-ui-tokens.css?v=20261105-v045",
     "./gamma-ui.js?v=20261104-v044",
     "./gamma-undo-owner.js?v=20261030-v0395",
-    "./gamma-workspace.js?v=20261112-v0417",
+    "./gamma-workspace.js?v=20261112-v0418",
     "./gamma.css?v=20261112-v0417",
     "./icons/stage-sketch-180.png",
     "./icons/stage-sketch-192.png",
@@ -1929,8 +1974,10 @@
     "./light-design/laser-effects.js?v=20261005-batch98",
     "./light-design/rig-engine.js?v=20261109-v0412",
     "./light-design/simple-lighting-model.js?v=20261109-v0412",
-    "./manual-gamma/manual-content.js?v=20261112-v0417",
-    "./manual-gamma/manual-meta.js?v=20261112-v0417",
+    "./manual-gamma/edition-scope.js",
+    "./manual-gamma/edition-scope.js?v=20261112-v0418",
+    "./manual-gamma/manual-content.js?v=20261112-v0418",
+    "./manual-gamma/manual-meta.js?v=20261112-v0418",
     "./run-of-show/timing.js?v=20261010-v0338",
     "./run.html",
     "./stage-audio-store.js?v=20261112-v0417",
@@ -1939,7 +1986,7 @@
     "./stage-data-safety.js?v=20261001-release69",
     "./stage-element-refs.js?v=20261104-v043",
     "./stage-field-run-checkpoint.js?v=20261020-v0380",
-    "./stage-field-run-console.js?v=20261112-v0417",
+    "./stage-field-run-console.js?v=20261112-v0418",
     "./stage-field-run-frame.js?v=20261104-v042",
     "./stage-field-run-model.js?v=20261016-v0373",
     "./stage-field-run-package.js?v=20261020-v0380",
@@ -1950,11 +1997,11 @@
     "./stage-first-person-loader.js?v=20261015-v0368",
     "./stage-fixture-body.js?v=20261031-v0396",
     "./stage-front-shape.js?v=2026092046",
-    "./stage-i18n.ja.js?v=20261112-v0417",
-    "./stage-i18n.js?v=20261112-v0417",
+    "./stage-i18n.ja.js?v=20261112-v0418",
+    "./stage-i18n.js?v=20261112-v0418",
     "./stage-idle-motion.js?v=20261014-v0362",
     "./stage-jog-reference.js?v=2026093003",
-    "./stage-language-loader.js?v=20261112-v0417",
+    "./stage-language-loader.js?v=20261112-v0418",
     "./stage-large-project-store.js?v=20261022-v0383",
     "./stage-light-eval.js?v=20261004-receiver89",
     "./stage-light-panel-import.js?v=2026092209",
@@ -1964,7 +2011,7 @@
     "./stage-lighting-plan-overlay.js?v=20261005-batch98",
     "./stage-lighting-plans.js?v=20261005-beam99",
     "./stage-machinery.js?v=20261012-v0358",
-    "./stage-metrics.js?v=20261020-v0380",
+    "./stage-metrics.js?v=20261112-v0418",
     "./stage-music-cues.js?v=20261015-v0371",
     "./stage-panel-bottom.css?v=20261013-v0360",
     "./stage-panel-columns.css?v=20261001-release71",
@@ -1982,7 +2029,7 @@
     "./stage-prop-shapes.js?v=20261009-v0333",
     "./stage-pwa.js?v=20261020-v0380",
     "./stage-q-link-model.js?v=20261111-v0414",
-    "./stage-q-link-owner.js?v=20261111-v0414",
+    "./stage-q-link-owner.js?v=20261112-v0418",
     "./stage-q-link.css?v=20261111-v0414",
     "./stage-rehearsal-export.js?v=2026091501",
     "./stage-reorder-motion.js?v=2026092420",
@@ -1990,13 +2037,13 @@
     "./stage-run-of-show-distribution.js?v=20261012-v0358",
     "./stage-run-of-show-files.js?v=20261012-v0358",
     "./stage-run-of-show-model.js?v=20261006-v0312",
-    "./stage-run-of-show-pane.js?v=20261112-v0417",
+    "./stage-run-of-show-pane.js?v=20261112-v0418",
     "./stage-run-of-show.css?v=20261009-v0337",
-    "./stage-runtime.js?v=20261112-v0417",
-    "./stage-samples/catalog.js?v=20261112-v0417",
+    "./stage-runtime.js?v=20261112-v0418",
+    "./stage-samples/catalog.js?v=20261112-v0418",
     "./stage-samples/index.js?v=20261013-v0360",
     "./stage-save-lifecycle.js?v=20260927-guard45",
-    "./stage-scene-alternatives-ui.js?v=20261009-v0337",
+    "./stage-scene-alternatives-ui.js?v=20261112-v0418",
     "./stage-scene-alternatives.css?v=20261031-v0396",
     "./stage-scene-alternatives.js?v=20261031-v0396",
     "./stage-scrim.js?v=20261009-v0335",
@@ -2008,24 +2055,24 @@
     "./stage-shortcuts.js?v=20261031-v0396",
     "./stage-show-overview.css?v=20261009-v0337",
     "./stage-show-overview.js?v=20261101-v0398",
-    "./stage-sketch.js?v=20261112-v0417",
+    "./stage-sketch.js?v=20261112-v0418",
     "./stage-sketch.webmanifest",
     "./stage-storage-codec.js?v=2026092523",
     "./stage-storage-hygiene.js?v=20261014-v0365",
     "./stage-storage-pressure.js?v=20260926-large39",
     "./stage-storage-recovery.js?v=20261020-v0382",
     "./stage-study-export.js?v=20261111-v0414",
-    "./stage-study-owner.js?v=20261111-v0415",
+    "./stage-study-owner.js?v=20261112-v0418",
     "./stage-study-pen.js?v=20261111-v0415",
     "./stage-study-reply-import.js?v=20261112-v0417",
     "./stage-study-reply-store.js?v=20261112-v0417",
     "./stage-study-reply.js?v=20261111-v0415",
-    "./stage-study-sticky.js?v=20261111-v0415",
+    "./stage-study-sticky.js?v=20261112-v0418",
     "./stage-study.css?v=20261111-v0415",
     "./stage-time-domain.js?v=20261013-v0359",
     "./stage-timecode.css?v=20261015-v0371",
     "./stage-timecode.js?v=20261015-v0371",
-    "./stage-timeline.js?v=20261109-v0411",
+    "./stage-timeline.js?v=20261112-v0418",
     "./stage-usage.js?v=20261015-v0368",
     "./stage-venue-curtains.js?v=20261011-v0347",
     "./stage-venue-editor.js?v=20261107-v048",
@@ -2040,7 +2087,7 @@
     "./stage-virtual-room.js?v=20261009-v0337",
     "./stage-vox-panel.css?v=20261015-v0368",
     "./stage-vox-panel.js?v=20261005-v030",
-    "./stage-web-analytics.js?v=20261020-v0380",
+    "./stage-web-analytics.js?v=20261112-v0418",
     "./stage-welcome.css?v=20261016-v0373",
     "./stage-welcome.js?v=20261025-v0387",
     "./stage.html",
@@ -2051,13 +2098,13 @@
   "rewritten": [
     {
       "path": "stage.html",
-      "bytes": 336404,
-      "sha256": "89c105b1f63a728069364c5157e8232c84e9e9ecc6f74a615195ebcdd38c1850"
+      "bytes": 337686,
+      "sha256": "6dd3ac503e4489fe8c01ac4e2e885d941bfa5a2be82c701f638d2cf4f7344d0e"
     },
     {
       "path": "stage-sw.js",
-      "bytes": 32945,
-      "sha256": "004f05c28d1fcc7518eb107330c8b2b76cd4d52cf76516412333e92a6b305e5c"
+      "bytes": 33222,
+      "sha256": "a4fd7cedbe7764d5a521eeaba2cff6ff35a9623fdf0bcec091d209089e456976"
     }
   ]
 }

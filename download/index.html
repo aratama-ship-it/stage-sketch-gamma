@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja" data-stage-skin="brown">
 <head>
-<script src="../stage-runtime.js?v=20261112-v0417"></script>
-<script src="../stage-i18n.ja.js?v=20261112-v0417"></script>
+<script src="../stage-runtime.js?v=20261112-v0418"></script>
+<script src="../stage-i18n.ja.js?v=20261112-v0418"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
@@ -145,11 +145,12 @@
     <p class="download-note" data-download-copy="authenticity">配布元の確認は合言葉とは別です。ダウンロード前に、リンク先が PYGMIX の公式 GitHub（aratama-ship-it/stage-sketch-gamma）であることを確認してください。</p>
   </main>
 
-  <script src="../stage-i18n.ja.js?v=20261112-v0417"></script>
-  <script src="../stage-i18n.en.js?v=20261112-v0417"></script>
-  <script src="../stage-i18n.ko.js?v=20261112-v0417"></script>
-  <script src="../stage-i18n.zh-Hans.js?v=20261112-v0417"></script>
-  <script src="../stage-i18n.zh-Hant.js?v=20261112-v0417"></script>
+  <script src="../stage-i18n.ja.js?v=20261112-v0418"></script>
+  <script src="../stage-i18n.en.js?v=20261112-v0418"></script>
+  <script src="../stage-i18n.ko.js?v=20261112-v0418"></script>
+  <script src="../stage-i18n.zh-Hans.js?v=20261112-v0418"></script>
+  <script src="../stage-i18n.zh-Hant.js?v=20261112-v0418"></script>
+  <script src="subscriber-guidance.js"></script>
   <script>
     const downloadLang = Object.hasOwn(window.SHOSAI_DOWNLOAD, new URLSearchParams(location.search).get("lang")) ? new URLSearchParams(location.search).get("lang") : "ja";
     const downloadText = window.SHOSAI_DOWNLOAD[downloadLang];
@@ -215,18 +216,20 @@
         button.disabled = false;
       });
     })();
+    if (window.GAMMA_MAC_GUIDANCE?.privateRelease()) window.GAMMA_MAC_GUIDANCE.apply(document, downloadText);
     fetch('../native-latest.json', { cache: 'no-store' })
       .then((response) => {
         if (!response.ok) throw new Error('version fetch failed');
         return response.json();
       })
       .then((latest) => {
+        if (window.GAMMA_MAC_GUIDANCE?.enabled(latest)) window.GAMMA_MAC_GUIDANCE.apply(document, downloadText);
         if (typeof latest.version !== 'string' || !/^\d+(?:\.\d+)*$/.test(latest.version)) return;
         document.getElementById('native-version').textContent = downloadText.version.replace("{version}", latest.version);
       })
       .catch(() => {});
   </script>
 <!-- Cloudflare Web Analytics: Pages only. -->
-<script src="../stage-web-analytics.js?v=20261020-v0380"></script>
+<script src="../stage-web-analytics.js?v=20261112-v0418"></script>
 </body>
 </html>

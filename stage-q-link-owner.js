@@ -44,7 +44,7 @@
     revoke.disabled=busy || !service || !link || host()?.readOnly(); copy.disabled=busy || !link || Boolean(expired);
     department.disabled=busy; expiryMode.disabled=busy || Boolean(link); expiryDate.disabled=busy || Boolean(link);
     expiryDate.hidden=expiryMode.value!=='dated';
-    field.value=link ? new URL('/stage-q-view.html?lang='+encodeURIComponent(language())+'#'+link.token,location.origin).href : '';
+    field.value=link ? window.GAMMA_LINK_ISSUER.qUrl(link.token,language()) : '';
     field.hidden=!link; copy.hidden=!link; update.hidden=!link; revoke.hidden=!link;
     dates.textContent=link ? t('公開日時')+': '+date(link.publishedAt)+' · '+t('リンクの期限')+': '+(link.expiresAt?date(link.expiresAt):t('期限なし')) : '';
     publish.title=update.title=allowed()?'':window.GAMMA_CONTRACT?.message('studyLinks')||t('閲覧リンクの公開は編集できる主催者だけが行えます。');

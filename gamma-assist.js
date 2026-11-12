@@ -179,7 +179,7 @@
     throw Error('invalid');
   }
   function referenceHref(ref) {
-    if (ref.kind === 'manual' && /^manual-gamma\/index\.html\?lang=(ja|en)#[A-Za-z0-9_%.-]+$/.test(ref.href || '')) return ref.href;
+    if (ref.kind === 'manual' && /^manual-gamma\/index\.html\?lang=(ja|en)#[A-Za-z0-9_%.-]+$/.test(ref.href || '')) return root?.GAMMA_MANUAL_SCOPE ? root.GAMMA_MANUAL_SCOPE.withEdition(ref.href) : ref.href;
     if (ref.kind === 'work') {
       try { const url = new URL(ref.href); if (['http:','https:'].includes(url.protocol)) return url.href; } catch {}
     }
@@ -524,7 +524,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261112-v0417';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261112-v0418';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;

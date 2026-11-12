@@ -7,7 +7,7 @@
     lead: "Look into the stage you built in three dimensions and check the composition from the house or through a performer's eyes.",
     sections: [
       {
-        id: "fpv-basics", title: "The 3D tab (open, look around, walk, leave)", status: "verified",
+        id: "fpv-basics", editions: ["studio", "company"], title: "The 3D tab (open, look around, walk, leave)", status: "verified",
         keywords: ["3d", "straight-on front", "camera", "free camera", "look around", "walk", "drag", "wasd", "e", "q", "r", "leave", "esc", "viewpoint", "angle", "lens", "wide", "ultra-wide", "standard", "full house", "empty house", "house centre", "front row", "wing", "overhead", "upstage", "5"],
         html: `
 <p>The ${ui("3D")} tab (${kbd("5")}) shows the current scene in three dimensions.</p>
@@ -40,13 +40,13 @@ ${fig("69-3d-rj", "3D in the sample “Romeo and Juliet” (scene 1-3). Viewpoin
 ${vid("fpv-look", "“Romeo and Juliet” (scene 1-3) in 3D: looking around, walking forward with W, seeing through Romeo's eyes, then moving to Stalls centre.")}`
       },
       {
-        id: "fpv-performer", title: "A performer's view (seeing through their eyes)", status: "sourced",
+        id: "fpv-performer", editions: ["studio", "company"], title: "A performer's view (seeing through their eyes)", status: "sourced",
         keywords: ["performer's view", "eyes", "first person", "point of view", "what they see", "see the house"],
         html: `
 <p>Press a performer's name among the viewpoint buttons (or click the performer in 3D) to see from that performer's eye height and facing. Performers can check where their partners are and how much of the house they can see. Try it in: J-2 (3D camera and a performer's view).</p>`
       },
       {
-        id: "fpv-view", title: "What 3D shows (legs, hanamichi, scrim, beams, haze, house floor)", status: "sourced",
+        id: "fpv-view", editions: ["studio", "company"], title: "What 3D shows (legs, hanamichi, scrim, beams, haze, house floor)", status: "sourced",
         keywords: ["3d", "shows", "legs", "hanamichi", "scrim", "projected", "beams", "haze", "house floor", "ceiling", "background", "skin", "slow", "simplify", "wide view"],
         html: `
 <ul>
@@ -59,7 +59,7 @@ ${vid("fpv-look", "“Romeo and Juliet” (scene 1-3) in 3D: looking around, wal
 <p>If large venues such as arenas or domes feel slow, switch on ${ui("Simplify the wide view")} in Settings (off by default): distant seats are drawn simply, while nearby detail is unchanged. It is the same as the “wide view: sharp / simplified” switch in the 3D screen.</p>`
       },
       {
-        id: "fpv-viewpoints", title: "Viewpoints are now registered in Theatre settings (v0.2.12)", status: "sourced",
+        id: "fpv-viewpoints", editions: ["studio", "company"], title: "Viewpoints are now registered in Theatre settings (v0.2.12)", status: "sourced",
         keywords: ["viewpoint", "register", "seat", "from 3d", "removed", "theatre settings", "step 9"],
         html: `
 <p>Viewpoints used to be registered from the 3D free camera. v0.2.12 removed this; viewpoints are now added and edited in step 9 of Theatre settings (${ref("viewpoints", "Part 5, 5-6")}). Viewpoints registered from 3D earlier are kept and still used by the front view.</p>`

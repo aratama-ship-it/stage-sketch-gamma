@@ -7,7 +7,7 @@
     lead: "Give scenes a length and a show becomes a flow rather than a list. Cues are the marks for light, music and lines.",
     sections: [
       {
-        id: "timeline", title: "The timeline (E) — time, section duration, playback", status: "verified",
+        id: "timeline", editions: ["studio", "company"], title: "The timeline (E) — time, section duration, playback", status: "verified",
         keywords: ["timeline", "e", "time", "seconds", "play", "stop", "bpm", "time-based", "section duration", "time on scene", "travel", "lock edge", "loop", "a", "b", "split scene", "TC", "timecode"],
         html: `
 <p>In Timecode settings, the close button, Cancel and Esc discard the draft even if the clock is empty or invalid. The show stays unchanged; validation happens on Save. The dialog follows light and dark skins. M cue details also scroll only the body, keeping the heading and decision buttons visible.</p>
@@ -34,7 +34,7 @@ ${fig("68-timeline-rj", "The timeline of the sample “Romeo and Juliet” aroun
 ${vid("timeline-play", "Opening the timeline in scene 1-2 of “Romeo and Juliet” and playing it. The playhead line moves past the cues.")}`
       },
       {
-        id: "music", title: "Audio (load, assign)", status: "sourced",
+        id: "music", editions: ["studio", "company"], title: "Audio (load, assign)", status: "sourced",
         keywords: ["music", "audio", "song", "track", "soundtrack", "bgm", "load", "assign", "play", "no sound", "audio file not found", "reconnect", "gain", "db", "bpm", "estimate", "first beat", "music sync", "sync"],
         html: `
 <p>Press ${kbd("E")} to open all timeline lanes, including dialogue. Add an M cue with ${ui("＋")} in the music lane, then double-click it. Use ${ui("Upload audio")} for a local file or choose a registered track in ${ui("Audio")}.</p>
@@ -54,7 +54,7 @@ ${table(["Control", "Meaning"], [
 <p>Try it in: H-2 (track A, file missing) and H-3 (track B, 120 BPM audio).</p>`
       },
       {
-        id: "cues", title: "Cues (lighting, music, dialogue) — setting, numbering, stepping, details", status: "sourced",
+        id: "cues", editions: ["studio", "company"], title: "Cues (lighting, music, dialogue) — setting, numbering, stepping, details", status: "sourced",
         keywords: ["cue", "lx", "lighting cue", "music cue", "dialogue cue", "vox", "set", "record", "number", "1-2-1", "step", "arrow keys", "details", "double-click", "note", "silent", "delete"],
         html: `
 <p>Cues go in the three lower lanes of the timeline (${ui("Lighting cue")}, ${ui("Music cue")}, ${ui("Dialogue cues")}). The LX + selects an authored Q for placement. The music and dialogue + buttons add cues.</p>
@@ -73,7 +73,7 @@ ${table(["Kind", "Lane", "Number", "What it holds"], [
 <p>Try it in: H-4 (light, music and dialogue cues).</p>`
       },
       {
-        id: "script", title: "The Lines tab — write the script and link lines to cues", status: "verified",
+        id: "script", editions: ["studio", "company"], title: "The Lines tab — write the script and link lines to cues", status: "verified",
         keywords: ["lines", "script", "dialogue", "speaker", "line", "add", "reorder", "link", "cue", "double-click", "column", "width", "export script", "print", "pdf", "import from scene notes", "proposal"],
         html: `
 <p>The ${ui("Lines")} tab is where the script is written, on one screen. It has three columns: ${ui("Scenes")} on the left (with ${ui("Search lines or speakers")} and a line count per scene), the ${ui("Script")} in the middle, and ${ui("Selected line")} on the right (edit speaker, line, scene and cue). The top strip totals things up, for example “Script 47 lines · assigned to cues 47 · dialogue cues without a line 0”.</p>
@@ -91,7 +91,7 @@ ${fig("33-tab-script", "The Lines tab for a show with no script yet.", "Lines ta
 ${vid("dialogue-assign", "In H-3, add a script line and assign it to a dialogue cue.")}`
       },
       {
-        id: "vox-panel", title: "The dialogue cue panel — the current line, large (vertical, bubbles, text size)", status: "verified",
+        id: "vox-panel", editions: ["studio", "company"], title: "The dialogue cue panel — the current line, large (vertical, bubbles, text size)", status: "verified",
         keywords: ["dialogue cues", "panel", "large", "rehearsal", "current line", "next line", "vertical", "speech bubble", "text size", "standard", "large", "extra large", "smooth", "previous", "next", "jump"],
         html: `
 <p>Show ${ui("Dialogue cues")} from ${ui("Panels")} and the right column gets a list of every dialogue cue in the show, by section, with the current line shown large.</p>
@@ -106,7 +106,7 @@ ${grid([fig("58-vox-panel", "The dialogue cue panel. The box at the top is the c
 <p>Lines are taken from the script (Lines tab). Without a script, the cue's note is used. Try it in: H-3 (four dialogue cues) and I-1 (a cue in another section).</p>`
       },
       {
-        id: "cuesheet", title: "Q sheets — master, per performer, per department (view, print, CSV)", status: "verified",
+        id: "cuesheet", editions: ["studio", "company"], title: "Q sheets — master, per performer, per department (view, print, CSV)", status: "verified",
         keywords: ["Q sheets", "Q sheet", "running order", "table", "master sheet", "per performer", "department", "lights", "sound", "stage management", "transition", "props", "positions", "print", "csv", "a4", "spreadsheet", "excel"],
         html: `
 <p>The Format section is in the left panel of the run of show. Use its heading to collapse or expand it, like the other sections; the state is remembered on this device. When the whole left panel is collapsed, use the button labelled Format to reopen it. Before a cell is selected, its controls are disabled and a short hint explains the next step. Click a cell once in A4 landscape, A4 portrait or free view to select it and change its formatting. The selection has a visible outline. Clearing the selection keeps the toolbar in place. Read-only views and distributed HTML omit the editing toolbar.</p>
@@ -134,6 +134,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
       },
       {
   "id": "release058-09-time-cues",
+  "editions": ["studio", "company"],
   "title": "v0.3.58",
   "status": "sourced",
   "keywords": [
@@ -144,6 +145,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
 },
       {
   "id": "release059-09-time-cues",
+  "editions": ["studio", "company"],
   "title": "v0.3.60",
   "status": "sourced",
   "keywords": [

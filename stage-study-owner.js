@@ -404,7 +404,7 @@
     if (unverifiedIssue?.showId === showId && !blockedExpiry) unverifiedIssue = null;
     const expired = expiredLink(link);
     const expiry = node(expired || blockedExpiry ? 'p' : 'span', blockedExpiry ? expiryMismatch() : expiryText(link), 'stage-share-study-muted'); expiry.id = 'study-owner-expiry-value';
-    const url = new URL('/study', location.origin); url.searchParams.set('lang', language()); url.hash = link.token;
+    const url = new URL(window.GAMMA_LINK_ISSUER.studyUrl(link.token, language()));
     const fieldLabel = node('label', t('閲覧リンク', 'Viewing link'), 'stage-share-study-field'); fieldLabel.htmlFor = 'study-owner-url';
     urlField = node('input', '', 'stage-text-input stage-share-study-url'); urlField.id = 'study-owner-url'; urlField.readOnly = true; urlField.value = url.href;
     const copy = publicationButton(t('リンクをコピー', 'Copy link'), async () => {

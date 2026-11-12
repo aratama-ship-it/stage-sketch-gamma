@@ -40,16 +40,16 @@ ${fig("release095-storage-band", "The browser storage reminder at the top, with 
 <h4>Mac menus and language</h4>
 <p>App menus and alerts follow the display language selected in Settings. Choose Settings… (⌘,) from the Stage Sketch γ menu to open the app's preferences. The same menu provides Hide (⌘H), Hide Others (⌥⌘H), Show All and Services.</p>
 <p>The Window menu provides Minimise (⌘M), Zoom and Bring All to Front. The View menu provides Enter Full Screen (⌃⌘F). Help → Stage Sketch γ User Guide opens the booklet bundled with this app in a separate window. The English booklet opens for display languages other than Japanese.</p>
-<h4>Getting the Mac version: passphrase</h4>
+${window.MANUAL_SUBSCRIBER_DOWNLOADS ? `<h4>Getting the Mac app</h4><p>The Mac app is available with an active Studio or Company subscription or insider licence. Sign in at the link to download.</p><p><a href="https://app.stagesketch.app/download/mac.zip" target="_blank" rel="noopener">Download for signed-in subscribers</a></p><p><a href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases" target="_blank" rel="noopener">Previous versions (still public)</a></p>` : `<h4>Getting the Mac version: passphrase</h4>
 <p>A passphrase is required to download the Mac version. Please ask the distributor who provided the app information, then enter it on the installation page below. The passphrase itself is not published in this booklet.</p>
-<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=en" target="_blank" rel="noopener">Get the Mac version</a></p>
+<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=en" target="_blank" rel="noopener">Get the Mac version</a></p>`}
 <h4>Opening the Mac app for the first time or after an update</h4>
 <p>Requires a Mac with Apple silicon and macOS 14 or later. Intel-based Macs are not supported. This distribution is signed with Developer ID and notarised by Apple. You normally do not need to bypass an “unidentified developer” warning.</p>
-${steps(["Download the latest zip from GitHub Releases.", "Unzip the file.", "Place 舞台スケッチγ.app in Applications or on the desktop. To update, quit the current app before replacing it with the new one.", "Double-click 舞台スケッチγ.app to open it."])}
+${steps([(window.MANUAL_SUBSCRIBER_DOWNLOADS ? "Download the latest zip using the link for signed-in Studio and Company subscribers." : "Download the latest zip from GitHub Releases."), "Unzip the file.", "Place 舞台スケッチγ.app in Applications or on the desktop. To update, quit the current app before replacing it with the new one.", "Double-click 舞台スケッチγ.app to open it."])}
 <p>If you see an unidentified developer warning, check the download source and app version, then contact support.</p>}`
       },
       {
-        id: "device-table", title: "What works where (the app's own table)", status: "sourced",
+        id: "device-table", editions: ["studio", "company"], title: "What works where (the app's own table)", status: "sourced",
         keywords: ["device", "difference", "support", "cannot", "ipad", "phone", "iphone", "tablet", "computer", "comparison", "list", "missing", "not there"],
         html: `
 <p>This copies the table in Settings → ${ui("Differences by device")}. ● means make and edit, ○ means view or limited, — means not in this version.</p>
@@ -76,14 +76,14 @@ ${fig("48-device-diff", "Differences by device, inside the app.", "Differences b
 ${note("Gamma's new tabs are not in this table", "The table dates from the beta. " + ui("Theatre design") + ", " + ui("Equipment placement") + ", " + ui("Light design") + ", " + ui("Lines") + " and " + ui("Q sheets") + " are built for the computer, and touch use on iPad has not been checked. A “—” means not carried on that device, not broken. Sharing uses Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ").")}`
       },
       {
-        id: "pc", title: "Computer (everything)", status: "verified",
+        id: "pc", editions: ["studio", "company"], title: "Computer (everything)", status: "verified",
         keywords: ["computer", "pc", "mac", "windows", "browser", "window width", "recommended"],
         html: `
 <p>All of Gamma is designed for the computer screen. A window 1200 px or wider is comfortable (this booklet's pictures are 1440×900). Narrower, the header tools and panels wrap.</p>
 <p>Keyboard shortcuts are for the computer too (${ref("shortcut-table", "Appendix A-1")}).</p>`
       },
       {
-        id: "ipad", title: "iPad (Add to Home Screen, use in rehearsal)", status: "unverified",
+        id: "ipad", editions: ["studio", "company"], title: "iPad (Add to Home Screen, use in rehearsal)", status: "unverified",
         keywords: ["ipad", "tablet", "home screen", "add", "pwa", "install", "offline", "no signal", "finger", "touch", "safari"],
         html: `
 ${steps([

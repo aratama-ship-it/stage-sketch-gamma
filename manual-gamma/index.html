@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="../stage-runtime.js?v=20261112-v0417"></script>
+<script src="../stage-runtime.js?v=20261112-v0418"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="stage-sketch-gamma-manual" content="2026-09-25">
@@ -309,6 +309,8 @@ dialog.lightbox button { appearance: none; background: none; border: 1px solid v
 <dialog class="lightbox" id="lightbox" aria-labelledby="lightbox-cap"><figure><img id="lightbox-img" alt=""><figcaption><span id="lightbox-cap"></span><button type="button" id="lightbox-close" data-t="lbClose">閉じる（Esc）</button></figcaption></figure></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="edition-scope.js"></script>
+<script src="../download/subscriber-guidance.js"></script>
 <script>
 /* 言語と本文の読み込み。
  * 言語: ?lang=ja|en が最優先 → アプリの言語設定（localStorage gamma:shosai-stage-lang。ja 以外は英語版）→ 日本語。
@@ -322,7 +324,8 @@ window.MANUAL_LANG = (function () {
 })();
 document.documentElement.lang = window.MANUAL_LANG;
 const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast", "05-venue", "06-machinery", "07-lighting", "08-drawing", "09-time-cues", "10-3d", "11-export-share", "12-prefs", "13-devices", "14-help", "15-appendix"];
-(function load() {
+(async function load() {
+  window.MANUAL_SUBSCRIBER_DOWNLOADS = window.GAMMA_MAC_GUIDANCE ? await window.GAMMA_MAC_GUIDANCE.load() : false;
   const base = window.MANUAL_LANG === "en" ? "content/en/" : "content/";
   const list = ["content/_img-sizes.js", "content/_helpers.js"].concat(FILES.map((f) => base + f + ".js"));
   let i = 0;
@@ -340,7 +343,8 @@ const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast",
 /* 器のふるまい: 目次・検索・深いリンク・図の拡大。文章は content/*.js から。 */
 window.addEventListener("manual-ready", function () {
   "use strict";
-  const M = window.MANUAL;
+  const edition = window.GAMMA_MANUAL_SCOPE.normalize(new URLSearchParams(location.search).get('edition'));
+  const M = { ...window.MANUAL, chapters: window.GAMMA_MANUAL_SCOPE.chaptersFor(window.MANUAL.chapters, edition) };
   const LANG = window.MANUAL_LANG === "en" ? "en" : "ja";
   const UI = {
     ja: { skip: "本文へ", toc: "目次", sideClose: "✕ 目次を閉じる", title: "使いかたの冊子", openAll: "すべて開く", closeAll: "すべて閉じる",
@@ -409,7 +413,7 @@ window.addEventListener("manual-ready", function () {
     ch.sections.forEach((sec, i) => {
       const secEl = document.createElement("section");
       secEl.className = "sec"; secEl.id = sec.id;
-      const sno = ch.short + "-" + (i + 1);
+      const sno = sec.number;
       const tags = [];
       if (sec.status && STATUS[sec.status]) tags.push('<span class="tag st-' + sec.status + '">' + STATUS[sec.status] + "</span>");
       (sec.tags || []).forEach((t) => tags.push('<span class="tag">' + esc(t) + "</span>"));
@@ -436,7 +440,7 @@ window.addEventListener("manual-ready", function () {
   M.chapters.forEach((ch) => {
     const li = document.createElement("li"); li.dataset.ch = ch.id;
     li.innerHTML = '<div class="toc-ch"><a href="#ch-' + ch.id + '"><span class="no">' + esc(ch.no) + "</span>" + esc(ch.tab || ch.title) + '</a><button type="button" aria-label="' + esc(T.tocToggle(ch.title)) + '" aria-expanded="false"></button></div>' +
-      '<ol class="toc-secs">' + ch.sections.map((s, i) => '<li><a href="#' + s.id + '" data-sec="' + s.id + '">' + esc(ch.short + "-" + (i + 1)) + "　" + esc(s.title) + "</a></li>").join("") + "</ol>";
+      '<ol class="toc-secs">' + ch.sections.map((s) => '<li><a href="#' + s.id + '" data-sec="' + s.id + '">' + esc(s.number) + "　" + esc(s.title) + "</a></li>").join("") + "</ol>";
     tocEl.appendChild(li);
     li.querySelector("button").addEventListener("click", () => setOpen(li, !li.classList.contains("is-open")));
     li.querySelector(".toc-ch > a").addEventListener("click", () => { setOpen(li, true); closeSide(); });
@@ -625,6 +629,6 @@ window.addEventListener("manual-ready", function () {
 });
 </script>
 <!-- Cloudflare Web Analytics: Pages only. -->
-<script src="../stage-web-analytics.js?v=20261020-v0380"></script>
+<script src="../stage-web-analytics.js?v=20261112-v0418"></script>
 </body>
 </html>

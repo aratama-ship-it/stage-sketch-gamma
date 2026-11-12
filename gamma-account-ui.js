@@ -11,6 +11,7 @@ let link = null;
 }
 const view = document.body.dataset.accountView;
 let locale = accountLocale(document.documentElement.lang), meta = null, csrf = null, busy = false, invitation = null;
+let insiderAccounts=[], insiderOperation=null, insiderRows=null;
 const copy = key => ACCOUNT_COPY[locale][key];
 const pageStatus = document.getElementById('page-status');
 function message(node,key,error=false) {
@@ -26,6 +27,7 @@ function translate() {
   const h = document.querySelector('h1'); document.title = h.textContent + ' · ' + copy('brand');
   document.querySelectorAll('nav a').forEach(a => {const url = new URL(a.href);url.searchParams.set('lang',locale);a.href=url.pathname+url.search;});
   if (meta) showDeadline();
+  if(view==='admin') {showInsider();showInsiderAudit();}
 }
 function showDeadline() {
   const node = document.getElementById('deadline'); node.hidden = false;
@@ -60,6 +62,44 @@ async function api(path,body,method='POST') {
   return data;
 }
 async function context() {const data = await api('/account/context',null,'GET');csrf=data.csrf;return data;}
+function showInsider() {
+  const select=document.getElementById('insider-target');if(!select)return;
+  const selected=insiderAccounts.find(a=>a.canonicalUser===select.value), node=document.getElementById('insider-detail');
+  node.hidden=!selected;
+  if(selected) node.textContent=selected.canonicalUser+' · '+
+    (selected.until ? copy(selected.stopped?'insiderStopped':'insiderUntil')+': '+selected.until : copy('insiderNone'))+
+    (selected.effective?' · '+copy('insiderEffective')+': '+selected.effective.plan+' / '+copy(selected.effective.grantSource==='insider'?'insiderTitle':'insiderPaid')+' / '+selected.effective.until:'');
+  select.disabled=busy||!insiderAccounts.length;
+  document.querySelectorAll('[data-insider-action]').forEach(button=>{
+    const action=button.dataset.insiderAction;
+    button.disabled=busy||!selected||(action==='issue' ? !!selected.until&&!selected.stopped&&Date.parse(selected.until)>Date.now() : !selected.until||selected.stopped);
+  });
+}
+async function loadInsiders() {
+  const select=document.getElementById('insider-target'), value=select.value;
+  const result=await api('/account-admin/insider/accounts',null,'GET');
+  insiderAccounts=result.accounts;
+  select.replaceChildren();
+  const blank=document.createElement('option');blank.value='';blank.dataset.copy=insiderAccounts.length?'insiderChoose':'insiderEmpty';blank.textContent=copy(blank.dataset.copy);select.append(blank);
+  for(const row of insiderAccounts) {const option=document.createElement('option');option.value=row.canonicalUser;option.textContent=row.canonicalUser;select.append(option);}
+  select.value=insiderAccounts.some(row=>row.canonicalUser===value)?value:'';
+  showInsider();
+}
+function showInsiderAudit() {
+  if(!insiderRows)return;
+  const node=document.getElementById('insider-audit-result');node.hidden=false;
+  node.textContent=insiderRows.map(row=>[row.at,row.actor,row.target,copy('insider'+row.action),row.previousUntil||'—',row.until].join(' · ')).join('\n')||copy('insiderNoAudit');
+}
+document.getElementById('insider-target')?.addEventListener('change',()=>{insiderOperation=null;showInsider();});
+document.getElementById('insider-refresh')?.addEventListener('click',async()=>{
+  if(busy)return;busy=true;showInsider();
+  try {await loadInsiders();insiderOperation=null;}catch(error){message(pageStatus,error.key||'unavailable',true);}
+  finally{busy=false;showInsider();}
+});
+document.getElementById('insider-audit')?.addEventListener('click',async()=>{
+  try{insiderRows=(await api('/account-admin/insider/audit',null,'GET')).rows;showInsiderAudit();}
+  catch(error){message(pageStatus,error.key||'unavailable',true);}
+});
 function fieldError(input,key) {
   input.setAttribute('aria-invalid','true'); const node = document.getElementById(input.id+'-error');
   if (node) message(node,key,true);
@@ -129,13 +169,30 @@ document.querySelectorAll('form').forEach(form => form.addEventListener('submit'
     body.idempotencyKey=invitation.key;success='queued';
   } else if (action === 'cancel') {path='/account-admin/invites/cancel';body={target:data['cancel-target'],purpose:data.purpose,expectedGeneration:Number(data.expectedGeneration)};success='done';}
   else if (action === 'session-revoke') {path='/account-admin/session-revoke';body={target:data['revoke-target'],expectedCredentialVersion:Number(data.expectedCredentialVersion)};success='done';}
+  else if(action==='insider') {
+    const selected=insiderAccounts.find(a=>a.canonicalUser===data.target), operation=event.submitter?.dataset.insiderAction;
+    if(!selected||!['issue','extend','stop'].includes(operation)) {fieldError(document.getElementById('insider-target'),'required');return;}
+    path='/account-admin/insider';body={target:selected.canonicalUser,action:operation,expectedGrantRevision:selected.revision};
+    const fingerprint=JSON.stringify(body);
+    if(insiderOperation?.fingerprint!==fingerprint)insiderOperation={fingerprint,key:crypto.randomUUID()};
+    body.idempotencyKey=insiderOperation.key;success='insiderDone';
+  }
   else return;
   const status=form.querySelector('.form-status'); busy=true;form.setAttribute('aria-busy','true');
+  if(view==='admin')showInsider();
   document.querySelectorAll('button[type="submit"]').forEach(n=>n.disabled=true);message(status,'processing');
   try {
-    await api(path,body); message(status,success);
+    const result=await api(path,body); message(status,success);
+    if(action==='insider') {
+      insiderAccounts=insiderAccounts.map(row=>row.canonicalUser===result.canonicalUser?result:row);
+      insiderOperation=null;insiderRows=null;document.getElementById('insider-audit-result').hidden=true;
+    }
     if (action==='invites') invitation=null;
-    if (action==='reauth') document.getElementById('admin-actions').hidden=false;
+    if (action==='reauth') {
+      document.getElementById('admin-actions').hidden=false;
+      try {await loadInsiders();}
+      catch(error) {message(document.querySelector('form[data-action="insider"] .form-status'),error.key||'unavailable',true);}
+    }
     if (action==='change-password') await context();
     form.querySelectorAll('input').forEach(n=>{if(n.type==='password'||n.autocomplete.includes('password')) n.value='';});
     if (['redeem','email-confirm'].includes(action)) {
@@ -143,13 +200,13 @@ document.querySelectorAll('form').forEach(form => form.addEventListener('submit'
       document.querySelector('nav a').focus();
     }
   } catch (error) {
-    const key=error.key||'unavailable';
+    const key=action==='insider'&&error.key==='uncertain'?'insiderUncertain':error.key||'unavailable';
     const field = key==='mismatch' ? form.querySelector('[name$="confirmation"]') : ['passwordInvalid','weak'].includes(key) ? form.querySelector('[name="password"],[name="change-password"]') : key==='emailInvalid' ? form.querySelector('input[type="email"]') : null;
     if (field) {status.hidden=true;delete status.dataset.messageKey;fieldError(field,key);field.focus();}
     else message(status,key,true);
     if (key==='invalidLink') invalidate();
-    if (error.status===401) document.getElementById('admin-actions')?.setAttribute('hidden','');
-  } finally {busy=false;form.removeAttribute('aria-busy');document.querySelectorAll('button[type="submit"]').forEach(n=>n.disabled=false);}
+    if (error.status===401||error.status===403) document.getElementById('admin-actions')?.setAttribute('hidden','');
+  } finally {busy=false;form.removeAttribute('aria-busy');document.querySelectorAll('button[type="submit"]').forEach(n=>n.disabled=false);if(view==='admin')showInsider();}
 }));
 document.getElementById('operations')?.addEventListener('click',async () => {
   try {const result=await api('/account-admin/operations?limit=50',null,'GET');const node=document.getElementById('operation-result');node.textContent=JSON.stringify(result,null,2);node.hidden=false;}
@@ -157,6 +214,10 @@ document.getElementById('operations')?.addEventListener('click',async () => {
 });
 window.addEventListener('pagehide',() => {
   link=null;meta=null;csrf=null;
+  insiderAccounts=[];insiderOperation=null;insiderRows=null;
+  document.getElementById('insider-target')?.replaceChildren();
+  for(const id of ['insider-detail','insider-audit-result']) {const node=document.getElementById(id);if(node){node.textContent='';node.hidden=true;}}
+  document.getElementById('admin-actions')?.setAttribute('hidden','');
   document.querySelectorAll('input').forEach(n=>{n.value='';});
 });
 window.addEventListener('pageshow',event=>{if(event.persisted && ['invite','reset'].includes(view)) invalidate();});
@@ -167,6 +228,7 @@ if (['settings','admin'].includes(view)) {
   void context().then(data=>{
     if(view==='settings' && !data.managed) return message(pageStatus,'needSetup');
     document.querySelectorAll('button[type="submit"]').forEach(n=>n.disabled=false);
+    if(view==='admin')showInsider();
   })
     .catch(error=>message(pageStatus,error.key||'unavailable',true));
 }

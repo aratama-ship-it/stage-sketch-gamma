@@ -11,6 +11,7 @@
         keywords: ["open", "url", "address", "login", "password", "browser", "safari", "chrome", "pc", "computer", "ipad", "iphone", "phone", "requirements", "install"],
         html: `
 <p>Open this GitHub Pages address in a browser; this address needs no sign-in. The separate Gamma sharing address requires a host sign-in. Saved shows belong to each address and are not transferred automatically (see Part 14, 14-2).</p>
+<p>An insider license is free Studio access issued by the operator to an invited account for one year. The operator manages extensions and stopping. After expiry or stopping, the next check allows viewing and export only; local works remain intact. A valid paid grant continues to apply. Shared data follows the normal retention period after the contract ends. This applies where the account feature is enabled.</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html" target="_blank" rel="noopener">https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html</a></p>
 <p>Requires a Mac with Apple silicon and macOS 14 or later. Intel-based Macs are not supported. This distribution is signed with Developer ID and notarised by Apple. You normally do not need to bypass an “unidentified developer” warning. For installation and update instructions, see ${ref("browser-storage", "Part 13, 13-2")}.</p>
 ${table(["Device", "Good for", "Notes"], [
@@ -21,7 +22,7 @@ ${table(["Device", "Good for", "Notes"], [
 ${note("Do not use a private window", "Your work is saved inside the browser, so a private (incognito) window loses it when closed. Use a normal window.", true)}`
       },
       {
-        id: "first-screen", title: "First screen and sample library", status: "verified",
+        id: "first-screen", editions: ["studio", "company"], title: "First screen and sample library", status: "verified",
         keywords: ["first", "first time", "sample", "example", "romeo and juliet", "eight circus", "garden of seams", "bundled", "all shows", "what is open"],
         html: `
 <p>In a fresh browser, start a show from the theatre setup. Existing saved shows stay available. Choose ${ui("Sample projects")} → ${ui("Get and open")} to open a sample. In the Mac project edition, choose New, Open or Sample projects from the first window.</p>
@@ -37,7 +38,7 @@ ${fig("release401-sample-library", "Get the examples you need from the sample li
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample projects when needed.")}`
       },
       {
-        id: "tour", title: "The first-time tour (nine hands-on steps)", status: "sourced",
+        id: "tour", editions: ["studio", "company"], title: "The first-time tour (nine hands-on steps)", status: "sourced",
         keywords: ["tutorial", "tour", "walkthrough", "first time", "getting started", "guide", "again"],
         html: `
 <p>Settings (the gear, top right) → ${ui("First-time tour")} starts a short nine-step tour. It is not reading: you do each thing yourself, and by the end a scene exists. You can close it at any time and start it again later.</p>

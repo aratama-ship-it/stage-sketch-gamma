@@ -67,7 +67,13 @@
       historyFull: ['この場面の履歴上限（32件）に達しました。元のメモを保持しています。別の場面へコピーできます。', 'This scene has reached its 32-entry history limit. Original notes are kept. You can copy to another scene.'],
       failed: ['保存できませんでした。元のメモは残っています。', 'Could not save. Original notes are kept.'],
     };
-    const t = key => words[key][state().lang === 'en' ? 1 : 0];
+    function historyText(ja, en) {
+      const code = state().lang;
+      if (code === 'ja') return ja;
+      if (code === 'en') return en;
+      return window.SHOSAI_I18N_PACKS?.[code]?.text?.[ja.replaceAll('場面', 'シーン')] || en;
+    }
+    const t = key => historyText(...words[key]);
     const node = (tag, value) => { const el = document.createElement(tag); el.textContent = value || ''; return el; };
     const post = (frame, value) => frame?.contentWindow?.postMessage({ channel: 'stage-study', ...value }, '*');
     const source = () => sources[Number($('study-history-source').value)];
@@ -80,7 +86,7 @@
     }
     function relabel() { host.querySelectorAll('[data-history-text]').forEach(el => { el.textContent = t(el.dataset.historyText); }); }
     function frame(where) {
-      const el = document.createElement('iframe'); el.setAttribute('sandbox', 'allow-scripts'); el.referrerPolicy = 'no-referrer'; el.title = t(where === 'source' ? 'from' : 'to'); el.src = '/study-frame.html?v=20261112-v0417-' + (state().lang === 'en' ? 'en' : 'ja');
+      const el = document.createElement('iframe'); el.setAttribute('sandbox', 'allow-scripts'); el.referrerPolicy = 'no-referrer'; el.title = t(where === 'source' ? 'from' : 'to'); el.src = '/study-frame.html?v=20261112-v0418-' + (state().lang === 'en' ? 'en' : 'ja');
       $('study-history-' + where + '-frame').replaceChildren(el); return el;
     }
     function loadSource() {
@@ -113,7 +119,7 @@
       }));
       $('study-history-stickies').replaceChildren(...(entry.stickies || []).map((note,i) => {
         const label = node('label'), input = document.createElement('input'); input.type = 'checkbox'; input.value = String(i); input.onchange = preview;
-        label.append(input, node('span', `${i + 1}. ${t(note.view)} · ${note.text || (s.lang === 'en' ? 'Blank note' : '空のメモ')}`)); return label;
+        label.append(input, node('span', `${i + 1}. ${t(note.view)} · ${note.text || (historyText('空のメモ', 'Blank note'))}`)); return label;
       }));
       preview();
       try {
@@ -131,7 +137,7 @@
       $('study-history-empty').hidden = sources.length > 0; $('study-history-content').hidden = !sources.length;
       $('study-history-source').replaceChildren(...sources.map((entry,i) => {
         const removed = !s.scenes.some(scene => scene.id === entry.sceneId);
-        const el = node('option', `${entry.sceneTitle} · ${s.lang === 'en' ? 'Revision' : '公開版'} ${entry.revision}${removed ? ' · ' + t('missing') : ''} · ${entry.updatedAt ? new Date(entry.updatedAt).toLocaleString(s.lang === 'en' ? 'en-GB' : 'ja-JP') : ''}`); el.value = String(i); return el;
+        const el = node('option', `${entry.sceneTitle} · ${historyText('公開版', 'Revision')} ${entry.revision}${removed ? ' · ' + t('missing') : ''} · ${entry.updatedAt ? new Date(entry.updatedAt).toLocaleString(s.lang === 'en' ? 'en-GB' : s.lang === 'ja' ? 'ja-JP' : s.lang) : ''}`); el.value = String(i); return el;
       }));
       $('study-history-target').replaceChildren(...s.scenes.map(scene => { const el = node('option', scene.title); el.value = scene.id; return el; }));
       $('study-history-target').value = s.sceneId; void choose();

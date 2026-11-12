@@ -150,6 +150,7 @@
     hint.textContent = tx('タブや機能の利用回数だけを送ります。作品・入力した文字・画面の画像・個人情報は送りません。この端末に保存します。');
     input.addEventListener('change', () => {
       installed.setEnabled(input.checked);
+      w.STAGE_WEB_ANALYTICS?.setEnabled(input.checked);
       try { w.localStorage.setItem(PREF_KEY, input.checked ? 'on' : 'off'); }
       catch (_) { hint.textContent = tx('設定を保存できませんでした。次回は元の値に戻ります。'); }
     });

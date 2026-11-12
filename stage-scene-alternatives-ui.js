@@ -34,7 +34,7 @@
       const selected=data ? item.id===context.currentId : true;
       const adopted=data ? item.id===data.adoptedId : true;
       const tab=button(displayLabel(item.label)+(adopted ? (' · ' + differenceLabel('採用')) : ''),()=>data && host().view(item.id));
-      tab.setAttribute('aria-pressed',String(selected));tab.title=item.description || item.label;
+      tab.setAttribute('aria-pressed',String(selected));tab.title=item.description ? differenceLabel(item.description) : displayLabel(item.label);
       tabs.append(tab);
     }
     const current=data?.items.find(item=>item.id===context.currentId);

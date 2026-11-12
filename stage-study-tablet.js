@@ -4,7 +4,11 @@
   const params = new URLSearchParams(location.search);
   const tablet = params.get('tablet') === '1' || (params.get('tablet') !== '0' && navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) > 600);
   const $ = id => document.getElementById(id), make = (tag, cls = '') => Object.assign(document.createElement(tag), { className: cls });
-  const t = ja => document.documentElement.lang === 'en' ? (window.SHOSAI_I18N_PACKS?.en?.text?.[ja] || ja) : ja;
+  function t(ja) {
+    const code = document.documentElement.lang;
+    if (code === 'ja') return ja;
+    return window.SHOSAI_I18N_PACKS?.[code]?.text?.[ja] || window.SHOSAI_I18N_PACKS?.en?.text?.[ja] || ja;
+  }
   const entry = make('a', 'study-action'); entry.id = 'study-tablet-entry';
   const entryURL = new URL(location.href); entryURL.searchParams.set('tablet', tablet ? '0' : '1'); entry.href = entryURL.href;
   entry.textContent = tablet ? t('通常の表示') : t('iPad書き込み');
@@ -254,7 +258,7 @@
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(viewport);
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(stage);
   window.addEventListener('blur',()=>{if(!editing)cancel();});
-  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=20261112-v0417';pack.onload=()=>{
+  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=20261112-v0418';pack.onload=()=>{
     document.querySelectorAll('[data-tablet-label]').forEach(el=>{const title=t(el.dataset.tabletLabel);el.title=title;el.setAttribute('aria-label',title);if(!['tablet-minus','tablet-plus'].includes(el.id))el.querySelector('span').textContent=title;});
     pageSelect.setAttribute('aria-label',t('書き込みページ'));pageLabel.textContent=t('ページ名');renderPages();entry.textContent=t('通常の表示');label.textContent=t('重ねる文字');scope.textContent=t('全面の書き込みはこの端末だけに保存され、オーナーへの共有には含まれません。');notify();
   };document.head.append(pack);

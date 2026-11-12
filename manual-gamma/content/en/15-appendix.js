@@ -66,6 +66,7 @@
     },
     {
       "id": "new-039-fixtures",
+      "editions": ["studio", "company"],
       "title": "Fixture numbers, names and the equipment list",
       "status": "sourced",
       "keywords": [
@@ -105,6 +106,7 @@
     },
     {
       "id": "new-03-field",
+      "editions": ["studio", "company"],
       "title": "Rehearsal and transition guidance",
       "status": "sourced",
       "keywords": [
@@ -130,6 +132,7 @@
     },
     {
       "id": "new-03-handover",
+      "editions": ["studio", "company"],
       "title": "Q sheets and handover packs",
       "status": "sourced",
       "keywords": [
@@ -142,6 +145,7 @@
     },
     {
       "id": "new-03-scrim",
+      "editions": ["studio", "company"],
       "title": "Scrims, stage machinery and room outlines",
       "status": "sourced",
       "keywords": [
@@ -155,6 +159,7 @@
     },
     {
       "id": "new-03-lighting",
+      "editions": ["studio", "company"],
       "title": "Fixture controls and lighting timing",
       "status": "sourced",
       "keywords": [
@@ -209,6 +214,7 @@
     },
     {
       "id": "new-03-loading",
+      "editions": ["studio", "company"],
       "title": "Loading features when needed",
       "status": "sourced",
       "keywords": [
@@ -224,6 +230,7 @@
     },
     {
       "id": "new-03-ipad",
+      "editions": ["studio", "company"],
       "title": "Writing on performer links on iPad",
       "status": "sourced",
       "keywords": [
@@ -237,6 +244,7 @@
     },
     {
       "id": "new-03-compatibility",
+      "editions": ["studio", "company"],
       "title": "Keeping alternatives and saved data",
       "status": "sourced",
       "keywords": [
@@ -251,6 +259,7 @@
     },
     {
       "id": "new-03-timeline",
+      "editions": ["studio", "company"],
       "title": "Timecode and audio controls",
       "status": "sourced",
       "keywords": [
@@ -290,6 +299,7 @@
     },
     {
       "id": "new-03-viewer",
+      "editions": ["studio", "company"],
       "title": "Reviewing movement through performer links",
       "status": "sourced",
       "keywords": [
@@ -302,6 +312,7 @@
     },
     {
       "id": "new-03-idle",
+      "editions": ["studio", "company"],
       "title": "Idle motion and performance areas",
       "status": "sourced",
       "keywords": [
@@ -327,6 +338,7 @@
     },
     {
       "id": "new-03-workspace",
+      "editions": ["studio", "company"],
       "title": "Comparing views and device rendering settings",
       "status": "sourced",
       "keywords": [
@@ -349,7 +361,7 @@
     lead: "",
     sections: [
       {
-        id: "shortcut-table", title: "Keyboard shortcuts (default keys)", status: "verified",
+        id: "shortcut-table", editions: ["studio", "company"], title: "Keyboard shortcuts (default keys)", status: "verified",
         keywords: ["shortcuts", "keys", "list", "keyboard", "default", "keybinding"],
         html: `
 <p>Default keys in the published v0.2.16. Change them by clicking a row in ${ui("Keyboard shortcuts")} in Settings (${ref("shortcuts", "2-7")}). On Windows and Linux read ⌘ as Ctrl.</p>
@@ -411,7 +423,7 @@ ${table(["Key", "What it does"], [
 </dl>`
       },
       {
-        id: "test-show-scenes", title: "Every scene in “Test: every-feature testing ground”", status: "verified",
+        id: "test-show-scenes", editions: ["studio", "company"], title: "Every scene in “Test: every-feature testing ground”", status: "verified",
         keywords: ["testing ground", "test show", "scene", "list", "a-1", "b-1", "c-1", "d-1", "e-1", "f-1", "g-1", "h-1", "i-1", "j-1", "test"],
         html: `
 <p>The number on the left is the app's number (section-scene). The code at the start of the scene name (A-1 and so on) is the scene code this booklet uses. Scene names are data and stay in Japanese. This is the order in testing ground v45 (v0.3.22). Each scene's note gives only the point of the scene (up to 120 characters); the steps and what counts as a pass are in the <b>check list</b> (<code>stage-samples/feature-test-checklist.html</code>, in Japanese).</p>
@@ -445,7 +457,7 @@ ${table(["Check-list chapter", "What you can try", "Scenes to open"], [
 <p>Remove the testing ground from All shows and reload the page, and it comes back in its original state. Break it as much as you like.</p>`
       },
       {
-        id: "release-history", title: "Update history (published through v0.2.34)", status: "sourced",
+        id: "release-history", editions: ["studio", "company"], title: "Update history (published through v0.2.34)", status: "sourced",
         keywords: ["update", "history", "release", "version", "new", "changed", "changelog", "v0.2"],
         html: `
 <p>A short summary of the published history under the bell icon, linked to sections of this booklet. For exact published wording see the app's own history.</p>

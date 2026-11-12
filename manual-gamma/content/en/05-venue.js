@@ -54,7 +54,7 @@ ${table(["Step", "What you decide", "Main items"], [
 <p>${ui("Three lines derived from the theatre")} are the reach, blind-spot and sightline limits. On the Stage tab you can check them by switching seats above the front view.</p>`
       },
       {
-        id: "venue-apply", title: "Apply this theatre (lighting, broken scenes, going back)", status: "sourced",
+        id: "venue-apply", editions: ["studio", "company"], title: "Apply this theatre (lighting, broken scenes, going back)", status: "sourced",
         keywords: ["apply", "use", "to the show", "lighting equipment", "lighting", "common 24-light set", "rebuild", "preset", "broken", "misplaced", "go back", "confirm", "change venue"],
         html: `
 <p>${ui("Apply this theatre")} at the bottom right uses the theatre for the current show. It applies <strong>only the theatre</strong>; the current lighting (fixtures and LX cues) stays as it is.</p>
