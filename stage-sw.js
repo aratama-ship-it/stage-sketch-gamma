@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v618";
+const CACHE_NAME = "stage-sketch-gamma-shell-v619";
 // BEGIN GENERATED SHELL (node tools/asset-ledger.mjs --write-sw)
 const APP_SHELL_CORE = [
   "./assets/brand/logo-jp-gamma-inline-white.svg",
@@ -50,6 +50,7 @@ const APP_SHELL_CORE = [
   "./run-of-show/timing.js?v=20261010-v0338",
   "./run.html",
   "./stage-audio-store.js?v=20261112-v0417",
+  "./stage-backup-notice.js",
   "./stage-call-grid.js?v=20261111-v0414",
   "./stage-cue-sheet.js?v=20261105-v046",
   "./stage-data-safety.js?v=20261001-release69",
@@ -163,23 +164,23 @@ const APP_SHELL_CORE = [
   "./storage-recovery-ui.js?v=20261112-v0417",
   "./storage-recovery.html",
   "./style.css?v=20261112-v0417",
-  "./stage-bundle-head-runtime.b28cc071214d9f374e69856802797b64290be3c1e21d5022edc2c9dd92d6a162.js",
-  "./stage-bundle-head-edition.6c6900895c06b84f27d08139b5e4e7ccd593121a91537fbdfacb5032e3c9b418.js",
+  "./stage-bundle-head-runtime.30cdcf1e3fc81202807008286ddf75707ab9c21acb152b6faa8c640cc81503a9.js",
+  "./stage-bundle-head-edition.52d994d874aae0e5e54f36999e6aed9c24781ad4c2c94fd2c58ba45a78d8ba91.js",
   "./stage-bundle-head-light.683469de8a937e6085feceb5a08d190b1697363878917ab9ebeeafbad4d3c42c.js",
-  "./stage-bundle-body-before-manual.348cc4c8860699703261b846ea6b7ba70829b5d8a83cff67ae7dfe5606b92e0f.js",
+  "./stage-bundle-body-before-manual.c646bd4628be6b234a94313cac52c96cb203efbcc1f8f3119bd802342cfda644.js",
   "./stage-bundle-manual-scope.0537abee0b7acb692a76a4ed031825da3d1dc47c68cd17fe0346015a0099b5c3.js",
-  "./stage-bundle-manual-meta.100aa63b4afd10d762d65d9d4743f2209f1f0492ebc8b63318a56236d097954e.js",
+  "./stage-bundle-manual-meta.a3d80f541420e8758e6c8cc0cc112a5be2f8385fe4570684cc7828282320f1ea.js",
   "./stage-bundle-body-before-language-1.e457b22dd71688ef40b9577945e71f4fd22dbddcdb044b455270a97bf1c80be6.js",
   "./stage-bundle-body-before-language-2.7d687fc6a8421eaf6cda4ea746b3c533333fac91f6a22d246447249c7285bab0.js",
   "./stage-bundle-body-before-language-3.25af597d569b415fb35de55c85e40ac3d7a5c5f46a7542ae227e2753fcf9b2f5.js",
   "./stage-bundle-language-loader.6983c97d523b9947d105f197652274a12eb9f8168bc99557755bb7e2b2758f55.js",
-  "./stage-bundle-body-after-language.4fa5caa700714bba4868f881ff2661c6572fbbf45d6c0b51d579a9ef36358150.js",
-  "./stage-bundle-body-after-field-css-1.35e1a3409ff07ed9ee493f58aff9fc800a42294249f2a8da48c3a20df2539f88.js",
+  "./stage-bundle-body-after-language.48cd8d48aed68bc9ff9a25f5bbae8c634ff514cc41539a37baa69d600f7adf7f.js",
+  "./stage-bundle-body-after-field-css-1.91a88f18226674e4c246c63285c30b454119a752a3e0fd3eed8b4a61dae11cc7.js",
   "./stage-bundle-body-after-field-css-2.bec39f12e3df29b217a67942679c238c6c9224b1e0a770049eaef90e5df79eb0.js",
   "./stage-bundle-body-after-field-css-3.4c28a0710d579a17625cbe6022f8269e87c85718efe5bf992634fb4470090e40.js",
   "./stage-bundle-base.2a35128f82497ce859165c82bb119b55fdeec6f12897d473ae564a78c1c55a06.css",
-  "./stage-bundle-head-before-light.cf70007d85ca68b140d16f52f188adec7632b9e607cd994678b1d6f194fafb1b.css",
-  "./stage-bundle-head-after-light.2aee0cec84100bd7150b77d0a9ec62bbaa04f4d7775d22b1f11e6c7907c82dae.css",
+  "./stage-bundle-head-before-light.4564785a3de0e21700b03e3f9a34b31dfdd0cea211a076f9d3ae2bac3e16f07a.css",
+  "./stage-bundle-head-after-light.77dca42e4027ddc06e7c1437262a08edb73a59bc686f88f907b3f773d4884301.css",
   "./stage-bundle-field.abe3a0c820e9d04bafcee1655ae8bd324132d053e220de16db302d2f0b019d2d.css"
 ];
 const APP_SHELL_GROUPS = {

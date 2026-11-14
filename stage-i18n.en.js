@@ -80,6 +80,8 @@ window.SHOSAI_DOWNLOAD_COPY["en"] = {
 window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
 window.SHOSAI_I18N_PACKS["en"] = window.SHOSAI_I18N_PACKS["en"] || { text: {} };
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "最後の控えから ○日たちました。この端末だけに入っている作品は、故障や設定で消えることがあります。": "It has been ○ days since your last backup. Work stored only on this device can be lost because of a failure or changes to settings.",
+  "控えを作る": "Create a backup",
   "リンクの期限": "Link expiry",
   "期限なし": "No expiry",
   "日時を指定": "Specify date and time",
@@ -940,4 +942,11 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "公開内容が更新されました。最新のシーンを確認してから送信してください。": "Published content changed. Check the latest scene before sending.",
   "表示名を入力してください。": "Enter a display name.",
   "公開された内容を表示しています。": "Showing published content."
+});
+
+/* Payment retry grace notice. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "支払いが失敗しています。カードを更新してください。": "Payment failed. Please update your card.",
+  "カードを更新": "Update card",
+  "猶予の終了: {date}": "Grace period ends: {date}"
 });

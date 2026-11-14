@@ -32,6 +32,20 @@
 
   const TEXT = {
 
+    "最後に控え（書き出しまたはフォルダ控え）を取ってから14日以上たつと、編集エリアの下にお知らせを出します（ゲストとスマートフォンの閲覧画面には出ません）。": "If 14 days or more have passed since your last backup (an export or a folder backup), a notice now appears below the editing area. It does not appear for guests or on phone viewing screens.",
+
+    "スマートフォンの閲覧画面では、場面の切り替えのアニメーションを常に切ります。ショーの設定の値は変えません。": "On phone viewing screens, scene-transition animation is now always off. The show's own setting is not changed.",
+
+    "横幅の狭い画面で共有の道具バーが収まらないときは、折り返して表示します。": "When the shared tool bar does not fit on a narrow screen, it now wraps onto more than one line.",
+
+    "契約の期間が終わったあとも、狭い画面で書き出しの操作に届くようにしました。": "After a contract ends, export can still be reached on a narrow screen.",
+
+    "同梱の見本「真夏」のディアボロの持ち方の内部指定を、見た目を変えずに整えました。": "The internal diabolo-hold setting of the bundled “Midsummer” sample was tidied up without changing how it looks.",
+
+    "有料版の準備として、支払いが滞ったあとに21日間の猶予を設け、カード更新のお知らせを出す仕組みを入れました。支払いのお知らせの閉じるボタンは44pxにし、文言から税込の表記を外しました。この機能は切ってあり、この版では使えるようになっていません。": "In preparation for the paid edition, a 21-day grace period after a failed payment and a card-update notice were added. The payment notice’s close button is now 44px, and “tax included” wording was removed from the text. This is switched off and is not available in this version.",
+
+    "共有データの控えと整理の仕組みに、毎日の実行結果の要約（件数と決まった語だけ）を記録し、読み取り専用で確かめる道具を加えました。どちらも切ってあり、この版では動いていません。": "The share backup and clean-up system now records a daily summary of each run (counts and fixed words only), and a read-only tool to check it was added. Both are switched off and are not running in this version.",
+
     "演者リンクとQシートの閲覧リンクを新しく作ると、どこで作っても https://app.stagesketch.app のアドレスになるようにしました。これまでに作ったリンクは、今までどおり開けます。": "New performer links and Q-sheet viewing links now always use the address https://app.stagesketch.app, wherever they are created. Links you created earlier still open as before.",
 
     "舞台スケッチのサーバーで確かめられたリンクを開いたときは、閲覧の画面に「舞台スケッチから発行」と確認の内容を表示します。そのリンクが確認した時点で有効であることを示すもので、内容の正しさや今後も有効であることを保証するものではありません。": "When you open a link that the Stage Sketch server has verified, the viewing screen shows “Issued by Stage Sketch” with the details that were checked. This means the link was valid when it was checked; it does not guarantee its contents or that it will stay valid.",
@@ -7534,4 +7548,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "公開内容が更新されました。最新のシーンを確認してから送信してください。": "Published content changed. Check the latest scene before sending.",
   "表示名を入力してください。": "Enter a display name.",
   "公開された内容を表示しています。": "Showing published content."
+});
+
+/* Payment retry grace notice. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "支払いが失敗しています。カードを更新してください。": "Payment failed. Please update your card.",
+  "カードを更新": "Update card",
+  "猶予の終了: {date}": "Grace period ends: {date}"
+});
+
+// BACKUP_NOTICE_14D: English entry point (stage-i18n.en.js mirrors this pair).
+Object.assign(window.SHOSAI_I18N_PACKS.en.text, {
+  "最後の控えから ○日たちました。この端末だけに入っている作品は、故障や設定で消えることがあります。": "It has been ○ days since your last backup. Work stored only on this device can be lost because of a failure or changes to settings.",
+  "控えを作る": "Create a backup",
 });

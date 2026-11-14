@@ -1,6 +1,20 @@
 /* Signed monthly local-edit rights. No show data, credentials or private keys. */
 (function(root) {
   'use strict';
+  // Single policy bound, shared by the reducer, issuer and signed client.
+  const PAST_DUE_GRACE_MS = 21 * 86400000;
+  function validPaymentIssue(issue) {
+    return !!issue && typeof issue === 'object' && !Array.isArray(issue)
+      && Number.isSafeInteger(issue.since) && issue.since >= 0
+      && Number.isSafeInteger(issue.graceUntil) && issue.graceUntil > issue.since
+      && issue.graceUntil - issue.since <= PAST_DUE_GRACE_MS;
+  }
+  function paymentIssueFor(grant) {
+    if(grant?.grantSource !== 'stripe' || grant.status !== 'past_due' || grant.ended || grant.hold)return null;
+    const since=Date.parse(grant.pastDueSince), graceUntil=Date.parse(grant.graceUntil);
+    const issue={since,graceUntil};return validPaymentIssue(issue)?issue:null;
+  }
+  const accessUntil = claims => Math.max(claims.until, claims.paymentIssue?.graceUntil || 0);
   const AUDIENCE = 'gamma-local-edit-v1';
   const DEVICE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const encode = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -26,7 +40,10 @@
       const c=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(decode(parts[1])));
       if(c.v!==1||c.aud!==AUDIENCE||!issuer||c.iss!==issuer||!DEVICE.test(c.device)||c.device!==device||typeof c.sub!=='string'||!c.sub||c.sub!==account
         ||!['lite','studio','company'].includes(c.plan)||![c.iat,c.nextRenewalAt,c.until,c.seq].every(Number.isSafeInteger)
-        ||!DEVICE.test(c.nonce||'')||(nonce!==undefined&&c.nonce!==nonce)||c.seq<1||c.seq<minimumSequence||c.iat<0||c.nextRenewalAt<=c.iat||c.until<=c.iat||c.until>c.nextRenewalAt)throw Error('claims');
+        ||!DEVICE.test(c.nonce||'')||(nonce!==undefined&&c.nonce!==nonce)||c.seq<1||c.seq<minimumSequence||c.iat<0||c.nextRenewalAt<=0||c.until<=0||c.until>c.nextRenewalAt
+        ||(c.paymentIssue!==undefined&&(!validPaymentIssue(c.paymentIssue)||c.paymentIssue.since>c.iat))
+        ||accessUntil(c)<=c.iat)throw Error('claims');
+      if(c.paymentIssue)Object.freeze(c.paymentIssue);
       return {ok:true,claims:Object.freeze(c)};
     }catch(_){return {ok:false,error:'invalid-license'};}
   }
@@ -38,8 +55,8 @@
     const now=()=>Math.max(wallNow(),anchor+Math.max(0,wallNow()-wall,elapsedNow()-elapsed));
     function persist(){if(!cache)return;cache.observed=Math.max(cache.observed||0,now());cache.wall=Math.max(cache.wall||0,wallNow());storage.setItem(key,JSON.stringify(cache));}
     function read(){
-      if(claims&&!locked&&now()>=claims.until){locked=true;state='renewal-required';error='renewal-required';changed();}
-      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,device});
+      if(claims&&!locked&&now()>=accessUntil(claims)){locked=true;state='renewal-required';error='renewal-required';changed();}
+      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,paymentIssue:claims&&!locked&&now()<claims.paymentIssue?.graceUntil?claims.paymentIssue:null,device});
     }
     function deny(reason){locked=true;state='renewal-required';error=reason;if(cache){cache.denied=reason;try{persist();}catch(_){/* Retain the last signed grant. */}}changed();return false;}
     async function accept(value,{restoring=false,nonce}={}) {
@@ -68,13 +85,13 @@
       },
       checkpoint(){try{persist();}catch(_){deny('storage');}},
       decision(){return {allowed:read().state==='licensed'||state==='legacy',reason:error||'license-required'};},
-      remaining(){read();return claims&&!locked?Math.max(0,claims.until-now()):null;},
-      needsCheck(){return !claims||locked||read().state!=='licensed';},
+      remaining(){read();return claims&&!locked?Math.max(0,accessUntil(claims)-now()):null;},
+      needsCheck(){return !!claims?.paymentIssue||!claims||locked||read().state!=='licensed';},
       // A failed online request never replaces a valid monthly grant.
       networkFailure(){if(!claims||read().state!=='licensed')deny('renewal-required');},
     });
   }
-  const api=Object.freeze({AUDIENCE,DEVICE,encode,decode,sign,verify,createAccess});
+  const api=Object.freeze({PAST_DUE_GRACE_MS,validPaymentIssue,paymentIssueFor,AUDIENCE,DEVICE,encode,decode,sign,verify,createAccess});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.GAMMA_LICENSE_MODEL=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

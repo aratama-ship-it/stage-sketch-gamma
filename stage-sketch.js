@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.18";
+  const GAMMA_APP_VERSION = "v0.4.19";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -698,6 +698,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // field. Rich editors (including empty/plaintext-only and inherited ones)
     // always remain read-only; leave their current text and editable flag intact.
     if (target?.isContentEditable) return false;
+    // The narrow shell's Show drawer is an export-only entry after expiry.
+    // Keep desktop's detached backup viewing routes intact, but do not expose
+    // import/open or any editing operation through this newly reachable panel.
+    if (target?.closest?.('html.gm-tablet .stage-project-panel')
+      && !target.closest('#stage-export-json')) return false;
     const field = target?.closest?.('input, textarea, select');
     if (field) return Boolean(field.closest('#stage-prefs-modal, #stage-export-modal, #stage-project-export-modal, #stage-venue-export-modal, [data-contract-recovery]')
       || field.matches('#stage-import-json, #stage-import-project-folder, #stage-view-select, #stage-show-names, #stage-show-set-names, #stage-show-light-names, #stage-front2-seat, #stage-front-lights, #stage-show-front-border, #stage-front-floor-grid, #stage-timeline-audio-volume, #stage-timeline-volume'));
@@ -735,7 +740,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       contractControlState.clear(); return;
     }
-    const selector = 'button, input, select, textarea, [contenteditable]:not([contenteditable="false"])';
+    const selector = 'button, input, select, textarea, [contenteditable]:not([contenteditable="false"]), html.gm-tablet .stage-project-panel label.stage-import-label';
     const message = contractMessage();
     for (const root of roots) {
       const controls = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
@@ -2632,6 +2637,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const phonePreview = bootPhonePreview;
   const phoneLike = bootPhoneLike;
   const phoneViewerActive = standaloneStagePage && !tabletPwaActive && (phonePreview || phoneLike) && !STUDY_READ_ONLY;
+  // Display policy only. Keep the show's saved preference intact on phones.
+  function sceneAnimationEnabled() {
+    return state.animateScenes && !phoneViewerActive;
+  }
   const phoneOrientation = window.matchMedia("(orientation: portrait)");
   const tabletOrientation = window.matchMedia("(orientation: portrait)");
   document.documentElement.classList.toggle("stage-phone-viewer", phoneViewerActive);
@@ -2816,7 +2825,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-12`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-13`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -7278,6 +7287,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const loaded = loadState();
   let state = loaded.value;
   let storageBand = null;
+  let backupNotice = null;
+  const pendingBackupNoticeStates = new Map();
   let newShowReturn = null;
   try {
     const stored = JSON.parse(sessionStorage.getItem(NEW_SHOW_RETURN_KEY) || "null");
@@ -25584,6 +25595,62 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return { update };
   }
 
+  function createBackupNotice() {
+    let nativeToken = null;
+    const notice = window.STAGE_BACKUP_NOTICE?.create({
+      element: document.getElementById('stage-backup-notice'), tx,
+      host: {
+        context: () => {
+          const session = window.SHOSAI_STAGE_SESSION_HOOKS;
+          const guest = typeof session?.guestView === 'function' ? session.guestView()
+            : guestSessionActive() || /^#session=[a-z0-9]{1,64}$/i.test(location.hash);
+          const c = fileAutosaveContext();
+          const workspace = document.body.dataset.gammaWorkspace || 'normal';
+          return { id:state.project.id, native:c.native, createdAt:state.project.createdAt, lastExportAt:state.lastExportAt,
+            eligible:c.editable && !c.readOnly && !c.viewer && !guest && !session?.role?.()
+              && !contractReadOnly() && workspace === 'normal' };
+        },
+        export: () => els.exportJson?.click(),
+        returnFocus: () => document.querySelector('.stage-sketch-head button')?.focus({preventScroll:true}),
+        onDue: refreshNativeBackup,
+      },
+    });
+    if (!notice) return null;
+    for (const [id, value] of pendingBackupNoticeStates) notice.folderState(id, value);
+    pendingBackupNoticeStates.clear();
+    function refreshNativeBackup() {
+      // Read the existing native backup status without opening settings or
+      // changing a destination. The bridge rejects replies from old documents.
+      if (nativeProject?.driveBackupAvailable?.()) {
+        const c = driveBackupContext();
+        if (nativeToken !== c.token) {
+          nativeToken = c.token;
+          void nativeProject.driveBackupRequest('status').then(value => {
+            if (driveBackupContext().token !== c.token) return;
+            notice.folderState(c.projectId, value);
+            // On a first run of this feature the shell's in-memory status may
+            // have no timestamps. Only if the reminder is due, read existing
+            // verified candidates; this never resumes a paused backup.
+            if (value.configured && !value.jsonAt && !value.packageAt) {
+              void nativeProject.driveBackupRequest('list').then(list => {
+                if (driveBackupContext().token !== c.token) return;
+                const dates = [list.latest, ...(list.history || []), ...(list.packages || [])]
+                  .filter(item => item?.available === true).map(item => Date.parse(item.entry?.at)).filter(Number.isFinite);
+                if (dates.length) notice.folderState(c.projectId, {state:'ready',jsonAt:new Date(Math.max(...dates)).toISOString()});
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+      }
+    }
+    function update() { notice.update(); }
+    window.addEventListener('stageSketchProject:driveBackup', event => notice.folderState(state.project.id, event.detail));
+    new MutationObserver(update).observe(document.body, {attributes:true, attributeFilter:['class','data-gamma-workspace']});
+    new MutationObserver(update).observe(document.documentElement, {attributes:true, attributeFilter:['lang']});
+    update();
+    return {update, folderState:notice.folderState};
+  }
+
   function headerTimestamp(value) {
     return window.STAGE_TIME_DOMAIN.dateText(value, document.documentElement.lang || "ja", {time:true});
   }
@@ -25591,6 +25658,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   // 時刻を進めるのは、保存・書き出しの成功を確認した後だけに限る。
   function syncSaveStamps() {
     storageBand?.update();
+    backupNotice?.update();
     syncBackupStatus();
     if (els.lastSaveTime) els.lastSaveTime.textContent = headerTimestamp(state && state.lastSavedAt);
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
@@ -28110,7 +28178,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         point.addEventListener("click", () => {
           expandedSceneTransitionToId = expandedSceneTransitionToId === toScene.id
             ? null : toScene.id;
-          const canPreview = state.animateScenes
+          const canPreview = sceneAnimationEnabled()
             && !document.body.classList.contains("stage-session-guest");
           if (canPreview) {
             openScene(toScene.id, { transitionFromSceneId: fromScene.id });
@@ -31317,7 +31385,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function spinRunAllowed() {
-    return state.animateScenes && !document.hidden
+    return sceneAnimationEnabled() && !document.hidden
       && (spinningGobos().length > 0 || spinningMirrorBalls().length > 0 || effectsActive());
   }
 
@@ -31541,7 +31609,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     stopSceneAnim();
     const liveSpins = liveSpinsIn && liveSpinsIn.size ? liveSpinsIn : captureLiveSpins();
     pauseSpinRun();
-    if (!state.animateScenes || !fromScene) return false;
+    if (!sceneAnimationEnabled() || !fromScene) return false;
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     const wasAt = rows.findIndex((row) => row.id === fromScene.id);
     const nowAt = rows.findIndex((row) => row.id === state.project.activeSceneId);
@@ -34463,7 +34531,7 @@ ${propsPlotHtml}
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     const at = rows.findIndex((row) => row.id === state.project.activeSceneId);
     const fromScene = rows[at - 1];
-    if (!state.animateScenes || !fromScene) return;
+    if (!sceneAnimationEnabled() || !fromScene) return;
     beginSceneAnim(fromScene);
   }
 
@@ -34505,9 +34573,9 @@ ${propsPlotHtml}
     }
     if (state.project.activeSceneId === id) {
       if (!options.fromTimeline && !options.throughTransition) { stopSceneAnim(); render(); }
-      const liveSpins = transitionFromScene && state.animateScenes ? captureLiveSpins() : null;
+      const liveSpins = transitionFromScene && sceneAnimationEnabled() ? captureLiveSpins() : null;
       renderScenes();
-      if (transitionFromScene && state.animateScenes) {
+      if (transitionFromScene && sceneAnimationEnabled()) {
         beginSceneAnim(transitionFromScene, liveSpins, options.transitionDurationMs, options.transitionProgress);
       }
       return;
@@ -40376,10 +40444,19 @@ document.addEventListener("keydown", function (event) {
   }
 
   function syncTransitionAnimationControls() {
-    if (els.animScenes) els.animScenes.checked = state.animateScenes;
+    const enabled = sceneAnimationEnabled();
+    if (els.animScenes) els.animScenes.checked = enabled;
+    if (phoneViewerActive) {
+      // Hide only the animation row; retain the adjacent cue-naming setting.
+      const row = els.animScenes?.closest(".stage-transition-animation-pref");
+      if (row) row.hidden = true;
+      for (const control of [els.animScenes, els.timelineAnimScenes, els.toolbarAnimScenes, els.animMs]) {
+        if (control) { control.hidden = true; control.disabled = true; }
+      }
+    }
     { const naming = document.getElementById("stage-cue-naming"); if (naming) { naming.value = state.project && state.project.cueNaming === "serial" ? "serial" : "scene"; window.GAMMA_UI?.refreshSelect?.(naming); } }
-    if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
-    if (els.toolbarAnimScenes) els.toolbarAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
+    if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(enabled));
+    if (els.toolbarAnimScenes) els.toolbarAnimScenes.setAttribute("aria-pressed", String(enabled));
   }
 
   function syncInputs() {
@@ -40424,7 +40501,7 @@ document.addEventListener("keydown", function (event) {
     if (els.animMs) {
       if (document.activeElement !== els.animMs) els.animMs.value = String(state.sceneAnimMs / 1000);
       // 転換アニメーションのON/OFFに、つまみの操作可否を同期する。
-      els.animMs.disabled = !state.animateScenes;
+      els.animMs.disabled = !sceneAnimationEnabled();
       if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
     }
   }
@@ -43323,7 +43400,8 @@ document.addEventListener("keydown", function (event) {
         }
         return {
           idleMotion: Boolean(idleMotionActive()),
-          animateScenes: Boolean(state.animateScenes),
+          animateScenes: Boolean(sceneAnimationEnabled()),
+          sceneAnimationSuppressed: phoneViewerActive,
           transition: sceneAnim ? {
             progress: finite(sceneAnim.progress, 0),
             blackout: Boolean(sceneAnim.blackout),
@@ -43566,12 +43644,13 @@ document.addEventListener("keydown", function (event) {
   }
   if (els.animScenes) {
     els.animScenes.addEventListener("change", (e) => {
+      if (phoneViewerActive) { syncTransitionAnimationControls(); return; }
       state.animateScenes = e.target.checked;
       syncTransitionAnimationControls();
-      if (!state.animateScenes) stopSceneAnim();
+      if (!sceneAnimationEnabled()) stopSceneAnim();
       syncSpinRun(false);
       render();
-      if (els.animMs) els.animMs.disabled = !state.animateScenes;
+      if (els.animMs) els.animMs.disabled = !sceneAnimationEnabled();
       syncSceneBar();
       persistSoon();
       announce(state.animateScenes ? "転換アニメーションを入れました。" : "転換アニメーションを切りました。");
@@ -43596,15 +43675,16 @@ document.addEventListener("keydown", function (event) {
     }
   }
   if (els.timelineAnimScenes && els.animScenes) {
-    els.timelineAnimScenes.addEventListener("click", () => els.animScenes.click());
+    els.timelineAnimScenes.addEventListener("click", () => { if (!phoneViewerActive) els.animScenes.click(); });
   }
   if (els.toolbarAnimScenes && els.animScenes) {
-    els.toolbarAnimScenes.addEventListener("click", () => els.animScenes.click());
+    els.toolbarAnimScenes.addEventListener("click", () => { if (!phoneViewerActive) els.animScenes.click(); });
   }
   document.addEventListener("visibilitychange", () => syncSpinRun());
 
   if (els.animMs) {
     els.animMs.addEventListener("input", (e) => {
+      if (phoneViewerActive) return;
       state.sceneAnimMs = clamp(finite(e.target.value, 2) * 1000, 200, 3000);
       if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
       persistSoon();
@@ -46914,6 +46994,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       // 初回描画と保存の初期化を終えてから。失敗は黙って次の起動へ回す。
       if (!nativeProject) setTimeout(() => { deliverBundledSampleBackfills(pendingBlocked).catch(() => {}); }, 1500);
       if (!nativeProject && !browserPreview) storageBand = createStorageBand();
+      if (!browserPreview) backupNotice = createBackupNotice();
       if (typeof nativeProject !== "undefined" && nativeProject) {
         window.addEventListener("stageSketchProject:audioConfirmedLate", event => {
           // review R6: the shell answered after the page gave up waiting. A new track is completed now; otherwise the user is told.
@@ -47527,7 +47608,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     context() {
       const row = sc();
       const data = sceneAlternatives?.validate(row);
-      return { sceneId: row.id, title: row.title, data, canPreview: state.animateScenes && state.project.scenes.filter(scene => scene.kind === "scene").findIndex(scene => scene.id === row.id) > 0, currentId: sceneAlternatives?.current(row)?.id,
+      return { sceneId: row.id, title: row.title, data, canPreview: sceneAnimationEnabled() && state.project.scenes.filter(scene => scene.kind === "scene").findIndex(scene => scene.id === row.id) > 0, currentId: sceneAlternatives?.current(row)?.id,
         readOnly: contractReadOnly() || !editionAllows("sceneAlternatives") || STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting };
     },
     add() {
@@ -49035,7 +49116,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     syncTimelineSceneTransition({ fromSceneId, toSceneId, durationMs, progress }) {
       if (!editionAllows("timeline")) return false;
-      if (!state.animateScenes || state.project.activeSceneId !== toSceneId || !Number.isFinite(progress)) return false;
+      if (!sceneAnimationEnabled() || state.project.activeSceneId !== toSceneId || !Number.isFinite(progress)) return false;
       if (sceneAnim && sceneAnim.timelineControlled && sceneAnim.fromSceneId === fromSceneId
           && sceneAnim.toSceneId === toSceneId) {
         sceneAnim.setProgress(progress);
@@ -49349,7 +49430,11 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   if (driveBackupUi) return;
   const driveContainer=document.getElementById('stage-drive-backup');
   if(driveContainer && window.STAGE_DRIVE_BACKUP_UI) {
-    driveBackupUi=window.STAGE_DRIVE_BACKUP_UI.create({container:driveContainer,tx:driveText,host:{
+    driveBackupUi=window.STAGE_DRIVE_BACKUP_UI.create({container:driveContainer,tx:driveText,
+      onState:(id,value)=>{
+        if (backupNotice) backupNotice.folderState(id,value);
+        else if (['saved','partial','ready'].includes(value?.state)) pendingBackupNoticeStates.set(id,value);
+      },host:{
       context:driveBackupContext,
       async assertExclusive(destination){
         if(!fileAutosaveUi)return;

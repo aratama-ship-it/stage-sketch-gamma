@@ -161,6 +161,7 @@
     "run-of-show/timing.js",
     "run.html",
     "stage-audio-store.js",
+    "stage-backup-notice.js",
     "stage-call-grid.js",
     "stage-cue-sheet.js",
     "stage-data-safety.js",

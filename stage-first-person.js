@@ -4907,8 +4907,10 @@
     const target = clamp(from + direction, 0, count - 1);
     if (target === from) return;
     pendingScene = target;
-    if (!data.animateScenes) elements.fade.classList.add("on");
-    if (!sceneTimer) sceneTimer = setTimeout(runPendingScene, data.animateScenes ? 0 : 140);
+    // The host supplies display policy; keep the existing non-phone fade.
+    const fade = !data.animateScenes && !data.sceneAnimationSuppressed;
+    if (fade) elements.fade.classList.add("on");
+    if (!sceneTimer) sceneTimer = setTimeout(runPendingScene, fade ? 140 : 0);
   }
 
   function canvasPoint(event) {

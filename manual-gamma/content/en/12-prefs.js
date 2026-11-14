@@ -65,7 +65,8 @@ ${table(["Setting", "Default", "Meaning"], [
   [ui("Transition animation"), "On", "When scenes change, performers move along their routes. Off makes them jump"],
   [ui("Default transition duration"), "2 s", "How long the transition animation plays (a slider)"]
 ])}
-<p>Both are saved with the current show and included in exports. They are separate from each scene's “time moving to the next scene” on the timeline (${ref("transition", "Part 3, 3-6")}).</p>`
+<p>Both are saved with the current show and included in exports. They are separate from each scene's “time moving to the next scene” on the timeline (${ref("transition", "Part 3, 3-6")}).</p>
+<p>The phone viewer always turns transition animation off and hides these two controls. The saved show preferences stay intact; computers, Macs and tablets continue to use them.</p>`
       },
       {
         id: "features", editions: ["studio", "company"], title: "Features (list and defaults)", status: "verified",

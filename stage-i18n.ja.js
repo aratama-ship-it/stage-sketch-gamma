@@ -83,6 +83,8 @@ window.SHOSAI_DOWNLOAD_COPY["ja"] = {
 window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
 window.SHOSAI_I18N_PACKS["ja"] = window.SHOSAI_I18N_PACKS["ja"] || { text: {} };
 Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "最後の控えから ○日たちました。この端末だけに入っている作品は、故障や設定で消えることがあります。": "最後の控えから ○日たちました。この端末だけに入っている作品は、故障や設定で消えることがあります。",
+  "控えを作る": "控えを作る",
   "リンクの期限": "リンクの期限",
   "期限なし": "期限なし",
   "日時を指定": "日時を指定",
@@ -1145,4 +1147,11 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "linkIssuance.network": "通信できないため、発行元を確認できません。",
   "linkIssuance.legacy-host": "旧URLで開いています。この画面では正規発行の確認を表示できません。",
   "linkIssuance.unverified-host": "このホストでは正規発行を確認できません。"
+});
+
+/* Payment retry grace notice. */
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "支払いが失敗しています。カードを更新してください。": "支払いが失敗しています。カードを更新してください。",
+  "カードを更新": "カードを更新",
+  "猶予の終了: {date}": "猶予の終了: {date}"
 });

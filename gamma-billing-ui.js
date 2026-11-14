@@ -18,12 +18,21 @@ $('billing-form').addEventListener('submit',event=>{event.preventDefault();void 
 $('confirm').addEventListener('click',()=>void action(async()=>{
   if(!ref)return;await call('/billing/purchase-confirm',{ref});ref=null;$('terms').hidden=true;status('ready');
 }));
-$('portal').addEventListener('click',()=>void action(async()=>{await call('/billing/portal',{});status('mock');}));
+async function openPortal(){
+  const result=await call('/billing/portal',{});
+  if(result.state==='mock'){status('mock');return;}
+  const url=new URL(result.url);
+  if(url.protocol!=='https:'||url.hostname!=='billing.stripe.com'||url.username||url.password||url.port||!url.pathname.startsWith('/p/session/'))throw Error('billing-portal');
+  window.location.assign(url.href);
+}
+$('portal').addEventListener('click',()=>void action(openPortal));
 void action(async()=>{
   const context=await call('/billing/context');csrf=context.csrf;
   if(context.entitlement){$('billing-period').hidden=false;$('billing-period').textContent=t.until+': '+context.entitlement.until+' (UTC)';$('portal').hidden=false;
     if(context.entitlement.cancelAtPeriodEnd)status('ending');
   }
-  if(context.matching)status('pending');
+  if(context.canManageBilling===false){$('portal').hidden=true;if(context.entitlement)status('contactOwner');}
+  if(context.matching&&!context.entitlement)status('pending');
   $('quote').disabled=Boolean(context.entitlement);
+  if(new URLSearchParams(window.location.search).get('portal')==='1'&&context.canManageBilling)await openPortal();
 });

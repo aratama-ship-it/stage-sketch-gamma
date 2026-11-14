@@ -3,7 +3,7 @@
  'use strict';
  const SELECTED='gamma:drive-backup:selected-v1';
  const errorCode=e=>typeof e?.code==='string' && e.code ? e.code : typeof e?.name==='string' && e.name ? e.name : 'write-failed';
- function create({container,host,tx,env=root}){
+ function create({container,host,tx,env=root,onState=()=>{}}){
   const B=env.STAGE_DRIVE_BACKUP_BROWSER,F=env.STAGE_FILE_AUTOSAVE;
   let controller,record=null,candidate=null,busy=false,last={state:'disabled'},token=null,selectedProject=null,paused=false;
   let nativeConfigured=false,actionSerial=0;
@@ -13,6 +13,7 @@
   const supported=()=>native()?host.nativeAvailable():Boolean(!host.context().legacyShell && B.eligible(env));
   const eligible=()=>{const c=host.context();return c.editable && !c.guest && !c.readOnly && !c.viewer && !c.hold && !c.browserSaveFailed;};
   function publish(value){
+   try{onState(host.context().projectId,value);}catch(_){} // UI observers cannot fail a backup.
    if(native() && value.bindingReset){actionSerial++;busy=false;candidate=null;nativeConfigured=false;paused=false;list?.replaceChildren();historyRows.length=0;}
    if(native() && value.configured===true)nativeConfigured=true;
    if(native() && value.limits){limits=value.limits;cleanup=value.cleanup===true;paused=value.paused===true;}
@@ -128,7 +129,27 @@
      if(saved){record=await repository.get(saved.slotId);if(token!==host.context().token)return;
       paused=saved.paused===true;cleanup=saved.cleanup===true;
       if(saved.limits && ['history','packages','bytes'].every(k=>Number.isSafeInteger(saved.limits[k])&&saved.limits[k]>0))limits=saved.limits;
-      if(record && !paused)await controller.restore(record);
+      if(record && !paused)try{await controller.restore(record);}catch(e){
+       if(errorCode(e)!=='saved-state-differs')throw e;
+       failed(e); // Keep the writer stopped; its verified past backup still counts.
+      }
+      if(record && (paused || last.code==='saved-state-differs')) {
+       renderStatus(); // Restored policy must be visible before optional I/O.
+       // Observe an existing JSON backup without activating a writer or asking
+       // permission. A paused or different destination can still be the latest
+       // good backup, independently of whether automatic writing may resume.
+       try {
+        const destination=await B.restoreDestination(record.rootHandle,record);
+        const adapter=B.adapter(destination),hash=bytes=>F.digestBytes(bytes,env.crypto);
+        const identity={slotId:record.slotId,writerId:record.writerId,projectId:c.projectId};
+        const saved=await env.STAGE_DRIVE_BACKUP_STORE.readIndex(adapter,identity,hash);
+        const bytes=await adapter.read('latest.stagesketch');
+        if(bytes && saved.index?.latest && await hash(bytes)===saved.index.latest.sha256) {
+         F.validateDocument(new TextDecoder('utf-8',{fatal:true}).decode(bytes),c.projectId);
+         if(token===c.token && host.context().token===c.token)try{onState(c.projectId,{state:'ready',jsonAt:saved.index.latest.at});}catch(_){}
+        }
+       }catch(_){} // Unavailable folders do not affect settings or stored shows.
+      }
      }
     }catch(e){failed(e);}
    }

@@ -784,3 +784,25 @@ html.stage-pwa-tablet.gm-tablet.gm-lite-enabled:has(#stage-storage-band.is-folde
 html.stage-pwa-tablet.gm-tablet .stage-sketch-head>.gm-lite-tabs{display:flex!important;gap:var(--gm-gap);padding:var(--sp-1,4px) var(--gm-gap);background:var(--desk)}
 .gm-lite-tabs .gm-rehearsal-tab{flex:1;min-width:0;min-height:var(--gm-hit);padding:var(--sp-1,4px);font:inherit;color:var(--milk);background:var(--desk-2);border:1px solid var(--edge)}
 .gm-lite-tabs .gm-rehearsal-tab[aria-selected=true]{border-color:var(--brass);background:var(--gamma-selected-bg)}
+
+/* Give the drawing reminder its own auto row, including Lite and folded bands. */
+html.stage-pwa-tablet.gm-tablet:has(#stage-backup-notice:not([hidden])):has(#stage-storage-band) .stage-sketch {
+  grid-template-rows:auto var(--backup-notice-storage-row, var(--storage-band-height)) minmax(0,1fr) auto;
+}
+html.stage-pwa-tablet.gm-tablet:has(#stage-backup-notice:not([hidden])):has(#stage-storage-band[hidden]) .stage-sketch {
+  grid-template-rows:auto minmax(0,1fr) auto;
+}
+html.stage-pwa-tablet.gm-tablet:has(#stage-storage-band.is-folded:not([hidden])) { --backup-notice-storage-row:var(--storage-band-folded); }
+
+/* Both notices: header, payment, optional storage band, drawing, backup.
+   The combined selectors outrank either notice's standalone grid rules. */
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-backup-notice:not([hidden])):has(> #stage-payment-notice:not([hidden])):has(> #stage-storage-band:not([hidden])) {
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
+}
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-backup-notice:not([hidden])):has(> #stage-payment-notice:not([hidden])):has(> #stage-storage-band[hidden]),
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-backup-notice:not([hidden])):has(> #stage-payment-notice:not([hidden])):not(:has(> #stage-storage-band)) {
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+}
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-backup-notice:not([hidden])):has(> #stage-payment-notice:not([hidden])):has(> #stage-storage-band.is-folded:not([hidden])) {
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
+}

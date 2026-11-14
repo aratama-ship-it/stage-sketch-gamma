@@ -206,7 +206,7 @@
   }
   function entitlementState(entitlement, nowMs) {
     if (entitlement?.blocked === true) return 'invalid';
-    return entitlement?.untilMs != null && nowMs >= entitlement.untilMs ? 'expired' : 'active';
+    return entitlement?.untilMs != null && nowMs >= Math.max(entitlement.untilMs,entitlement.graceUntilMs||0) ? 'expired' : 'active';
   }
   function featureDecision(entitlement, feature, nowMs) {
     const plan = normalizePlan(entitlement?.plan);
@@ -225,7 +225,7 @@
     const now = () => server + Math.max(0, wallNow() - wall, elapsedNow() - elapsed);
     const read = () => {
       const wasExpired = expired;
-      if (identity?.untilMs != null && now() >= identity.untilMs) expired = true;
+      if (identity?.untilMs != null && now() >= Math.max(identity.untilMs,identity.graceUntilMs||0)) expired = true;
       const value = Object.freeze({plan:identity?.displayPlan ?? null, until:identity?.until ?? null,
         untilMs:identity?.untilMs ?? null, state:expired ? 'expired' : identity ? 'active' : 'unknown'});
       if (!wasExpired && expired) changed(value);
@@ -242,7 +242,9 @@
         if (!plan || !until.ok) return false;
         const observed = typeof value.serverTime === 'string' ? Date.parse(value.serverTime) : NaN;
         if (identity?.user === value.user && Number.isFinite(observed) && observed < server) return false;
-        identity = {...until, plan, displayPlan:value.plan === undefined ? null : plan, user:value.user}; wall = wallNow(); elapsed = elapsedNow(); sharingDenied = false;
+        const grace=parseUntil(value.graceUntil);
+        if(!grace.ok)return false;
+        identity = {...until, graceUntilMs:grace.untilMs, plan, displayPlan:value.plan === undefined ? null : plan, user:value.user}; wall = wallNow(); elapsed = elapsedNow(); sharingDenied = false;
         server = typeof value.serverTime === 'string' && Number.isFinite(Date.parse(value.serverTime)) ? Date.parse(value.serverTime) : wall;
         expired = value.state === 'expired' || entitlementState(identity, now()) === 'expired';
         changed(read()); return true;
@@ -259,7 +261,7 @@
         if (!identity || feature === 'edit') return {allowed:true};
         return featureDecision(identity, feature, now());
       },
-      remaining() { read(); return expired || identity?.untilMs == null ? null : Math.max(0, identity.untilMs - now()); },
+      remaining() { read(); return expired || identity?.untilMs == null ? null : Math.max(0, Math.max(identity.untilMs,identity.graceUntilMs||0) - now()); },
     });
   }
   // 2026-10-15: count-based timeline UI is held for release. Restore this one
@@ -304,6 +306,20 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
 /* Signed monthly local-edit rights. No show data, credentials or private keys. */
 (function(root) {
   'use strict';
+  // Single policy bound, shared by the reducer, issuer and signed client.
+  const PAST_DUE_GRACE_MS = 21 * 86400000;
+  function validPaymentIssue(issue) {
+    return !!issue && typeof issue === 'object' && !Array.isArray(issue)
+      && Number.isSafeInteger(issue.since) && issue.since >= 0
+      && Number.isSafeInteger(issue.graceUntil) && issue.graceUntil > issue.since
+      && issue.graceUntil - issue.since <= PAST_DUE_GRACE_MS;
+  }
+  function paymentIssueFor(grant) {
+    if(grant?.grantSource !== 'stripe' || grant.status !== 'past_due' || grant.ended || grant.hold)return null;
+    const since=Date.parse(grant.pastDueSince), graceUntil=Date.parse(grant.graceUntil);
+    const issue={since,graceUntil};return validPaymentIssue(issue)?issue:null;
+  }
+  const accessUntil = claims => Math.max(claims.until, claims.paymentIssue?.graceUntil || 0);
   const AUDIENCE = 'gamma-local-edit-v1';
   const DEVICE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const encode = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -329,7 +345,10 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
       const c=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(decode(parts[1])));
       if(c.v!==1||c.aud!==AUDIENCE||!issuer||c.iss!==issuer||!DEVICE.test(c.device)||c.device!==device||typeof c.sub!=='string'||!c.sub||c.sub!==account
         ||!['lite','studio','company'].includes(c.plan)||![c.iat,c.nextRenewalAt,c.until,c.seq].every(Number.isSafeInteger)
-        ||!DEVICE.test(c.nonce||'')||(nonce!==undefined&&c.nonce!==nonce)||c.seq<1||c.seq<minimumSequence||c.iat<0||c.nextRenewalAt<=c.iat||c.until<=c.iat||c.until>c.nextRenewalAt)throw Error('claims');
+        ||!DEVICE.test(c.nonce||'')||(nonce!==undefined&&c.nonce!==nonce)||c.seq<1||c.seq<minimumSequence||c.iat<0||c.nextRenewalAt<=0||c.until<=0||c.until>c.nextRenewalAt
+        ||(c.paymentIssue!==undefined&&(!validPaymentIssue(c.paymentIssue)||c.paymentIssue.since>c.iat))
+        ||accessUntil(c)<=c.iat)throw Error('claims');
+      if(c.paymentIssue)Object.freeze(c.paymentIssue);
       return {ok:true,claims:Object.freeze(c)};
     }catch(_){return {ok:false,error:'invalid-license'};}
   }
@@ -341,8 +360,8 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
     const now=()=>Math.max(wallNow(),anchor+Math.max(0,wallNow()-wall,elapsedNow()-elapsed));
     function persist(){if(!cache)return;cache.observed=Math.max(cache.observed||0,now());cache.wall=Math.max(cache.wall||0,wallNow());storage.setItem(key,JSON.stringify(cache));}
     function read(){
-      if(claims&&!locked&&now()>=claims.until){locked=true;state='renewal-required';error='renewal-required';changed();}
-      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,device});
+      if(claims&&!locked&&now()>=accessUntil(claims)){locked=true;state='renewal-required';error='renewal-required';changed();}
+      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,paymentIssue:claims&&!locked&&now()<claims.paymentIssue?.graceUntil?claims.paymentIssue:null,device});
     }
     function deny(reason){locked=true;state='renewal-required';error=reason;if(cache){cache.denied=reason;try{persist();}catch(_){/* Retain the last signed grant. */}}changed();return false;}
     async function accept(value,{restoring=false,nonce}={}) {
@@ -371,13 +390,13 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
       },
       checkpoint(){try{persist();}catch(_){deny('storage');}},
       decision(){return {allowed:read().state==='licensed'||state==='legacy',reason:error||'license-required'};},
-      remaining(){read();return claims&&!locked?Math.max(0,claims.until-now()):null;},
-      needsCheck(){return !claims||locked||read().state!=='licensed';},
+      remaining(){read();return claims&&!locked?Math.max(0,accessUntil(claims)-now()):null;},
+      needsCheck(){return !!claims?.paymentIssue||!claims||locked||read().state!=='licensed';},
       // A failed online request never replaces a valid monthly grant.
       networkFailure(){if(!claims||read().state!=='licensed')deny('renewal-required');},
     });
   }
-  const api=Object.freeze({AUDIENCE,DEVICE,encode,decode,sign,verify,createAccess});
+  const api=Object.freeze({PAST_DUE_GRACE_MS,validPaymentIssue,paymentIssueFor,AUDIENCE,DEVICE,encode,decode,sign,verify,createAccess});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.GAMMA_LICENSE_MODEL=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
@@ -392,6 +411,7 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
   const config=root.GAMMA_LICENSE_CONFIG||{required:false,keys:{},issuer:''};
   const store={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
   let access=null;
+  let paymentNotice=null,paymentDismissed=false,paymentTimer=null;
   const makeAccess=device=>root.GAMMA_LICENSE_MODEL.createAccess({storage:store,config:device?{...config,device}:config,changed:()=>root.dispatchEvent(new Event('gamma-license-change'))});
   // Serialize first-tab registration without hardware fingerprints. Native uses
   // its Keychain UUID. Web Locks is preferred; the dedicated IDB transaction is
@@ -493,6 +513,7 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
   }
   function observeIdentity(identity){
     const mode=identity?.license?.mode;
+    if(config.required&&mode==='required'&&read().paymentIssue&&identity.user===read().user)void renew({explicit:true});
     // A stopped grant can have a still-valid offline signature. Recheck it
     // through the licence endpoint rather than trusting an old whoami reply.
     if(config.required&&mode==='required'&&identity.state==='expired'&&identity.user===read().user)
@@ -502,8 +523,39 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
     if(mode==='unavailable'){lastError='license-unavailable';if(config.required)access.networkFailure();else access.deny(lastError);}
     if(mode==='required'&&!config.required){lastError='license-unavailable';access.deny(lastError);}
   }
-  function message(){const r=access.read();return tx(messages[lastError]||messages[r.error]||messages[r.state]||messages.default);}
-  function render(){if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';
+  function message(){const r=access.read();if(r.paymentIssue)return tx('支払いが失敗しています。カードを更新してください。');return tx(messages[lastError]||messages[r.error]||messages[r.state]||messages.default);}
+  function renderPaymentNotice(){
+    const r=read(),issue=r.paymentIssue;
+    clearTimeout(paymentTimer);
+    if(!issue&&!paymentNotice)return;
+    const header=document.querySelector('.stage-sketch-head');
+    if(!paymentNotice && issue && header && root.top===root && !root.GAMMA_BROWSER_PREVIEW?.active){
+      const box=document.createElement('aside');box.id='stage-payment-notice';box.setAttribute('data-no-i18n','');box.setAttribute('data-contract-recovery','');
+      const message=document.createElement('span');message.id='stage-payment-message';message.setAttribute('role','status');
+      const date=document.createElement('span');date.id='stage-payment-date';
+      const content=document.createElement('div');content.className='stage-payment-copy';content.append(message,date);
+      const portal=document.createElement('a');portal.id='stage-payment-card';portal.className='btn-quiet';portal.target='_blank';portal.rel='noopener noreferrer';
+      // Use the existing authenticated billing entry in a new tab; never leave
+      // the editor or put account credentials into a URL (including on Mac).
+      try {const url=new URL('/billing',config.issuer);if(url.protocol==='https:'&&!url.username&&!url.password)portal.href=url.href;}catch(_){}
+      const close=document.createElement('button');close.type='button';close.id='stage-payment-close';close.className='btn-quiet';close.textContent='×';
+      close.addEventListener('click',()=>{paymentDismissed=true;renderPaymentNotice();});
+      box.append(content,portal,close);header.after(box);paymentNotice={box,message,date,portal,close};
+    }
+    if(!paymentNotice)return;
+    paymentNotice.box.hidden=!issue||paymentDismissed;
+    if(!issue)return;
+    paymentNotice.message.textContent=tx('支払いが失敗しています。カードを更新してください。');
+    const locale=document.documentElement.lang||'ja';
+    paymentNotice.date.textContent=tx('猶予の終了: {date}').replace('{date}',new Date(issue.graceUntil).toLocaleString(locale));
+    paymentNotice.portal.textContent=tx('カードを更新');
+    if(paymentNotice.portal.href){const url=new URL(paymentNotice.portal.href);url.searchParams.set('lang',locale);url.searchParams.set('portal','1');paymentNotice.portal.href=url.href;}
+    paymentNotice.close.setAttribute('aria-label',tx('この知らせを閉じる'));
+    // A hidden tab can sleep beyond the deadline; read() also checks on every
+    // edit and on visibility changes, using the monotone licence clock.
+    paymentTimer=setTimeout(()=>{access.read();renderPaymentNotice();},Math.min(2147483647,Math.max(1,Math.min(access.remaining()||0,issue.graceUntil-Date.now()))));
+  }
+  function render(){renderPaymentNotice();if(!ui)return;ui.status.textContent=message();const r=access.read();ui.date.textContent=r.paymentIssue?tx('猶予の終了: {date}').replace('{date}',new Date(r.paymentIssue.graceUntil).toLocaleString(document.documentElement.lang||'ja')):r.nextRenewalAt?tx('次回更新: {date}').replace('{date}',new Date(r.nextRenewalAt).toLocaleString(document.documentElement.lang||'ja')):'';
     ui.eye.setAttribute('aria-label',tx(ui.password.type==='password'?'パスワードを表示':'パスワードを隠す'));}
   function mount(){
     const parent=document.querySelector('#stage-prefs-main');if(!parent||ui)return;
@@ -561,8 +613,10 @@ if (!globalThis.GAMMA_LICENSE_CONFIG) globalThis.GAMMA_LICENSE_CONFIG = Object.f
     details.append(check,button('登録端末を確認',list),devices,admin);box.append(heading,status,date,details);parent.append(box);ui={status,date,eye,password:pass.el};render();
   }
   root.GAMMA_LICENSE=Object.freeze({read,decision:()=>access?.decision()||{allowed:!config.required},remaining:()=>access?.remaining()??null,needsCheck:()=>access?.needsCheck()??true,initialize,renew,observeIdentity,message,mount});
-  root.addEventListener('pagehide',()=>access?.checkpoint());
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)access?.checkpoint();});
+  document.addEventListener('DOMContentLoaded',render,{once:true});
+  root.addEventListener('focus',()=>{if(read().paymentIssue)void renew({explicit:true});});
+  root.addEventListener('pagehide',()=>{clearTimeout(paymentTimer);access?.checkpoint();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)access?.checkpoint();else {render();if(read().paymentIssue)void renew({explicit:true});}});
   root.addEventListener('gamma-license-change',render);
 })(globalThis);
 

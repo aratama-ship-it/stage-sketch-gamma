@@ -1604,7 +1604,24 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
  * 帯の末尾にはヘッダーから移した「パネルの表示スタイル」「パネルのオン/オフ」を同じ四角で並べる。 */
 html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid { gap: 4px; }
 html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-split { display: none; }
-.stage-center-bar .stage-panel-tools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.stage-center-bar .stage-panel-tools { display: flex; align-items: center; gap: 4px; }
+/* TOOLBAR_WRAP: every container down to the fixed-size buttons must be able
+   to wrap inside a 240px lane. Keep the same rules when moved to a drawer. */
+.stage-center-bar { min-width: 0; flex-shrink: 0; }
+.stage-center-bar .stage-center-group.is-tools,
+.stage-center-bar .stage-tool-grid,
+.stage-center-bar .stage-panel-tools {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+/* The legacy tablet shell moves this same tool grid out of the center bar. */
+html.stage-pwa-tablet .stage-tablet-top-controls,
+html.stage-pwa-tablet .stage-tablet-top-controls .stage-tool-grid {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
 html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-panel-visibility-btn) {
   box-sizing: border-box;
   display: inline-flex;
@@ -2195,3 +2212,39 @@ body[data-gamma-edition="field"] #stage-audience-present { display: none !import
 .gamma-preview-notice > button { min-height:44px; flex-shrink:0; }
 .gamma-preview-notice[hidden] { display:none; }
 #gamma-browser-preview-label { position:fixed; right:12px; bottom:12px; z-index:9999; pointer-events:none; padding:4px 8px; font-size:12px; color:var(--milk); background:var(--desk-2); }
+
+/* Payment issue: normal flow below the header, above the backup notice.
+   Uses the existing desk palette; no overlay, animation or focus capture. */
+#stage-payment-notice { --payment-gap:var(--gamma-gap,8px); display:flex; flex:none; flex-wrap:wrap; align-items:center; gap:var(--payment-gap); margin:var(--payment-gap); padding:var(--payment-gap); color:var(--milk); background:var(--desk); border:1px solid currentColor; border-radius:var(--radius-sm,4px); font-size:13px; line-height:1.5; }
+#stage-payment-notice[hidden] { display:none; }
+/* The narrow editor is a grid: give the visible notice its own content-sized
+   row before the work area, including when the storage reminder is folded. */
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-payment-notice:not([hidden])):has(> #stage-storage-band:not([hidden])) { grid-template-rows:auto auto auto minmax(0,1fr); }
+html.stage-pwa-tablet.gm-tablet .stage-sketch:has(> #stage-payment-notice:not([hidden])):has(> #stage-storage-band[hidden]) { grid-template-rows:auto auto minmax(0,1fr); }
+#stage-payment-notice .stage-payment-copy { flex:1 1 240px; min-width:0; overflow-wrap:anywhere; }
+#stage-payment-message, #stage-payment-date { display:block; }
+#stage-payment-notice .btn-quiet { display:inline-flex; align-items:center; justify-content:center; min-height:var(--ctrl-lg,44px); min-width:var(--ctrl-lg,44px); color:inherit; font:inherit; border:1px solid currentColor; }
+#stage-payment-card { padding-inline:var(--payment-gap); text-decoration:underline; }
+/* The shared close-square rule also uses this token for its max size and flex basis. */
+html #stage-payment-notice #stage-payment-close { --gamma-close-box:var(--ctrl-lg,44px); width:var(--ctrl-lg,44px); height:var(--ctrl-lg,44px); min-width:var(--ctrl-lg,44px); min-height:var(--ctrl-lg,44px); padding:0; }
+@media print { #stage-payment-notice { display:none !important; } }
+/* BACKUP_NOTICE_14D: one ordinary-flow row below the drawing, never an overlay. */
+#stage-backup-notice {
+  --backup-notice-gap:8px;
+  --backup-notice-hit:44px;
+  --backup-notice-text-max:117px;
+  box-sizing:border-box; flex:none; min-width:0; width:100%;
+  padding:4px 8px; border-left:4px solid var(--storage-band-red);
+  background:var(--paper); color:var(--storage-band-red); font-size:13px; line-height:1.5;
+}
+#stage-backup-notice:not([hidden]) { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:var(--backup-notice-gap); }
+#stage-backup-notice [data-backup-message] { min-width:0; overflow-wrap:anywhere; }
+#stage-backup-notice button { box-sizing:border-box; min-width:var(--backup-notice-hit); min-height:var(--backup-notice-hit); height:auto; margin:0; padding:4px 8px; background:transparent; color:inherit; border:1px solid currentColor; border-radius:var(--radius-sm); font:inherit; line-height:1.5; white-space:normal; }
+#stage-backup-notice [data-backup-close] { width:var(--backup-notice-hit); padding:0; }
+#stage-backup-notice :focus-visible { outline:2px solid currentColor; outline-offset:-2px; }
+@media (max-width:600px) {
+  #stage-backup-notice:not([hidden]) { grid-template-columns:minmax(0,1fr) var(--backup-notice-hit); }
+  #stage-backup-notice [data-backup-message] { grid-column:1 / -1; max-height:var(--backup-notice-text-max); overflow:auto; }
+  #stage-backup-notice [data-backup-export] { justify-self:start; }
+}
+@media print { #stage-backup-notice { display:none !important; } }

@@ -276,7 +276,9 @@
     const topLeft = el("div", "gm-top-left");
     const identity = $(".stage-header-app-identity");
     if (identity) topLeft.append(identity);
-    const showName = button("gm-show-name", tx("ショーの操作"));
+    // Opening the drawer only exposes controls; the contract guard still checks
+    // each operation inside it (including the export-only expired show panel).
+    const showName = button("gm-show-name", tx("ショーの操作"), { "data-contract-view": "" });
     const showNameText = el("span", "gm-show-name-text");
     showName.append(showNameText);
     topLeft.append(showName);
@@ -390,6 +392,7 @@
     const railButtons = new Map();
     GROUPS.forEach((group) => {
       const b = button("gm-rail-btn", tx(group.ja), { "data-gm-group": group.id, "aria-pressed": "false" });
+      if (group.id === "show") b.setAttribute("data-contract-view", "");
       const icon = el("span", "gm-rail-icon", { "aria-hidden": "true" });
       icon.innerHTML = group.icon;
       const label = el("span", "gm-rail-label");
@@ -414,7 +417,7 @@
     const drawerTitle = el("h2", "gm-drawer-title");
     const pin = button("gm-icon-btn gm-drawer-pin", tx("引き出しを固定する"), { "aria-pressed": "false" });
     pin.innerHTML = ICON.pin;
-    const close = button("gm-icon-btn gm-drawer-close", tx("閉じる"));
+    const close = button("gm-icon-btn gm-drawer-close", tx("閉じる"), { "data-contract-view": "" });
     close.innerHTML = ICON.close;
     drawerHead.append(drawerTitle, pin, close);
     const drawerBody = el("div", "gm-drawer-body");

@@ -28,7 +28,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.18</span>
+                <span class="stage-app-version">0.4.19</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -1481,6 +1481,8 @@
         <span class="stage-timeline-shortcut" aria-hidden="true">E</span>
       </button>
 
+      <aside id="stage-backup-notice" hidden data-no-i18n></aside>
+
       <section class="stage-timeline-panel" id="stage-timeline-panel" aria-label="タイムライン" hidden>
         <div class="stage-timeline-resize" id="stage-timeline-resize" role="separator"
              aria-orientation="horizontal" aria-label="タイムラインの高さ"
@@ -2798,16 +2800,16 @@
   <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0418">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0418-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0418-title">v0.4.18</h3><time datetime="2026-11-12">2026-11-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0419-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0419-title">v0.4.19</h3><time datetime="2026-11-13">2026-11-13</time></header>
       <ul>
-        <li>演者リンクとQシートの閲覧リンクを新しく作ると、どこで作っても https://app.stagesketch.app のアドレスになるようにしました。これまでに作ったリンクは、今までどおり開けます。</li>
-        <li>舞台スケッチのサーバーで確かめられたリンクを開いたときは、閲覧の画面に「舞台スケッチから発行」と確認の内容を表示します。そのリンクが確認した時点で有効であることを示すもので、内容の正しさや今後も有効であることを保証するものではありません。</li>
-        <li>環境設定で利用の計測をオフにしたとき、開いているページの中でも Cloudflare Web Analytics の送信を止めるようにしました。オフにする前に送った分は取り消しません。</li>
-        <li>アプリから開いた説明書は、使っている版（Lite／Studio／Company）で使える節だけを本文・目次・検索・印刷に出すようにしました。説明書を直接開いたときは、今までどおりすべての節が出ます。</li>
-        <li>英語・韓国語・中国語の画面で日本語のまま残っていたボタンの説明や読み上げの名前を訳しました。演者リンクの閲覧の画面（付箋・前後のシーン・線の本数・公開の更新など）も、韓国語・中国語で表示されるようになりました。</li>
-        <li>環境設定の「Mac版をダウンロード」のリンクは、通常は入手の案内のページを開きます。最新版の情報が取得でき、配布ファイルのアドレスが正式な形のときだけ、配布ファイルを直接開きます。</li>
-        <li>有料版の準備として、アカウントと支払い・契約者向けのMac版の配布・関係者ライセンスの管理・共有データの控えと期限後の整理の仕組みが入っています。どれも切ってあり、この版では使えるようになっていません。</li>
+        <li>最後に控え（書き出しまたはフォルダ控え）を取ってから14日以上たつと、編集エリアの下にお知らせを出します（ゲストとスマートフォンの閲覧画面には出ません）。</li>
+        <li>スマートフォンの閲覧画面では、場面の切り替えのアニメーションを常に切ります。ショーの設定の値は変えません。</li>
+        <li>横幅の狭い画面で共有の道具バーが収まらないときは、折り返して表示します。</li>
+        <li>契約の期間が終わったあとも、狭い画面で書き出しの操作に届くようにしました。</li>
+        <li>同梱の見本「真夏」のディアボロの持ち方の内部指定を、見た目を変えずに整えました。</li>
+        <li>有料版の準備として、支払いが滞ったあとに21日間の猶予を設け、カード更新のお知らせを出す仕組みを入れました。支払いのお知らせの閉じるボタンは44pxにし、文言から税込の表記を外しました。この機能は切ってあり、この版では使えるようになっていません。</li>
+        <li>共有データの控えと整理の仕組みに、毎日の実行結果の要約（件数と決まった語だけ）を記録し、読み取り専用で確かめる道具を加えました。どちらも切ってあり、この版では動いていません。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
