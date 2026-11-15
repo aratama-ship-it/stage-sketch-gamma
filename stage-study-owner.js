@@ -7,7 +7,7 @@
   }
   const bridge = window.SHOSAI_STAGE_STUDY_OWNER;
   if (!bridge) return;
-  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=20261111-v0415'; document.head.append(css);
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=20261115-v0420'; document.head.append(css);
   const en = () => bridge.isEnglish();
   const t = (ja, english) => {
     const language = document.documentElement.lang || (en() ? 'en' : 'ja');

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.4.19";
+  const GAMMA_APP_VERSION = "v0.4.20";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2543,6 +2543,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
 
   const canvasCssWidth = new WeakMap();
+  /* B5 図の中の名前: 値は画面上の CSS px（design/TOKEN_SHEET.md「B5 図の中の名前」が正）。 */
+  const NAME_TAG = {minPx:10, padX:4, heightEm:1.4, gap:3, edge:2, step:16, maxLevels:2, ground:"rgba(25,21,18,0.86)", edgeColor:"#191512", ink:"#efe7d6"};
   const canvasBadgeInset = new WeakMap();
   const canvas = document.getElementById("stage-canvas");
   if (!canvas) return;
@@ -2825,7 +2827,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-13`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-11-15`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -8514,7 +8516,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261112-v0418&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261115-v0420&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11083,7 +11085,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      消え得るので、「最後にファイルへ残したのはいつか」を常に見せ、
      変更が一定数たまったら書き出しを勧める。お願いの文章より仕組みで促す。 */
   const BACKUP_HINT_AFTER = 30;
+  /* Q3（本人決定 2026-11-13）: 右上の「書き出し」は、まだ書き出していない変更があるときだけ錆色にする。
+     書き出し後（editsSinceExport が 0）は他のアイコンと同じ無色。Mac 版はファイルへの保存が正本で
+     控えの促しの対象外なので常に無色。色は style.css の [data-export-pending]。 */
+  function syncExportPending() {
+    const button = document.getElementById("stage-export");
+    if (!button) return;
+    button.dataset.exportPending = String(!nativeProject && (!state.lastExportAt || (state.editsSinceExport || 0) > 0));
+  }
   function updateBackupNote() {
+    syncExportPending();
     if (!els.backupNote) return;
     const n = state.editsSinceExport || 0;
     if (!state.lastExportAt) {
@@ -11124,7 +11135,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       recovery.hidden = code !== "QUOTA_EXCEEDED";
       recovery.textContent = sx("保存容量を確認・修復（別タブ）", "Check storage space in a new tab");
     }
+    syncSaveAlertMark(level);
     syncPhoneSaveNotice(text, level, code);
+  }
+
+  /* 保存に失敗している間だけ、保存時刻の隣に赤い「!」の印を出す（本人決定 2026-11-14）。
+     ×で知らせを閉じても残り、押すと帯を開き直す。表示だけ。作品データ・保存形式には何も書かない。 */
+  let saveAlertActive = false;
+  function syncSaveAlertMark(level) {
+    const failing = level === "warn" && !browserPreview;
+    const anchor = els.lastSaveTime;
+    let mark = document.getElementById("stage-save-alert-mark");
+    if (failing && anchor && !mark) {
+      mark = document.createElement("button");
+      mark.type = "button"; mark.id = "stage-save-alert-mark"; mark.textContent = "!";
+      mark.addEventListener("click", () => {
+        storageBand?.reopen();
+        const box = document.getElementById("stage-show-save-error");
+        if (box && els.showsModal && !els.showsModal.hidden) box.hidden = false;
+        document.getElementById("stage-storage-band-message")?.focus({ preventScroll:true });
+      });
+      anchor.after(mark);
+    }
+    if (mark) {
+      const text = tx("保存できていません。押すと案内を開きます");
+      mark.setAttribute("aria-label", text); mark.title = text; mark.hidden = !failing;
+    }
+    if (failing && !saveAlertActive) storageBand?.reopen();
+    saveAlertActive = failing;
   }
 
   function setShowSavedStatus(title) {
@@ -18694,7 +18732,31 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     target.restore();
   }
 
-  function pieceNameTag(target, piece, L, shown) {
+  /* 画面の図（ctx・planCtx・ctx2）だけ k/z を返す。書き出し・印刷・サムネイルの一時 canvas は 1（今の大きさ）。 */
+  function screenLabelScale(target, L) {
+    const cssWidth = target && target.canvas ? canvasCssWidth.get(target.canvas) : 0;
+    if (!cssWidth || printPaperSurface) return { s: 1, screen: false };
+    const z = zoomOf(L.plan ? "plan" : "front").z || 1;
+    return { s: (W / cssWidth) / z, screen: true };
+  }
+
+  /* 名札の寸法（図の座標）。s=1 のときは従来と同じ値。大きく表示した時も従来値の方が大きければ従来値。
+   * old = {size, padX, height, gap}（従来の値）。 */
+  function nameTagGeometry(old, m) {
+    const s = m && m.s > 0 ? m.s : 1;
+    const size = Math.max(old.size, NAME_TAG.minPx * s);
+    return {
+      size,
+      padX: Math.max(old.padX, NAME_TAG.padX * s),
+      height: Math.max(old.height, NAME_TAG.minPx * NAME_TAG.heightEm * s),
+      gap: Math.max(old.gap, NAME_TAG.gap * s),
+      step: Math.max(22, NAME_TAG.step * s),
+      edge: m && m.screen ? NAME_TAG.edge * 2 * s : 0,
+      levels: m && m.screen ? NAME_TAG.maxLevels : 1,
+    };
+  }
+
+  function pieceNameTag(target, piece, L, shown, m) {
     const wanted = piece.type === "performer" ? state.showNames
       : piece.type === "light" ? state.showLightNames
       : state.showSetNames;
@@ -18705,22 +18767,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const pos = placePiece(visualPiece, L);
     const scale = pieceScale(visualPiece, pos, L);
     const bounds = selectionBounds(visualPiece, L);
-    let y = bounds.y - (L.plan ? 9 : 10);
+    const baseSize = Math.max(10, Math.round(13 * (L.plan ? 1 : Math.min(1.4, scale))));
+    const geo = nameTagGeometry({ size: baseSize, padX: 6, height: 18, gap: L.plan ? 9 : 10 }, m);
+    let y = bounds.y - geo.gap;
     if (piece.heldBy && piece.holdMode === "face" && state.showNames) {
       const holder = shown.find((item) => item.id === piece.heldBy);
       if (holder) y = Math.min(y, selectionBounds(effectivelyPlacedPiece(holder), L).y - 34);
     }
-    const font = `${Math.max(10, Math.round(13 * (L.plan ? 1 : Math.min(1.4, scale))))}px 'Hiragino Kaku Gothic ProN', sans-serif`;
+    const font = `${geo.size}px 'Hiragino Kaku Gothic ProN', sans-serif`;
     target.save();
     target.font = font;
     const textWidth = target.measureText(text).width;
     target.restore();
     return {
       piece, text, font, x: pos.x, y,
-      left: pos.x - textWidth / 2 - 6,
-      top: y - 15,
-      width: textWidth + 12,
-      height: 18,
+      left: pos.x - textWidth / 2 - geo.padX,
+      top: y - geo.height * 15 / 18,
+      width: textWidth + geo.padX * 2,
+      height: geo.height,
+      step: geo.step, edge: geo.edge, levels: geo.levels,
     };
   }
 
@@ -18730,17 +18795,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const priorIdleDepth = idleVisualDepth;
     let tags;
     idleVisualDepth = 0;
-    try { tags = shown.map(piece => pieceNameTag(target, piece, L, shown)).filter(Boolean); }
+    const m = screenLabelScale(target, L);
+    try { tags = shown.map(piece => pieceNameTag(target, piece, L, shown, m)).filter(Boolean); }
     finally { idleVisualDepth = priorIdleDepth; }
     const placed = [];
     const overlap = (a,b) => a.left < b.left+b.width+2 && a.left+a.width+2 > b.left && a.top < b.top+b.height+2 && a.top+a.height+2 > b.top;
     for (const tag of tags) {
       tag.anchorY = tag.y;
       if (placed.some(other => overlap(tag,other))) {
-        const shifted = {...tag, top:tag.top-22, y:tag.y-22};
-        if (shifted.top >= 0 && placed.filter(other=>overlap(shifted,other)).length < placed.filter(other=>overlap(tag,other)).length) {
-          tag.top=shifted.top; tag.y=shifted.y;
+        let best = {top:tag.top, y:tag.y}, bestCount = placed.filter(other=>overlap(tag,other)).length;
+        for (let level = 1; level <= tag.levels; level += 1) {
+          const shifted = {...tag, top:tag.top-tag.step*level, y:tag.y-tag.step*level};
+          const count = placed.filter(other=>overlap(shifted,other)).length;
+          if (shifted.top >= 0 && count < bestCount) { best = shifted; bestCount = count; }
         }
+        tag.top=best.top; tag.y=best.y;
       }
       placed.push(tag);
     }
@@ -18751,17 +18820,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!L.plan || !state.showNames) return null;
     const pos = place(ghost.u, ghost.v, L);
     const text = ghost.member.name;
-    const font = "12px 'Hiragino Kaku Gothic ProN', sans-serif";
+    const geo = nameTagGeometry({ size: 12, padX: 5, height: 17, gap: 21 }, screenLabelScale(target, L));
+    const font = `${geo.size}px 'Hiragino Kaku Gothic ProN', sans-serif`;
     target.save();
     target.font = font;
     const textWidth = target.measureText(text).width;
     target.restore();
     return {
-      castId: ghost.member.id, text, font, x: pos.x, y: pos.y - 21,
-      left: pos.x - textWidth / 2 - 5,
-      top: pos.y - 30,
-      width: textWidth + 10,
-      height: 17,
+      castId: ghost.member.id, text, font, x: pos.x, y: pos.y - geo.gap,
+      left: pos.x - textWidth / 2 - geo.padX,
+      top: pos.y - geo.gap - geo.height * 9 / 17,
+      width: textWidth + geo.padX * 2,
+      height: geo.height,
+      edge: geo.edge,
     };
   }
 
@@ -20009,9 +20080,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         target.font = tag.font;
         target.textAlign = "center";
         target.textBaseline = "bottom";
-        target.fillStyle = printPaperSurface ? "rgba(255,255,255,0.9)" : "rgba(13,12,11,0.66)";
+        target.fillStyle = printPaperSurface ? "rgba(255,255,255,0.9)" : tag.edge ? NAME_TAG.ground : "rgba(13,12,11,0.66)";
         target.fillRect(tag.left, tag.top, tag.width, tag.height);
-        target.fillStyle = "rgba(239,231,214,0.9)";
+        if (tag.edge) {
+          target.lineJoin = "round"; target.lineWidth = tag.edge; target.strokeStyle = NAME_TAG.edgeColor;
+          target.strokeText(tag.text, tag.x, tag.y);
+        }
+        target.fillStyle = tag.edge ? NAME_TAG.ink : "rgba(239,231,214,0.9)";
         target.fillText(tag.text, tag.x, tag.y);
         target.restore();
       });
@@ -20145,12 +20220,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           if (!tag) return;
           target.save();
           target.globalAlpha = 0.7;
-          target.fillStyle = printPaperSurface ? "rgba(255,255,255,0.9)" : "rgba(13,12,11,0.85)";
+          target.fillStyle = printPaperSurface ? "rgba(255,255,255,0.9)" : tag.edge ? NAME_TAG.ground : "rgba(13,12,11,0.85)";
           target.font = tag.font;
           target.fillRect(tag.left, tag.top, tag.width, tag.height);
-          target.fillStyle = "rgba(240,231,214,0.8)";
           target.textAlign = "center";
           target.textBaseline = "middle";
+          if (tag.edge) {
+            target.lineJoin = "round"; target.lineWidth = tag.edge; target.strokeStyle = NAME_TAG.edgeColor;
+            target.strokeText(tag.text, tag.x, tag.y);
+          }
+          target.fillStyle = tag.edge ? NAME_TAG.ink : "rgba(240,231,214,0.8)";
           target.fillText(tag.text, tag.x, tag.y);
           target.restore();
         }
@@ -25478,6 +25557,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const byId = suffix => document.getElementById("stage-storage-" + suffix);
     const modal = byId("return-modal"), backdrop = byId("return-backdrop");
     const exportButton = byId("band-export"), fold = byId("band-fold");
+    const more = byId("band-more"), detail = byId("band-detail");
     const age = stamp => {
       const ms = stamp ? Date.parse(stamp) : NaN;
       return Number.isFinite(ms) ? Math.max(0, Math.floor((Date.now() - ms) / DAY)) : null;
@@ -25540,15 +25620,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       band.classList.toggle("is-stale", stale);
       band.dataset.persistence = String(persisted);
       band.dataset.state = protectedStorage ? "protected" : safari && !installed() ? "safari" : days === null ? "unexported" : stale ? "stale" : "normal";
-      const lead = protectedStorage
+      const detailText = protectedStorage
         ? "この端末の保存は保護されています（インストール済み）。それでも控えは取ってください。"
         : safari && !installed()
         ? "Safari は 7 日間このサイトを操作しないと保存データをすべて削除します。ホーム画面に追加するか、控えを書き出してください。普段は Mac 版をお使いください。"
         : "ブラウザ版のショーはこの端末のブラウザの中だけに保存されます。ブラウザの設定や長い未使用で消えることがあります。普段は Mac 版をお使いください。";
+      // D1（本人決定 2026-11-13）: 帯の 1 行目は主文（日本語 40 字以内）。長い説明は「詳しく」の小窓へ。
+      const lead = protectedStorage
+        ? "この端末の保存は保護されています。控えも取ってください"
+        : safari && !installed()
+        ? "Safari は 7 日間使わないと、保存したショーを消します"
+        : "このショーはこのブラウザの中だけに保存されています";
+      byId("band-detail-text").textContent = tx(detailText);
+      more.textContent = tx("詳しく");
       byId("band-lead").textContent = tx(lead);
       byId("band-backup").textContent = days === null ? tx("控え: まだ一度も書き出していません") : tx("控え: 最終 ○日前").replace("○", String(days));
-      fold.textContent = stale ? "!" : protectedStorage ? "✓" : "!";
-      fold.setAttribute("aria-label", tx("この起動中だけ忠告帯を畳む"));
+      // 2026-11-14 本人決定: 注意の表示にはすべて閉じる×。閉じても赤い細線（印）は残り、押すと開き直す。
+      fold.textContent = "×";
+      fold.setAttribute("aria-label", tx("この知らせを閉じる"));
+      if (band.classList.contains("is-folded")) markFolded();
       exportButton.textContent = tx("いま書き出す");
       const install = byId("band-install"), download = byId("band-download");
       install.hidden = !safari || installed();
@@ -25562,20 +25652,54 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       install.href = window.GAMMA_MANUAL_SCOPE?.withEdition?.(installHref) ?? installHref;
       if (layoutLaneSaveUnconfirmed) {
         band.classList.remove("is-folded", "is-protected");
+        band.removeAttribute("aria-label"); band.removeAttribute("tabindex"); band.setAttribute("role", "status");
         byId("band-lead").textContent = tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。");
         byId("band-backup").textContent = "";
+        byId("band-detail-text").textContent = tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。");
       }
       if (!modal.hidden && modalDays !== null) {
         byId("return-lead").textContent = tx("このショーは ○日間開かれていません。ブラウザ内の保存は消えることがあります。いま控えを書き出しておくと安全です。").replace("○", String(modalDays));
       }
     }
+    // 閉じた後の印: 畳んだ赤い細線そのものを押せるようにする（畳む＝表示だけ。保存・作品データには触れない）。
+    function markFolded() {
+      band.setAttribute("role", "button"); band.tabIndex = 0;
+      band.setAttribute("aria-label", tx("保存の注意をもう一度開く"));
+    }
+    function unfold() {
+      band.classList.remove("is-folded");
+      band.removeAttribute("aria-label"); band.removeAttribute("tabindex"); band.setAttribute("role", "status");
+      try { sessionStorage.removeItem(foldKey); } catch (_) { /* optional */ }
+      window.dispatchEvent(new Event("resize"));
+    }
     fold.addEventListener("click", () => {
       band.classList.add("is-folded");
+      markFolded();
       try { sessionStorage.setItem(foldKey, "1"); } catch (_) { /* optional */ }
       document.querySelector(".stage-sketch-head button")?.focus({ preventScroll:true });
       window.dispatchEvent(new Event("resize"));
     });
+    band.addEventListener("click", event => { if (band.classList.contains("is-folded") && event.target === band) unfold(); });
+    band.addEventListener("keydown", event => {
+      if (!band.classList.contains("is-folded") || event.target !== band || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault(); unfold();
+    });
     exportButton.addEventListener("click", () => els.exportJson?.click());
+    // 「詳しく」の小窓: 押す・Esc・外側を押すで閉じ、Esc のときはフォーカスを「詳しく」へ戻す。
+    function setDetail(open, { restoreFocus = false } = {}) {
+      detail.hidden = !open;
+      more.setAttribute("aria-expanded", String(open));
+      if (!open && restoreFocus) more.focus({ preventScroll:true });
+    }
+    more.addEventListener("click", () => setDetail(detail.hidden));
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape" || detail.hidden || !modal.hidden) return;
+      event.preventDefault();
+      setDetail(false, { restoreFocus:true });
+    });
+    document.addEventListener("pointerdown", event => {
+      if (!detail.hidden && !detail.contains(event.target) && event.target !== more) setDetail(false);
+    });
     byId("return-export").addEventListener("click", () => { close(); els.exportJson?.click(); });
     ["return-close", "return-later", "return-backdrop"].forEach(name => byId(name).addEventListener("click", close));
     document.addEventListener("keydown", event => {
@@ -25592,7 +25716,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     new MutationObserver(update).observe(document.body, { attributes:true, attributeFilter:["class"] });
     update();
     void refreshPersistence(!firefox);
-    return { update };
+    // C（悪化したら出し直す）: 新しく保存に失敗したときは、閉じてあっても帯を開き直す。
+    return { update, reopen: () => { if (!band.hidden && band.classList.contains("is-folded")) unfold(); } };
   }
 
   function createBackupNotice() {
@@ -25746,6 +25871,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
 
   document.getElementById("stage-show-save-export")?.addEventListener("click", () => exportProject());
+  // 閉じても、保存時刻の隣の赤い「!」の印（#stage-save-alert-mark）が失敗の間は残る。表示だけの操作。
+  document.getElementById("stage-show-save-error-close")?.addEventListener("click", () => {
+    document.getElementById("stage-show-save-error").hidden = true;
+  });
 
   function closeShows() {
     if (bundledDownload) cancelBundledDownload();
@@ -35467,7 +35596,7 @@ ${propsPlotHtml}
       const timer = setTimeout(() => finish(false), 30000);
       script.onload = () => finish(Boolean(rehearsalExporter()));
       script.onerror = () => finish(false);
-      script.src = "stage-rehearsal-export.js?v=2026091501";
+      script.src = "stage-rehearsal-export.js?v=20261115-v0420";
       document.head.append(script);
     }).finally(() => { rehearsalExporterLoad = null; });
     return rehearsalExporterLoad;
@@ -37969,7 +38098,7 @@ ${propsPlotHtml}
     if (!partsLoading) {
       partsLoading = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'light-design/part-lighting-model.js?v=20261109-v0412';
+        script.src = 'light-design/part-lighting-model.js?v=20261115-v0420';
         script.onload = () => {
           script.remove();
           if (window.GAMMA_PART_LIGHTING) resolve(window.GAMMA_PART_LIGHTING);
@@ -47387,7 +47516,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (contractReadOnly()) reasons.push("contract-read-only");
     if (typeof browserPreview !== "undefined" && browserPreview) reasons.push("preview-no-save");
     if (STUDY_READ_ONLY || nativeProject?.readOnly) reasons.push("read-only");
-    if (nativeProject) reasons.push("native");
+    // Mac (owner decision 2026-11-13 Q2=B): AI edit proposals open only while gamma-assist.js holds a
+    // confirmed relay identity. Applying still needs the user's press and the guarded transaction below.
+    if (nativeProject && window.GAMMA_ASSIST_NATIVE?.active?.() !== true) reasons.push("native");
     if (mode !== "current" && (!editionAllows("sceneAlternatives") || !sceneAlternatives)) reasons.push("lite");
     const hooks = window.SHOSAI_STAGE_SESSION_HOOKS;
     if (guestSessionActive() || hooks?.role?.() || hooks?.guestView?.()) reasons.push("shared");
@@ -49517,7 +49648,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if(driveBackupUi)return Promise.resolve(driveBackupUi);
     if(driveBackupLoad)return driveBackupLoad;
     driveBackupLoad=(async()=>{
-      await loadDeferredScript('stage-i18n.ja.js?v=20261112-v0418', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
+      await loadDeferredScript('stage-i18n.ja.js?v=20261115-v0420', () => Boolean(window.SHOSAI_I18N_PACKS?.ja?.text?.['drive.title']));
       await loadFileAutosaveUi();
       if (!window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) throw new Error('file-autosave-load-failed');
       for (const [name, key] of [

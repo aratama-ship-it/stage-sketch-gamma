@@ -2,7 +2,7 @@
   "use strict";
   if (window.GAMMA_BROWSER_PREVIEW?.active) {
     // No reads, migration, export or cleanup of the pre-existing device store.
-    for (const href of ['style.css?v=20261112-v0417', 'gamma.css?v=20261112-v0417']) {
+    for (const href of ['style.css?v=20261115-v0420', 'gamma.css?v=20261115-v0420']) {
       const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
       document.head.append(link);
     }

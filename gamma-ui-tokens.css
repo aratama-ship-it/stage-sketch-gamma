@@ -1,4 +1,4 @@
-@import url("gamma-select.css?v=20261012-select-local");
+@import url("gamma-select.css?v=20261115-v0420");
 /* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
 :root {
   --gamma-gap: 8px;
@@ -18,7 +18,7 @@
   --gamma-panel-row-height: 28px;
   --gamma-panel-row-gap: 4px;
   --gamma-panel-row-padding: 3px 5px;
-  --gamma-panel-row-font: 11.5px;
+  --gamma-panel-row-font: 12px; /* D3（2026-11-13）: 11.5px → 12px＝--fs-4（0.5px 刻みを切り上げ。静的に読む試験があるので数値で書く） */
   --gamma-panel-row-leading: 1.5;
   --gamma-panel-row-weight: 400;
   --gamma-panel-body-padding: 0;
@@ -55,6 +55,9 @@
 }
 :root[data-stage-skin] {
   --desk:#191512; --desk-2:#201b16; --desk-3:#282119; --line-dark:#382f25; --edge:var(--line-dark);
+  /* Design quick win 2: control outlines (inputs, minor actions) need 3:1 against every desk tone.
+     line-dark stays for dividers and decoration (1.38:1). #7a6a56 = 3.48 / 3.27 / 3.04 on desk / desk-2 / desk-3. */
+  --edge-control:#7a6a56;
   --stage-ui-recess-rgb:13,12,11;
   --gamma-ui-3d:#0d0a08;
   --recess:rgba(var(--stage-ui-recess-rgb),.3);
@@ -65,6 +68,7 @@
   --desk-3: #23272c;
   --line-dark: #373d44;
   --edge: var(--line-dark);
+  --edge-control: #68707a; /* 3.61 / 3.34 / 3.00 on desk / desk-2 / desk-3 */
   --stage-ui-recess-rgb: 13, 14, 16;
   --stage-ui-seat-rgb: 21, 23, 26;
   --stage-ui-desk-rgb: 20, 22, 25;
@@ -412,6 +416,7 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
   --desk-3: #e7e0d3;
   --line-dark: #8d8475;
   --edge: var(--line-dark);
+  --edge-control: var(--line-dark); /* already 3.19 / 3.60 on desk / desk-2 */
   --milk: #29251f;
   --milk-dim: #61594d;
   --ink-soft-sm: #61594d;
@@ -460,6 +465,8 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
   --fr-go-text: var(--milk);
   --storage-warning-caution: #735916;
   --storage-warning-danger: var(--danger);
+  /* Design quick win 1: the white dialog edge disappears on daylight paper (3.19:1 with line-dark). */
+  --gamma-dialog-border-color: var(--line-dark);
 }
 /* B57 A4-01/02: use daylight ink only on the affected paper controls. */
 html[data-stage-skin="paper-light"] #stage-native-download { color:var(--gamma-download-ink); }
@@ -722,6 +729,14 @@ html[data-stage-layout="bottom"] .stage-scene-step-left { flex-shrink:0; }
 #gamma-information-summary .gamma-information-action { color:var(--milk);font:inherit;text-decoration:underline;text-underline-offset:3px; }
 #gamma-information-summary button.gamma-information-action { min-height:var(--ctrl-sm);padding:2px 6px; }
 @media(max-width:700px) { #gamma-information-summary { flex-basis:26ch; } #gamma-information-summary > :not(.gamma-information-save) { display:none; } }
+/* B4: the bar shows "what this does" and the last save only; the rest sits behind (i). */
+#gamma-information-more { flex:0 0 auto;width:var(--ctrl-sm);height:var(--ctrl-sm);padding:0;border:1px solid var(--line-dark);border-radius:50%;background:transparent;color:var(--milk-dim);font:italic 600 var(--fs-4)/1 var(--serif,Georgia,serif);cursor:pointer; }
+#gamma-information-more:hover,#gamma-information-more[aria-expanded="true"] { color:var(--milk);border-color:var(--brass); }
+#gamma-information-more[hidden],#gamma-information-detail[hidden] { display:none!important; }
+#gamma-information-detail { position:absolute;top:calc(100% + 4px);right:0;z-index:30;display:flex;flex-direction:column;gap:var(--gamma-gap);width:min(420px,calc(100vw - 24px));max-height:60vh;overflow:auto;padding:var(--gamma-gap);border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font-size:var(--fs-4);line-height:1.5; }
+#gamma-information-detail .gamma-information-item { overflow:visible;white-space:normal; }
+#gamma-information-detail .gamma-information-item::after { content:none!important; }
+#gamma-information-detail button.gamma-information-action { min-height:var(--ctrl-sm);padding:2px 6px;color:var(--milk);font:inherit;text-decoration:underline;text-underline-offset:3px; }
 
 /* T-01: show guidance only while its drawing tool is selected. */
 html[data-stage-skin] .stage-drawing-guide:not([hidden]) { padding:var(--gamma-gap);border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font-size:var(--fs-3); }

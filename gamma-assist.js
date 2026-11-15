@@ -13,9 +13,41 @@
     // Display gating only. Metadata never grants authentication or edit rights.
     return root.STAGE_RUNTIME?.isMac?.() === true || !!nativeSessionBridge();
   }
-  function eligible(identity, native = false) {
+  // Mac consultation (owner decision 2026-11-13 Q1=A): Swift relays the licence login to the
+  // Worker's existing /whoami and /assist/chat. Only the three fixed actions count as a transport;
+  // metadata, the legacy session bridge or licenseRequest alone keep the consultation closed.
+  function nativeAssistBridge() {
+    const b = root.stageSketchBridge;
+    return b && ['assistIdentity','assistChat','assistCancel'].every(k => typeof b[k] === 'function') ? b : null;
+  }
+  // The Mac app is paid-only: a licensed (not read-only) grant is required before asking Swift.
+  function nativeLicensed() {
+    try { return root.GAMMA_LICENSE?.read?.().state === 'licensed'; } catch { return false; }
+  }
+  function eligible(identity, native = false, nativeTransport = false) {
     const plan = root.GAMMA_EDITIONS?.normalizePlan(identity?.plan);
-    return !native && !!identity?.user && identity.state === 'active' && root.GAMMA_EDITIONS?.PLAN_RIGHTS[plan]?.assist === true;
+    return (!native || nativeTransport) && !!identity?.user && identity.state === 'active' && root.GAMMA_EDITIONS?.PLAN_RIGHTS[plan]?.assist === true;
+  }
+  // Mac transport failures are fixed codes from Swift; map them onto the page's status copy.
+  function nativeStatusKey(code) {
+    return {offline:'offline',authentication:'authExpired',license:'auth',stale:'auth'}[code] || 'unavailable';
+  }
+  // Mac: one relayed request. A transport error is reported, never re-sent (the Worker counts
+  // before the model call). The page aborts at 25 s and asks Swift to cancel the same id.
+  async function nativeChat(bridge, payload, signal) {
+    if (root.navigator?.onLine === false) return {ok:false,status:0,data:{},native:'offline'};
+    const id = crypto.randomUUID();
+    const cancel = () => { try { bridge.assistCancel(id); } catch {} };
+    signal?.addEventListener('abort', cancel, {once:true});
+    try {
+      const result = await bridge.assistChat(id, JSON.parse(JSON.stringify(payload)));
+      if (signal?.aborted) return {ok:false,status:0,data:{},native:'cancelled'};
+      if (!result || typeof result !== 'object' || typeof result.error === 'string' || !Number.isInteger(result.status))
+        return {ok:false,status:0,data:{},native:typeof result?.error === 'string' ? result.error : 'unavailable'};
+      const data = result.body && typeof result.body === 'object' && !Array.isArray(result.body) ? result.body : {};
+      return {ok:result.status >= 200 && result.status < 300,status:result.status,data};
+    } catch { return {ok:false,status:0,data:{},native:'unavailable'}; }
+    finally { signal?.removeEventListener('abort', cancel); }
   }
   // P3A owns preview eligibility; require its active session and the independent OFF switch.
   function trialEligible() {
@@ -203,7 +235,7 @@
     if(kind==='field'&&!['level','colour','aim','beam','gobo','shutter'].includes(key))return null;
     return {doc,tab,kind,key,selector:kind==='field'?`#insp [data-assist-field="${key}"]`:kind==='panel'?`section.stage-panel[data-panel="${key}"]`:'#'+key};
   }
-  const model = {isNative, eligible, trialEligible, assistTransport, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps, resolveLight2Op};
+  const model = {isNative, nativeAssistBridge, nativeLicensed, nativeStatusKey, nativeChat, eligible, trialEligible, assistTransport, requestHistory, referenceHref, splitGuidance, decodeDestination, buildSceneSnapshot, sceneCheckText, buildEditSnapshot, resolveEditOps, editOpText, buildLightingSnapshot, resolveLightingOps, resolveLight2Op};
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
   if (!root.document) return;
   const panel = document.querySelector('[data-panel="assist"]');
@@ -218,7 +250,24 @@
   // Hide before any asynchronous work, including on Mac and static Pages.
   panel.hidden = true;
   panel.dataset.assistAvailable = 'false';
-  if (isNative()) { removePanel(); return; }
+  // A Mac without the fixed relay (current distribution, older shells, metadata only) stays closed.
+  const nativeBridge = isNative() ? nativeAssistBridge() : null;
+  if (isNative() && !nativeBridge) { removePanel(); return; }
+  // Stage edits and lighting drafts reopen on Mac only after the relay identity is confirmed below.
+  let nativeActive = false;
+  // A second evaluation of this file must not throw on the fixed flag; it closes its own copy instead.
+  if (nativeBridge && Object.hasOwn(root,'GAMMA_ASSIST_NATIVE')) { removePanel(); return; }
+  if (nativeBridge) Object.defineProperty(root,'GAMMA_ASSIST_NATIVE',{value:Object.freeze({active:() => nativeActive && !panelRemoved}),configurable:false,writable:false});
+  let nativeUser = '';
+  function closeNativeIdentity() { nativeActive=false; removePanel(); }
+  // A licence change (sign-in to another account, sign-out) re-asks Swift; any other user closes the panel.
+  if (nativeBridge) root.addEventListener?.('gamma-license-change',async()=>{
+    if (!nativeActive || panelRemoved) return;
+    try {
+      const result=await nativeBridge.assistIdentity();
+      if (result?.error==='authentication' || typeof result?.error!=='string' && result?.user!==nativeUser) closeNativeIdentity();
+    } catch {}
+  });
   const trial = trialEligible();
   panel.innerHTML = `<div class="stage-panel-body">
               <form class="assist-form" data-assist="form" autocomplete="off">
@@ -246,7 +295,7 @@
                 <span class="assist-remaining" data-assist="remaining"></span>
               </div>
             </div>`;
-  const style = document.createElement("link"); style.rel="stylesheet"; style.href="gamma-assist.css?v=20261031-v0396"; document.head.append(style);
+  const style = document.createElement("link"); style.rel="stylesheet"; style.href="gamma-assist.css?v=20261115-v0420"; document.head.append(style);
   const $ = key => panel.querySelector('[data-assist="'+key+'"]');
   const light2Button=document.createElement('button');light2Button.type='button';light2Button.className='assist-draft';
   light2Button.dataset.assist='light2';light2Button.dataset.assistText='light2.button';light2Button.disabled=true;
@@ -524,7 +573,7 @@
   async function ensureCopy() {
     if (lang() === 'ja' && !root.SHOSAI_I18N_PACKS?.ja?.text?.['assist.title']) {
       japaneseCopy ||= new Promise((resolve,reject) => {
-        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261112-v0418';
+        const script=document.createElement('script');script.src='stage-i18n.ja.js?v=20261115-v0420';
         script.onload=resolve;script.onerror=reject;document.head.append(script);
       });
       await japaneseCopy;
@@ -710,6 +759,8 @@
     const quickMode=extension?.isMode(mode),docsMode=docs?.isMode(mode), batchMode=mode==='batchCheck';
     const text = batchMode ? t('batch.prompt') : quickMode ? extension.text(mode,$('input').value) : checkScene ? sceneCheckText(t('checkPrompt'),$('input').value) : $('input').value.trim();
     if (busy || ended || !text || [...text].length > 400) return;
+    // Mac: every relayed request (and its quota) starts from a user's press, never a script.
+    if (nativeBridge && typeof navigator!=='undefined' && navigator.userActivation && !navigator.userActivation.isActive) return;
     if (trial && (editing || lighting || operating)) return;
     if(operating&&!currentOps?.allowed()){currentOps?.refresh();return;}
     if(editing&&!editContext()?.editable){refreshEditAvailability();return;}
@@ -737,11 +788,21 @@
       if(batchMode){const prepared=await batch?.prepare();if(!prepared){statusKey='';restingState();return;}Object.assign(payload,prepared);}
       if(quickMode)Object.assign(payload,await extension.prepare(mode));
       if (!batchMode && !quickMode && !reviewLight && $('context').checked) payload.context=sceneContext();
+      const documentAtSend=nativeBridge?editContext()?.expected?.projectId:undefined;
       const transport=assistTransport();
-      const response=await fetch(transport.url,{method:'POST',credentials:transport.credentials,cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const data=await response.json();
+      const response=nativeBridge?await nativeChat(nativeBridge,payload,controller.signal)
+        :await fetch(transport.url,{method:'POST',credentials:transport.credentials,cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const data=nativeBridge?response.data:await response.json();
+      if (response.native) {
+        statusKey=nativeStatusKey(response.native);
+        // Signed out or another account: the mounted history and edit gate belong to the old identity.
+        if (['stale','authentication'].includes(response.native)) closeNativeIdentity();
+        throw new Error('native');
+      }
+      // A reply for a show that is no longer open is dropped with its cards (Mac document switch).
+      if (nativeBridge&&editContext()?.expected?.projectId!==documentAtSend) {statusKey='';throw new Error('stale');}
       if (!response.ok) {
-        const keys={'trial-user-daily':'trialDaily','trial-global-daily':'trialGlobalDaily','ended':'ended','user-daily':'daily','global-daily':'daily','quota-month':'monthly','upstream-busy':'busy','authentication':'auth','plan-required':'auth'};
+        const keys={'trial-user-daily':'trialDaily','trial-global-daily':'trialGlobalDaily','ended':'ended','user-daily':'daily','global-daily':'daily','quota-month':'monthly','upstream-busy':'busy','authentication':nativeBridge?'authExpired':'auth','plan-required':'auth'};
         if(trial && Number.isInteger(data.remaining))remaining=data.remaining;
         if(trial && data.reason==='trial-user-daily')remaining=0;
         statusKey=keys[data.reason] || 'unavailable';
@@ -838,14 +899,35 @@
     }
     // Static Pages editions have no Worker: never probe paid identity there (trial contract).
     if (/(^|\.)github\.io$/i.test(root.location?.hostname || '')) {removePanel(); return;}
+    await evaluate();
+    async function evaluate() {
     try {
-      const response=await fetch('/whoami',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
-      const identity=response.ok ? await response.json() : null;
-      if (!response.ok || !eligible(identity,isNative())) {removePanel(); return;}
+      let identity=null;
+      if (nativeBridge) {
+        // The licence client restores the Keychain grant asynchronously; wait for it before judging.
+        try { await root.GAMMA_LICENSE?.initialize?.(); } catch {}
+        if (!nativeLicensed()) {removePanel(); return;}
+        // Swift returns only user/plan/state/graceUntil, or a fixed error code.
+        // Offline at start: keep the panel hidden and judge again once the network returns.
+        if (root.navigator?.onLine===false) {
+          root.addEventListener?.('online',()=>{if(!panelRemoved)void evaluate();},{once:true});
+          return;
+        }
+        const result=await nativeBridge.assistIdentity();
+        identity=result&&typeof result.error!=='string'?result:null;
+        if (!nativeLicensed() || !eligible(identity,true,true)) {removePanel(); return;}
+        nativeActive=true;
+        nativeUser=identity.user;
+      } else {
+        const response=await fetch('/whoami',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
+        identity=response.ok ? await response.json() : null;
+        if (!response.ok || !eligible(identity,isNative())) {removePanel(); return;}
+      }
       await ensureCopy();
       try {archive=await (await import('./gamma-assist-history.js')).mount({panel,t,identity});organizeModes();} catch { /* Optional archive cannot hide the consultation. */ }
       panel.dataset.assistAvailable='true'; panel.hidden=false;
       root.dispatchEvent(new CustomEvent('gamma-assist-availability'));
     } catch { removePanel(); }
+    }
   })();
 })(typeof window !== 'undefined' ? window : globalThis);

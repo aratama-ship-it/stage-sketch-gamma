@@ -26,7 +26,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "026acfa03c2f4c02d8f59eedbeedf4984fe5eba1404a6d6e76010629df0f3ccc"
+      "sha256": "070d33b51525e1adcd0727ce174dee15101dc6103a88f5ba5d61ecc8d2247f53"
     },
     {
       "id": "feature-test-2",
@@ -51,7 +51,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "5c5d8de9c3bc8cc11e90a129647eceebae8daf1b7caf70d2922066f84e510a52"
+      "sha256": "86fdf6486296deaf168536cb14a519f63d7518d68c9af9bcd909a03a0e312558"
     },
     {
       "id": "eight-circus",
@@ -75,7 +75,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "5a7ffc172311073b2280105783ed96aea96a9f52124fdee79371af4e6658676b"
+      "sha256": "65795dbf3070e2cb552be09762b2eab6d5ce6ecbde3b1b777a1c0557762797c8"
     },
     {
       "id": "seam-garden",
@@ -99,7 +99,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "e266f4090431d296a96234e36fdd5e81459e9c92688140ec2176fa2ab02b7c83"
+      "sha256": "4b2a1aabda06119faf9c36b8d46dc63a605b7e0cd9dfde5cd749be6b8e43809d"
     },
     {
       "id": "romeo-juliet-cued",
@@ -123,7 +123,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "6283fd5b8981273a86e47e0224aa5cfcb7df15b61da4308bc0e18160677bebae"
+      "sha256": "f659451c19ab2dc1c04491a43011857990659c6097b7fe5e29bd029e3426dc78"
     },
     {
       "id": "romeo-juliet-second",
@@ -147,7 +147,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "b52271a99527155a80708822e96014b7af47d28efd315b056eba7caa020ae676"
+      "sha256": "57b9e1335c38f83d1f675b0a62b5e96b2283c06c137b8882363d7b8d5a8ebabc"
     },
     {
       "id": "midsummer-rehearsal",
@@ -171,7 +171,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "midsummer-rehearsal.stageproj.zip",
-      "sha256": "979548e67ecc451e073d9e92255ee9c6e25c150a1be09fd53dc0561a76f0d6d2"
+      "sha256": "85eb263b23dd63fd820123949320eb738f4f2db8b6c5e80184e6afa2374f7d32"
     }
   ]
 }

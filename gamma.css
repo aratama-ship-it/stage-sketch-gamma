@@ -1132,7 +1132,7 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-hea
   min-height: 32px;
   margin: 0;
   padding: 5px 7px;
-  font-size: 10.5px;
+  font-size: var(--fs-3);
 }
 
 /* Lite scope; data and shared preferences remain intact. */
@@ -1680,12 +1680,37 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-close[data-to
 #stage-storage-band.is-folded > * { display:none; }
 html:has(#stage-storage-band:not([hidden])):not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head { top:var(--storage-band-height); }
 html:has(#stage-storage-band.is-folded:not([hidden])):not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head { top:var(--storage-band-folded); }
+/* D1（本人決定 2026-11-13）: 「詳しく」の小窓。帯（sticky＝位置の基準）の真下・右寄せに浮かせる。
+   地は帯と同じ紙、本文は読みやすい墨（#2b2620 / 紙 #efe7d6）。帯の赤は左の 4px の線だけに残す。 */
+#stage-storage-band-detail:not([hidden]) {
+  position:absolute; top:100%; right:0; z-index:32; box-sizing:border-box;
+  width:min(560px,calc(100vw - 16px)); display:grid; gap:8px; justify-items:start;
+  padding:12px; background:var(--paper); color:var(--ink,#2b2620);
+  border:1px solid var(--storage-band-red); border-left-width:4px;
+  font-size:13px; line-height:1.6; white-space:normal;
+}
+#stage-storage-band-detail p { margin:0; }
+.stage-storage-band-detail-actions { display:flex; flex-wrap:wrap; gap:8px; }
+#stage-storage-band #stage-storage-band-more[aria-expanded="true"] { background:rgba(170,40,40,.08); }
+/* 601〜900px は主文を省き、控えの状態と 2 つのボタンだけを 1 行に残す（スマホの帯は今のまま）。 */
+@media (min-width:601px) and (max-width:900px) {
+  html:not(.stage-phone-viewer) #stage-storage-band-lead { display:none; }
+}
+/* 閉じた後の印（本人決定 2026-11-14）: 畳んだ赤い細線は押して開き直せる。保存失敗の間は保存時刻の隣に赤い「!」。 */
+#stage-storage-band.is-folded:not([hidden]) { cursor:pointer; }
+#stage-storage-band.is-folded:not([hidden]):focus-visible { outline:2px solid var(--storage-band-red); outline-offset:2px; }
+#stage-save-alert-mark { margin-inline-start:6px; min-width:20px; height:20px; padding:0 4px; border:1px solid var(--storage-band-red);
+  border-radius:50%; background:var(--storage-band-red); color:#fff; font-size:var(--fs-3,11px); font-weight:700; line-height:1; cursor:pointer; }
+#stage-save-alert-mark[hidden] { display:none; }
+#stage-save-alert-mark:focus-visible { outline:2px solid var(--storage-band-red); outline-offset:2px; }
+.stage-show-save-error { position:relative; }
+#stage-show-save-error-close { position:absolute; top:4px; right:4px; min-width:28px; min-height:28px; padding:0; }
 .stage-storage-return-modal { width:min(560px,calc(100vw - 24px)); }
 .stage-storage-return-actions { display:flex; justify-content:flex-end; gap:8px; }
 .stage-storage-return-actions button { min-height:44px; }
 @media(max-width:700px) {
   #stage-storage-band { gap:4px; padding-inline:4px; }
-  #stage-storage-band a { max-width:72px; overflow:hidden; justify-content:flex-start; text-overflow:ellipsis; }
+  #stage-storage-band > a { max-width:72px; overflow:hidden; justify-content:flex-start; text-overflow:ellipsis; }
 }
 @media print { #stage-storage-band, #stage-storage-return-modal, #stage-storage-return-backdrop { display:none !important; } }
 
@@ -1726,6 +1751,13 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted .stage
   display:flex; flex:0 0 auto; margin-left:auto; min-width:max-content; align-items:flex-end; gap:calc(var(--gamma-gap) * .75);
 }
 .gamma-header-fitted.gamma-header-no-tc .stage-show-elapsed-group { display:none; }
+/* D2（本人決定 2026-11-13）: 右上の群の区切り。編集｜見せる｜渡す｜アプリの用事 の間に 1px（--line-dark・装飾）。
+   線の左右は群の間隔 6px から 4px 詰めて 2px（margin-inline:-4px。1px だと照明デザインの 1440px で TC・発表用を畳んでも 1 段に収まらず 2 段になった: 2026-11-15）。入りきらないときは gamma-header-fit.js が実際の幅で測って TC→発表用→2 段の順に畳む。
+   タブレット・スマホは id で拾った操作を自分の帯へ並べ直すので、区切りは出さない。 */
+.gamma-header-sep { display:none; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head .gamma-header-sep {
+  display:block; flex:0 0 1px; width:1px; height:20px; margin-inline:-4px; align-self:center; background:var(--line-dark);
+}
 /* L1（本人 2026-11-12）: 入りきらないときだけ、2 段にする前に発表用の表示のアイコンを隠す（全画面 ⛶ は残る）。 */
 .gamma-header-fitted.gamma-header-no-audience #stage-audience-present { display:none !important; }
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head.gamma-header-fitted.gamma-header-two-rows { flex-wrap:wrap; }

@@ -75,7 +75,7 @@
       if (visible) {
         const message = tx(MESSAGE).replace('○', String(days));
         if (text.textContent !== message) text.textContent = message;
-        action.textContent = tx('控えを作る');
+        action.textContent = tx('いま書き出す');
         close.setAttribute('aria-label', tx('この知らせを閉じる'));
       }
       if (changed) env.dispatchEvent(new env.Event('resize'));

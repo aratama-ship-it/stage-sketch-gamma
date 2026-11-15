@@ -56,7 +56,9 @@
     function persist(){if(!cache)return;cache.observed=Math.max(cache.observed||0,now());cache.wall=Math.max(cache.wall||0,wallNow());storage.setItem(key,JSON.stringify(cache));}
     function read(){
       if(claims&&!locked&&now()>=accessUntil(claims)){locked=true;state='renewal-required';error='renewal-required';changed();}
-      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,paymentIssue:claims&&!locked&&now()<claims.paymentIssue?.graceUntil?claims.paymentIssue:null,device});
+      return Object.freeze({state,error,plan:claims?.plan??null,user:claims?.sub??cache?.account??'',until:claims?new Date(claims.until).toISOString():null,nextRenewalAt:claims?.nextRenewalAt??null,paymentIssue:claims&&!locked&&now()<claims.paymentIssue?.graceUntil?claims.paymentIssue:null,
+        // Grace over and the grant locked: keep the card-update entry visible.
+        paymentEnded:claims&&locked&&error==='renewal-required'&&claims.paymentIssue&&now()>=claims.paymentIssue.graceUntil?claims.paymentIssue:null,device});
     }
     function deny(reason){locked=true;state='renewal-required';error=reason;if(cache){cache.denied=reason;try{persist();}catch(_){/* Retain the last signed grant. */}}changed();return false;}
     async function accept(value,{restoring=false,nonce}={}) {

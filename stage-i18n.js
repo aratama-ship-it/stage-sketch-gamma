@@ -32,6 +32,20 @@
 
   const TEXT = {
 
+    "保存の帯をすっきりさせました。要点は1行、くわしい説明は［詳しく］から開けます。": "The save band is simpler: one line for the key point, with details under [Details].",
+
+    "ヘッダーのボタンを「編集｜ショー｜受け渡し｜アプリ」の4つのまとまりに分けました。未書き出しの変更があるときだけ、書き出しボタンに色がつきます。": "Header buttons are grouped into Edit | Show | Hand-off | App. The export button is tinted only when there are unexported changes.",
+
+    "文字の大きさ・入力欄やボタンの縁・小窓の縁を整えました（見やすさのための小さな調整です）。": "Text sizes and the outlines of inputs, buttons and pop-ups were tidied up (small adjustments for legibility).",
+
+    "舞台図の名札を、画面では小さくても読める大きさで表示します（画面の表示のみ。書き出し・印刷は変わりません）。": "Name tags on the stage diagram stay readable on screen even when small (screen display only; export and print are unchanged).",
+
+    "注意の表示を×で閉じられるようになりました。閉じた表示は、その起動のあいだは出ません。保存に失敗している間は、保存時刻の隣に赤い「!」が残ります。": "Notices can now be closed with ×. A closed notice does not return during that session. While saving is failing, a red “!” stays next to the save time.",
+
+    "有料版の準備として、契約の猶予が終わったあとにカード更新のお知らせを残し、書き出しの言い回しを統一しました。この機能は切ってあり、この版では使えません。": "In preparation for the paid edition, the card-update notice now remains after a contract's grace period ends, and export wording was unified. This is switched off and is not available in this version.",
+
+    "Mac版：ライセンス画面にサインアウトのボタンを付け、ネットに戻ったときにAI相談役が使えるかを確かめ直します。起動時にオフラインでも止まらないようにしました。": "Mac app: a sign-out button was added to the license screen, and whether the AI assistant is available is re-checked when the network returns. Starting offline no longer stops the app.",
+
     "最後に控え（書き出しまたはフォルダ控え）を取ってから14日以上たつと、編集エリアの下にお知らせを出します（ゲストとスマートフォンの閲覧画面には出ません）。": "If 14 days or more have passed since your last backup (an export or a folder backup), a notice now appears below the editing area. It does not appear for guests or on phone viewing screens.",
 
     "スマートフォンの閲覧画面では、場面の切り替えのアニメーションを常に切ります。ショーの設定の値は変えません。": "On phone viewing screens, scene-transition animation is now always off. The show's own setting is not changed.",
@@ -369,6 +383,7 @@
     "端末登録は既定3台です。保存領域を消去すると再ログインが必要です。端末を解除してもショーは消えません。": "The default limit is 3 devices. Clearing storage requires signing in again. Removing a device does not delete shows.",
     "ログインして契約を確認": "Sign in and check contract",
     "契約を再確認": "Check contract again",
+    "サインアウト": "Sign out",
     "登録端末を確認": "Show registered devices",
     "口座名": "Account name",
     "端末数の上限": "Device limit",
@@ -1093,6 +1108,7 @@
     "情報バーを非表示": "Hide information bar",
     "現在の情報": "Current information",
     "機能にカーソルを合わせると、ここに説明を表示します。": "Hover over a control to see its explanation here.",
+    "詳しい情報": "More information",
     "全タブで保存状況と操作の説明を表示します。": "Show save status and control help in every tab.",
 
     "劇場全体を読み込み直す": "Reload entire theatre",
@@ -5606,6 +5622,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "Safari は 7 日間このサイトを操作しないと保存データをすべて削除します。ホーム画面に追加するか、控えを書き出してください。普段は Mac 版をお使いください。": "Safari deletes all saved data after 7 days without interaction with this site. Add it to your Home Screen or export a backup. Use the Mac version for everyday work.",
   "この端末の保存は保護されています（インストール済み）。それでも控えは取ってください。": "Storage on this device is protected (installed). Please still keep backups.",
   "控え: まだ一度も書き出していません": "Backup: never exported",
+  "このショーはこのブラウザの中だけに保存されています": "This show is saved only inside this browser",
+  "Safari は 7 日間使わないと、保存したショーを消します": "Safari erases saved shows after 7 days without use",
+  "この端末の保存は保護されています。控えも取ってください": "Storage on this device is protected. Keep a backup too",
+  "詳しく": "Details",
+  "保存できていません。押すと案内を開きます": "Saving has failed. Press to open the notice.",
+  "保存の注意をもう一度開く": "Reopen the saving notice",
   "PDF出力": "Export PDF",
   "{name}（Q シート）": "{name} (Q sheet)",
   "表示内容": "View content",
@@ -6322,7 +6344,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.ended": "The consultation trial has ended. Thank you for your feedback.",
   "assist.busy": "The service is busy. Please reopen it later.",
   "assist.unavailable": "Consultation is unavailable. Please reopen it later.",
-  "assist.auth": "Please check your sign-in and subscription, then reopen."
+  "assist.auth": "Please check your sign-in and subscription, then reopen. On Mac, check your licence and sign-in in the app (separate from signing in through Safari).",
+  "assist.offline": "Consultation is unavailable while offline. You can keep editing. Connect to the internet before sending again.",
+  "assist.authExpired": "Your sign-in has expired. Please sign in again. On Mac, check your licence and sign-in in the app.",
+  "assist.suspended": "Consultation is currently suspended. You can keep editing."
 });
 
 // R-5: guest-only viewing guide, adopted option A.
@@ -6560,7 +6585,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.quick.title":"Frequent questions","assist.quick.terms":"Look up terms","assist.quick.help":"Troubleshooting","assist.quick.cue":"Draft cue wording","assist.quick.names":"Suggest names","assist.quick.transition":"Review transition","assist.quick.script":"Plan from script","assist.quick.direction":"Compare transition","assist.quick.next":"Now → next","assist.quick.prev":"Previous → now","assist.quick.notice":"Each press uses one request. Transitions send pieces from the selected two scenes; script planning sends up to 400 characters of current-scene dialogue/directions (or notes/input) to Anthropic. Suggestions only; your show stays as it is.","assist.quick.voice":"Voice input: You can use your device’s dictation, such as Mac Dictation.","assist.quick.copy":"Copy","assist.quick.copied":"Copied","assist.quick.copyFailed":"Could not copy. Select and copy the reply text.","assist.quick.noScript":"No script or notes in this scene. Paste dialogue or directions in the input (up to 400 characters).","assist.quick.noAdjacent":"Cannot read the adjacent scene. Check the scene selection.","assist.quick.excerpt":"Script sent: {title} ({n} characters)","assist.quick.excerptShort":"Script sent: {title} (first {n} of {total} characters; the rest was not read)","assist.quick.prompt.terms":"Explain stage left, cyclorama and gobo","assist.quick.prompt.help":"What should I do if I cannot save?","assist.quick.prompt.cue":"Suggest short wording for a lighting cue memo","assist.quick.prompt.names":"Suggest scene, cue or alternative names","assist.quick.prompt.transition":"Explain moving people and objects, entrances, exits and ordering for the selected transition","assist.quick.prompt.script":"Suggest entrances, exits and transition order from this scene’s dialogue and directions"});
 
 // INFRA local archive controls; policy text remains a publication approval item.
-Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.history.settings": "Consultation settings", "assist.history.enabled": "Keep history on this device", "assist.history.notice": "Off by default. Only questions and replies started after enabling are kept here: up to 20 exchanges, 7 days and 64 KiB. They are not saved in shows or on the server, or automatically sent with new questions. Turning this off keeps existing entries readable until deleted.", "assist.history.archive": "Saved history ({n} exchanges)", "assist.history.clear": "Delete all history", "assist.history.confirmClear": "Delete (cannot be undone)", "assist.history.cancel": "Cancel", "assist.history.cleared": "History on this device was deleted.", "assist.history.storageFailed": "History could not be saved or read. Your show and this reply are unchanged. Delete history to reset this setting.", "assist.history.notSaved": "This exchange was not saved to history.", "assist.history.policy": "Your input is sent to Anthropic to produce replies. You can choose to keep later questions and replies on this device. Conversation history is not stored on the server."});
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"assist.history.settings": "Consultation settings", "assist.history.enabled": "Keep history on this device", "assist.history.notice": "Off by default. Only questions and replies started after enabling are kept here: up to 20 exchanges, 7 days and 64 KiB. They are not saved in shows or on the server, or automatically sent with new questions. Turning this off keeps existing entries readable until deleted. History is stored in this browser in the browser edition, or inside the Mac app. Mac history is separate from Safari history and is not included in show files.", "assist.history.archive": "Saved history ({n} exchanges)", "assist.history.clear": "Delete all history", "assist.history.confirmClear": "Delete (cannot be undone)", "assist.history.cancel": "Cancel", "assist.history.cleared": "History on this device was deleted.", "assist.history.storageFailed": "History could not be saved or read. Your show and this reply are unchanged. Delete history to reset this setting.", "assist.history.notSaved": "This exchange was not saved to history.", "assist.history.policy": "Your input is sent to Anthropic to produce replies. You can choose to keep later questions and replies on this device. Conversation history is not stored on the server."});
 // CHECK: local batch results and explicit finding-only transmission.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "assist.batch.title": "AI check",
@@ -7554,7 +7579,9 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "支払いが失敗しています。カードを更新してください。": "Payment failed. Please update your card.",
   "カードを更新": "Update card",
-  "猶予の終了: {date}": "Grace period ends: {date}"
+  "猶予の終了: {date}": "Grace period ends: {date}",
+  "支払いが確認できなかったため、閲覧と書き出しだけになっています。カードを更新すると編集に戻れます。": "Payment could not be confirmed, so the show is view and export only. Update your card to return to editing.",
+  "猶予は {date} に終わりました": "Grace period ended: {date}"
 });
 
 // BACKUP_NOTICE_14D: English entry point (stage-i18n.en.js mirrors this pair).

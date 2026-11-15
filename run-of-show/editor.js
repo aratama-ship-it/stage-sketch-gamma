@@ -122,7 +122,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   const runOnly=Boolean(parent.RUN_SHELL_CORE)&&new URLSearchParams(location.search).get("host")==="run";
   const lite=bridge?.edition?.()==="lite";
   const readOnlyPaper=()=>Boolean(parent.SHOSAI_STAGE_CUE_SHEET_HOST?.readOnly?.());
-  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261015-fixa2";if(lite)css.media="screen";document.head.append(css);}
+  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261115-v0420";if(lite)css.media="screen";document.head.append(css);}
   if(!bridge){document.body.textContent="舞台スケッチγの進行表タブから開いてください。";return;}
   let packet;try{packet=bridge.read();}catch(error){document.body.textContent=error.message;return;}
   let token=packet.token,syncing=true;

@@ -847,6 +847,18 @@ if(typeof window === "object") { window.GAMMA_PANELS = createGammaPanels(); wind
   const contextName = document.getElementById('gamma-information-name');
   const contextKey = document.getElementById('gamma-information-key');
   const contextHint = document.getElementById('gamma-information-hint');
+  // B4: the (i) button and its small window are created here, once, so every page that
+  // carries the bar gets them without touching each HTML file.
+  const more = document.createElement('button');
+  more.type = 'button'; more.id = 'gamma-information-more'; more.setAttribute('aria-expanded', 'false');
+  more.setAttribute('aria-controls', 'gamma-information-detail'); more.textContent = 'i'; more.hidden = true;
+  const detail = document.createElement('div');
+  detail.id = 'gamma-information-detail'; detail.setAttribute('role', 'group'); detail.hidden = true;
+  summary.after(more, detail);
+  function closeDetail() { detail.hidden = true; more.setAttribute('aria-expanded', 'false'); }
+  more.addEventListener('click', () => { detail.hidden = !detail.hidden; more.setAttribute('aria-expanded', String(!detail.hidden)); });
+  document.addEventListener('pointerdown', event => { if (!detail.hidden && !bar.contains(event.target)) closeDetail(); }, true);
+  bar.addEventListener('keydown', event => { if (event.key === 'Escape' && !detail.hidden) { closeDetail(); more.focus(); event.stopPropagation(); } });
   const selector = 'button,a[href],summary,label,input,select,textarea,[role="button"],[role="combobox"],[role="option"],[data-tip-description]';
   const documents = new Map();
   let enabled = false, hovered = null, focused = null, keyboard = false, pending = false;
@@ -887,8 +899,9 @@ if(typeof window === "object") { window.GAMMA_PANELS = createGammaPanels(); wind
   }
   function syncInformation() {
     if (!enabled || !source) return;
-    const activeSource = summary.contains(document.activeElement) ? document.activeElement.dataset.infoSource : null;
-    const fragment = document.createDocumentFragment();
+    const activeSource = bar.contains(document.activeElement) ? document.activeElement.dataset.infoSource : null;
+    // B4: the bar keeps only the last-save time; everything else lives in the (i) detail window.
+    const fragment = document.createDocumentFragment(), rest = document.createDocumentFragment();
     for (const node of source.querySelectorAll('.stage-panel-body > p,#stage-save-stamps,#stage-save-recovery-link,#stage-backup-hint')) {
       if (!sourceVisible(node) || !node.textContent.trim()) continue;
       const item = document.createElement('span'); item.className='gamma-information-item';
@@ -898,7 +911,7 @@ if(typeof window === "object") { window.GAMMA_PANELS = createGammaPanels(); wind
           const time = document.createElement('span');
           time.className = index === 0 ? 'gamma-information-item gamma-information-save' : 'gamma-information-item';
           time.textContent = stamp.textContent.trim(); time.title = time.textContent;
-          fragment.append(time);
+          (index === 0 ? fragment : rest).append(time);
         });
         continue;
       }
@@ -917,11 +930,14 @@ if(typeof window === "object") { window.GAMMA_PANELS = createGammaPanels(); wind
       }
       const itemText=item.textContent.trim();
       if (itemText) item.title=itemText;
-      fragment.append(item);
+      rest.append(item);
     }
     // No cloned IDs, live regions, editable fields or source nodes.
     summary.replaceChildren(fragment);
-    if(activeSource) [...summary.querySelectorAll('[data-info-source]')].find(node=>node.dataset.infoSource===activeSource)?.focus({preventScroll:true});
+    detail.replaceChildren(rest);
+    more.hidden = !detail.childNodes.length;
+    if (more.hidden) closeDetail();
+    if(activeSource) [...bar.querySelectorAll('[data-info-source]')].find(node=>node.dataset.infoSource===activeSource)?.focus({preventScroll:true});
     summary.setAttribute('aria-label',text('現在の情報'));
   }
   function scheduleSync() {
@@ -963,9 +979,10 @@ if(typeof window === "object") { window.GAMMA_PANELS = createGammaPanels(); wind
     toggle.dataset.tipTitle=toggle.getAttribute('aria-label');
     toggle.dataset.tipDescription=text('全タブで保存状況と操作の説明を表示します。');
     bar.setAttribute('aria-label',text('情報バー'));
+    more.setAttribute('aria-label',text('詳しい情報'));more.title=text('詳しい情報');detail.setAttribute('aria-label',text('詳しい情報'));
   }
   toggle.addEventListener('click',()=>{
-    enabled=!enabled;bar.hidden=!enabled;clearContext();syncToggle();
+    enabled=!enabled;bar.hidden=!enabled;if(!enabled)closeDetail();clearContext();syncToggle();
     if(enabled){syncInformation();renderContext();}
   });
   bindDocument(document);

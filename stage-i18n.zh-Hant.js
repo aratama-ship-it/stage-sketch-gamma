@@ -17,6 +17,20 @@
 
   const TEXT = {
 
+    "保存の帯をすっきりさせました。要点は1行、くわしい説明は［詳しく］から開けます。": "儲存提示列更簡潔：重點一行，詳情可從［詳情］開啟。",
+
+    "ヘッダーのボタンを「編集｜ショー｜受け渡し｜アプリ」の4つのまとまりに分けました。未書き出しの変更があるときだけ、書き出しボタンに色がつきます。": "將頁首按鈕分為「編輯｜演出｜交付｜應用」四組。僅在有未匯出的變更時，匯出按鈕才會著色。",
+
+    "文字の大きさ・入力欄やボタンの縁・小窓の縁を整えました（見やすさのための小さな調整です）。": "整理了文字大小以及輸入框、按鈕、彈出視窗的邊框（為提升易讀性的小調整）。",
+
+    "舞台図の名札を、画面では小さくても読める大きさで表示します（画面の表示のみ。書き出し・印刷は変わりません）。": "舞台圖上的名牌即使較小，在螢幕上也能讀清（僅限螢幕顯示，匯出和列印不變）。",
+
+    "注意の表示を×で閉じられるようになりました。閉じた表示は、その起動のあいだは出ません。保存に失敗している間は、保存時刻の隣に赤い「!」が残ります。": "提示現在可以用×關閉。關閉後的提示在本次啟動期間不再出現。儲存失敗期間，儲存時間旁會保留紅色「!」。",
+
+    "有料版の準備として、契約の猶予が終わったあとにカード更新のお知らせを残し、書き出しの言い回しを統一しました。この機能は切ってあり、この版では使えません。": "作為付費版的準備，合約寬限期結束後仍保留更新信用卡的提示，並統一了匯出的措辭。此功能已關閉，本版本無法使用。",
+
+    "Mac版：ライセンス画面にサインアウトのボタンを付け、ネットに戻ったときにAI相談役が使えるかを確かめ直します。起動時にオフラインでも止まらないようにしました。": "Mac版：授權畫面新增登出按鈕，網路恢復後會重新確認AI顧問是否可用。離線啟動時也不會再停止。",
+
     "最後に控え（書き出しまたはフォルダ控え）を取ってから14日以上たつと、編集エリアの下にお知らせを出します（ゲストとスマートフォンの閲覧画面には出ません）。": "距上次備份（匯出或資料夾備份）超過14天時，編輯區下方會顯示提示。訪客和手機檢視畫面不顯示。",
 
     "スマートフォンの閲覧画面では、場面の切り替えのアニメーションを常に切ります。ショーの設定の値は変えません。": "手機檢視畫面中，場景切換動畫一律關閉。演出本身的設定值不會改變。",
@@ -354,6 +368,7 @@
     "端末登録は既定3台です。保存領域を消去すると再ログインが必要です。端末を解除してもショーは消えません。": "預設可登記3台裝置。清除儲存空間後需要重新登入。解除裝置不會刪除演出。",
     "ログインして契約を確認": "登入並確認合約",
     "契約を再確認": "重新確認合約",
+    "サインアウト": "登出",
     "登録端末を確認": "查看已登記裝置",
     "口座名": "帳戶名稱",
     "端末数の上限": "裝置數量上限",
@@ -1120,6 +1135,7 @@
     "操作の説明": "操作說明",
     "現在の情報": "目前資訊",
     "機能にカーソルを合わせると、ここに説明を表示します。": "將游標移到功能上，即可在此查看說明。",
+    "詳しい情報": "更多資訊",
     "全タブで保存状況と操作の説明を表示します。": "在所有分頁顯示儲存狀態與操作說明。",
 
     "劇場全体を読み込み直す": "重新載入整個劇場",
@@ -5002,6 +5018,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "Safari は 7 日間このサイトを操作しないと保存データをすべて削除します。ホーム画面に追加するか、控えを書き出してください。普段は Mac 版をお使いください。": "Safari 會在連續 7 天未操作此網站後刪除所有儲存的資料。請加入主畫面或匯出備份。平常請使用 Mac 版。",
   "この端末の保存は保護されています（インストール済み）。それでも控えは取ってください。": "此裝置的儲存已受保護（已安裝）。仍請保留備份。",
   "控え: まだ一度も書き出していません": "備份：尚未匯出過",
+  "このショーはこのブラウザの中だけに保存されています": "此演出僅儲存在此瀏覽器中",
+  "Safari は 7 日間使わないと、保存したショーを消します": "Safari 在 7 天未使用後會刪除已儲存的演出",
+  "この端末の保存は保護されています。控えも取ってください": "此裝置的儲存已受保護。也請保留備份",
+  "詳しく": "詳細",
+  "保存できていません。押すと案内を開きます": "未能儲存。點按可開啟說明",
+  "保存の注意をもう一度開く": "重新開啟儲存提示",
   "PDF出力": "匯出 PDF",
   "{name}（Q シート）": "{name}（Q表）",
   "表示内容": "顯示內容",
@@ -6098,7 +6120,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "assist.ended": "諮詢試用已結束。感謝你的意見。",
   "assist.busy": "服務忙碌中，請稍後重新開啟。",
   "assist.unavailable": "暫時無法諮詢，請稍後重新開啟。",
-  "assist.auth": "請檢查登入與訂閱狀態後重新開啟。"
+  "assist.auth": "請檢查登入與訂閱狀態後重新開啟。Mac版請在應用程式內檢查授權和登入狀態（與Safari登入分開）。",
+  "assist.offline": "離線時無法諮詢，仍可繼續編輯。請連接網際網路後再次傳送。",
+  "assist.authExpired": "登入已過期，請重新登入。Mac版請在應用程式內檢查授權和登入狀態。",
+  "assist.suspended": "諮詢服務目前已暫停，仍可繼續編輯。"
 });
 
 // R-5: guest-only viewing guide, adopted option A.
@@ -6376,7 +6401,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.quick.title":"常用問題","assist.quick.terms":"查詢術語","assist.quick.help":"遇到問題","assist.quick.cue":"起草提示文字","assist.quick.names":"建議名稱","assist.quick.transition":"查看轉場","assist.quick.script":"根據劇本提建議","assist.quick.direction":"比較的轉場","assist.quick.next":"目前 → 下一個","assist.quick.prev":"上一個 → 目前","assist.quick.notice":"每次點擊計為1次。轉場會將所選兩個場景的棋子資訊，劇本會將目前場景的台詞和舞台指示（沒有時則為說明或輸入文字）最多400字傳送給Anthropic。只提供建議，不更改演出。","assist.quick.voice":"語音輸入：可使用裝置內建的語音輸入，如Mac聽寫。","assist.quick.copy":"複製","assist.quick.copied":"已複製","assist.quick.copyFailed":"無法複製。請選取回答文字後複製。","assist.quick.noScript":"此場景沒有劇本或說明。請在輸入框貼上400字以內的台詞或舞台指示。","assist.quick.noAdjacent":"無法讀取相鄰場景。請檢查場景選擇。","assist.quick.excerpt":"已傳送劇本：{title}（{n}字）","assist.quick.excerptShort":"已傳送劇本：{title}（共{total}字中的前{n}字，其餘未讀）","assist.quick.prompt.terms":"請解釋舞台左側、天幕和圖案片的含義","assist.quick.prompt.help":"無法儲存時應該怎麼辦？","assist.quick.prompt.cue":"請建議簡短的燈光提示說明文字","assist.quick.prompt.names":"請建議場景、提示或備選方案的名稱","assist.quick.prompt.transition":"請說明所選轉場中移動的人和物、出入場及順序的注意事項","assist.quick.prompt.script":"請根據此場景的台詞和舞台指示建議出入場及轉場順序"});
 
 // INFRA local archive controls; policy text remains a publication approval item.
-Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.history.settings": "諮詢設定", "assist.history.enabled": "在此裝置保留歷史", "assist.history.notice": "預設關閉。開啟後開始的提問和回答才會保留在此裝置，最多20輪、7天、合計64KiB。不寫入演出或伺服器，也不隨新問題自動傳送。關閉後，已有歷史在刪除前仍可閱讀。", "assist.history.archive": "已儲存的歷史（{n}輪）", "assist.history.clear": "刪除全部歷史", "assist.history.confirmClear": "刪除（無法復原）", "assist.history.cancel": "取消", "assist.history.cleared": "已刪除此裝置的歷史。", "assist.history.storageFailed": "無法儲存或讀取歷史。演出和本次回答維持原樣。刪除歷史後可以重新設定。", "assist.history.notSaved": "本輪對話未儲存至歷史。", "assist.history.policy": "輸入的文字會傳送給Anthropic以產生回答。開啟歷史後，可將後續提問和回答保留在此裝置。伺服器不儲存對話歷史。"});
+Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {"assist.history.settings": "諮詢設定", "assist.history.enabled": "在此裝置保留歷史", "assist.history.notice": "預設關閉。開啟後開始的提問和回答才會保留在此裝置，最多20輪、7天、合計64KiB。不寫入演出或伺服器，也不隨新問題自動傳送。關閉後，已有歷史在刪除前仍可閱讀。 瀏覽器版將歷史儲存在此瀏覽器內，Mac版則儲存在應用程式內。Mac版的歷史與Safari歷史分開，不包含在演出檔案中。", "assist.history.archive": "已儲存的歷史（{n}輪）", "assist.history.clear": "刪除全部歷史", "assist.history.confirmClear": "刪除（無法復原）", "assist.history.cancel": "取消", "assist.history.cleared": "已刪除此裝置的歷史。", "assist.history.storageFailed": "無法儲存或讀取歷史。演出和本次回答維持原樣。刪除歷史後可以重新設定。", "assist.history.notSaved": "本輪對話未儲存至歷史。", "assist.history.policy": "輸入的文字會傳送給Anthropic以產生回答。開啟歷史後，可將後續提問和回答保留在此裝置。伺服器不儲存對話歷史。"});
 // CHECK: local batch results and explicit finding-only transmission.
 Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "assist.batch.title": "AI 檢查",
@@ -7372,5 +7397,7 @@ window.SHOSAI_I18N_PACKS["zh-Hant"].say.unshift([/^(.+)を舞台の上で選ぶ$
 Object.assign(window.SHOSAI_I18N_PACKS["zh-Hant"].text, {
   "支払いが失敗しています。カードを更新してください。": "付款失敗。請更新付款卡。",
   "カードを更新": "更新付款卡",
-  "猶予の終了: {date}": "寬限期結束：{date}"
+  "猶予の終了: {date}": "寬限期結束：{date}",
+  "支払いが確認できなかったため、閲覧と書き出しだけになっています。カードを更新すると編集に戻れます。": "無法確認付款，目前僅能檢視與匯出。更新付款卡後即可恢復編輯。",
+  "猶予は {date} に終わりました": "寬限期已於 {date} 結束"
 });

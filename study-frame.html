@@ -4,8 +4,8 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261112-v0417"><link rel="stylesheet" href="/stage-study.css?v=20261111-v0415"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
-<script src="/stage-study-sticky.js?v=20261112-v0418"></script><script src="/stage-study-pen.js?v=20261111-v0415"></script><script src="/stage-study-navigation.js?v=20261112-v0418"></script><script src="/stage-study-frame.js?v=20261111-v0415"></script></head>
+<link rel="stylesheet" href="/study-assets/style.css?v=20261115-v0420"><link rel="stylesheet" href="/stage-study.css?v=20261115-v0420"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
+<script src="/stage-study-sticky.js?v=20261115-v0420"></script><script src="/stage-study-pen.js?v=20261115-v0420"></script><script src="/stage-study-navigation.js?v=20261115-v0420"></script><script src="/stage-study-frame.js?v=20261115-v0420"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
 <div id="study-legacy" hidden inert aria-hidden="true"><main id="view-stage" class="view">
@@ -15,8 +15,16 @@
         <button type="button" id="stage-storage-band-fold" aria-label="この起動中だけ忠告帯を畳む">!</button>
         <span id="stage-storage-band-message" tabindex="0"><span id="stage-storage-band-lead"></span> <span id="stage-storage-band-backup"></span></span>
         <button type="button" id="stage-storage-band-export">いま書き出す</button>
-        <a id="stage-storage-band-install" target="_blank" rel="noopener" hidden>ホーム画面に追加の手順</a>
-        <a id="stage-storage-band-download" target="_blank" rel="noopener">Mac 版を入手</a>
+        <!-- D1（本人決定 2026-11-13）: 1 行目は主文（日本語 40 字以内）＋控えの状態＋［いま書き出す］［詳しく］だけ。
+             長い説明・「普段は Mac 版をお使いください」・Mac 版の入手・ホーム画面に追加の手順は「詳しく」の小窓へ。 -->
+        <button type="button" id="stage-storage-band-more" aria-expanded="false" aria-controls="stage-storage-band-detail">詳しく</button>
+        <div id="stage-storage-band-detail" hidden>
+          <p id="stage-storage-band-detail-text"></p>
+          <div class="stage-storage-band-detail-actions">
+            <a id="stage-storage-band-install" target="_blank" rel="noopener" hidden>ホーム画面に追加の手順</a>
+            <a id="stage-storage-band-download" target="_blank" rel="noopener">Mac 版を入手</a>
+          </div>
+        </div>
       </div>
       <header class="stage-sketch-head">
         <div class="stage-header-topleft">
@@ -36,7 +44,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.4.19</span>
+                <span class="stage-app-version">0.4.20</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -111,6 +119,9 @@
               <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.2h3.3V.9"/><path d="M13.1 4.1A5.4 5.4 0 1 0 13.2 11"/></svg>
             </button>
           </div>
+          <!-- D2（本人決定 2026-11-13）: 右上は「編集（戻す・やり直す・さがす）｜見せる（全画面・発表用・Qシート）｜渡す（書き出し・共有）｜
+               アプリの用事（情報・フィードバック・設定・通知）」の群に分け、群の間に 1px の区切り（.gamma-header-sep・装飾なので aria-hidden）。
+               TC と音量は 9-17 の本人指示どおり左端のまま。共有はこの包みへ移した（タブレット・スマホは id で拾って自分の帯へ並べ直す）。 -->
           <!-- 2026-10-08 改善案 A-14「機能をさがす」（⌘K／Ctrl+K）: 画面の中の操作を名前で探して、その場所へ連れていく
                （gamma-feature-search.js）。冊子の説明を出す「使い方をさがす」（環境設定の左列）とは役割が違う。
                「一つ戻す・やり直す」の右＝操作の列の先頭に置く。絵は虫眼鏡（箱34px・絵15px・線1.6px は gamma-ui-tokens.css）。
@@ -120,13 +131,7 @@
                   data-tip-description="画面の中の操作を名前で探して、その場所へ連れていきます">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7"/><path d="M15.6 15.6 21 21"/></svg>
           </button>
-          <button type="button" class="stage-header-icon stage-feature-search-btn" id="gamma-information-toggle" data-no-i18n aria-label="情報バーを表示" aria-controls="gamma-information-bar" aria-expanded="false" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 10v7M12 6.8v.2"/></svg>
-          </button>
-          <!-- 感想・改善点を送る窓。β利用者が画面を離れずに書けるよう、上部に置く（2026-09-03 本人指示） -->
-          <button type="button" class="stage-lang stage-header-icon" id="stage-feedback-open" aria-label="フィードバック" title="フィードバック"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v9H7l-4 3v-3H2zM5 5h6M5 8h4"/></svg></button>
-
-          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
+          <span class="gamma-header-sep" aria-hidden="true"></span>
           <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
           <button type="button" class="stage-lang stage-present-icon stage-audience-icon" id="stage-audience-present" aria-pressed="false" aria-label="発表用の表示"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1"/><path d="M5.5 13.5h5M8 11v2.5M8 8.6V5.2M6.3 6.8 8 5.1l1.7 1.7"/></svg></span></button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
@@ -134,13 +139,21 @@
                   aria-haspopup="dialog" aria-controls="stage-cue-sheet-modal">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16M4 14h16M9 4v16"/></svg>
           </button>
+          <span class="gamma-header-sep" aria-hidden="true"></span>
           <button type="button" class="stage-export stage-export-icon" id="stage-export"
                   aria-label="書き出し・保存・印刷" aria-haspopup="dialog" aria-controls="stage-export-modal">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg>
           </button>
+          <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
+          <span class="gamma-header-sep" aria-hidden="true"></span>
+          <button type="button" class="stage-header-icon stage-feature-search-btn" id="gamma-information-toggle" data-no-i18n aria-label="情報バーを表示" aria-controls="gamma-information-bar" aria-expanded="false" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 10v7M12 6.8v.2"/></svg>
+          </button>
+          <!-- 感想・改善点を送る窓。β利用者が画面を離れずに書けるよう、上部に置く（2026-09-03 本人指示） -->
+          <button type="button" class="stage-lang stage-header-icon" id="stage-feedback-open" aria-label="フィードバック" title="フィードバック"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v9H7l-4 3v-3H2zM5 5h6M5 8h4"/></svg></button>
+          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
         </div>
         <div class="stage-header-collaboration">
-          <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
           <button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="通知・アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
         </div>
         </div>
@@ -2240,6 +2253,7 @@
   <div class="stage-modal-body">
     <p class="stage-profile-hint">この端末に保存したショーです。見本はサンプルプロジェクトから入手できます。</p>
     <section class="stage-show-save-error" id="stage-show-save-error" role="alert" hidden>
+      <button type="button" class="btn-quiet" id="stage-show-save-error-close" aria-label="この知らせを閉じる">×</button>
       <p id="stage-show-save-error-text"></p>
       <p id="stage-show-save-error-help" hidden></p>
       <div class="stage-show-save-error-actions">
@@ -2805,19 +2819,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261112-v0418">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261115-v0420">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0419-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0419-title">v0.4.19</h3><time datetime="2026-11-13">2026-11-13</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0420-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0420-title">v0.4.20</h3><time datetime="2026-11-15">2026-11-15</time></header>
       <ul>
-        <li>最後に控え（書き出しまたはフォルダ控え）を取ってから14日以上たつと、編集エリアの下にお知らせを出します（ゲストとスマートフォンの閲覧画面には出ません）。</li>
-        <li>スマートフォンの閲覧画面では、場面の切り替えのアニメーションを常に切ります。ショーの設定の値は変えません。</li>
-        <li>横幅の狭い画面で共有の道具バーが収まらないときは、折り返して表示します。</li>
-        <li>契約の期間が終わったあとも、狭い画面で書き出しの操作に届くようにしました。</li>
-        <li>同梱の見本「真夏」のディアボロの持ち方の内部指定を、見た目を変えずに整えました。</li>
-        <li>有料版の準備として、支払いが滞ったあとに21日間の猶予を設け、カード更新のお知らせを出す仕組みを入れました。支払いのお知らせの閉じるボタンは44pxにし、文言から税込の表記を外しました。この機能は切ってあり、この版では使えるようになっていません。</li>
-        <li>共有データの控えと整理の仕組みに、毎日の実行結果の要約（件数と決まった語だけ）を記録し、読み取り専用で確かめる道具を加えました。どちらも切ってあり、この版では動いていません。</li>
+        <li>保存の帯をすっきりさせました。要点は1行、くわしい説明は［詳しく］から開けます。</li>
+        <li>ヘッダーのボタンを「編集｜ショー｜受け渡し｜アプリ」の4つのまとまりに分けました。未書き出しの変更があるときだけ、書き出しボタンに色がつきます。</li>
+        <li>文字の大きさ・入力欄やボタンの縁・小窓の縁を整えました（見やすさのための小さな調整です）。</li>
+        <li>舞台図の名札を、画面では小さくても読める大きさで表示します（画面の表示のみ。書き出し・印刷は変わりません）。</li>
+        <li>注意の表示を×で閉じられるようになりました。閉じた表示は、その起動のあいだは出ません。保存に失敗している間は、保存時刻の隣に赤い「!」が残ります。</li>
+        <li>有料版の準備として、契約の猶予が終わったあとにカード更新のお知らせを残し、書き出しの言い回しを統一しました。この機能は切ってあり、この版では使えません。</li>
+        <li>Mac版：ライセンス画面にサインアウトのボタンを付け、ネットに戻ったときにAI相談役が使えるかを確かめ直します。起動時にオフラインでも止まらないようにしました。</li>
         <li>説明書の画像は v0.4.1 時点の画面です。</li>
       </ul>
     </section>
@@ -3770,30 +3784,30 @@
     <span>全画面を終了</span><kbd data-no-i18n>Esc</kbd>
   </button>
 </div></div>
-<script src="/study-assets/stage-runtime.js?v=20261112-v0418"></script>
-<script src="/study-assets/gamma-light-model.js?v=20261107-v049"></script>
-<script src="/study-assets/stage-venues.js?v=20261109-v0412"></script>
-<script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-set-model.js?v=2026092354"></script>
-<script src="/study-assets/stage-machinery.js?v=20261012-v0358"></script>
-<script src="/study-assets/stage-virtual-room.js?v=20261009-v0337"></script>
-<script src="/study-assets/stage-reorder-warning.js?v=20261009-v0335"></script>
-<script src="/study-assets/stage-scrim.js?v=20261009-v0335"></script>
-<script src="/study-assets/stage-fixture-body.js?v=20261031-v0396"></script>
-<script src="/study-assets/stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
-<script src="/study-assets/light-design/rig-engine.js?v=20261109-v0412"></script>
-<script src="/study-assets/light-design/laser-effects.js?v=20261005-batch98"></script>
-<script src="/study-assets/stage-light-render.js?v=20261105-v045"></script>
-<script src="/study-assets/gamma-light-cue-overlay.js?v=20261105-v045"></script>
-<script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
-<script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
-<script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20261104-v044"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261112-v0418"></script>
-<script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
-<script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-element-refs.js?v=20261104-v043"></script>
-<script src="/study-assets/stage-plan-fit.js?v=20261112-v0416"></script>
-<script src="/study-assets/stage-sketch.js?v=20261112-v0418"></script>
-<script src="/study-assets/gamma-appearance.js?v=20261109-v0411"></script>
+<script src="/study-assets/stage-runtime.js?v=20261115-v0420"></script>
+<script src="/study-assets/gamma-light-model.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-venues.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-venue-lines.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-set-model.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-machinery.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-virtual-room.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-reorder-warning.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-scrim.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-fixture-body.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-lighting-plan-overlay.js?v=20261115-v0420"></script>
+<script src="/study-assets/light-design/rig-engine.js?v=20261115-v0420"></script>
+<script src="/study-assets/light-design/laser-effects.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-light-render.js?v=20261115-v0420"></script>
+<script src="/study-assets/gamma-light-cue-overlay.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-performer-motion.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-idle-motion.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-data-safety.js?v=20261115-v0420"></script>
+<script src="/study-assets/gamma-ui.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-pose-data.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-prop-shapes.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-element-refs.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-plan-fit.js?v=20261115-v0420"></script>
+<script src="/study-assets/stage-sketch.js?v=20261115-v0420"></script>
+<script src="/study-assets/gamma-appearance.js?v=20261115-v0420"></script>
 </body></html>

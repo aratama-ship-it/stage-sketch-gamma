@@ -12,7 +12,7 @@ const index = [
     "description": "",
     "type": "cued",
     "rawBytes": 1005026,
-    "url": "./stage-samples/romeo-juliet-cued.json?v=20261009-v0334"
+    "url": "./stage-samples/romeo-juliet-cued.json?v=20261115-v0420"
   },
   {
     "id": "romeo-juliet-rj-second-v1",
@@ -24,7 +24,7 @@ const index = [
     "description": "",
     "type": "second",
     "rawBytes": 1537790,
-    "url": "./stage-samples/romeo-juliet-second.json?v=20261010-v0338"
+    "url": "./stage-samples/romeo-juliet-second.json?v=20261115-v0420"
   },
   {
     "id": "midsummer-rehearsal-v1",
@@ -36,7 +36,7 @@ const index = [
     "description": "γの機能を一通り見せる28シーン。職人たちの芝居づくり。",
     "type": "second",
     "rawBytes": 1877282,
-    "url": "./stage-samples/midsummer-rehearsal.json?v=20261107-v048"
+    "url": "./stage-samples/midsummer-rehearsal.json?v=20261115-v0420"
   },
   {
     "id": "gamma-feature-test-v47-retired-pose",
